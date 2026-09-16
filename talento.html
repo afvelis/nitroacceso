@@ -27,6 +27,7 @@ input{width:100%;padding:12px;border-radius:10px;border:1px solid var(--borde);b
 .btn{display:inline-block;border:none;border-radius:12px;padding:12px 18px;font-size:17px;font-weight:600;color:#06281a;background:linear-gradient(135deg,var(--acento),#2bb673);cursor:pointer;text-decoration:none;}
 .btn-gris{background:#2a3648;color:var(--texto);}
 .btn-rojo{background:linear-gradient(135deg,#e05252,#c73e3e);color:#fff;}
+.btn-azul{background:linear-gradient(135deg,var(--acento2),#147acc);color:#fff;}
 .fila{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;}
 .suave{color:var(--suave);}
 .badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:17px;margin-left:8px;vertical-align:middle;}
@@ -40,6 +41,8 @@ th,td{border:1px solid var(--borde);padding:8px;font-size:17px;text-align:left;}
 th{background:#0d1526;color:var(--suave);}
 .qrbox{margin-top:14px;padding:14px;border:1px dashed var(--borde);border-radius:12px;text-align:center;}
 .qrbox img{width:220px;height:220px;background:#fff;padding:8px;border-radius:10px;}
+.qrbox .fila{justify-content:center;}
+.panelOpcion{margin-top:12px;padding:14px;border:1px dashed var(--acento2);border-radius:12px;background:#0d1526;}
 </style>
 </head>
 <body>
@@ -69,15 +72,6 @@ th{background:#0d1526;color:var(--suave);}
     <div id="zonaListas"></div>
   </section>
 
-  <section class="tarjeta" id="cardPregunta" hidden>
-    <h2>Se repiten los integrantes en el Dia 2?</h2>
-    <p class="suave">Si la misma gente trabaja ambos dias, copiamos la lista del Dia 1 al Dia 2. Si no, dejaremos el Dia 2 vacio para que lo llenes aparte.</p>
-    <div class="fila">
-      <button class="btn" id="btnSiRepiten">Si, son los mismos</button>
-      <button class="btn btn-gris" id="btnNoRepiten">No, lista nueva</button>
-    </div>
-  </section>
-
 </main>
 <script src="config.js"></script>
 <script>
@@ -87,11 +81,11 @@ function esc(t){
     .replace(/&/g,'&amp;').replace(/</g,'&lt;')
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-function avisoMsg(id, texto, ok){
-  var el = $(id);
+function pinta(el, texto, ok){
   el.textContent = texto;
   el.style.color = ok ? 'var(--acento)' : 'var(--aviso)';
 }
+function avisoMsg(id, texto, ok){ pinta($(id), texto, ok); }
 function boton(texto, clase, fn){
   var b = document.createElement('button');
   b.className = 'btn ' + clase;
@@ -101,6 +95,32 @@ function boton(texto, clase, fn){
 }
 function param(name){
   return new URLSearchParams(location.search).get(name);
+}
+function urlWA(texto){ return 'https://wa.me/?text=' + encodeURIComponent(texto); }
+function urlMail(asunto, texto){ return 'mailto:?subject=' + encodeURIComponent(asunto) + '&body=' + encodeURIComponent(texto); }
+async function copiarTexto(txt){
+  try {
+    await navigator.clipboard.writeText(txt);
+    return true;
+  } catch (e) {
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = txt;
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return ok;
+    } catch (e2) {
+      return false;
+    }
+  }
+}
+async function copiarImagen(url){
+  var r = await fetch(url);
+  var blob = await r.blob();
+  if (!window.ClipboardItem) throw new Error('sin ClipboardItem');
+  await navigator.clipboard.write([new ClipboardItem({ [blob.type || 'image/png']: blob })]);
 }
 
 var DATA = null;
@@ -132,6 +152,14 @@ function nombreTalento(){
   return 'Talento';
 }
 
+function dia1ConPersonas(){
+  return (DATA.listas || []).some(function(l){ return l.dia === 1 && (l.personas || []).length > 0; });
+}
+function personasDia1(){
+  var l = (DATA.listas || []).filter(function(x){ return x.dia === 1; })[0];
+  return l ? (l.personas || []).length : 0;
+}
+
 function render(){
   $('cardCarga').hidden = true;
   $('cardTalento').hidden = false;
@@ -146,7 +174,6 @@ function render(){
   zona.innerHTML = '';
   var listas = (DATA.listas || []).slice().sort(function(a, b){ return a.dia - b.dia; });
   listas.forEach(function(l){ zona.appendChild(cardLista(l)); });
-  actualizarPregunta(listas);
 }
 
 function cardLista(l){
@@ -167,7 +194,15 @@ function cardLista(l){
     sec.appendChild(rows);
     var fila = document.createElement('div');
     fila.className = 'fila';
-    fila.appendChild(boton('Agregar participante', 'btn-gris', function(){ rows.appendChild(filaPersona(null)); }));
+    fila.appendChild(boton('Agregar participante', 'btn-gris', function(){
+      var yaTienePanel = sec.querySelector('.panelOpcion');
+      if (l.dia === 2 && (l.personas || []).length === 0 && dia1ConPersonas()
+          && !sessionStorage.getItem('na_norep_' + CODIGO) && !rows.children.length && !yaTienePanel) {
+        mostrarOpcionDia2(sec, rows, l);
+      } else {
+        rows.appendChild(filaPersona(null));
+      }
+    }));
     fila.appendChild(boton('Guardar lista del Dia ' + l.dia, '', function(){ guardarDia(l, rows); }));
     sec.appendChild(fila);
   } else {
@@ -188,8 +223,15 @@ function cardLista(l){
     notaQr.className = 'suave';
     notaQr.textContent = 'Muestra este QR en la puerta, o dicta el codigo corto si el QR no se pudiera leer.';
     qr.appendChild(notaQr);
+    var filaQr = document.createElement('div');
+    filaQr.className = 'fila';
+    qr.appendChild(filaQr);
+    var msgQr = document.createElement('p');
+    msgQr.className = 'suave';
+    qr.appendChild(msgQr);
     sec.appendChild(qr);
     ponerQR(qrInner, urlPuerta('lista', l.codigo_corto), l.codigo_corto);
+    agregarBotonesQR(filaQr, msgQr, qrInner, l);
   } else if (editable) {
     var notaQr2 = document.createElement('p');
     notaQr2.className = 'suave';
@@ -197,6 +239,74 @@ function cardLista(l){
     sec.appendChild(notaQr2);
   }
   return sec;
+}
+
+function mostrarOpcionDia2(sec, rows, l){
+  var panel = document.createElement('div');
+  panel.className = 'panelOpcion';
+  var txt = document.createElement('p');
+  txt.className = 'suave';
+  txt.textContent = 'Ya tienes una lista guardada del Dia 1 con ' + personasDia1() + ' participante(s). Que prefieres hacer con el Dia 2?';
+  panel.appendChild(txt);
+  var fila = document.createElement('div');
+  fila.className = 'fila';
+  fila.appendChild(boton('Repetir y editar la del Dia 1', '', async function(){
+    try {
+      var ok = await llamar('f_link_talento_copiar', {
+        p_codigo_link: CODIGO, p_dia_origen: 1, p_dia_destino: 2
+      });
+      if (ok === true) { await cargar(); return; }
+      pinta($('msgGlobal'), 'No se pudo copiar la lista al Dia 2 (quizas el Dia 2 ya tiene integrantes).', false);
+    } catch (e) {
+      pinta($('msgGlobal'), 'No se pudo conectar: ' + e.message, false);
+    }
+  }));
+  fila.appendChild(boton('Lista nueva desde cero', 'btn-azul', function(){
+    sessionStorage.setItem('na_norep_' + CODIGO, '1');
+    panel.remove();
+    rows.appendChild(filaPersona(null));
+  }));
+  fila.appendChild(boton('Cancelar', 'btn-gris', function(){ panel.remove(); }));
+  panel.appendChild(fila);
+  sec.insertBefore(panel, rows);
+}
+
+function agregarBotonesQR(fila, msgEl, qrInner, l){
+  var img = qrInner.querySelector('img');
+  var urlImg = img ? img.src : null;
+  var textoComp = 'Nitrotoon - Lista del Dia ' + l.dia + ' de ' + nombreTalento()
+    + '. Codigo corto: ' + l.codigo_corto
+    + '. Link de puerta: ' + urlPuerta('lista', l.codigo_corto)
+    + (urlImg ? ' . Ver el QR: ' + urlImg : '');
+
+  fila.appendChild(boton('Copiar QR', 'btn-gris', async function(){
+    if (urlImg) {
+      try {
+        await copiarImagen(urlImg);
+        pinta(msgEl, 'QR copiado como imagen: pegalo en tu grupo o chat con Ctrl+V o manteniendo pulsado.', true);
+        return;
+      } catch (e) {}
+    }
+    var ok = await copiarTexto(textoComp);
+    if (ok) {
+      pinta(msgEl, 'Tu navegador no dejo copiar la imagen, asi que copie el texto con el codigo y el link: pegalo donde quieras.', true);
+    } else {
+      pinta(msgEl, 'No se pudo copiar. Selecciona el codigo corto con el dedo y copialo manual.', false);
+    }
+  }));
+
+  var aWA = document.createElement('a');
+  aWA.className = 'btn';
+  aWA.textContent = 'WhatsApp';
+  aWA.target = '_blank';
+  aWA.href = urlWA(textoComp);
+  fila.appendChild(aWA);
+
+  fila.appendChild(boton('Correo', 'btn-azul', async function(){
+    await copiarTexto(textoComp);
+    pinta(msgEl, 'Intentamos abrir tu aplicacion de correo. Si no se abrio nada, el mensaje ya quedo copiado: pegalo en tu correo o en un grupo.', true);
+    window.location.href = urlMail('Nitrotoon - QR de lista Dia ' + l.dia, textoComp);
+  }));
 }
 
 function filaPersona(p){
@@ -274,37 +384,6 @@ async function guardarDia(l, rows){
     avisoMsg('msgGlobal', 'No se pudo conectar: ' + e.message, false);
   }
 }
-
-function actualizarPregunta(listas){
-  var l1 = null, l2 = null;
-  listas.forEach(function(l){ if (l.dia === 1) l1 = l; if (l.dia === 2) l2 = l; });
-  var show = !!(l1 && l2 && DATA.edicion_abierta
-    && l1.estado === 'en_edicion' && l2.estado === 'en_edicion'
-    && (l1.personas || []).length > 0 && (l2.personas || []).length === 0
-    && !sessionStorage.getItem('na_norep_' + CODIGO));
-  $('cardPregunta').hidden = !show;
-}
-
-async function copiarDia(){
-  try {
-    var ok = await llamar('f_link_talento_copiar', {
-      p_codigo_link: CODIGO, p_dia_origen: 1, p_dia_destino: 2
-    });
-    if (ok === true) {
-      await cargar();
-      return;
-    }
-    avisoMsg('msgGlobal', 'No se pudo copiar la lista al Dia 2 (quizas el Dia 2 ya tiene integrantes).', false);
-  } catch (e) {
-    avisoMsg('msgGlobal', 'No se pudo conectar: ' + e.message, false);
-  }
-}
-
-$('btnSiRepiten').onclick = copiarDia;
-$('btnNoRepiten').onclick = function(){
-  sessionStorage.setItem('na_norep_' + CODIGO, '1');
-  $('cardPregunta').hidden = true;
-};
 
 cargar();
 </script>
