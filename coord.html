@@ -71,9 +71,9 @@ li{margin:4px 0;}
     <details class="ayuda">
       <summary>Ayuda: como entregar un link de registro</summary>
       <ul>
-        <li><strong>Copiar:</strong> copia el link y pegalo donde tu quieras (chat, correo, documento).</li>
+        <li><strong>Copiar:</strong> copia el link y pegalo donde tu quieras (chat, correo, documento). El boton te avisara cuando ya este copiado.</li>
         <li><strong>WhatsApp:</strong> abre WhatsApp con el link ya escrito en un mensaje; solo eliges el contacto y envias.</li>
-        <li><strong>Correo:</strong> abre tu aplicacion de correo con un borrador listo para enviar.</li>
+        <li><strong>Correo:</strong> intenta abrir tu aplicacion de correo con un borrador listo. Si tu equipo no tiene aplicacion de correo, el mensaje queda copiado para que lo pegues donde prefieras.</li>
         <li>Cada link es unico y esta amarrado a un correo irrepetible: no lo publiques en redes, envialo solo a la persona indicada.</li>
       </ul>
     </details>
@@ -127,6 +127,7 @@ li{margin:4px 0;}
     <h2>Links creados en esta sesion</h2>
     <p class="suave">Aqui quedan tus links mientras trabajas. Copialos o envialos por WhatsApp o correo con los botones de cada uno.</p>
     <div id="listaLinks"></div>
+    <p id="msgLinks" class="suave"></p>
   </section>
 
 </main>
@@ -148,13 +149,19 @@ function urlMail(asunto, texto){ return 'mailto:?subject=' + encodeURIComponent(
 async function copiarTexto(txt){
   try {
     await navigator.clipboard.writeText(txt);
+    return true;
   } catch (e) {
-    var ta = document.createElement('textarea');
-    ta.value = txt;
-    document.body.appendChild(ta);
-    ta.select();
-    try { document.execCommand('copy'); } catch (e2) {}
-    document.body.removeChild(ta);
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = txt;
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return ok;
+    } catch (e2) {
+      return false;
+    }
   }
 }
 
@@ -221,6 +228,7 @@ function renderLinks(){
   cont.innerHTML = '';
   arr.forEach(function(item){
     var link = linkCompleto(item);
+    var textoWA = 'Hola, te comparto el link de registro de ' + item.titulo + ' para Nitrotoon: ' + link;
     var div = document.createElement('div');
     div.className = 'item';
     div.innerHTML =
@@ -228,23 +236,39 @@ function renderLinks(){
       '<div class="codigo">' + esc(link) + '</div>' +
       '<div class="fila"></div>';
     var fila = div.querySelector('.fila');
+
     var bCop = document.createElement('button');
     bCop.className = 'btn btn-gris';
     bCop.textContent = 'Copiar';
-    bCop.onclick = function(){ copiarTexto(link); };
-    var textoWA = 'Hola, te comparto el link de registro de ' + item.titulo + ' para Nitrotoon: ' + link;
+    bCop.onclick = async function(){
+      var ok = await copiarTexto(link);
+      if (ok) {
+        bCop.textContent = '¡Copiado!';
+        avisoMsg('msgLinks', 'Link copiado. Pegalo donde quieras.', true);
+        setTimeout(function(){ bCop.textContent = 'Copiar'; }, 2000);
+      } else {
+        avisoMsg('msgLinks', 'Tu navegador no dejo copiar solo. Selecciona el link con el mouse o el dedo y copialo manual.', false);
+      }
+    };
+
     var aWA = document.createElement('a');
     aWA.className = 'btn';
     aWA.textContent = 'WhatsApp';
     aWA.target = '_blank';
     aWA.href = urlWA(textoWA);
-    var aMail = document.createElement('a');
-    aMail.className = 'btn btn-azul';
-    aMail.textContent = 'Correo';
-    aMail.href = urlMail('Nitrotoon - link de registro', textoWA);
+
+    var bMail = document.createElement('button');
+    bMail.className = 'btn btn-azul';
+    bMail.textContent = 'Correo';
+    bMail.onclick = async function(){
+      await copiarTexto(textoWA);
+      avisoMsg('msgLinks', 'Intentamos abrir tu aplicacion de correo. Si no se abrio nada, no te preocupes: el mensaje ya quedo copiado, pegalo en tu correo o en WhatsApp.', true);
+      window.location.href = urlMail('Nitrotoon - link de registro', textoWA);
+    };
+
     fila.appendChild(bCop);
     fila.appendChild(aWA);
-    fila.appendChild(aMail);
+    fila.appendChild(bMail);
     cont.appendChild(div);
   });
 }
