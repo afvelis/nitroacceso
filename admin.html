@@ -2,180 +2,334 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nitrotoon · Administración</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nitrotoon Control de acceso</title>
 <style>
-  :root {
-    --fondo: #0b1220; --tarjeta: #121c2e; --borde: #24344d; --texto: #eef3f8;
-    --suave: #9fb0c3; --acento: #35d07f; --acento2: #1fa2ff; --aviso: #ffd33d;
-  }
-  * { box-sizing: border-box; }
-  body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; font-size: 18px; color: var(--texto); background: radial-gradient(1200px 600px at 80% -10%, #16233c 0%, var(--fondo) 55%); min-height: 100vh; }
-  .barra { height: 6px; background: linear-gradient(90deg, var(--acento), var(--acento2)); }
-  .cab { display: flex; gap: 16px; align-items: center; max-width: 760px; margin: 24px auto 0; padding: 0 20px; }
-  .logo { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--acento), var(--acento2)); font-size: 26px; flex: none; }
-  .etiqueta { letter-spacing: 3px; font-size: 17px; text-transform: uppercase; color: var(--suave); margin: 0 0 4px; }
-  h1 { margin: 0; font-size: 26px; }
-  .contenedor { max-width: 760px; margin: 20px auto 60px; padding: 0 20px; display: flex; flex-direction: column; gap: 20px; }
-  .tarjeta { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 16px; padding: 24px; }
-  h2 { font-size: 22px; margin: 0 0 12px; }
-  label { display: block; font-weight: 600; margin: 14px 0 6px; }
-  input, select { width: 100%; font-size: 18px; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--borde); background: #0b1524; color: var(--texto); outline: none; }
-  input:focus, select:focus { border-color: var(--acento2); box-shadow: 0 0 0 4px rgba(31,162,255,.25); }
-  button { font-size: 18px; font-weight: 700; padding: 13px 18px; border-radius: 10px; border: none; cursor: pointer; color: #06131f; background: linear-gradient(135deg, var(--acento), #2bb673); }
-  button:hover { filter: brightness(1.08); }
-  .btnGris { background: #2a3644; color: var(--texto); }
-  .btnRojo { background: #d64545; color: #ffffff; }
-  .filaBotones { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 14px; }
-  .estado { font-size: 19px; font-weight: 600; }
-  .aviso { min-height: 24px; color: var(--aviso); font-weight: 600; margin: 12px 0 0; }
-  .oculto { display: none; }
-  .codigo { font-family: ui-monospace, Consolas, monospace; font-size: 24px; letter-spacing: 2px; background: #0b1524; border: 1px solid var(--borde); border-radius: 10px; padding: 12px; margin: 10px 0; }
-  .nota { color: var(--suave); font-size: 17px; line-height: 1.5; }
-  .lista { margin: 10px 0; padding-left: 22px; }
-  .lista li { margin: 8px 0; line-height: 1.45; }
+:root{
+  --fondo:#0b1220; --tarjeta:#121c2e; --borde:#24344d; --texto:#eef3f8;
+  --suave:#9fb0c3; --acento:#35d07f; --acento2:#1fa2ff; --aviso:#ffd33d;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0; background:var(--fondo); color:var(--texto);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  font-size:17px; line-height:1.5;
+}
+.franja{height:6px;background:linear-gradient(90deg,var(--acento),var(--acento2));}
+.cabecera{display:flex;gap:14px;align-items:center;padding:20px 16px;max-width:860px;margin:0 auto;}
+.logo{width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,var(--acento),var(--acento2));display:flex;align-items:center;justify-content:center;font-size:30px;flex:none;}
+.ceja{color:var(--suave);letter-spacing:2px;text-transform:uppercase;font-size:17px;}
+h1{margin:0;font-size:26px;}
+main{max-width:860px;margin:0 auto;padding:0 16px 40px;display:flex;flex-direction:column;gap:20px;}
+.tarjeta{background:var(--tarjeta);border:1px solid var(--borde);border-radius:16px;padding:20px;box-shadow:0 8px 24px rgba(0,0,0,.35);}
+h2{margin:0 0 12px;font-size:22px;}
+h3{margin:14px 0 6px;font-size:19px;color:var(--acento2);}
+label{display:block;margin:10px 0;font-size:17px;}
+select,input{width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1px solid var(--borde);background:#0d1526;color:var(--texto);font-size:17px;}
+.btn{display:inline-block;border:none;border-radius:12px;padding:12px 18px;font-size:17px;font-weight:600;color:#06281a;background:linear-gradient(135deg,var(--acento),#2bb673);cursor:pointer;}
+.btn-gris{background:#2a3648;color:var(--texto);}
+.btn-rojo{background:linear-gradient(135deg,#e05252,#c73e3e);color:#fff;}
+.btn-verde{background:linear-gradient(135deg,var(--acento),#2bb673);color:#06281a;}
+.fila{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;}
+.suave{color:var(--suave);}
+.codigo{background:#0d1526;border:1px solid var(--borde);border-radius:10px;padding:12px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:20px;letter-spacing:2px;margin-top:8px;word-break:break-all;}
+.item{border:1px solid var(--borde);border-radius:12px;padding:14px;margin-top:12px;background:#0e1728;}
+.badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:17px;margin-left:8px;vertical-align:middle;}
+.badge-tipo{background:#123a5c;color:#9fd2ff;}
+.badge-ok{background:#12402c;color:#7ee2ae;}
+.badge-no{background:#4a1a1a;color:#ff9d9d;}
+.panel-edit{margin-top:12px;border-top:1px dashed var(--borde);padding-top:6px;}
+ul{margin:6px 0;padding-left:22px;}
+li{margin:4px 0;}
 </style>
 </head>
 <body>
-<div class="barra"></div>
-<header class="cab">
-  <div class="logo" aria-hidden="true">🚀</div>
+<div class="franja"></div>
+<header class="cabecera">
+  <div class="logo">🚀</div>
   <div>
-    <p class="etiqueta">Panel de administración</p>
+    <div class="ceja">Panel de administracion</div>
     <h1>Nitrotoon Control de acceso</h1>
   </div>
 </header>
-<main class="contenedor">
+<main>
+
   <section class="tarjeta">
-    <h2>Edición de listas</h2>
-    <p class="estado" id="estadoEdicion">Consultando...</p>
-    <div class="filaBotones">
-      <button id="botonCerrarEdicion" class="btnRojo">Cerrar edición</button>
-      <button id="botonAbrirEdicion">Abrir edición</button>
+    <h2>Edicion de listas</h2>
+    <p id="estadoEdicion" class="suave">Consultando estado...</p>
+    <div class="fila">
+      <button class="btn btn-rojo" id="btnCerrarEdicion">Cerrar edicion</button>
+      <button class="btn btn-verde" id="btnAbrirEdicion">Abrir edicion</button>
     </div>
-    <p class="aviso" id="avisoEdicion"></p>
   </section>
+
   <section class="tarjeta">
     <h2>Crear coordinador</h2>
-    <label for="tipoCoord">Tipo</label>
-    <select id="tipoCoord">
-      <option value="talentos">Coordinador de talentos</option>
-      <option value="stands">Coordinador de stands</option>
-    </select>
-    <label for="nombreCoord">Nombre y apellido</label>
-    <input id="nombreCoord" type="text" placeholder="Ej.: Maria Perez">
-    <label for="correoCoord">Correo (opcional)</label>
-    <input id="correoCoord" type="email" placeholder="correo@ejemplo.com">
-    <div class="filaBotones"><button id="botonCrearCoord">Crear coordinador</button></div>
-    <p class="aviso" id="avisoCoord"></p>
-    <div id="resultadoCoord" class="oculto">
-      <p style="margin:14px 0 0;font-weight:600;">Codigo de acceso del coordinador:</p>
-      <p class="codigo" id="codigoCoord"></p>
-      <button id="botonCopiarCoord" class="btnGris">Copiar codigo</button>
-      <p class="nota">Entrégale este código a tu coordinador: con él entra en coord.html y crea los links de registro.</p>
+    <label>Tipo
+      <select id="cTipo">
+        <option value="talentos">Coordinador de talentos</option>
+        <option value="stands">Coordinador de stands</option>
+      </select>
+    </label>
+    <label>Nombre y apellido
+      <input id="cNombre" placeholder="Ej.: Maria Perez">
+    </label>
+    <label>Correo (opcional)
+      <input id="cCorreo" placeholder="Ej.: maria@correo.com">
+    </label>
+    <div class="fila">
+      <button class="btn" id="btnCrearCoord">Crear coordinador</button>
     </div>
+    <p id="msgCrear" class="suave"></p>
+    <div id="resultadoCoord"></div>
   </section>
+
   <section class="tarjeta">
-    <h2>Estadística del evento</h2>
-    <div class="filaBotones"><button id="botonStats">Estadistica</button></div>
-    <div id="panelStats" class="oculto"></div>
+    <h2>Coordinadores creados</h2>
+    <p class="suave">Aqui ves quien tiene llave de entrada. Puedes copiar su codigo, editar sus datos o eliminar su llave (lo que esa persona ya hubiera creado queda intacto).</p>
+    <div id="listaCoords"><p class="suave">Consultando...</p></div>
   </section>
+
   <section class="tarjeta">
-    <div class="filaBotones"><button id="botonSalir" class="btnGris">Salir</button></div>
+    <h2>Estadistica</h2>
+    <div class="fila">
+      <button class="btn" id="btnStats">Ver estadisticas</button>
+    </div>
+    <div id="zonaStats"></div>
   </section>
+
+  <div class="fila">
+    <button class="btn btn-gris" id="btnSalir">Salir</button>
+  </div>
+
 </main>
 <script src="config.js"></script>
 <script>
-  const sesion = leerSesion();
-  if (!sesion.token || sesion.rol !== "admin") { window.location.href = "index.html"; }
+function $(id){ return document.getElementById(id); }
+function esc(t){
+  return String(t == null ? '' : t)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function aviso(id, texto, ok){
+  var el = $(id);
+  el.textContent = texto;
+  el.style.color = ok ? 'var(--acento)' : 'var(--aviso)';
+}
+function boton(texto, clase, fn){
+  var b = document.createElement('button');
+  b.className = 'btn ' + clase;
+  b.textContent = texto;
+  b.onclick = fn;
+  return b;
+}
+async function copiarTexto(txt){
+  try {
+    await navigator.clipboard.writeText(txt);
+  } catch (e) {
+    var ta = document.createElement('textarea');
+    ta.value = txt;
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch (e2) {}
+    document.body.removeChild(ta);
+  }
+}
 
-  function esc(s) {
-    return String(s).replace(/[&<>"']/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+var ses = leerSesion();
+
+async function cargarEstado(){
+  try {
+    var st = await llamar('f_admin_stats', { p_token: ses.token });
+    if (!st) { aviso('estadoEdicion', 'Tu sesion expiro: entra de nuevo con tu PIN.', false); return; }
+    if (st.edicion_abierta) {
+      aviso('estadoEdicion', 'Edicion ABIERTA: talentos y stands pueden editar sus listas.', true);
+    } else {
+      aviso('estadoEdicion', 'Edicion CERRADA: los links externos no pueden modificar nada.', false);
+    }
+  } catch (e) {
+    aviso('estadoEdicion', 'No se pudo consultar el estado: ' + e.message, false);
+  }
+}
+
+async function cambiarEdicion(abierta){
+  try {
+    await llamar('f_admin_toggle_edicion', { p_token: ses.token, p_abierta: abierta });
+    await cargarEstado();
+  } catch (e) {
+    aviso('estadoEdicion', 'Fallo al cambiar la edicion: ' + e.message, false);
+  }
+}
+
+async function crearCoord(){
+  var tipo = $('cTipo').value;
+  var nombre = $('cNombre').value.trim();
+  var correo = $('cCorreo').value.trim();
+  if (!nombre) { aviso('msgCrear', 'Escribe primero el nombre y apellido.', false); return; }
+  try {
+    var codigo = await llamar('f_admin_crear_coordinador', {
+      p_token: ses.token, p_tipo: tipo, p_nombre: nombre, p_correo: correo || null
     });
+    if (!codigo) { aviso('msgCrear', 'No se pudo crear el coordinador. Intenta de nuevo.', false); return; }
+    var cont = $('resultadoCoord');
+    cont.innerHTML = '';
+    var caja = document.createElement('div');
+    caja.className = 'codigo';
+    caja.textContent = codigo;
+    var fila = document.createElement('div');
+    fila.className = 'fila';
+    fila.appendChild(boton('Copiar codigo', 'btn-gris', function(){ copiarTexto(codigo); }));
+    var nota = document.createElement('p');
+    nota.className = 'suave';
+    nota.textContent = 'Entregale este codigo a tu coordinador: con el entra en coord.html y crea los links de registro.';
+    cont.appendChild(caja);
+    cont.appendChild(fila);
+    cont.appendChild(nota);
+    $('cNombre').value = '';
+    $('cCorreo').value = '';
+    aviso('msgCrear', 'Coordinador creado correctamente.', true);
+    await cargarLista();
+  } catch (e) {
+    aviso('msgCrear', 'Fallo al crear: ' + e.message, false);
   }
+}
 
-  async function cargarEstado() {
+async function cargarLista(){
+  var cont = $('listaCoords');
+  try {
+    var arr = await llamar('f_admin_listar_coordinadores', { p_token: ses.token });
+    if (!arr) { cont.innerHTML = '<p class="suave">Tu sesion expiro: entra de nuevo con tu PIN.</p>'; return; }
+    cont.innerHTML = '';
+    if (!arr.length) { cont.innerHTML = '<p class="suave">Todavia no hay coordinadores creados.</p>'; return; }
+    arr.forEach(function(c){ cont.appendChild(tarjetaCoord(c)); });
+  } catch (e) {
+    cont.innerHTML = '<p class="suave">No se pudo cargar la lista: ' + e.message + '</p>';
+  }
+}
+
+function tarjetaCoord(c){
+  var div = document.createElement('div');
+  div.className = 'item';
+  var tipoTxt = (c.tipo === 'talentos') ? 'Talentos' : 'Stands';
+  var fecha = '';
+  try { fecha = new Date(c.creada_at).toLocaleDateString('es-VE', { day:'2-digit', month:'short', year:'numeric' }); } catch (e) { fecha = ''; }
+  div.innerHTML =
+    '<div><strong>' + esc(c.nombre) + '</strong>' +
+    '<span class="badge badge-tipo">' + tipoTxt + '</span>' +
+    '<span class="badge ' + (c.activo ? 'badge-ok">Activo' : 'badge-no">Revocado') + '</span></div>' +
+    '<div class="codigo">' + esc(c.codigo) + '</div>' +
+    '<p class="suave">' + (c.correo ? esc(c.correo) : 'Sin correo registrado') + (fecha ? ' · Creado el ' + fecha : '') + '</p>' +
+    '<div class="fila"></div>';
+  var fila = div.querySelector('.fila');
+  fila.appendChild(boton('Copiar codigo', 'btn-gris', function(){ copiarTexto(c.codigo); }));
+  fila.appendChild(boton('Editar', 'btn-gris', function(){ mostrarEdicion(div, c); }));
+  if (c.activo) {
+    fila.appendChild(boton('Eliminar', 'btn-rojo', function(){ revocar(c, false); }));
+  } else {
+    fila.appendChild(boton('Reactivar', 'btn-verde', function(){ revocar(c, true); }));
+  }
+  return div;
+}
+
+function mostrarEdicion(div, c){
+  var existente = div.querySelector('.panel-edit');
+  if (existente) { existente.remove(); return; }
+  var panel = document.createElement('div');
+  panel.className = 'panel-edit';
+  var l1 = document.createElement('label');
+  l1.textContent = 'Nombre y apellido';
+  var i1 = document.createElement('input');
+  i1.value = c.nombre || '';
+  l1.appendChild(i1);
+  var l2 = document.createElement('label');
+  l2.textContent = 'Correo (opcional)';
+  var i2 = document.createElement('input');
+  i2.value = c.correo || '';
+  l2.appendChild(i2);
+  var fila = document.createElement('div');
+  fila.className = 'fila';
+  fila.appendChild(boton('Guardar cambios', 'btn-verde', async function(){
+    var nom = i1.value.trim();
+    var cor = i2.value.trim();
+    if (!nom) { alert('El nombre no puede quedar vacio.'); return; }
     try {
-      const st = await llamar("f_admin_stats", { p_token: sesion.token });
-      if (!st) { borrarSesion(); window.location.href = "index.html"; return; }
-      document.getElementById("estadoEdicion").textContent = st.edicion_abierta
-        ? "Edicion ABIERTA: talentos y stands pueden editar sus listas."
-        : "Edicion CERRADA: solo la puerta trabaja.";
-    } catch (e) {
-      document.getElementById("estadoEdicion").textContent = "Sin conexion con la base de datos.";
-    }
-  }
-
-  async function cambiarEdicion(abierta) {
-    const aviso = document.getElementById("avisoEdicion");
-    aviso.textContent = "";
-    try {
-      const ok = await llamar("f_admin_toggle_edicion", { p_token: sesion.token, p_abierta: abierta });
-      if (ok === true) { cargarEstado(); }
-      else { aviso.textContent = "No se pudo cambiar el estado de edicion."; }
-    } catch (e) { aviso.textContent = "Sin conexion con la base de datos."; }
-  }
-
-  function pintarStats(st) {
-    const p = document.getElementById("panelStats");
-    let rubros = "";
-    if (st.rubros && st.rubros.length > 0) {
-      rubros = "<p style='margin:14px 0 0;font-weight:600;'>Rubros mas frecuentes:</p><ul class='lista'>" +
-        st.rubros.map(function (r) { return "<li>" + esc(r.vende) + ": " + r.total + "</li>"; }).join("") + "</ul>";
-    }
-    p.innerHTML = "<ul class='lista'>" +
-      "<li>Dia 1 - personas en listas: " + st.personas_dia1 + " · autorizados: " + st.autorizados_dia1 + " · pendientes: " + st.pendientes_dia1 + "</li>" +
-      "<li>Dia 2 - personas en listas: " + st.personas_dia2 + " · autorizados: " + st.autorizados_dia2 + " · pendientes: " + st.pendientes_dia2 + "</li>" +
-      "<li>Organizaciones (talentos): " + st.organizaciones + "</li>" +
-      "<li>Vendedores registrados: " + st.vendedores + " · presentes Dia 1: " + st.presentes_dia1 + " · presentes Dia 2: " + st.presentes_dia2 + "</li>" +
-      "<li>Rubros distintos: " + st.rubros_distintos + "</li>" +
-      "<li>Stands patrocinantes: " + st.stands_patrocinantes + " · pagados: " + st.stands_pagados + "</li>" +
-      "</ul>" + rubros;
-    p.classList.remove("oculto");
-  }
-
-  document.getElementById("botonCerrarEdicion").addEventListener("click", function () { cambiarEdicion(false); });
-  document.getElementById("botonAbrirEdicion").addEventListener("click", function () { cambiarEdicion(true); });
-
-  document.getElementById("botonCrearCoord").addEventListener("click", async function () {
-    const aviso = document.getElementById("avisoCoord");
-    aviso.textContent = "";
-    const nombre = document.getElementById("nombreCoord").value.trim();
-    if (nombre === "") { aviso.textContent = "Escribe el nombre del coordinador."; return; }
-    try {
-      const codigo = await llamar("f_admin_crear_coordinador", {
-        p_token: sesion.token,
-        p_tipo: document.getElementById("tipoCoord").value,
-        p_nombre: nombre,
-        p_correo: document.getElementById("correoCoord").value.trim()
+      var ok = await llamar('f_admin_editar_coordinador', {
+        p_token: ses.token, p_id: c.id, p_nombre: nom, p_correo: cor || null
       });
-      if (!codigo) { aviso.textContent = "No se pudo crear el coordinador."; return; }
-      document.getElementById("codigoCoord").textContent = codigo;
-      document.getElementById("resultadoCoord").classList.remove("oculto");
-      document.getElementById("nombreCoord").value = "";
-      document.getElementById("correoCoord").value = "";
-    } catch (e) { aviso.textContent = "Sin conexion con la base de datos."; }
-  });
+      if (!ok) { alert('No se pudo guardar el cambio.'); return; }
+      await cargarLista();
+    } catch (e) { alert('Fallo al guardar: ' + e.message); }
+  }));
+  fila.appendChild(boton('Cancelar', 'btn-gris', function(){ panel.remove(); }));
+  panel.appendChild(l1);
+  panel.appendChild(l2);
+  panel.appendChild(fila);
+  div.appendChild(panel);
+}
 
-  document.getElementById("botonCopiarCoord").addEventListener("click", function () {
-    const codigo = document.getElementById("codigoCoord").textContent;
-    if (navigator.clipboard) { navigator.clipboard.writeText(codigo); }
-  });
+async function revocar(c, activo){
+  var pregunta = activo
+    ? 'Reactivar el codigo de ' + c.nombre + '? Podra volver a entrar y crear links nuevos.'
+    : 'Eliminar la llave de ' + c.nombre + '? Ya no podra entrar ni crear links nuevos. Lo que ya creo queda intacto.';
+  if (!confirm(pregunta)) return;
+  try {
+    var ok = await llamar('f_admin_activar_coordinador', { p_token: ses.token, p_id: c.id, p_activo: activo });
+    if (!ok) { alert('No se pudo completar la accion.'); return; }
+    await cargarLista();
+  } catch (e) { alert('Fallo: ' + e.message); }
+}
 
-  document.getElementById("botonStats").addEventListener("click", async function () {
-    try {
-      const st = await llamar("f_admin_stats", { p_token: sesion.token });
-      if (st) { pintarStats(st); }
-    } catch (e) { document.getElementById("panelStats").textContent = "Sin conexion con la base de datos."; }
-  });
+async function verStats(){
+  var zona = $('zonaStats');
+  zona.innerHTML = '<p class="suave">Consultando...</p>';
+  try {
+    var s = await llamar('f_admin_stats', { p_token: ses.token });
+    if (!s) { zona.innerHTML = '<p class="suave">Tu sesion expiro: entra de nuevo con tu PIN.</p>'; return; }
+    var n = function(v){ return (v === null || v === undefined) ? 0 : v; };
+    var html =
+      '<h3>Dia 1</h3><ul>' +
+      '<li>Personas en listas: ' + n(s.personas_dia1) + '</li>' +
+      '<li>Llegaron (autorizados): ' + n(s.autorizados_dia1) + '</li>' +
+      '<li>Pendientes por llegar: ' + n(s.pendientes_dia1) + '</li>' +
+      '<li>Vendedores presentes: ' + n(s.presentes_dia1) + '</li>' +
+      '</ul>' +
+      '<h3>Dia 2</h3><ul>' +
+      '<li>Personas en listas: ' + n(s.personas_dia2) + '</li>' +
+      '<li>Llegaron (autorizados): ' + n(s.autorizados_dia2) + '</li>' +
+      '<li>Pendientes por llegar: ' + n(s.pendientes_dia2) + '</li>' +
+      '<li>Vendedores presentes: ' + n(s.presentes_dia2) + '</li>' +
+      '</ul>' +
+      '<h3>General</h3><ul>' +
+      '<li>Talentos (organizaciones): ' + n(s.organizaciones) + '</li>' +
+      '<li>Vendedores registrados: ' + n(s.vendedores) + '</li>' +
+      '<li>Rubros distintos: ' + n(s.rubros_distintos) + '</li>' +
+      '<li>Stands patrocinantes: ' + n(s.stands_patrocinantes) + '</li>' +
+      '<li>Stands pagados: ' + n(s.stands_pagados) + '</li>' +
+      '</ul>';
+    if (Array.isArray(s.rubros) && s.rubros.length) {
+      html += '<h3>Rubros que mas se repiten</h3><ul>';
+      s.rubros.slice(0, 8).forEach(function(r){
+        html += '<li>' + esc(r.vende) + ': ' + n(r.total) + '</li>';
+      });
+      html += '</ul>';
+    }
+    zona.innerHTML = html;
+  } catch (e) {
+    zona.innerHTML = '<p class="suave">Fallo al consultar estadisticas: ' + e.message + '</p>';
+  }
+}
 
-  document.getElementById("botonSalir").addEventListener("click", function () {
-    borrarSesion();
-    window.location.href = "index.html";
-  });
-
+if (!ses || ses.rol !== 'admin') {
+  location.replace('index.html');
+} else {
+  $('btnCerrarEdicion').onclick = function(){ cambiarEdicion(false); };
+  $('btnAbrirEdicion').onclick = function(){ cambiarEdicion(true); };
+  $('btnCrearCoord').onclick = crearCoord;
+  $('btnStats').onclick = verStats;
+  $('btnSalir').onclick = function(){ borrarSesion(); location.replace('index.html'); };
   cargarEstado();
+  cargarLista();
+}
 </script>
 </body>
 </html>
