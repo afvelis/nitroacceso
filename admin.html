@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nitrotoon · Administración</title>
+<style>
+  :root {
+    --fondo: #0b1220; --tarjeta: #121c2e; --borde: #24344d; --texto: #eef3f8;
+    --suave: #9fb0c3; --acento: #35d07f; --acento2: #1fa2ff; --aviso: #ffd33d;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; font-size: 18px; color: var(--texto); background: radial-gradient(1200px 600px at 80% -10%, #16233c 0%, var(--fondo) 55%); min-height: 100vh; }
+  .barra { height: 6px; background: linear-gradient(90deg, var(--acento), var(--acento2)); }
+  .cab { display: flex; gap: 16px; align-items: center; max-width: 760px; margin: 24px auto 0; padding: 0 20px; }
+  .logo { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--acento), var(--acento2)); font-size: 26px; flex: none; }
+  .etiqueta { letter-spacing: 3px; font-size: 17px; text-transform: uppercase; color: var(--suave); margin: 0 0 4px; }
+  h1 { margin: 0; font-size: 26px; }
+  .contenedor { max-width: 760px; margin: 20px auto 60px; padding: 0 20px; display: flex; flex-direction: column; gap: 20px; }
+  .tarjeta { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 16px; padding: 24px; }
+  h2 { font-size: 22px; margin: 0 0 12px; }
+  label { display: block; font-weight: 600; margin: 14px 0 6px; }
+  input, select { width: 100%; font-size: 18px; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--borde); background: #0b1524; color: var(--texto); outline: none; }
+  input:focus, select:focus { border-color: var(--acento2); box-shadow: 0 0 0 4px rgba(31,162,255,.25); }
+  button { font-size: 18px; font-weight: 700; padding: 13px 18px; border-radius: 10px; border: none; cursor: pointer; color: #06131f; background: linear-gradient(135deg, var(--acento), #2bb673); }
+  button:hover { filter: brightness(1.08); }
+  .btnGris { background: #2a3644; color: var(--texto); }
+  .btnRojo { background: #d64545; color: #ffffff; }
+  .filaBotones { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 14px; }
+  .estado { font-size: 19px; font-weight: 600; }
+  .aviso { min-height: 24px; color: var(--aviso); font-weight: 600; margin: 12px 0 0; }
+  .oculto { display: none; }
+  .codigo { font-family: ui-monospace, Consolas, monospace; font-size: 24px; letter-spacing: 2px; background: #0b1524; border: 1px solid var(--borde); border-radius: 10px; padding: 12px; margin: 10px 0; }
+  .nota { color: var(--suave); font-size: 17px; line-height: 1.5; }
+  .lista { margin: 10px 0; padding-left: 22px; }
+  .lista li { margin: 8px 0; line-height: 1.45; }
+</style>
+</head>
+<body>
+<div class="barra"></div>
+<header class="cab">
+  <div class="logo" aria-hidden="true">🚀</div>
+  <div>
+    <p class="etiqueta">Panel de administración</p>
+    <h1>Nitrotoon Control de acceso</h1>
+  </div>
+</header>
+<main class="contenedor">
+  <section class="tarjeta">
+    <h2>Edición de listas</h2>
+    <p class="estado" id="estadoEdicion">Consultando...</p>
+    <div class="filaBotones">
+      <button id="botonCerrarEdicion" class="btnRojo">Cerrar edición</button>
+      <button id="botonAbrirEdicion">Abrir edición</button>
+    </div>
+    <p class="aviso" id="avisoEdicion"></p>
+  </section>
+  <section class="tarjeta">
+    <h2>Crear coordinador</h2>
+    <label for="tipoCoord">Tipo</label>
+    <select id="tipoCoord">
+      <option value="talentos">Coordinador de talentos</option>
+      <option value="stands">Coordinador de stands</option>
+    </select>
+    <label for="nombreCoord">Nombre y apellido</label>
+    <input id="nombreCoord" type="text" placeholder="Ej.: Maria Perez">
+    <label for="correoCoord">Correo (opcional)</label>
+    <input id="correoCoord" type="email" placeholder="correo@ejemplo.com">
+    <div class="filaBotones"><button id="botonCrearCoord">Crear coordinador</button></div>
+    <p class="aviso" id="avisoCoord"></p>
+    <div id="resultadoCoord" class="oculto">
+      <p style="margin:14px 0 0;font-weight:600;">Codigo de acceso del coordinador:</p>
+      <p class="codigo" id="codigoCoord"></p>
+      <button id="botonCopiarCoord" class="btnGris">Copiar codigo</button>
+      <p class="nota">Entrégale este código a tu coordinador: con él entra en coord.html y crea los links de registro.</p>
+    </div>
+  </section>
+  <section class="tarjeta">
+    <h2>Estadística del evento</h2>
+    <div class="filaBotones"><button id="botonStats">Estadistica</button></div>
+    <div id="panelStats" class="oculto"></div>
+  </section>
+  <section class="tarjeta">
+    <div class="filaBotones"><button id="botonSalir" class="btnGris">Salir</button></div>
+  </section>
+</main>
+<script src="config.js"></script>
+<script>
+  const sesion = leerSesion();
+  if (!sesion.token || sesion.rol !== "admin") { window.location.href = "index.html"; }
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  async function cargarEstado() {
+    try {
+      const st = await llamar("f_admin_stats", { p_token: sesion.token });
+      if (!st) { borrarSesion(); window.location.href = "index.html"; return; }
+      document.getElementById("estadoEdicion").textContent = st.edicion_abierta
+        ? "Edicion ABIERTA: talentos y stands pueden editar sus listas."
+        : "Edicion CERRADA: solo la puerta trabaja.";
+    } catch (e) {
+      document.getElementById("estadoEdicion").textContent = "Sin conexion con la base de datos.";
+    }
+  }
+
+  async function cambiarEdicion(abierta) {
+    const aviso = document.getElementById("avisoEdicion");
+    aviso.textContent = "";
+    try {
+      const ok = await llamar("f_admin_toggle_edicion", { p_token: sesion.token, p_abierta: abierta });
+      if (ok === true) { cargarEstado(); }
+      else { aviso.textContent = "No se pudo cambiar el estado de edicion."; }
+    } catch (e) { aviso.textContent = "Sin conexion con la base de datos."; }
+  }
+
+  function pintarStats(st) {
+    const p = document.getElementById("panelStats");
+    let rubros = "";
+    if (st.rubros && st.rubros.length > 0) {
+      rubros = "<p style='margin:14px 0 0;font-weight:600;'>Rubros mas frecuentes:</p><ul class='lista'>" +
+        st.rubros.map(function (r) { return "<li>" + esc(r.vende) + ": " + r.total + "</li>"; }).join("") + "</ul>";
+    }
+    p.innerHTML = "<ul class='lista'>" +
+      "<li>Dia 1 - personas en listas: " + st.personas_dia1 + " · autorizados: " + st.autorizados_dia1 + " · pendientes: " + st.pendientes_dia1 + "</li>" +
+      "<li>Dia 2 - personas en listas: " + st.personas_dia2 + " · autorizados: " + st.autorizados_dia2 + " · pendientes: " + st.pendientes_dia2 + "</li>" +
+      "<li>Organizaciones (talentos): " + st.organizaciones + "</li>" +
+      "<li>Vendedores registrados: " + st.vendedores + " · presentes Dia 1: " + st.presentes_dia1 + " · presentes Dia 2: " + st.presentes_dia2 + "</li>" +
+      "<li>Rubros distintos: " + st.rubros_distintos + "</li>" +
+      "<li>Stands patrocinantes: " + st.stands_patrocinantes + " · pagados: " + st.stands_pagados + "</li>" +
+      "</ul>" + rubros;
+    p.classList.remove("oculto");
+  }
+
+  document.getElementById("botonCerrarEdicion").addEventListener("click", function () { cambiarEdicion(false); });
+  document.getElementById("botonAbrirEdicion").addEventListener("click", function () { cambiarEdicion(true); });
+
+  document.getElementById("botonCrearCoord").addEventListener("click", async function () {
+    const aviso = document.getElementById("avisoCoord");
+    aviso.textContent = "";
+    const nombre = document.getElementById("nombreCoord").value.trim();
+    if (nombre === "") { aviso.textContent = "Escribe el nombre del coordinador."; return; }
+    try {
+      const codigo = await llamar("f_admin_crear_coordinador", {
+        p_token: sesion.token,
+        p_tipo: document.getElementById("tipoCoord").value,
+        p_nombre: nombre,
+        p_correo: document.getElementById("correoCoord").value.trim()
+      });
+      if (!codigo) { aviso.textContent = "No se pudo crear el coordinador."; return; }
+      document.getElementById("codigoCoord").textContent = codigo;
+      document.getElementById("resultadoCoord").classList.remove("oculto");
+      document.getElementById("nombreCoord").value = "";
+      document.getElementById("correoCoord").value = "";
+    } catch (e) { aviso.textContent = "Sin conexion con la base de datos."; }
+  });
+
+  document.getElementById("botonCopiarCoord").addEventListener("click", function () {
+    const codigo = document.getElementById("codigoCoord").textContent;
+    if (navigator.clipboard) { navigator.clipboard.writeText(codigo); }
+  });
+
+  document.getElementById("botonStats").addEventListener("click", async function () {
+    try {
+      const st = await llamar("f_admin_stats", { p_token: sesion.token });
+      if (st) { pintarStats(st); }
+    } catch (e) { document.getElementById("panelStats").textContent = "Sin conexion con la base de datos."; }
+  });
+
+  document.getElementById("botonSalir").addEventListener("click", function () {
+    borrarSesion();
+    window.location.href = "index.html";
+  });
+
+  cargarEstado();
+</script>
+</body>
+</html>
