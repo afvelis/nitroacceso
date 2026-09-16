@@ -86,7 +86,7 @@ li{margin:4px 0;}
 
   <section class="tarjeta">
     <h2>Coordinadores creados</h2>
-    <p class="suave">Aqui ves quien tiene llave de entrada. Puedes copiar su codigo, editar sus datos o eliminar su llave (lo que esa persona ya hubiera creado queda intacto).</p>
+    <p class="suave">Aqui ves quien tiene llave de entrada. El boton "Eliminar" revoca la llave sin borrar lo creado; y sobre un coordinador ya revocado aparece "Eliminar definitivamente" para sacarlo de esta lista para siempre.</p>
     <div id="listaCoords"><p class="suave">Consultando...</p></div>
   </section>
 
@@ -227,6 +227,7 @@ function tarjetaCoord(c){
     fila.appendChild(boton('Eliminar', 'btn-rojo', function(){ revocar(c, false); }));
   } else {
     fila.appendChild(boton('Reactivar', 'btn-verde', function(){ revocar(c, true); }));
+    fila.appendChild(boton('Eliminar definitivamente', 'btn-rojo', function(){ borrarDefinitivo(c); }));
   }
   return div;
 }
@@ -277,6 +278,19 @@ async function revocar(c, activo){
     if (!ok) { alert('No se pudo completar la accion.'); return; }
     await cargarLista();
   } catch (e) { alert('Fallo: ' + e.message); }
+}
+
+async function borrarDefinitivo(c){
+  if (!confirm('Borrar DEFINITIVAMENTE a ' + c.nombre + ' de la lista? Esta accion no se puede deshacer. Si ya creo talentos o stands, el sistema no lo dejara borrar para proteger el evento.')) return;
+  try {
+    var r = await llamar('f_admin_borrar_coordinador', { p_token: ses.token, p_id: c.id });
+    if (r === 'ok') { await cargarLista(); return; }
+    if (r === 'protegido') {
+      alert('No se pudo borrar definitivamente: este coordinador ya creo talentos o stands. Dejalo como revocado: asi su llave queda inutil y los datos del evento quedan protegidos.');
+      return;
+    }
+    alert('No se pudo borrar. Puede que tu sesion expirara o que el coordinador ya no exista. Recarga la pagina.');
+  } catch (e) { alert('Fallo al borrar: ' + e.message); }
 }
 
 async function verStats(){
