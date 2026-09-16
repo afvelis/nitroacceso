@@ -159,7 +159,7 @@ function cardLista(l){
   if (editable) {
     var hint = document.createElement('p');
     hint.className = 'suave';
-    hint.textContent = 'Pulsa "Agregar persona" para anadir integrantes y luego "Guardar lista". Nombre, apellido, cedula y cargo son obligatorios.';
+    hint.textContent = 'Pulsa "Agregar participante" para anadir integrantes y luego "Guardar lista". Nombre, apellido, cedula y cargo son obligatorios.';
     sec.appendChild(hint);
     var rows = document.createElement('div');
     rows.id = 'rows-' + l.dia;
@@ -167,7 +167,7 @@ function cardLista(l){
     sec.appendChild(rows);
     var fila = document.createElement('div');
     fila.className = 'fila';
-    fila.appendChild(boton('Agregar persona', 'btn-gris', function(){ rows.appendChild(filaPersona(null)); }));
+    fila.appendChild(boton('Agregar participante', 'btn-gris', function(){ rows.appendChild(filaPersona(null)); }));
     fila.appendChild(boton('Guardar lista del Dia ' + l.dia, '', function(){ guardarDia(l, rows); }));
     sec.appendChild(fila);
   } else {
@@ -193,7 +193,7 @@ function cardLista(l){
   } else if (editable) {
     var notaQr2 = document.createElement('p');
     notaQr2.className = 'suave';
-    notaQr2.textContent = 'El QR de esta lista aparecera aqui cuando guardes al menos una persona con todos sus datos.';
+    notaQr2.textContent = 'El QR de esta lista aparecera aqui cuando guardes al menos un participante con todos sus datos.';
     sec.appendChild(notaQr2);
   }
   return sec;
@@ -268,7 +268,7 @@ async function guardarDia(l, rows){
     avisoMsg('msgGlobal', 'No se pudo guardar la lista. Revisa que la edicion este abierta y que ningun campo quede vacio.', false);
   } catch (e) {
     if (String(e.message).indexOf('duplicate') >= 0 || String(e.message).indexOf('unique') >= 0) {
-      avisoMsg('msgGlobal', 'Hay cedulas repetidas dentro de la lista del Dia ' + l.dia + '. Cada persona debe tener una cedula distinta.', false);
+      avisoMsg('msgGlobal', 'Hay cedulas repetidas dentro de la lista del Dia ' + l.dia + '. Cada participante debe tener una cedula distinta.', false);
       return;
     }
     avisoMsg('msgGlobal', 'No se pudo conectar: ' + e.message, false);
