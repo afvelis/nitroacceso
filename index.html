@@ -3,32 +3,88 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NITROACCESO</title>
+<title>Nitrotoon Control de acceso</title>
 <style>
-  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; font-size: 18px; background: #101418; color: #f2f5f7; margin: 0; padding: 24px; }
-  .caja { max-width: 560px; margin: 40px auto; background: #1c242b; border: 2px solid #3d4c59; border-radius: 12px; padding: 28px; }
-  h1 { font-size: 30px; margin: 0 0 8px; }
-  p { line-height: 1.5; }
-  label { display: block; margin: 18px 0 6px; font-weight: 600; }
-  input { width: 100%; box-sizing: border-box; font-size: 20px; padding: 12px; border-radius: 8px; border: 2px solid #3d4c59; background: #0d1115; color: #f2f5f7; }
-  button { margin-top: 18px; width: 100%; font-size: 20px; font-weight: 700; padding: 14px; border-radius: 8px; border: none; background: #2ea043; color: #ffffff; cursor: pointer; }
-  button:hover { background: #278a3a; }
-  .aviso { color: #ffd33d; min-height: 24px; margin-top: 12px; font-weight: 600; }
-  .nota { font-size: 17px; color: #b7c4cf; }
+  :root {
+    --fondo: #0b1220;
+    --tarjeta: #121c2e;
+    --borde: #24344d;
+    --texto: #eef3f8;
+    --suave: #9fb0c3;
+    --acento: #35d07f;
+    --acento2: #1fa2ff;
+    --aviso: #ffd33d;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    font-size: 18px;
+    color: var(--texto);
+    background: radial-gradient(1200px 600px at 80% -10%, #16233c 0%, var(--fondo) 55%);
+  }
+  .barra { height: 6px; background: linear-gradient(90deg, var(--acento), var(--acento2)); }
+  main { flex: 1; display: flex; align-items: center; justify-content: center; padding: 32px 20px; }
+  .tarjeta {
+    width: 100%;
+    max-width: 460px;
+    background: var(--tarjeta);
+    border: 1px solid var(--borde);
+    border-radius: 18px;
+    padding: 36px 32px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  }
+  .logo {
+    width: 64px; height: 64px; border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, var(--acento), var(--acento2));
+    font-size: 32px;
+    margin-bottom: 18px;
+  }
+  .etiqueta { letter-spacing: 3px; font-size: 17px; text-transform: uppercase; color: var(--suave); margin: 0 0 6px; }
+  h1 { margin: 0 0 10px; font-size: 30px; line-height: 1.2; }
+  .nota { color: var(--suave); font-size: 17px; line-height: 1.55; margin: 0 0 26px; }
+  label { display: block; font-weight: 600; margin-bottom: 8px; }
+  input {
+    width: 100%; font-size: 20px; padding: 14px 16px;
+    border-radius: 12px; border: 1px solid var(--borde);
+    background: #0b1524; color: var(--texto);
+    outline: none; transition: border-color .15s, box-shadow .15s;
+  }
+  input:focus { border-color: var(--acento2); box-shadow: 0 0 0 4px rgba(31, 162, 255, 0.25); }
+  button {
+    width: 100%; margin-top: 20px; padding: 15px;
+    font-size: 19px; font-weight: 700; letter-spacing: .3px;
+    color: #06131f; background: linear-gradient(135deg, var(--acento), #2bb673);
+    border: none; border-radius: 12px; cursor: pointer;
+    transition: transform .06s, filter .15s;
+  }
+  button:hover { filter: brightness(1.08); }
+  button:active { transform: scale(.985); }
+  .aviso { min-height: 26px; margin: 14px 0 0; font-weight: 600; color: var(--aviso); }
+  footer { padding: 18px; text-align: center; color: var(--suave); font-size: 17px; }
 </style>
 </head>
 <body>
-  <div class="caja">
-    <h1 id="titulo">Control de acceso</h1>
-    <p class="nota">Los enlaces de registro de talentos y stands llegan por WhatsApp o correo. Esta entrada es solo para personal autorizado.</p>
-    <label for="pin">PIN de personal</label>
-    <input id="pin" type="password" inputmode="numeric" autocomplete="off" placeholder="Escribe tu PIN">
-    <button id="botonEntrar">Entrar</button>
-    <p class="aviso" id="aviso"></p>
-  </div>
+  <div class="barra"></div>
+  <main>
+    <section class="tarjeta">
+      <div class="logo" aria-hidden="true">🚀</div>
+      <p class="etiqueta">Sistema oficial del evento</p>
+      <h1 id="titulo">Nitrotoon Control de acceso</h1>
+      <p class="nota">Los enlaces de registro de talentos y stands llegan por WhatsApp o correo. Esta entrada es exclusiva para personal autorizado.</p>
+      <label for="pin">PIN de personal</label>
+      <input id="pin" type="password" inputmode="numeric" autocomplete="off" placeholder="Escribe tu PIN">
+      <button id="botonEntrar">Entrar</button>
+      <p class="aviso" id="aviso"></p>
+    </section>
+  </main>
+  <footer>Evento privado · Personal autorizado</footer>
 <script src="config.js"></script>
 <script>
-  document.getElementById("titulo").textContent = NOMBRE_EVENTO + " - Control de acceso";
   document.getElementById("botonEntrar").addEventListener("click", async function () {
     const pin = document.getElementById("pin").value.trim();
     const aviso = document.getElementById("aviso");
