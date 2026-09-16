@@ -30,6 +30,7 @@ select,input{width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1p
 .btn-gris{background:#2a3648;color:var(--texto);}
 .btn-rojo{background:linear-gradient(135deg,#e05252,#c73e3e);color:#fff;}
 .btn-verde{background:linear-gradient(135deg,var(--acento),#2bb673);color:#06281a;}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
 .fila{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;}
 .suave{color:var(--suave);}
 .codigo{background:#0d1526;border:1px solid var(--borde);border-radius:10px;padding:12px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:20px;letter-spacing:2px;margin-top:8px;word-break:break-all;}
@@ -91,6 +92,19 @@ li{margin:4px 0;}
   </section>
 
   <section class="tarjeta">
+    <h2>Historial e informes</h2>
+    <p class="suave">Guarda una foto completa del evento con sus estadisticas. Desde aqui abres el informe y lo guardas como PDF. La limpieza final solo se desbloquea con al menos un informe guardado.</p>
+    <div class="fila">
+      <button class="btn" id="btnGuardarInforme">Guardar informe del evento</button>
+    </div>
+    <div id="listaHistorial"><p class="suave">Consultando...</p></div>
+    <div class="fila">
+      <button class="btn btn-rojo" id="btnLimpiarTodo" disabled>Limpiar todo para el proximo evento</button>
+    </div>
+    <p id="notaLimpieza" class="suave"></p>
+  </section>
+
+  <section class="tarjeta">
     <h2>Estadistica</h2>
     <div class="fila">
       <button class="btn" id="btnStats">Ver estadisticas</button>
@@ -135,8 +149,14 @@ async function copiarTexto(txt){
     document.body.removeChild(ta);
   }
 }
+function fechaBonita(iso){
+  try {
+    return new Date(iso).toLocaleDateString('es-VE', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  } catch (e) { return ''; }
+}
 
 var ses = leerSesion();
+var historialHay = false;
 
 async function cargarEstado(){
   try {
@@ -158,192 +178,3 @@ async function cambiarEdicion(abierta){
     await cargarEstado();
   } catch (e) {
     aviso('estadoEdicion', 'Fallo al cambiar la edicion: ' + e.message, false);
-  }
-}
-
-async function crearCoord(){
-  var tipo = $('cTipo').value;
-  var nombre = $('cNombre').value.trim();
-  var correo = $('cCorreo').value.trim();
-  if (!nombre) { aviso('msgCrear', 'Escribe primero el nombre y apellido.', false); return; }
-  try {
-    var codigo = await llamar('f_admin_crear_coordinador', {
-      p_token: ses.token, p_tipo: tipo, p_nombre: nombre, p_correo: correo || null
-    });
-    if (!codigo) { aviso('msgCrear', 'No se pudo crear el coordinador. Intenta de nuevo.', false); return; }
-    var cont = $('resultadoCoord');
-    cont.innerHTML = '';
-    var caja = document.createElement('div');
-    caja.className = 'codigo';
-    caja.textContent = codigo;
-    var fila = document.createElement('div');
-    fila.className = 'fila';
-    fila.appendChild(boton('Copiar codigo', 'btn-gris', function(){ copiarTexto(codigo); }));
-    var nota = document.createElement('p');
-    nota.className = 'suave';
-    nota.textContent = 'Entregale este codigo a tu coordinador: con el entra en coord.html y crea los links de registro.';
-    cont.appendChild(caja);
-    cont.appendChild(fila);
-    cont.appendChild(nota);
-    $('cNombre').value = '';
-    $('cCorreo').value = '';
-    aviso('msgCrear', 'Coordinador creado correctamente.', true);
-    await cargarLista();
-  } catch (e) {
-    aviso('msgCrear', 'Fallo al crear: ' + e.message, false);
-  }
-}
-
-async function cargarLista(){
-  var cont = $('listaCoords');
-  try {
-    var arr = await llamar('f_admin_listar_coordinadores', { p_token: ses.token });
-    if (!arr) { cont.innerHTML = '<p class="suave">Tu sesion expiro: entra de nuevo con tu PIN.</p>'; return; }
-    cont.innerHTML = '';
-    if (!arr.length) { cont.innerHTML = '<p class="suave">Todavia no hay coordinadores creados.</p>'; return; }
-    arr.forEach(function(c){ cont.appendChild(tarjetaCoord(c)); });
-  } catch (e) {
-    cont.innerHTML = '<p class="suave">No se pudo cargar la lista: ' + e.message + '</p>';
-  }
-}
-
-function tarjetaCoord(c){
-  var div = document.createElement('div');
-  div.className = 'item';
-  var tipoTxt = (c.tipo === 'talentos') ? 'Talentos' : 'Stands';
-  var fecha = '';
-  try { fecha = new Date(c.creada_at).toLocaleDateString('es-VE', { day:'2-digit', month:'short', year:'numeric' }); } catch (e) { fecha = ''; }
-  div.innerHTML =
-    '<div><strong>' + esc(c.nombre) + '</strong>' +
-    '<span class="badge badge-tipo">' + tipoTxt + '</span>' +
-    '<span class="badge ' + (c.activo ? 'badge-ok">Activo' : 'badge-no">Revocado') + '</span></div>' +
-    '<div class="codigo">' + esc(c.codigo) + '</div>' +
-    '<p class="suave">' + (c.correo ? esc(c.correo) : 'Sin correo registrado') + (fecha ? ' · Creado el ' + fecha : '') + '</p>' +
-    '<div class="fila"></div>';
-  var fila = div.querySelector('.fila');
-  fila.appendChild(boton('Copiar codigo', 'btn-gris', function(){ copiarTexto(c.codigo); }));
-  fila.appendChild(boton('Editar', 'btn-gris', function(){ mostrarEdicion(div, c); }));
-  if (c.activo) {
-    fila.appendChild(boton('Eliminar', 'btn-rojo', function(){ revocar(c, false); }));
-  } else {
-    fila.appendChild(boton('Reactivar', 'btn-verde', function(){ revocar(c, true); }));
-    fila.appendChild(boton('Eliminar definitivamente', 'btn-rojo', function(){ borrarDefinitivo(c); }));
-  }
-  return div;
-}
-
-function mostrarEdicion(div, c){
-  var existente = div.querySelector('.panel-edit');
-  if (existente) { existente.remove(); return; }
-  var panel = document.createElement('div');
-  panel.className = 'panel-edit';
-  var l1 = document.createElement('label');
-  l1.textContent = 'Nombre y apellido';
-  var i1 = document.createElement('input');
-  i1.value = c.nombre || '';
-  l1.appendChild(i1);
-  var l2 = document.createElement('label');
-  l2.textContent = 'Correo (opcional)';
-  var i2 = document.createElement('input');
-  i2.value = c.correo || '';
-  l2.appendChild(i2);
-  var fila = document.createElement('div');
-  fila.className = 'fila';
-  fila.appendChild(boton('Guardar cambios', 'btn-verde', async function(){
-    var nom = i1.value.trim();
-    var cor = i2.value.trim();
-    if (!nom) { alert('El nombre no puede quedar vacio.'); return; }
-    try {
-      var ok = await llamar('f_admin_editar_coordinador', {
-        p_token: ses.token, p_id: c.id, p_nombre: nom, p_correo: cor || null
-      });
-      if (!ok) { alert('No se pudo guardar el cambio.'); return; }
-      await cargarLista();
-    } catch (e) { alert('Fallo al guardar: ' + e.message); }
-  }));
-  fila.appendChild(boton('Cancelar', 'btn-gris', function(){ panel.remove(); }));
-  panel.appendChild(l1);
-  panel.appendChild(l2);
-  panel.appendChild(fila);
-  div.appendChild(panel);
-}
-
-async function revocar(c, activo){
-  var pregunta = activo
-    ? 'Reactivar el codigo de ' + c.nombre + '? Podra volver a entrar y crear links nuevos.'
-    : 'Eliminar la llave de ' + c.nombre + '? Ya no podra entrar ni crear links nuevos. Lo que ya creo queda intacto.';
-  if (!confirm(pregunta)) return;
-  try {
-    var ok = await llamar('f_admin_activar_coordinador', { p_token: ses.token, p_id: c.id, p_activo: activo });
-    if (!ok) { alert('No se pudo completar la accion.'); return; }
-    await cargarLista();
-  } catch (e) { alert('Fallo: ' + e.message); }
-}
-
-async function borrarDefinitivo(c){
-  if (!confirm('Borrar DEFINITIVAMENTE a ' + c.nombre + ' de la lista? Esta accion no se puede deshacer. Si ya creo talentos o stands, el sistema no lo dejara borrar para proteger el evento.')) return;
-  try {
-    var r = await llamar('f_admin_borrar_coordinador', { p_token: ses.token, p_id: c.id });
-    if (r === 'ok') { await cargarLista(); return; }
-    if (r === 'protegido') {
-      alert('No se pudo borrar definitivamente: este coordinador ya creo talentos o stands. Dejalo como revocado: asi su llave queda inutil y los datos del evento quedan protegidos.');
-      return;
-    }
-    alert('No se pudo borrar. Puede que tu sesion expirara o que el coordinador ya no exista. Recarga la pagina.');
-  } catch (e) { alert('Fallo al borrar: ' + e.message); }
-}
-
-async function verStats(){
-  var zona = $('zonaStats');
-  zona.innerHTML = '<p class="suave">Consultando...</p>';
-  try {
-    var s = await llamar('f_admin_stats', { p_token: ses.token });
-    if (!s) { zona.innerHTML = '<p class="suave">Tu sesion expiro: entra de nuevo con tu PIN.</p>'; return; }
-    var n = function(v){ return (v === null || v === undefined) ? 0 : v; };
-    var html =
-      '<h3>Dia 1</h3><ul>' +
-      '<li>Personas en listas: ' + n(s.personas_dia1) + '</li>' +
-      '<li>Llegaron (autorizados): ' + n(s.autorizados_dia1) + '</li>' +
-      '<li>Pendientes por llegar: ' + n(s.pendientes_dia1) + '</li>' +
-      '<li>Vendedores presentes: ' + n(s.presentes_dia1) + '</li>' +
-      '</ul>' +
-      '<h3>Dia 2</h3><ul>' +
-      '<li>Personas en listas: ' + n(s.personas_dia2) + '</li>' +
-      '<li>Llegaron (autorizados): ' + n(s.autorizados_dia2) + '</li>' +
-      '<li>Pendientes por llegar: ' + n(s.pendientes_dia2) + '</li>' +
-      '<li>Vendedores presentes: ' + n(s.presentes_dia2) + '</li>' +
-      '</ul>' +
-      '<h3>General</h3><ul>' +
-      '<li>Talentos (organizaciones): ' + n(s.organizaciones) + '</li>' +
-      '<li>Vendedores registrados: ' + n(s.vendedores) + '</li>' +
-      '<li>Rubros distintos: ' + n(s.rubros_distintos) + '</li>' +
-      '<li>Stands patrocinantes: ' + n(s.stands_patrocinantes) + '</li>' +
-      '<li>Stands pagados: ' + n(s.stands_pagados) + '</li>' +
-      '</ul>';
-    if (Array.isArray(s.rubros) && s.rubros.length) {
-      html += '<h3>Rubros que mas se repiten</h3><ul>';
-      s.rubros.slice(0, 8).forEach(function(r){
-        html += '<li>' + esc(r.vende) + ': ' + n(r.total) + '</li>';
-      });
-      html += '</ul>';
-    }
-    zona.innerHTML = html;
-  } catch (e) {
-    zona.innerHTML = '<p class="suave">Fallo al consultar estadisticas: ' + e.message + '</p>';
-  }
-}
-
-if (!ses || ses.rol !== 'admin') {
-  location.replace('index.html');
-} else {
-  $('btnCerrarEdicion').onclick = function(){ cambiarEdicion(false); };
-  $('btnAbrirEdicion').onclick = function(){ cambiarEdicion(true); };
-  $('btnCrearCoord').onclick = crearCoord;
-  $('btnStats').onclick = verStats;
-  $('btnSalir').onclick = function(){ borrarSesion(); location.replace('index.html'); };
-  cargarEstado();
-  cargarLista();
-}
-</script>
-</body>
-</html>
