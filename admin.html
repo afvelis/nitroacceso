@@ -178,3 +178,324 @@ async function cambiarEdicion(abierta){
     await cargarEstado();
   } catch (e) {
     aviso('estadoEdicion', 'Fallo al cambiar la edicion: ' + e.message, false);
+  }
+}
+
+async function crearCoord(){
+  var tipo = $('cTipo').value;
+  var nombre = $('cNombre').value.trim();
+  var correo = $('cCorreo').value.trim();
+  if (!nombre) { aviso('msgCrear', 'Escribe primero el nombre y apellido.', false); return; }
+  try {
+    var codigo = await llamar('f_admin_crear_coordinador', {
+      p_token: ses.token, p_tipo: tipo, p_nombre: nombre, p_correo: correo || null
+    });
+    if (!codigo) { aviso('msgCrear', 'No se pudo crear el coordinador. Intenta de nuevo.', false); return; }
+    var cont = $('resultadoCoord');
+    cont.innerHTML = '';
+    var caja = document.createElement('div');
+    caja.className = 'codigo';
+    caja.textContent = codigo;
+    var fila = document.createElement('div');
+    fila.className = 'fila';
+    fila.appendChild(boton('Copiar codigo', 'btn-gris', function(){ copiarTexto(codigo); }));
+    var nota = document.createElement('p');
+    nota.className = 'suave';
+    nota.textContent = 'Entregale este codigo a tu coordinador: con el entra en coord.html y crea los links de registro.';
+    cont.appendChild(caja);
+    cont.appendChild(fila);
+    cont.appendChild(nota);
+    $('cNombre').value = '';
+    $('cCorreo').value = '';
+    aviso('msgCrear', 'Coordinador creado correctamente.', true);
+    await cargarLista();
+  } catch (e) {
+    aviso('msgCrear', 'Fallo al crear: ' + e.message, false);
+  }
+}
+
+async function cargarLista(){
+  var cont = $('listaCoords');
+  try {
+    var arr = await llamar('f_admin_listar_coordinadores', { p_token: ses.token });
+    if (!arr) { cont.innerHTML = '<p class="suave">Tu sesion expiro: entra de nuevo con tu PIN.</p>'; return; }
+    cont.innerHTML = '';
+    if (!arr.length) { cont.innerHTML = '<p class="suave">Todavia no hay coordinadores creados.</p>'; return; }
+    arr.forEach(function(c){ cont.appendChild(tarjetaCoord(c)); });
+  } catch (e) {
+    cont.innerHTML = '<p class="suave">No se pudo cargar la lista: ' + e.message + '</p>';
+  }
+}
+
+function tarjetaCoord(c){
+  var div = document.createElement('div');
+  div.className = 'item';
+  var tipoTxt = (c.tipo === 'talentos') ? 'Talentos' : 'Stands';
+  var fecha = fechaBonita(c.creada_at);
+  div.innerHTML =
+    '<div><strong>' + esc(c.nombre) + '</strong>' +
+    '<span class="badge badge-tipo">' + tipoTxt + '</span>' +
+    '<span class="badge ' + (c.activo ? 'badge-ok">Activo' : 'badge-no">Revocado') + '</span></div>' +
+    '<div class="codigo">' + esc(c.codigo) + '</div>' +
+    '<p class="suave">' + (c.correo ? esc(c.correo) : 'Sin correo registrado') + (fecha ? ' · Creado el ' + fecha : '') + '</p>' +
+    '<div class="fila"></div>';
+  var fila = div.querySelector('.fila');
+  fila.appendChild(boton('Copiar codigo', 'btn-gris', function(){ copiarTexto(c.codigo); }));
+  fila.appendChild(boton('Editar', 'btn-gris', function(){ mostrarEdicion(div, c); }));
+  if (c.activo) {
+    fila.appendChild(boton('Eliminar', 'btn-rojo', function(){ revocar(c, false); }));
+  } else {
+    fila.appendChild(boton('Reactivar', 'btn-verde', function(){ revocar(c, true); }));
+    fila.appendChild(boton('Eliminar definitivamente', 'btn-rojo', function(){ borrarDefinitivo(c); }));
+  }
+  return div;
+}
+
+function mostrarEdicion(div, c){
+  var existente = div.querySelector('.panel-edit');
+  if (existente) { existente.remove(); return; }
+  var panel = document.createElement('div');
+  panel.className = 'panel-edit';
+  var l1 = document.createElement('label');
+  l1.textContent = 'Nombre y apellido';
+  var i1 = document.createElement('input');
+  i1.value = c.nombre || '';
+  l1.appendChild(i1);
+  var l2 = document.createElement('label');
+  l2.textContent = 'Correo (opcional)';
+  var i2 = document.createElement('input');
+  i2.value = c.correo || '';
+  l2.appendChild(i2);
+  var fila = document.createElement('div');
+  fila.className = 'fila';
+  fila.appendChild(boton('Guardar cambios', 'btn-verde', async function(){
+    var nom = i1.value.trim();
+    var cor = i2.value.trim();
+    if (!nom) { alert('El nombre no puede quedar vacio.'); return; }
+    try {
+      var ok = await llamar('f_admin_editar_coordinador', {
+        p_token: ses.token, p_id: c.id, p_nombre: nom, p_correo: cor || null
+      });
+      if (!ok) { alert('No se pudo guardar el cambio.'); return; }
+      await cargarLista();
+    } catch (e) { alert('Fallo al guardar: ' + e.message); }
+  }));
+  fila.appendChild(boton('Cancelar', 'btn-gris', function(){ panel.remove(); }));
+  panel.appendChild(l1);
+  panel.appendChild(l2);
+  panel.appendChild(fila);
+  div.appendChild(panel);
+}
+
+async function revocar(c, activo){
+  var pregunta = activo
+    ? 'Reactivar el codigo de ' + c.nombre + '? Podra volver a entrar y crear links nuevos.'
+    : 'Eliminar la llave de ' + c.nombre + '? Ya no podra entrar ni crear links nuevos. Lo que ya creo queda intacto.';
+  if (!confirm(pregunta)) return;
+  try {
+    var ok = await llamar('f_admin_activar_coordinador', { p_token: ses.token, p_id: c.id, p_activo: activo });
+    if (!ok) { alert('No se pudo completar la accion.'); return; }
+    await cargarLista();
+  } catch (e) { alert('Fallo: ' + e.message); }
+}
+
+async function borrarDefinitivo(c){
+  if (!confirm('Borrar DEFINITIVAMENTE a ' + c.nombre + ' de la lista? Esta accion no se puede deshacer. Si ya creo talentos o stands, el sistema no lo dejara borrar para proteger el evento.')) return;
+  try {
+    var r = await llamar('f_admin_borrar_coordinador', { p_token: ses.token, p_id: c.id });
+    if (r === 'ok') { await cargarLista(); return; }
+    if (r === 'protegido') {
+      alert('No se pudo borrar definitivamente: este coordinador ya creo talentos o stands. Dejalo como revocado: asi su llave queda inutil y los datos del evento quedan protegidos.');
+      return;
+    }
+    alert('No se pudo borrar. Puede que tu sesion expirara o que el coordinador ya no exista. Recarga la pagina.');
+  } catch (e) { alert('Fallo al borrar: ' + e.message); }
+}
+
+function htmlStats(s){
+  var n = function(v){ return (v === null || v === undefined) ? 0 : v; };
+  var html =
+    '<h3>Dia 1</h3><ul>' +
+    '<li>Personas en listas: ' + n(s.personas_dia1) + '</li>' +
+    '<li>Llegaron (autorizados): ' + n(s.autorizados_dia1) + '</li>' +
+    '<li>Pendientes por llegar: ' + n(s.pendientes_dia1) + '</li>' +
+    '<li>Vendedores presentes: ' + n(s.presentes_dia1) + '</li>' +
+    '</ul>' +
+    '<h3>Dia 2</h3><ul>' +
+    '<li>Personas en listas: ' + n(s.personas_dia2) + '</li>' +
+    '<li>Llegaron (autorizados): ' + n(s.autorizados_dia2) + '</li>' +
+    '<li>Pendientes por llegar: ' + n(s.pendientes_dia2) + '</li>' +
+    '<li>Vendedores presentes: ' + n(s.presentes_dia2) + '</li>' +
+    '</ul>' +
+    '<h3>General</h3><ul>' +
+    '<li>Talentos (organizaciones): ' + n(s.organizaciones) + '</li>' +
+    '<li>Vendedores registrados: ' + n(s.vendedores) + '</li>' +
+    '<li>Rubros distintos: ' + n(s.rubros_distintos) + '</li>' +
+    '<li>Stands patrocinantes: ' + n(s.stands_patrocinantes) + '</li>' +
+    '<li>Stands pagados: ' + n(s.stands_pagados) + '</li>' +
+    '</ul>';
+  if (Array.isArray(s.rubros) && s.rubros.length) {
+    html += '<h3>Rubros que mas se repiten</h3><ul>';
+    s.rubros.slice(0, 8).forEach(function(r){
+      html += '<li>' + esc(r.vende) + ': ' + n(r.total) + '</li>';
+    });
+    html += '</ul>';
+  }
+  return html;
+}
+
+async function verStats(){
+  var zona = $('zonaStats');
+  zona.innerHTML = '<p class="suave">Consultando...</p>';
+  try {
+    var s = await llamar('f_admin_stats', { p_token: ses.token });
+    if (!s) { zona.innerHTML = '<p class="suave">Tu sesion expiro: entra de nuevo con tu PIN.</p>'; return; }
+    zona.innerHTML = htmlStats(s);
+  } catch (e) {
+    zona.innerHTML = '<p class="suave">Fallo al consultar estadisticas: ' + e.message + '</p>';
+  }
+}
+
+async function guardarInforme(){
+  var nombre = prompt('Nombre del evento para el historico (ej.: Nitrotoon 2026):', 'Nitrotoon ' + new Date().getFullYear());
+  if (nombre === null) return;
+  nombre = nombre.trim();
+  if (!nombre) { alert('Escribe un nombre para el informe.'); return; }
+  try {
+    var id = await llamar('f_admin_guardar_evento', { p_token: ses.token, p_nombre: nombre });
+    if (!id) { alert('No se pudo guardar el informe.'); return; }
+    alert('Informe guardado en el historial.');
+    await cargarHistorial();
+  } catch (e) { alert('Fallo al guardar: ' + e.message); }
+}
+
+async function cargarHistorial(){
+  var cont = $('listaHistorial');
+  try {
+    var arr = await llamar('f_admin_listar_eventos', { p_token: ses.token });
+    if (!arr) { cont.innerHTML = '<p class="suave">Tu sesion expiro: entra de nuevo con tu PIN.</p>'; return; }
+    historialHay = arr.length > 0;
+    cont.innerHTML = '';
+    if (!historialHay) {
+      cont.innerHTML = '<p class="suave">Todavia no hay informes guardados. Guarda el primero para tener historial y desbloquear la limpieza final.</p>';
+    }
+    arr.forEach(function(ev){
+      var div = document.createElement('div');
+      div.className = 'item';
+      div.innerHTML =
+        '<div><strong>' + esc(ev.nombre) + '</strong></div>' +
+        '<p class="suave">Guardado el ' + fechaBonita(ev.creado_at) + '</p>' +
+        '<div class="fila"></div>';
+      div.querySelector('.fila').appendChild(boton('Ver informe / PDF', 'btn-gris', function(){ verInforme(ev); }));
+      cont.appendChild(div);
+    });
+    actualizarBotonLimpieza();
+  } catch (e) {
+    cont.innerHTML = '<p class="suave">No se pudo cargar el historial: ' + e.message + '</p>';
+  }
+}
+
+function actualizarBotonLimpieza(){
+  var b = $('btnLimpiarTodo');
+  b.disabled = !historialHay;
+  $('notaLimpieza').textContent = historialHay
+    ? 'Candado abierto: hay al menos un informe guardado, la limpieza esta disponible.'
+    : 'Candado cerrado: guarda primero un informe del evento para poder limpiar.';
+}
+
+async function verInforme(ev){
+  try {
+    var d = await llamar('f_admin_ver_evento', { p_token: ses.token, p_id: ev.id });
+    if (!d) { alert('No se pudo abrir el informe.'); return; }
+    var w = window.open('', '_blank');
+    if (!w) { alert('El navegador bloqueo la ventana del informe. Permite las ventanas emergentes de este sitio y vuelve a intentar.'); return; }
+    w.document.open();
+    w.document.write(htmlInforme(d));
+    w.document.close();
+  } catch (e) { alert('Fallo al abrir el informe: ' + e.message); }
+}
+
+function tablaPersonas(rows){
+  var h = '<table><tr><th>Nombre</th><th>Apellido</th><th>Cedula</th><th>Cargo</th><th>Estado</th></tr>';
+  (rows || []).forEach(function(p){
+    h += '<tr><td>' + esc(p.nombre) + '</td><td>' + esc(p.apellido) + '</td><td>' + esc(p.cedula) + '</td><td>' + esc(p.cargo) + '</td><td>' + esc(p.estado) + '</td></tr>';
+  });
+  h += '</table>';
+  return h;
+}
+
+function tablaVendedores(rows){
+  var h = '<table><tr><th>Nombre</th><th>Apellido</th><th>Cedula</th><th>Vende</th><th>Empresa</th><th>Dia 1</th><th>Dia 2</th></tr>';
+  (rows || []).forEach(function(v){
+    h += '<tr><td>' + esc(v.nombre) + '</td><td>' + esc(v.apellido) + '</td><td>' + esc(v.cedula) + '</td><td>' + esc(v.vende) + '</td><td>' + esc(v.empresa || '') + '</td><td>' + esc(v.estado_dia1) + '</td><td>' + esc(v.estado_dia2) + '</td></tr>';
+  });
+  h += '</table>';
+  return h;
+}
+
+function htmlInforme(d){
+  var h = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Informe ' + esc(d.nombre) + '</title><style>' +
+    'body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:17px;color:#111;background:#fff;margin:28px;}' +
+    'h1{font-size:26px;margin:0 0 4px;} h2{font-size:21px;margin:24px 0 8px;border-bottom:2px solid #111;padding-bottom:4px;} h3{font-size:18px;margin:16px 0 6px;}' +
+    'table{border-collapse:collapse;width:100%;margin:8px 0;} th,td{border:1px solid #777;padding:6px 8px;text-align:left;font-size:17px;} th{background:#eee;}' +
+    '.nota{background:#fff8dc;border:1px solid #cc9;padding:10px;margin-bottom:14px;}' +
+    'button{font-size:17px;padding:10px 16px;margin-bottom:10px;}' +
+    '@media print{.noprint{display:none;}}' +
+    '</style></head><body>' +
+    '<div class="nota noprint">Para sacar el PDF: pulsa el boton y en la ventana de impresion elige como destino "Guardar como PDF".</div>' +
+    '<div class="noprint"><button onclick="window.print()">Imprimir / Guardar PDF</button></div>' +
+    '<h1>Informe del evento: ' + esc(d.nombre) + '</h1>' +
+    '<p>Guardado el: ' + fechaBonita(d.creado_at) + '</p>' +
+    '<h2>Estadisticas generales</h2>' + htmlStats(d.stats || {});
+  var talentos = (d.detalle && d.detalle.talentos) || [];
+  var stands = (d.detalle && d.detalle.stands) || [];
+  h += '<h2>Talentos y sus listas</h2>';
+  if (!talentos.length) { h += '<p>Sin talentos registrados.</p>'; }
+  talentos.forEach(function(t){
+    var dias = (t.dia1 ? 'Dia 1' : '') + (t.dia1 && t.dia2 ? ' y ' : '') + (t.dia2 ? 'Dia 2' : '');
+    h += '<h3>' + esc(t.talento) + ' (' + dias + ')</h3>';
+    (t.listas || []).forEach(function(l){
+      h += '<p>Dia ' + l.dia + ' — estado: ' + esc(l.estado) + ' — codigo corto: ' + esc(l.codigo_corto) + '</p>';
+      h += tablaPersonas(l.personas);
+    });
+  });
+  h += '<h2>Stands y sus vendedores</h2>';
+  if (!stands.length) { h += '<p>Sin stands registrados.</p>'; }
+  stands.forEach(function(s){
+    h += '<h3>Stand ' + esc(s.numero) + ' (' + esc(s.tipo) + ', cupo ' + esc(s.cupo) + ')</h3>';
+    h += tablaVendedores(s.vendedores);
+  });
+  h += '</body></html>';
+  return h;
+}
+
+async function limpiarTodo(){
+  if (!historialHay) { alert('Primero guarda un informe del evento: es tu candado de seguridad.'); return; }
+  if (!confirm('Esto vaciara TODAS las tablas de trabajo (personas, listas, talentos, vendedores, stands, coordinadores y sesiones) para empezar el proximo evento. El historial y sus informes NO se tocan. Continuar?')) return;
+  if (!confirm('SEGUNDA CONFIRMACION: despues de esto tu sesion se cerrara y tendras que entrar de nuevo con tu PIN. Seguro quieres limpiar?')) return;
+  try {
+    var ok = await llamar('f_admin_limpiar_todo', { p_token: ses.token });
+    if (!ok) { alert('No se pudo limpiar. Recuerda: debe existir al menos un informe guardado.'); return; }
+    borrarSesion();
+    alert('Limpieza completada. Entra de nuevo con tu PIN para empezar el proximo evento.');
+    location.replace('index.html');
+  } catch (e) { alert('Fallo al limpiar: ' + e.message); }
+}
+
+if (!ses || ses.rol !== 'admin') {
+  location.replace('index.html');
+} else {
+  $('btnCerrarEdicion').onclick = function(){ cambiarEdicion(false); };
+  $('btnAbrirEdicion').onclick = function(){ cambiarEdicion(true); };
+  $('btnCrearCoord').onclick = crearCoord;
+  $('btnStats').onclick = verStats;
+  $('btnGuardarInforme').onclick = guardarInforme;
+  $('btnLimpiarTodo').onclick = limpiarTodo;
+  $('btnSalir').onclick = function(){ borrarSesion(); location.replace('index.html'); };
+  cargarEstado();
+  cargarLista();
+  cargarHistorial();
+}
+</script>
+</body>
+</html>
