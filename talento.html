@@ -21,7 +21,8 @@ body{
 .ceja{color:var(--suave);letter-spacing:2px;text-transform:uppercase;font-size:17px;}
 h1{margin:0;font-size:26px;}
 h2{margin:0 0 12px;font-size:22px;}
-main{max-width:860px;margin:0 auto;padding:0 16px 40px;display:flex;flex-direction:column;gap:20px;}
+h3{margin:14px 0 6px;font-size:19px;color:var(--acento2);}
+main{max-width:860px;margin:0 auto;padding:0 16px 110px;display:flex;flex-direction:column;gap:20px;}
 .tarjeta{background:var(--tarjeta);border:1px solid var(--borde);border-radius:16px;padding:20px;box-shadow:0 8px 24px rgba(0,0,0,.35);}
 input{width:100%;padding:12px;border-radius:10px;border:1px solid var(--borde);background:#0d1526;color:var(--texto);font-size:17px;}
 .btn{display:inline-block;border:none;border-radius:12px;padding:12px 18px;font-size:17px;font-weight:600;color:#06281a;background:linear-gradient(135deg,var(--acento),#2bb673);cursor:pointer;text-decoration:none;}
@@ -43,6 +44,8 @@ th{background:#0d1526;color:var(--suave);}
 .qrbox img{width:220px;height:220px;background:#fff;padding:8px;border-radius:10px;}
 .qrbox .fila{justify-content:center;}
 .panelOpcion{margin-top:12px;padding:14px;border:1px dashed var(--acento2);border-radius:12px;background:#0d1526;}
+.barraFinal{position:fixed;left:0;right:0;bottom:0;background:rgba(13,21,38,.96);border-top:1px solid var(--borde);padding:12px 16px;display:flex;justify-content:center;z-index:50;}
+.barraFinal .btn{width:100%;max-width:520px;font-size:18px;}
 </style>
 </head>
 <body>
@@ -72,7 +75,21 @@ th{background:#0d1526;color:var(--suave);}
     <div id="zonaListas"></div>
   </section>
 
+  <section class="tarjeta" id="cardFinal" hidden>
+    <h2>✅ Tarea cumplida</h2>
+    <p class="suave">Este resumen muestra lo ultimo que quedo guardado. Tus QR estan listos para la puerta: puedes compartirlos desde aqui o simplemente cerrar la aplicacion o la pestana. Si vuelves a abrir tu link, todo seguira igual.</p>
+    <div id="zonaQRFinal"></div>
+    <div class="fila">
+      <button class="btn btn-gris" id="btnVolver">Volver a mis listas</button>
+      <button class="btn btn-rojo" id="btnCerrarPestana">Cerrar esta pestana</button>
+    </div>
+    <p id="msgCerrar" class="suave"></p>
+  </section>
+
 </main>
+<div class="barraFinal" id="barraFinal" hidden>
+  <button class="btn" id="btnTermine">✅ Terminé: ver mis QR y salir</button>
+</div>
 <script src="config.js"></script>
 <script>
 function $(id){ return document.getElementById(id); }
@@ -162,6 +179,7 @@ function personasDia1(){
 
 function render(){
   $('cardCarga').hidden = true;
+  $('cardFinal').hidden = true;
   $('cardTalento').hidden = false;
   $('tituloTalento').textContent = nombreTalento();
   if (DATA.edicion_abierta) {
@@ -174,6 +192,7 @@ function render(){
   zona.innerHTML = '';
   var listas = (DATA.listas || []).slice().sort(function(a, b){ return a.dia - b.dia; });
   listas.forEach(function(l){ zona.appendChild(cardLista(l)); });
+  $('barraFinal').hidden = false;
 }
 
 function cardLista(l){
@@ -215,23 +234,7 @@ function cardLista(l){
     sec.appendChild(tablaPersonas(l.personas));
   }
   if ((l.personas || []).length && l.codigo_corto) {
-    var qr = document.createElement('div');
-    qr.className = 'qrbox';
-    var qrInner = document.createElement('div');
-    qr.appendChild(qrInner);
-    var notaQr = document.createElement('p');
-    notaQr.className = 'suave';
-    notaQr.textContent = 'Muestra este QR en la puerta, o dicta el codigo corto si el QR no se pudiera leer.';
-    qr.appendChild(notaQr);
-    var filaQr = document.createElement('div');
-    filaQr.className = 'fila';
-    qr.appendChild(filaQr);
-    var msgQr = document.createElement('p');
-    msgQr.className = 'suave';
-    qr.appendChild(msgQr);
-    sec.appendChild(qr);
-    ponerQR(qrInner, urlPuerta('lista', l.codigo_corto), l.codigo_corto);
-    agregarBotonesQR(filaQr, msgQr, qrInner, l);
+    sec.appendChild(construirCajaQR(l));
   } else if (editable) {
     var notaQr2 = document.createElement('p');
     notaQr2.className = 'suave';
@@ -239,6 +242,26 @@ function cardLista(l){
     sec.appendChild(notaQr2);
   }
   return sec;
+}
+
+function construirCajaQR(l){
+  var qr = document.createElement('div');
+  qr.className = 'qrbox';
+  var qrInner = document.createElement('div');
+  qr.appendChild(qrInner);
+  var notaQr = document.createElement('p');
+  notaQr.className = 'suave';
+  notaQr.textContent = 'Muestra este QR en la puerta, o dicta el codigo corto si el QR no se pudiera leer.';
+  qr.appendChild(notaQr);
+  var filaQr = document.createElement('div');
+  filaQr.className = 'fila';
+  qr.appendChild(filaQr);
+  var msgQr = document.createElement('p');
+  msgQr.className = 'suave';
+  qr.appendChild(msgQr);
+  ponerQR(qrInner, urlPuerta('lista', l.codigo_corto), l.codigo_corto);
+  agregarBotonesQR(filaQr, msgQr, qrInner, l);
+  return qr;
 }
 
 function mostrarOpcionDia2(sec, rows, l){
@@ -307,6 +330,30 @@ function agregarBotonesQR(fila, msgEl, qrInner, l){
     pinta(msgEl, 'Intentamos abrir tu aplicacion de correo. Si no se abrio nada, el mensaje ya quedo copiado: pegalo en tu correo o en un grupo.', true);
     window.location.href = urlMail('Nitrotoon - QR de lista Dia ' + l.dia, textoComp);
   }));
+}
+
+function mostrarFinal(){
+  $('cardTalento').hidden = true;
+  $('barraFinal').hidden = true;
+  var zona = $('zonaQRFinal');
+  zona.innerHTML = '';
+  var listas = (DATA.listas || []).slice().sort(function(a, b){ return a.dia - b.dia; });
+  var hay = false;
+  listas.forEach(function(l){
+    if ((l.personas || []).length && l.codigo_corto) {
+      hay = true;
+      var h = document.createElement('h3');
+      h.textContent = 'Dia ' + l.dia + ' — codigo corto ' + l.codigo_corto;
+      zona.appendChild(h);
+      zona.appendChild(construirCajaQR(l));
+    }
+  });
+  if (!hay) {
+    zona.innerHTML = '<p class="suave">Todavia no tienes listas guardadas con participantes. Vuelve y guarda al menos una para tener tu QR.</p>';
+  }
+  avisoMsg('msgCerrar', '', true);
+  $('cardFinal').hidden = false;
+  window.scrollTo(0, 0);
 }
 
 function filaPersona(p){
@@ -384,6 +431,20 @@ async function guardarDia(l, rows){
     avisoMsg('msgGlobal', 'No se pudo conectar: ' + e.message, false);
   }
 }
+
+$('btnTermine').onclick = mostrarFinal;
+$('btnVolver').onclick = function(){
+  $('cardFinal').hidden = true;
+  $('cardTalento').hidden = false;
+  $('barraFinal').hidden = false;
+  window.scrollTo(0, 0);
+};
+$('btnCerrarPestana').onclick = function(){
+  window.close();
+  setTimeout(function(){
+    pinta($('msgCerrar'), 'Tu navegador no permite que la pagina se cierre sola: cierrala con la X de la pestana o el boton de atras. Tus QR quedan guardados.', false);
+  }, 300);
+};
 
 cargar();
 </script>
