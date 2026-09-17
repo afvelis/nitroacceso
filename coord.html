@@ -55,7 +55,7 @@ li{margin:4px 0;}
 
   <section class="tarjeta" id="cardEntrada">
     <h2>Entrar con tu codigo</h2>
-    <p class="suave">Escribe el codigo COORD- que te dio el administrador del evento.</p>
+    <p class="suave">Escribe el codigo COORD- que te dio el administrador del evento, o abre el link que te envio.</p>
     <label>Tu codigo de coordinador
       <input id="inCodigo" placeholder="Ej.: COORD-1234ABCD">
     </label>
@@ -154,8 +154,12 @@ async function copiarTexto(txt){
     try {
       var ta = document.createElement('textarea');
       ta.value = txt;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
       document.body.appendChild(ta);
       ta.select();
+      ta.setSelectionRange(0, 99999);
       var ok = document.execCommand('copy');
       document.body.removeChild(ta);
       return ok;
@@ -185,9 +189,7 @@ function linkCompleto(item){
     : BASE + 'stand.html?s=' + item.codigo;
 }
 
-async function entrar(){
-  var codigo = $('inCodigo').value.toUpperCase().trim();
-  if (!codigo) { avisoMsg('msgEntrada', 'Escribe tu codigo COORD- primero.', false); return; }
+async function entrarConCodigo(codigo){
   try {
     var d = await llamar('f_coord_entrar', { p_codigo: codigo });
     if (!d) { avisoMsg('msgEntrada', 'Codigo invalido o revocado. Pidele uno nuevo al administrador.', false); return; }
@@ -197,6 +199,12 @@ async function entrar(){
   } catch (e) {
     avisoMsg('msgEntrada', 'No se pudo conectar con la base de datos: ' + e.message, false);
   }
+}
+
+async function entrar(){
+  var codigo = $('inCodigo').value.toUpperCase().trim();
+  if (!codigo) { avisoMsg('msgEntrada', 'Escribe tu codigo COORD- primero.', false); return; }
+  await entrarConCodigo(codigo);
 }
 
 function mostrarTrabajo(){
@@ -348,12 +356,13 @@ function salir(){
 }
 
 var guardado = leerCoordGuardado();
-if (guardado && guardado.codigo) {
-  llamar('f_coord_entrar', { p_codigo: guardado.codigo }).then(function(d){
-    if (!d) { sessionStorage.removeItem('na_coord'); return; }
-    coord = { codigo: guardado.codigo, tipo: d.tipo, nombre: d.nombre, edicion_abierta: d.edicion_abierta };
-    mostrarTrabajo();
-  }).catch(function(){});
+var codigoUrl = '';
+try { codigoUrl = (new URLSearchParams(window.location.search).get('c') || '').toUpperCase().trim(); } catch (e) {}
+if (codigoUrl) {
+  $('inCodigo').value = codigoUrl;
+  entrarConCodigo(codigoUrl);
+} else if (guardado && guardado.codigo) {
+  entrarConCodigo(guardado.codigo);
 }
 $('btnEntrar').onclick = entrar;
 $('btnCrearTalento').onclick = crearTalento;
