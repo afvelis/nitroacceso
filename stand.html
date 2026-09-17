@@ -152,6 +152,13 @@ async function cargar() {
       document.getElementById('cargando').innerHTML = 'Enlace inválido o stand no encontrado.';
       return;
     }
+    if (datosStand.anulado) {
+      document.getElementById('cargando').style.display = 'none';
+      const av = document.getElementById('avisoCerrado');
+      av.innerHTML = '<h2>Link modificado</h2>Este link fue modificado por el coordinador y quedó anulado. Comuníquese con el coordinador para que le envíe el nuevo link generado con los cambios.';
+      av.style.display = 'block';
+      return;
+    }
     document.getElementById('cargando').style.display = 'none';
     renderStand(true);
   } catch (e) {
