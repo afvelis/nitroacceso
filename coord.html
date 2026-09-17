@@ -36,6 +36,7 @@ input,select{width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1p
 .suave{color:var(--suave);}
 .codigo{background:#0d1526;border:1px solid var(--borde);border-radius:10px;padding:12px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:18px;letter-spacing:1px;margin-top:8px;word-break:break-all;}
 .item{border:1px solid var(--borde);border-radius:12px;padding:14px;margin-top:12px;background:#0e1728;}
+.panel-edit{margin-top:14px;border-top:1px dashed var(--borde);padding-top:8px;}
 details.ayuda{margin-top:14px;border:1px dashed var(--borde);border-radius:12px;padding:10px 14px;}
 summary{cursor:pointer;color:var(--acento2);font-size:17px;}
 ul{margin:6px 0;padding-left:22px;}
@@ -74,6 +75,7 @@ li{margin:4px 0;}
         <li><strong>Copiar:</strong> copia el link y pegalo donde tu quieras (chat, correo, documento). El boton te avisara cuando ya este copiado.</li>
         <li><strong>WhatsApp:</strong> abre WhatsApp con el link ya escrito en un mensaje; solo eliges el contacto y envias.</li>
         <li><strong>Correo:</strong> intenta abrir tu aplicacion de correo con un borrador listo. Si tu equipo no tiene aplicacion de correo, el mensaje queda copiado para que lo pegues donde prefieras.</li>
+        <li><strong>Edicion del link:</strong> si te equivocaste en un dato del stand o del talento, abre el panel, corrige y guarda. El correo y el codigo del link no se cambian porque son su llave unica.</li>
         <li>Cada link es unico y esta amarrado a un correo irrepetible: no lo publiques en redes, envialo solo a la persona indicada.</li>
       </ul>
     </details>
@@ -128,7 +130,7 @@ li{margin:4px 0;}
 
   <section class="tarjeta" id="cardLinks" hidden>
     <h2>Links creados en esta sesion</h2>
-    <p class="suave">Aqui quedan tus links mientras trabajas. Copialos o envialos por WhatsApp o correo con los botones de cada uno.</p>
+    <p class="suave">Aqui quedan tus links mientras trabajas. Copialos o envialos por WhatsApp o correo con los botones de cada uno, o corregir sus datos con "Edicion del link".</p>
     <div id="listaLinks"></div>
     <p id="msgLinks" class="suave"></p>
   </section>
@@ -180,10 +182,13 @@ function leerCoordGuardado(){
 function leerLinks(){
   try { return JSON.parse(sessionStorage.getItem('na_coord_links_' + coord.codigo) || '[]'); } catch (e) { return []; }
 }
+function guardarLinksEnSesion(arr){
+  sessionStorage.setItem('na_coord_links_' + coord.codigo, JSON.stringify(arr));
+}
 function guardarLink(item){
   var arr = leerLinks();
   arr.unshift(item);
-  sessionStorage.setItem('na_coord_links_' + coord.codigo, JSON.stringify(arr));
+  guardarLinksEnSesion(arr);
   renderLinks();
 }
 function linkCompleto(item){
@@ -215,7 +220,7 @@ function mostrarTrabajo(){
   $('cardTrabajo').hidden = false;
   $('saludo').textContent = 'Hola, ' + coord.nombre + ' — Coordinador de ' + coord.tipo;
   if (coord.edicion_abierta) {
-    avisoMsg('notaEdicion', 'La edicion esta ABIERTA: puedes crear links nuevos.', true);
+    avisoMsg('notaEdicion', 'La edicion esta ABIERTA: puedes crear links nuevos y editar sus datos.', true);
     if (coord.tipo === 'talentos') {
       $('formTalentos').hidden = false;
       $('formStands').hidden = true;
@@ -224,11 +229,24 @@ function mostrarTrabajo(){
       $('formTalentos').hidden = true;
     }
   } else {
-    avisoMsg('notaEdicion', 'El administrador CERRo la edicion: por ahora no puedes crear links nuevos.', false);
+    avisoMsg('notaEdicion', 'El administrador CERRo la edicion: por ahora no puedes crear links nuevos ni editar sus datos.', false);
     $('formTalentos').hidden = true;
     $('formStands').hidden = true;
   }
   renderLinks();
+}
+
+function msgError(r, esTalento){
+  if (r === 'ERR_COORD') return 'Tu codigo ya no es valido o fue revocado.';
+  if (r === 'ERR_EDICION_CERRADA') return 'El administrador cerro la edicion: no se pueden crear ni editar links ahora mismo.';
+  if (r === 'ERR_CORREO_USADO') return 'Ese correo ya esta amarrado a otro talento o stand. Usa un correo distinto.';
+  if (r === 'ERR_CUPO') return 'El cupo no puede ser menor que la cantidad de vendedores ya registrados.';
+  if (r === 'ERR_DATOS') {
+    return esTalento
+      ? 'Revisa: nombre obligatorio y al menos un dia marcado.'
+      : 'Revisa: nombre y numero del stand obligatorios, cupo mayor que cero y tipo elegido.';
+  }
+  return 'No se pudo completar. Intenta de nuevo o avisa al administrador.';
 }
 
 function renderLinks(){
@@ -237,7 +255,7 @@ function renderLinks(){
   if (!arr.length) { $('cardLinks').hidden = true; cont.innerHTML = ''; return; }
   $('cardLinks').hidden = false;
   cont.innerHTML = '';
-  arr.forEach(function(item){
+  arr.forEach(function(item, idx){
     var link = linkCompleto(item);
     var textoWA = 'Hola, te comparto el link de registro de ' + item.titulo + ' para Nitrotoon: ' + link;
     var div = document.createElement('div');
@@ -245,8 +263,10 @@ function renderLinks(){
     div.innerHTML =
       '<div><strong>' + esc(item.titulo) + '</strong></div>' +
       '<div class="codigo">' + esc(link) + '</div>' +
-      '<div class="fila"></div>';
+      '<div class="fila"></div>' +
+      '<div class="panel-edit" hidden></div>';
     var fila = div.querySelector('.fila');
+    var panel = div.querySelector('.panel-edit');
 
     var bCop = document.createElement('button');
     bCop.className = 'btn btn-gris';
@@ -277,23 +297,114 @@ function renderLinks(){
       window.location.href = urlMail('Nitrotoon - link de registro', textoWA);
     };
 
+    var bEdit = document.createElement('button');
+    bEdit.className = 'btn btn-gris';
+    bEdit.textContent = '✏️ Edicion del link';
+    bEdit.onclick = function(){
+      if (panel.hidden) { abrirPanelEdit(panel, item, idx); }
+      else { panel.hidden = true; panel.innerHTML = ''; }
+    };
+
     fila.appendChild(bCop);
     fila.appendChild(aWA);
     fila.appendChild(bMail);
+    fila.appendChild(bEdit);
     cont.appendChild(div);
   });
 }
 
-function msgError(r, esTalento){
-  if (r === 'ERR_COORD') return 'Tu codigo ya no es valido o fue revocado.';
-  if (r === 'ERR_EDICION_CERRADA') return 'El administrador cerro la edicion: no se pueden crear links ahora mismo.';
-  if (r === 'ERR_CORREO_USADO') return 'Ese correo ya esta amarrado a otro talento o stand. Usa un correo distinto.';
-  if (r === 'ERR_DATOS') {
-    return esTalento
-      ? 'Revisa: nombre obligatorio y al menos un dia marcado.'
-      : 'Revisa: nombre y numero del stand obligatorios, cupo mayor que cero y tipo elegido.';
+async function abrirPanelEdit(panel, item, idx){
+  panel.hidden = false;
+  panel.innerHTML = '<p class="suave">Cargando datos del link...</p>';
+  var datos = null;
+  if (item.tipo === 'stands') {
+    try {
+      datos = await llamar('f_link_stand_ver', { p_codigo_link: item.codigo });
+    } catch (e) { datos = null; }
+    if (!datos) { panel.innerHTML = '<p class="suave">No se pudieron cargar los datos del stand. Intenta de nuevo.</p>'; return; }
   }
-  return 'No se pudo crear. Intenta de nuevo o avisa al administrador.';
+  panel.innerHTML = '';
+
+  var msg = document.createElement('p');
+  msg.className = 'suave';
+
+  if (item.tipo === 'stands') {
+    var lN = document.createElement('label'); lN.textContent = 'Nombre del stand o negocio';
+    var iN = document.createElement('input'); iN.value = datos.nombre || '';
+    var lNu = document.createElement('label'); lNu.textContent = 'Numero del stand';
+    var iNu = document.createElement('input'); iNu.value = datos.numero || '';
+    var lC = document.createElement('label'); lC.textContent = 'Cupo de vendedores';
+    var iC = document.createElement('input'); iC.type = 'number'; iC.min = '1'; iC.value = datos.cupo;
+    var lT = document.createElement('label'); lT.textContent = 'Tipo de stand';
+    var iT = document.createElement('select');
+    iT.innerHTML = '<option value="patrocinante">Patrocinante</option><option value="pagado">Pagado</option>';
+    iT.value = datos.tipo;
+    panel.appendChild(lN); panel.appendChild(iN);
+    panel.appendChild(lNu); panel.appendChild(iNu);
+    panel.appendChild(lC); panel.appendChild(iC);
+    panel.appendChild(lT); panel.appendChild(iT);
+  } else {
+    var lNT = document.createElement('label'); lNT.textContent = 'Nombre del talento u organizacion';
+    var iNT = document.createElement('input'); iNT.value = item.titulo || '';
+    panel.appendChild(lNT); panel.appendChild(iNT);
+    var notaDias = document.createElement('p');
+    notaDias.className = 'suave';
+    notaDias.textContent = 'Los dias de presentacion no se cambian aqui para proteger las listas ya creadas.';
+    panel.appendChild(notaDias);
+  }
+
+  var nota = document.createElement('p');
+  nota.className = 'suave';
+  nota.textContent = 'El correo y el codigo del link no se cambian: son su llave unica.';
+  panel.appendChild(nota);
+
+  var fila = document.createElement('div');
+  fila.className = 'fila';
+  var bGuardar = document.createElement('button');
+  bGuardar.className = 'btn';
+  bGuardar.textContent = 'Guardar cambios';
+  bGuardar.onclick = async function(){
+    var r;
+    if (item.tipo === 'stands') {
+      r = await llamar('f_coord_editar_stand', {
+        p_codigo_coord: coord.codigo,
+        p_codigo_link: item.codigo,
+        p_nombre: iN.value.trim(),
+        p_numero: iNu.value.trim(),
+        p_cupo: parseInt(iC.value, 10),
+        p_tipo: iT.value
+      });
+    } else {
+      r = await llamar('f_coord_editar_talento', {
+        p_codigo_coord: coord.codigo,
+        p_codigo_link: item.codigo,
+        p_nombre: iNT.value.trim()
+      });
+    }
+    if (r === 'ok') {
+      var arr = leerLinks();
+      if (item.tipo === 'stands') {
+        item.titulo = 'Stand ' + iNu.value.trim() + ' — ' + iN.value.trim();
+      } else {
+        item.titulo = iNT.value.trim();
+      }
+      arr[idx] = item;
+      guardarLinksEnSesion(arr);
+      avisoMsg('msgLinks', 'Cambios guardados correctamente.', true);
+      renderLinks();
+      return;
+    }
+    msg.textContent = msgError(r, item.tipo === 'talentos');
+    msg.style.color = 'var(--aviso)';
+  };
+  var bCancelar = document.createElement('button');
+  bCancelar.className = 'btn btn-gris';
+  bCancelar.textContent = 'Cancelar';
+  bCancelar.onclick = function(){ panel.hidden = true; panel.innerHTML = ''; };
+  fila.appendChild(bGuardar);
+  fila.appendChild(bCancelar);
+  panel.appendChild(fila);
+  panel.appendChild(msg);
 }
 
 async function crearTalento(){
