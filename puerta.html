@@ -7,143 +7,54 @@
 <script src="config.js"></script>
 <style>
 :root{
-  --fondo:#0b1220;
-  --tarjeta:#121c2e;
-  --borde:#24344d;
-  --texto:#eef3f8;
-  --suave:#9fb0c3;
-  --acento:#35d07f;
-  --acento2:#1fa2ff;
-  --aviso:#ffd33d;
-  --rojo:#e05252;
-  --rojo2:#c73e3e;
+  --fondo:#0b1220;--tarjeta:#121c2e;--borde:#24344d;--texto:#eef3f8;
+  --suave:#9fb0c3;--acento:#35d07f;--acento2:#1fa2ff;--aviso:#ffd33d;
+  --rojo:#e05252;--rojo2:#c73e3e;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%}
-body{
-  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-  background:var(--fondo);
-  color:var(--texto);
-  font-size:17px;
-  line-height:1.5;
-  min-height:100vh;
-  padding-bottom:40px;
-}
-.franja{height:6px;background:linear-gradient(90deg,var(--acento),var(--acento2));width:100%}
-.cabecera{
-  display:flex;align-items:center;gap:14px;
-  padding:18px 20px;
-  background:var(--tarjeta);
-  border-bottom:1px solid var(--borde);
-}
-.logo{
-  font-size:28px;
-  background:linear-gradient(135deg,var(--acento),var(--acento2));
-  width:48px;height:48px;
-  display:flex;align-items:center;justify-content:center;
-  border-radius:10px;
-}
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--fondo);color:var(--texto);font-size:17px;line-height:1.5;min-height:100vh;padding-bottom:40px}
+.franja{height:6px;background:linear-gradient(90deg,var(--acento),var(--acento2))}
+.cabecera{display:flex;align-items:center;gap:14px;padding:18px 20px;background:var(--tarjeta);border-bottom:1px solid var(--borde)}
+.logo{font-size:28px;background:linear-gradient(135deg,var(--acento),var(--acento2));width:48px;height:48px;display:flex;align-items:center;justify-content:center;border-radius:10px}
 .titulo{font-size:20px;font-weight:700}
 .subtitulo{font-size:14px;color:var(--suave)}
 .contenedor{max-width:900px;margin:20px auto;padding:0 16px}
-.tarjeta{
-  background:var(--tarjeta);
-  border:1px solid var(--borde);
-  border-radius:16px;
-  padding:20px;
-  margin-bottom:18px;
-  box-shadow:0 4px 14px rgba(0,0,0,.25);
-}
+.tarjeta{background:var(--tarjeta);border:1px solid var(--borde);border-radius:16px;padding:20px;margin-bottom:18px;box-shadow:0 4px 14px rgba(0,0,0,.25)}
 .tarjeta h2{font-size:19px;margin-bottom:12px;color:var(--acento)}
-.aviso{
-  padding:12px 14px;border-radius:10px;
-  background:rgba(255,211,61,.12);
-  border:1px solid var(--aviso);
-  color:var(--aviso);
-  margin-bottom:14px;
-  font-size:15px;
-}
-.btn{
-  display:inline-block;
-  padding:12px 20px;
-  border:none;border-radius:10px;
-  font-size:17px;font-weight:600;
-  cursor:pointer;
-  text-decoration:none;
-  color:white;
-  background:linear-gradient(135deg,var(--acento),#26a866);
-  transition:transform .1s;
-}
+.aviso{padding:12px 14px;border-radius:10px;background:rgba(255,211,61,.12);border:1px solid var(--aviso);color:var(--aviso);margin-bottom:14px;font-size:15px}
+.aviso-rojo{background:rgba(224,82,82,.12);border-color:var(--rojo);color:var(--rojo)}
+.aviso-verde{background:rgba(53,208,127,.12);border-color:var(--acento);color:var(--acento)}
+.btn{display:inline-block;padding:12px 20px;border:none;border-radius:10px;font-size:17px;font-weight:600;cursor:pointer;color:white;background:linear-gradient(135deg,var(--acento),#26a866);transition:transform .1s}
 .btn:active{transform:scale(.97)}
-.btn-gris{background:#2a3648;color:var(--texto)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-gris{background:#2a3648}
 .btn-rojo{background:linear-gradient(135deg,var(--rojo),var(--rojo2))}
 .btn-azul{background:linear-gradient(135deg,var(--acento2),#147acc)}
-input,select{
-  width:100%;
-  padding:12px 14px;
-  border:1px solid var(--borde);
-  border-radius:10px;
-  background:#0d1626;
-  color:var(--texto);
-  font-size:17px;
-  font-family:inherit;
-}
-input:focus,select:focus{outline:2px solid var(--acento2);border-color:var(--acento2)}
+.btn-grande{width:100%;padding:18px;font-size:20px;margin-bottom:12px}
+input{width:100%;padding:12px 14px;border:1px solid var(--borde);border-radius:10px;background:#0d1626;color:var(--texto);font-size:17px;font-family:inherit}
+input:focus{outline:2px solid var(--acento2);border-color:var(--acento2)}
 label{display:block;margin-bottom:6px;color:var(--suave);font-size:15px}
-.fila{display:flex;gap:10px;flex-wrap:wrap}
-.fila > *{flex:1;min-width:120px}
-.pill{
-  display:inline-block;
-  padding:4px 10px;
-  border-radius:20px;
-  font-size:13px;
-  font-weight:600;
-}
+.selector-dia{display:flex;gap:10px;margin-bottom:16px}
+.selector-dia button{flex:1;padding:16px;border:2px solid var(--borde);background:#0d1626;color:var(--suave);border-radius:10px;cursor:pointer;font-size:18px;font-weight:700;transition:all .2s}
+.selector-dia button.activo{background:linear-gradient(135deg,var(--acento),#26a866);border-color:var(--acento);color:white}
+#visorQR{width:100%;max-width:500px;aspect-ratio:4/3;background:#000;border-radius:12px;margin:14px auto;display:block;border:2px solid var(--acento)}
+.resultado{border-left:6px solid var(--acento);padding-left:14px;margin-top:14px}
+.resultado.bloqueado{border-left-color:var(--rojo)}
+.dato{margin-bottom:8px}
+.dato strong{color:var(--suave);font-size:14px;display:block}
+.dato span{font-size:17px}
+.pill{display:inline-block;padding:4px 10px;border-radius:20px;font-size:13px;font-weight:600}
 .pill-verde{background:rgba(53,208,127,.18);color:var(--acento)}
-.pill-amarillo{background:rgba(255,211,61,.18);color:var(--aviso)}
+.pill-rojo{background:rgba(224,82,82,.18);color:var(--rojo)}
 .pill-azul{background:rgba(31,162,255,.18);color:var(--acento2)}
-.mono{font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:1px}
-.selector-dia{
-  display:flex;gap:10px;margin-bottom:16px;
-}
-.selector-dia button{
-  flex:1;padding:14px;border:2px solid var(--borde);
-  background:#0d1626;color:var(--suave);
-  border-radius:10px;cursor:pointer;font-size:17px;font-weight:600;
-  transition:all .2s;
-}
-.selector-dia button:hover{
-  border-color:var(--acento);
-}
-.selector-dia button.activo{
-  background:linear-gradient(135deg,var(--acento),#26a866);
-  border-color:var(--acento);
-  color:white;
-}
-.modo-tabs{
-  display:flex;gap:8px;margin-bottom:16px;
-}
-.modo-tabs button{
-  flex:1;padding:10px;border:1px solid var(--borde);
-  background:transparent;color:var(--suave);
-  border-radius:8px;cursor:pointer;font-size:15px;
-}
-.modo-tabs button.activo{
-  background:var(--borde);color:var(--texto);
-}
-#visorQR{
-  width:100%;
-  max-width:500px;
-  aspect-ratio:4/3;
-  background:#000;
-  border-radius:12px;
-  margin:14px auto;
-  display:block;
-  border:2px solid var(--acento);
-}
-.scan-line{
-  position:relative;
-}
+.pill-amarillo{background:rgba(255,211,61,.18);color:var(--aviso)}
+.fila-personas{margin-top:14px;border-top:1px solid var(--borde);padding-top:14px}
+.persona-item{display:flex;align-items:center;justify-content:space-between;padding:10px;border-bottom:1px solid var(--borde)}
+.persona-item.ultimo{border-bottom:none}
+.persona-info{flex:1}
+.persona-nombre{font-weight:600;font-size:16px}
+.persona-detalle{font-size:13px;color:var(--suave)}
+.estado-badge{font-size:12px;padding:3px 8px;border-radius:12px;margin-left:8px}
 </style>
 </head>
 <body>
@@ -157,56 +68,42 @@ label{display:block;margin-bottom:6px;color:var(--suave);font-size:15px}
 </header>
 
 <main class="contenedor">
+  <!-- LOGIN -->
   <div class="tarjeta" id="tarjetaLogin">
     <h2>🔐 Sesión de puerta</h2>
     <p style="color:var(--suave);margin-bottom:14px">Ingresa el PIN de puerta para comenzar.</p>
     <label for="pin">PIN de puerta</label>
     <input type="password" id="pin" inputmode="numeric" maxlength="6" placeholder="••••">
-    <div style="margin-top:14px">
-      <button class="btn" id="btnEntrar">Entrar</button>
-    </div>
+    <div style="margin-top:14px"><button class="btn" id="btnEntrar">Entrar</button></div>
   </div>
 
+  <!-- PRINCIPAL -->
   <div class="tarjeta" id="tarjetaPrincipal" style="display:none">
     <h2>🎯 Control de acceso</h2>
     
-    <label>Selecciona el día (solo uno activo a la vez)</label>
+    <label>¿Qué día se está controlando hoy?</label>
     <div class="selector-dia">
-      <button id="btnDia1">📅 Día 1</button>
-      <button id="btnDia2">📅 Día 2</button>
+      <button id="btnDia1">📅 DÍA 1</button>
+      <button id="btnDia2">📅 DÍA 2</button>
     </div>
 
-    <div id="panelDia" style="display:none">
+    <div id="panelEscaneo" style="display:none">
       <div class="aviso" id="avisoDia"></div>
 
-      <div class="modo-tabs">
-        <button class="activo" id="tabLista">📋 Lista de talento</button>
-        <button id="tabVendedor">👤 Vendedor de stand</button>
+      <button class="btn btn-grande btn-azul" id="btnEscanear">📷 ESCANEAR QR</button>
+      
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <input type="text" id="inputManual" placeholder="Código manual (L-XXXXX o V-XXXXX)">
+        <button class="btn" id="btnBuscarManual">Buscar</button>
       </div>
 
-      <div id="panelLista">
-        <label for="codigoLista">Código corto de lista (L-XXXXXX) o nombre</label>
-        <input type="text" id="codigoLista" placeholder="Ej: L-43B2CD o nombre del talento">
-        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn" id="btnBuscarLista">Buscar lista</button>
-          <button class="btn btn-azul" id="btnEscanearLista">📷 Escanear QR</button>
-        </div>
-      </div>
-
-      <div id="panelVendedor" style="display:none">
-        <label for="codigoVendedor">Código QR del vendedor (V-XXXXXXXX) o cédula</label>
-        <input type="text" id="codigoVendedor" placeholder="Ej: V-A1B2C3D4 o 12345678">
-        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn" id="btnBuscarVendedor">Buscar vendedor</button>
-          <button class="btn btn-azul" id="btnEscanearVendedor">📷 Escanear QR</button>
-        </div>
-      </div>
-
-      <div id="visorContainer" style="display:none;margin-top:16px">
+      <div id="visorContainer" style="display:none">
         <video id="visorQR" autoplay playsinline muted></video>
         <p style="text-align:center;color:var(--suave);font-size:14px">Apunta la cámara al código QR</p>
         <button class="btn btn-rojo" id="btnDetenerScan" style="display:block;margin:10px auto">⏹ Detener cámara</button>
       </div>
+
+      <div id="panelResultado" style="display:none;margin-top:20px"></div>
     </div>
 
     <div style="margin-top:20px">
@@ -222,29 +119,22 @@ const tarjetaLogin = document.getElementById('tarjetaLogin');
 const tarjetaPrincipal = document.getElementById('tarjetaPrincipal');
 const btnDia1 = document.getElementById('btnDia1');
 const btnDia2 = document.getElementById('btnDia2');
-const panelDia = document.getElementById('panelDia');
+const panelEscaneo = document.getElementById('panelEscaneo');
 const avisoDia = document.getElementById('avisoDia');
-const tabLista = document.getElementById('tabLista');
-const tabVendedor = document.getElementById('tabVendedor');
-const panelLista = document.getElementById('panelLista');
-const panelVendedor = document.getElementById('panelVendedor');
-const codigoLista = document.getElementById('codigoLista');
-const codigoVendedor = document.getElementById('codigoVendedor');
-const btnBuscarLista = document.getElementById('btnBuscarLista');
-const btnBuscarVendedor = document.getElementById('btnBuscarVendedor');
-const btnEscanearLista = document.getElementById('btnEscanearLista');
-const btnEscanearVendedor = document.getElementById('btnEscanearVendedor');
+const btnEscanear = document.getElementById('btnEscanear');
+const inputManual = document.getElementById('inputManual');
+const btnBuscarManual = document.getElementById('btnBuscarManual');
 const visorContainer = document.getElementById('visorContainer');
 const visorQR = document.getElementById('visorQR');
 const btnDetenerScan = document.getElementById('btnDetenerScan');
+const panelResultado = document.getElementById('panelResultado');
 const btnSalir = document.getElementById('btnSalir');
 
 let diaSeleccionado = null;
 let tokenSesion = null;
 let streamVideo = null;
-let detectorQR = null;
 let scanningInterval = null;
-let modoScanActual = null; // 'lista' o 'vendedor'
+let usandoJsQR = false;
 
 function mostrarPrincipal(){
   tarjetaLogin.style.display = 'none';
@@ -253,7 +143,6 @@ function mostrarPrincipal(){
 
 function seleccionarDia(dia){
   diaSeleccionado = dia;
-  // Exclusividad visual: solo uno activo
   if(dia === 1){
     btnDia1.classList.add('activo');
     btnDia2.classList.remove('activo');
@@ -261,26 +150,12 @@ function seleccionarDia(dia){
     btnDia2.classList.add('activo');
     btnDia1.classList.remove('activo');
   }
-  panelDia.style.display = 'block';
+  panelEscaneo.style.display = 'block';
   avisoDia.textContent = `✓ Controlando entrada del Día ${dia}`;
 }
 
 btnDia1.addEventListener('click', () => seleccionarDia(1));
 btnDia2.addEventListener('click', () => seleccionarDia(2));
-
-tabLista.addEventListener('click', () => {
-  tabLista.classList.add('activo');
-  tabVendedor.classList.remove('activo');
-  panelLista.style.display = 'block';
-  panelVendedor.style.display = 'none';
-});
-
-tabVendedor.addEventListener('click', () => {
-  tabVendedor.classList.add('activo');
-  tabLista.classList.remove('activo');
-  panelVendedor.style.display = 'block';
-  panelLista.style.display = 'none';
-});
 
 btnEntrar.addEventListener('click', async () => {
   const pin = elPin.value.trim();
@@ -313,97 +188,82 @@ btnSalir.addEventListener('click', () => {
   }
 });
 
-btnBuscarLista.addEventListener('click', async () => {
-  if(!diaSeleccionado){ alert('Selecciona un día primero.'); return; }
-  const buscar = codigoLista.value.trim();
-  if(!buscar){ alert('Escribe un código o nombre.'); return; }
-  btnBuscarLista.disabled = true;
-  btnBuscarLista.textContent = 'Buscando...';
-  try{
-    const listas = await llamar('f_puerta_lista', {
-      p_token: tokenSesion,
-      p_dia: diaSeleccionado,
-      p_buscar: buscar
-    });
-    if(!listas || listas.length === 0){
-      alert('No se encontraron listas.');
-    }else{
-      alert(`Se encontraron ${listas.length} lista(s). Siguiente paso: mostrar resultados.`);
-    }
-  }catch(e){
-    alert('Error: ' + (e.message || e));
-  }
-  btnBuscarLista.disabled = false;
-  btnBuscarLista.textContent = 'Buscar lista';
-});
+// ============================================
+// CARGA DE jsQR DESDE CDN (Capa 2)
+// ============================================
+function cargarJsQR(callback){
+  if(window.jsQR){ callback(true); return; }
+  const script = document.createElement('script');
+  script.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
+  script.onload = () => callback(true);
+  script.onerror = () => callback(false);
+  document.head.appendChild(script);
+}
 
-btnBuscarVendedor.addEventListener('click', async () => {
+// ============================================
+// ESCÁNER DE QR (3 capas)
+// ============================================
+async function iniciarScanner(){
   if(!diaSeleccionado){ alert('Selecciona un día primero.'); return; }
-  const codigo = codigoVendedor.value.trim();
-  if(!codigo){ alert('Escribe un código o cédula.'); return; }
-  btnBuscarVendedor.disabled = true;
-  btnBuscarVendedor.textContent = 'Buscando...';
-  try{
-    let vendedor = null;
-    if(codigo.toUpperCase().startsWith('V-')){
-      vendedor = await llamar('f_puerta_vendedor_por_qr', {
-        p_token: tokenSesion,
-        p_codigo_qr: codigo
-      });
-    }else{
-      vendedor = await llamar('f_puerta_vendedor_por_cedula', {
-        p_token: tokenSesion,
-        p_cedula: codigo
-      });
-    }
-    if(!vendedor){
-      alert('No se encontró el vendedor.');
-    }else{
-      alert(`Vendedor encontrado: ${vendedor.nombre} ${vendedor.apellido}. Siguiente paso: mostrar detalles.`);
-    }
-  }catch(e){
-    alert('Error: ' + (e.message || e));
-  }
-  btnBuscarVendedor.disabled = false;
-  btnBuscarVendedor.textContent = 'Buscar vendedor';
-});
-
-// === LECTOR DE QR CON CÁMARA (API nativa BarcodeDetector) ===
-async function iniciarScanner(modo){
-  if(!('BarcodeDetector' in window)){
-    alert('Tu navegador no soporta lectura de QR por cámara. Escribe el código manualmente.');
-    return;
-  }
-  if(!diaSeleccionado){
-    alert('Selecciona un día primero.');
-    return;
-  }
   
-  modoScanActual = modo;
+  visorContainer.style.display = 'block';
+  panelResultado.style.display = 'none';
+  
   try{
     streamVideo = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
     });
     visorQR.srcObject = streamVideo;
-    visorContainer.style.display = 'block';
-    
-    detectorQR = new BarcodeDetector({ formats: ['qr_code'] });
-    
-    scanningInterval = setInterval(async () => {
-      if(!visorQR.videoWidth) return;
-      try{
-        const codigos = await detectorQR.detect(visorQR);
-        if(codigos && codigos.length > 0){
-          const valor = codigos[0].rawValue;
-          procesarQRLeido(valor);
-        }
-      }catch(e){
-        // Silenciar errores de detección
-      }
-    }, 300);
+    await visorQR.play();
   }catch(e){
-    alert('No se pudo acceder a la cámara: ' + e.message);
+    visorContainer.style.display = 'none';
+    alert('No se pudo acceder a la cámara. Usa el código manual.');
+    return;
   }
+  
+  // Capa 1: BarcodeDetector nativo
+  if('BarcodeDetector' in window){
+    try{
+      const detector = new BarcodeDetector({ formats: ['qr_code'] });
+      scanningInterval = setInterval(async () => {
+        if(!visorQR.videoWidth) return;
+        try{
+          const codigos = await detector.detect(visorQR);
+          if(codigos && codigos.length > 0){
+            procesarQRLeido(codigos[0].rawValue);
+          }
+        }catch(e){}
+      }, 300);
+      return;
+    }catch(e){}
+  }
+  
+  // Capa 2: jsQR desde CDN
+  cargarJsQR(function(exito){
+    if(!exito){
+      visorContainer.style.display = 'none';
+      alert('Tu navegador no soporta lectura de QR y no se pudo cargar el respaldo. Usa el código manual.');
+      detenerScanner();
+      return;
+    }
+    usandoJsQR = true;
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    
+    scanningInterval = setInterval(() => {
+      if(!visorQR.videoWidth) return;
+      canvas.width = visorQR.videoWidth;
+      canvas.height = visorQR.videoHeight;
+      ctx.drawImage(visorQR, 0, 0, canvas.width, canvas.height);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      try{
+        const code = window.jsQR(imageData.data, imageData.width, imageData.height);
+        if(code && code.data){
+          procesarQRLeido(code.data);
+        }
+      }catch(e){}
+    }, 300);
+  });
 }
 
 function detenerScanner(){
@@ -416,46 +276,250 @@ function detenerScanner(){
     streamVideo = null;
   }
   visorContainer.style.display = 'none';
+  usandoJsQR = false;
+}
+
+function extraerCodigo(valor){
+  // Intentar parsear como URL
+  try{
+    const url = new URL(valor);
+    const params = url.searchParams;
+    if(params.has('lista')) return params.get('lista');
+    if(params.has('v')) return params.get('v');
+  }catch(e){}
+  
+  // Si no es URL, ver si es código directo
+  const limpio = valor.trim().toUpperCase();
+  if(limpio.startsWith('L-') || limpio.startsWith('V-')) return limpio;
+  
+  return valor;
 }
 
 function procesarQRLeido(valor){
   detenerScanner();
-  // El QR codifica una URL como https://afvelis.github.io/nitroacceso/puerta.html?lista=L-XXXXX o ?v=V-XXXXX
-  try{
-    const url = new URL(valor);
-    const params = url.searchParams;
-    if(params.has('lista')){
-      codigoLista.value = params.get('lista');
-      tabLista.click();
-      btnBuscarLista.click();
-    }else if(params.has('v')){
-      codigoVendedor.value = params.get('v');
-      tabVendedor.click();
-      btnBuscarVendedor.click();
-    }else{
-      alert('QR leído pero no contiene datos de lista ni vendedor: ' + valor);
-    }
-  }catch(e){
-    // Si no es URL válida, intentar usar el valor directo
-    if(valor.toUpperCase().startsWith('V-')){
-      codigoVendedor.value = valor;
-      tabVendedor.click();
-      btnBuscarVendedor.click();
-    }else if(valor.toUpperCase().startsWith('L-')){
-      codigoLista.value = valor;
-      tabLista.click();
-      btnBuscarLista.click();
-    }else{
-      alert('QR leído: ' + valor + '\nNo se reconoce el formato.');
-    }
+  const codigo = extraerCodigo(valor);
+  
+  if(codigo.toUpperCase().startsWith('V-')){
+    inputManual.value = codigo;
+    buscarVendedor(codigo);
+  }else if(codigo.toUpperCase().startsWith('L-')){
+    inputManual.value = codigo;
+    buscarLista(codigo);
+  }else{
+    mostrarError('QR leído pero no reconocido: ' + codigo);
   }
 }
 
-btnEscanearLista.addEventListener('click', () => iniciarScanner('lista'));
-btnEscanearVendedor.addEventListener('click', () => iniciarScanner('vendedor'));
+btnEscanear.addEventListener('click', iniciarScanner);
 btnDetenerScan.addEventListener('click', detenerScanner);
 
-// Al cargar: verificar sesión existente y parámetros URL
+btnBuscarManual.addEventListener('click', () => {
+  const codigo = inputManual.value.trim().toUpperCase();
+  if(!codigo){ alert('Escribe un código.'); return; }
+  if(codigo.startsWith('V-')){
+    buscarVendedor(codigo);
+  }else if(codigo.startsWith('L-')){
+    buscarLista(codigo);
+  }else{
+    mostrarError('Código no reconocido. Debe empezar con L- o V-.');
+  }
+});
+
+// ============================================
+// BÚSQUEDA Y AUTORIZACIÓN DE VENDEDOR
+// ============================================
+async function buscarVendedor(codigoQR){
+  mostrarCargando('Buscando vendedor...');
+  try{
+    const vendedor = await llamar('f_puerta_vendedor_por_qr', {
+      p_token: tokenSesion,
+      p_codigo_qr: codigoQR
+    });
+    
+    if(!vendedor){
+      mostrarError('No se encontró vendedor con ese QR.');
+      return;
+    }
+    
+    const estadoDia = diaSeleccionado === 1 ? vendedor.estado_dia1 : vendedor.estado_dia2;
+    const marcadoDia = diaSeleccionado === 1 ? vendedor.marcado_dia1_at : vendedor.marcado_dia2_at;
+    const yaAutorizado = estadoDia === 'autorizado';
+    
+    let html = `<div class="resultado ${yaAutorizado ? 'bloqueado' : ''}">`;
+    html += `<div class="dato"><strong>Tipo</strong><span class="pill pill-azul">Vendedor de stand</span></div>`;
+    html += `<div class="dato"><strong>Nombre</strong><span>${vendedor.nombre} ${vendedor.apellido}</span></div>`;
+    html += `<div class="dato"><strong>Cédula</strong><span>${vendedor.cedula}</span></div>`;
+    if(vendedor.empresa) html += `<div class="dato"><strong>Empresa</strong><span>${vendedor.empresa}</span></div>`;
+    html += `<div class="dato"><strong>Día</strong><span>Día ${diaSeleccionado}</span></div>`;
+    
+    if(yaAutorizado){
+      const hora = marcadoDia ? new Date(marcadoDia).toLocaleTimeString('es-VE') : 'hora no registrada';
+      html += `<div class="aviso aviso-rojo">⛔ ENTRADA YA CONSUMADA<br>Esta persona ya fue autorizada a las ${hora}. No se puede autorizar de nuevo.</div>`;
+    }else{
+      html += `<button class="btn btn-grande" id="btnAutorizarVendedor">✅ AUTORIZAR ENTRADA</button>`;
+    }
+    html += `</div>`;
+    
+    panelResultado.innerHTML = html;
+    panelResultado.style.display = 'block';
+    
+    if(!yaAutorizado){
+      document.getElementById('btnAutorizarVendedor').addEventListener('click', async () => {
+        const btn = document.getElementById('btnAutorizarVendedor');
+        btn.disabled = true;
+        btn.textContent = 'Autorizando...';
+        try{
+          const ok = await llamar('f_puerta_marcar_vendedor', {
+            p_token: tokenSesion,
+            p_vendedor_id: vendedor.vendedor_id,
+            p_dia: diaSeleccionado,
+            p_estado: 'autorizado'
+          });
+          if(ok){
+            alert('✅ Entrada autorizada para ' + vendedor.nombre + ' ' + vendedor.apellido);
+            buscarVendedor(codigoQR); // Refrescar para mostrar estado bloqueado
+          }else{
+            alert('No se pudo autorizar. Verifica que la lista no esté cerrada.');
+            btn.disabled = false;
+            btn.textContent = '✅ AUTORIZAR ENTRADA';
+          }
+        }catch(e){
+          alert('Error: ' + (e.message || e));
+          btn.disabled = false;
+          btn.textContent = '✅ AUTORIZAR ENTRADA';
+        }
+      });
+    }
+  }catch(e){
+    mostrarError('Error al buscar vendedor: ' + (e.message || e));
+  }
+}
+
+// ============================================
+// BÚSQUEDA Y AUTORIZACIÓN DE LISTA DE TALENTO
+// ============================================
+async function buscarLista(codigoLista){
+  mostrarCargando('Buscando lista...');
+  try{
+    // Buscar la lista por código corto
+    const listas = await llamar('f_puerta_lista', {
+      p_token: tokenSesion,
+      p_dia: diaSeleccionado,
+      p_buscar: codigoLista
+    });
+    
+    if(!listas || listas.length === 0){
+      mostrarError('No se encontró ninguna lista con ese código en el Día ' + diaSeleccionado + '.');
+      return;
+    }
+    
+    const lista = listas[0];
+    
+    // Obtener las personas de la lista
+    let personas = [];
+    try{
+      personas = await llamar('f_puerta_personas_de_lista', {
+        p_token: tokenSesion,
+        p_lista_id: lista.lista_id
+      });
+    }catch(e){
+      mostrarError('Error al obtener personas. ¿Ejecutaste el SQL de f_puerta_personas_de_lista?');
+      return;
+    }
+    
+    if(!personas || personas.length === 0){
+      mostrarError('La lista está vacía.');
+      return;
+    }
+    
+    let html = `<div class="resultado">`;
+    html += `<div class="dato"><strong>Tipo</strong><span class="pill pill-azul">Lista de talento</span></div>`;
+    html += `<div class="dato"><strong>Talento</strong><span>${lista.talento_nombre || 'Talento'}</span></div>`;
+    html += `<div class="dato"><strong>Código</strong><span class="mono">${lista.codigo_corto}</span></div>`;
+    html += `<div class="dato"><strong>Estado</strong><span class="pill ${lista.estado === 'cerrada' ? 'pill-rojo' : 'pill-verde'}">${lista.estado}</span></div>`;
+    html += `<div class="fila-personas">`;
+    
+    personas.forEach((p, idx) => {
+      const yaAutorizado = p.estado === 'autorizado';
+      const hora = p.marcado_at ? new Date(p.marcado_at).toLocaleTimeString('es-VE') : '';
+      
+      html += `<div class="persona-item ${idx === personas.length - 1 ? 'ultimo' : ''}">`;
+      html += `<div class="persona-info">`;
+      html += `<div class="persona-nombre">${p.nombre} ${p.apellido}`;
+      if(yaAutorizado){
+        html += `<span class="estado-badge pill-rojo">✅ Autorizado ${hora}</span>`;
+      }else{
+        html += `<span class="estado-badge pill-amarillo">Pendiente</span>`;
+      }
+      html += `</div>`;
+      html += `<div class="persona-detalle">CI: ${p.cedula} • ${p.cargo}</div>`;
+      html += `</div>`;
+      
+      if(lista.estado === 'cerrada'){
+        html += `<span class="pill pill-rojo">Lista cerrada</span>`;
+      }else if(yaAutorizado){
+        html += `<span class="pill pill-rojo">⛔ Consumada</span>`;
+      }else{
+        html += `<button class="btn" data-persona="${p.persona_id}" data-nombre="${p.nombre} ${p.apellido}">✅ Autorizar</button>`;
+      }
+      html += `</div>`;
+    });
+    
+    html += `</div></div>`;
+    
+    panelResultado.innerHTML = html;
+    panelResultado.style.display = 'block';
+    
+    // Agregar listeners a los botones de autorizar
+    panelResultado.querySelectorAll('button[data-persona]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const personaId = btn.getAttribute('data-persona');
+        const nombre = btn.getAttribute('data-nombre');
+        btn.disabled = true;
+        btn.textContent = 'Autorizando...';
+        try{
+          const ok = await llamar('f_puerta_marcar_persona', {
+            p_token: tokenSesion,
+            p_persona_id: personaId,
+            p_estado: 'autorizado'
+          });
+          if(ok){
+            alert('✅ Entrada autorizada para ' + nombre);
+            buscarLista(codigoLista); // Refrescar
+          }else{
+            alert('No se pudo autorizar. Verifica que la lista no esté cerrada.');
+            btn.disabled = false;
+            btn.textContent = '✅ Autorizar';
+          }
+        }catch(e){
+          alert('Error: ' + (e.message || e));
+          btn.disabled = false;
+          btn.textContent = '✅ Autorizar';
+        }
+      });
+    });
+    
+  }catch(e){
+    mostrarError('Error al buscar lista: ' + (e.message || e));
+  }
+}
+
+// ============================================
+// UTILIDADES UI
+// ============================================
+function mostrarCargando(msg){
+  panelResultado.innerHTML = `<div class="aviso">${msg}</div>`;
+  panelResultado.style.display = 'block';
+}
+
+function mostrarError(msg){
+  panelResultado.innerHTML = `<div class="aviso aviso-rojo">${msg}</div>`;
+  panelResultado.style.display = 'block';
+}
+
+// ============================================
+// INICIALIZACIÓN
+// ============================================
 (function(){
   const s = leerSesion();
   if(s && s.rol === 'puerta'){
@@ -467,14 +531,14 @@ btnDetenerScan.addEventListener('click', detenerScanner);
   const listaParam = params.get('lista');
   const vendedorParam = params.get('v');
   
-  if(listaParam){
-    codigoLista.value = listaParam;
-    if(tokenSesion) seleccionarDia(1);
-  }
-  if(vendedorParam){
-    codigoVendedor.value = vendedorParam;
-    tabVendedor.click();
-    if(tokenSesion) seleccionarDia(1);
+  if(tokenSesion){
+    if(vendedorParam){
+      inputManual.value = vendedorParam;
+      if(diaSeleccionado) buscarVendedor(vendedorParam);
+    }else if(listaParam){
+      inputManual.value = listaParam;
+      if(diaSeleccionado) buscarLista(listaParam);
+    }
   }
 })();
 </script>
