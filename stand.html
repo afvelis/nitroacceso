@@ -157,7 +157,7 @@ function lugaresRestantes() {
 }
 function personasDelStand() {
   return datosStand.vendedores.map(function(v){
-    return { nombre: v.nombre, apellido: v.apellido, cedula: v.cedula, codigo_qr: v.codigo_qr, empresa: v.empresa || '', vende: v.vende || '' };
+    return { nombre: v.nombre, apellido: v.apellido, cedula: v.cedula, codigo_qr: v.codigo_qr, empresa: v.empresa || datosStand.empresa || '', vende: v.vende || datosStand.vende || '' };
   });
 }
 function tituloRegistrados() {
@@ -218,10 +218,10 @@ function renderStand() {
   document.getElementById('infoStand').style.display = 'block';
 
   if (!datosStand.edicion_abierta) {
-    document.getElementById('avisoCerrado').textContent = 'Las inscripciones para este stand están cerradas: no se puede agregar ni quitar personas.';
+    document.getElementById('avisoCerrado').textContent = 'Las inscripciones para este stand están cerradas: no se puede agregar ni quitar personas. Puedes ver tu QR desde la lista de abajo o recuperarlo por cédula.';
     document.getElementById('avisoCerrado').style.display = 'block';
     document.getElementById('formLote').style.display = 'none';
-    document.getElementById('recuperarQR').style.display = 'none';
+    document.getElementById('recuperarQR').style.display = 'block';
   } else if (lugaresRestantes() === 0) {
     document.getElementById('avisoCerrado').textContent = 'El cupo de este stand está lleno.';
     document.getElementById('avisoCerrado').style.display = 'block';
@@ -238,9 +238,15 @@ function renderStand() {
   if (datosStand.vendedores.length > 0) {
     document.getElementById('tituloReg').textContent = tituloRegistrados();
     const conAcciones = datosStand.edicion_abierta;
-    let html = '<table><thead><tr><th>Nombre</th><th>Cédula</th>' + (conAcciones ? '<th>Acciones</th>' : '') + '</tr></thead><tbody>';
+    let html = '<table><thead><tr><th>Nombre</th><th>Cédula</th><th>' + (conAcciones ? 'Acciones' : 'Tu QR') + '</th></tr></thead><tbody>';
     datosStand.vendedores.forEach(function(v, i){
-      html += '<tr><td>' + v.nombre + ' ' + v.apellido + '</td><td>' + v.cedula + '</td>' + (conAcciones ? '<td class="celd-acciones"><button class="btn btn-rojo btn-mini" data-ced="' + i + '">Quitar y anular QR</button></td>' : '') + '</tr>';
+      html += '<tr><td>' + v.nombre + ' ' + v.apellido + '</td><td>' + v.cedula + '</td>';
+      if (conAcciones) {
+        html += '<td class="celd-acciones"><button class="btn btn-rojo btn-mini" data-ced="' + i + '">Quitar y anular QR</button></td>';
+      } else {
+        html += '<td class="celd-acciones"><button class="btn btn-azul btn-mini" data-ver="' + i + '">Ver mi QR</button></td>';
+      }
+      html += '</tr>';
     });
     html += '</tbody></table>';
     document.getElementById('tablaReg').innerHTML = html;
@@ -250,6 +256,19 @@ function renderStand() {
         b.onclick = function(){
           const v = datosStand.vendedores[parseInt(b.getAttribute('data-ced'), 10)];
           quitarVendedor(v);
+        };
+      });
+    } else {
+      document.querySelectorAll('#tablaReg button[data-ver]').forEach(function(b){
+        b.onclick = function(){
+          const v = datosStand.vendedores[parseInt(b.getAttribute('data-ver'), 10)];
+          loteActual = { personas: [{
+            nombre: v.nombre, apellido: v.apellido, cedula: v.cedula,
+            codigo_qr: v.codigo_qr,
+            empresa: v.empresa || datosStand.empresa || '',
+            vende: v.vende || datosStand.vende || ''
+          }] };
+          mostrarResultados();
         };
       });
     }
@@ -353,7 +372,7 @@ function renderTabla() {
 function actualizarCupo() {
   const quedan = lugaresRestantes();
   const n = listaPersonas.length;
-  document.getElementById('msgCupo').textContent = 'Lugares restantes del stand: ' + quedan + '. Personas en la lista: ' + n + '.';
+  document.getElementById('msgCupo').textContent = 'Cupo total: ' + datosStand.cupo + ' · Registrados: ' + datosStand.vendedores.length + ' · En lista: ' + n + ' · Disponibles: ' + quedan + '.';
   document.getElementById('btnAgregar').disabled = (editIndex === -1 && n >= quedan);
   document.getElementById('btnRegistrar').disabled = (n === 0);
 }
