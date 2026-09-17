@@ -31,6 +31,7 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;backgr
 .btn-rojo{background:linear-gradient(135deg,var(--rojo),var(--rojo2))}
 .btn-azul{background:linear-gradient(135deg,var(--acento2),#147acc)}
 .btn-grande{width:100%;padding:18px;font-size:20px;margin-bottom:12px}
+.btn-mini{padding:8px 12px;font-size:14px}
 input{width:100%;padding:12px 14px;border:1px solid var(--borde);border-radius:10px;background:#0d1626;color:var(--texto);font-size:17px;font-family:inherit}
 input:focus{outline:2px solid var(--acento2);border-color:var(--acento2)}
 label{display:block;margin-bottom:6px;color:var(--suave);font-size:15px}
@@ -57,6 +58,8 @@ label{display:block;margin-bottom:6px;color:var(--suave);font-size:15px}
 .persona-nombre{font-weight:600;font-size:16px}
 .persona-detalle{font-size:13px;color:var(--suave)}
 .estado-badge{font-size:12px;padding:3px 8px;border-radius:12px;margin-left:8px}
+.acciones-lista{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.acciones-lista button{flex:1;min-width:140px}
 </style>
 </head>
 <body>
@@ -110,7 +113,7 @@ label{display:block;margin-bottom:6px;color:var(--suave);font-size:15px}
       <button class="btn btn-grande btn-azul" id="btnEscanear">📷 ESCANEAR QR</button>
       
       <div style="display:flex;gap:8px;margin-bottom:16px">
-        <input type="text" id="inputManual" placeholder="Código manual (L-XXXXX o V-XXXXX)">
+        <input type="text" id="inputManual" placeholder="Código (L- o V-) o nombre del talento">
         <button class="btn" id="btnBuscarManual">Buscar</button>
       </div>
 
@@ -158,6 +161,8 @@ let diaActivo = 1;
 let tokenSesion = null;
 let streamVideo = null;
 let scanningInterval = null;
+let listaActualId = null;
+let listaActualCodigo = null;
 
 function mostrarPrincipal(){
   tarjetaLogin.style.display = 'none';
@@ -186,7 +191,6 @@ function actualizarSelectorDia(){
     panelCerrarDia1.style.display = 'none';
   }
   
-  // Seleccionar automáticamente el día activo
   seleccionarDia(diaActivo, false);
 }
 
@@ -322,11 +326,10 @@ async function iniciarScanner(){
     await visorQR.play();
   }catch(e){
     visorContainer.style.display = 'none';
-    alert('No se pudo acceder a la cámara. Usa el código manual.');
+    alert('No se pudo acceder a la cámara. Usa el código manual o el buscador por nombre.');
     return;
   }
   
-  // Capa 1: BarcodeDetector nativo
   if('BarcodeDetector' in window){
     try{
       const detector = new BarcodeDetector({ formats: ['qr_code'] });
@@ -343,11 +346,10 @@ async function iniciarScanner(){
     }catch(e){}
   }
   
-  // Capa 2: jsQR desde CDN
   cargarJsQR(function(exito){
     if(!exito){
       visorContainer.style.display = 'none';
-      alert('Tu navegador no soporta lectura de QR y no se pudo cargar el respaldo. Usa el código manual.');
+      alert('Tu navegador no soporta lectura de QR y no se pudo cargar el respaldo. Usa el código manual o el buscador por nombre.');
       detenerScanner();
       return;
     }
@@ -405,7 +407,7 @@ function procesarQRLeido(valor){
     buscarVendedor(codigo);
   }else if(codigo.toUpperCase().startsWith('L-')){
     inputManual.value = codigo;
-    buscarLista(codigo);
+    buscarListaPorCodigo(codigo);
   }else{
     mostrarError('QR leído pero no reconocido: ' + codigo);
   }
@@ -415,14 +417,17 @@ btnEscanear.addEventListener('click', iniciarScanner);
 btnDetenerScan.addEventListener('click', detenerScanner);
 
 btnBuscarManual.addEventListener('click', () => {
-  const codigo = inputManual.value.trim().toUpperCase();
-  if(!codigo){ alert('Escribe un código.'); return; }
-  if(codigo.startsWith('V-')){
-    buscarVendedor(codigo);
-  }else if(codigo.startsWith('L-')){
-    buscarLista(codigo);
+  const texto = inputManual.value.trim();
+  if(!texto){ alert('Escribe un código o nombre.'); return; }
+  
+  const limpio = texto.toUpperCase();
+  
+  if(limpio.startsWith('V-')){
+    buscarVendedor(limpio);
+  }else if(limpio.startsWith('L-')){
+    buscarListaPorCodigo(limpio);
   }else{
-    mostrarError('Código no reconocido. Debe empezar con L- o V-.');
+    buscarListaPorNombre(texto);
   }
 });
 
@@ -480,7 +485,7 @@ async function buscarVendedor(codigoQR){
             alert('✅ Entrada autorizada para ' + vendedor.nombre + ' ' + vendedor.apellido);
             buscarVendedor(codigoQR);
           }else{
-            alert('No se pudo autorizar. Verifica que la lista no esté cerrada.');
+            alert('No se pudo autorizar.');
             btn.disabled = false;
             btn.textContent = '✅ AUTORIZAR ENTRADA';
           }
@@ -497,9 +502,9 @@ async function buscarVendedor(codigoQR){
 }
 
 // ============================================
-// BÚSQUEDA Y AUTORIZACIÓN DE LISTA DE TALENTO
+// BÚSQUEDA DE LISTA POR CÓDIGO
 // ============================================
-async function buscarLista(codigoLista){
+async function buscarListaPorCodigo(codigoLista){
   mostrarCargando('Buscando lista...');
   try{
     const listas = await llamar('f_puerta_lista', {
@@ -513,8 +518,101 @@ async function buscarLista(codigoLista){
       return;
     }
     
-    const lista = listas[0];
+    mostrarListaCompleta(listas[0]);
+  }catch(e){
+    mostrarError('Error al buscar lista: ' + (e.message || e));
+  }
+}
+
+// ============================================
+// BÚSQUEDA DE LISTA POR NOMBRE
+// ============================================
+async function buscarListaPorNombre(nombre){
+  mostrarCargando('Buscando por nombre...');
+  try{
+    const listas = await llamar('f_puerta_lista', {
+      p_token: tokenSesion,
+      p_dia: diaSeleccionado,
+      p_buscar: nombre
+    });
     
+    if(!listas || listas.length === 0){
+      mostrarError('No se encontraron listas que coincidan con "' + nombre + '" en el Día ' + diaSeleccionado + '.');
+      return;
+    }
+    
+    if(listas.length === 1){
+      mostrarListaCompleta(listas[0]);
+      return;
+    }
+    
+    // Si hay varias, mostrar selección
+    let html = `<div class="resultado">`;
+    html += `<div class="dato"><strong>Se encontraron ${listas.length} listas. Elige una:</strong></div>`;
+    html += `<div class="fila-personas">`;
+    
+    listas.forEach((l, idx) => {
+      html += `<div class="persona-item ${idx === listas.length - 1 ? 'ultimo' : ''}">`;
+      html += `<div class="persona-info">`;
+      html += `<div class="persona-nombre">${l.talento_nombre || 'Talento'}</div>`;
+      html += `<div class="persona-detalle">Código: ${l.codigo_corto} • Estado: ${l.estado}</div>`;
+      html += `</div>`;
+      html += `<button class="btn btn-mini" data-lista-id="${l.lista_id}" data-codigo="${l.codigo_corto}">Abrir</button>`;
+      html += `</div>`;
+    });
+    
+    html += `</div></div>`;
+    
+    panelResultado.innerHTML = html;
+    panelResultado.style.display = 'block';
+    
+    panelResultado.querySelectorAll('button[data-lista-id]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const listaId = btn.getAttribute('data-lista-id');
+        const codigo = btn.getAttribute('data-codigo');
+        await mostrarListaPorId(listaId, codigo);
+      });
+    });
+    
+  }catch(e){
+    mostrarError('Error al buscar: ' + (e.message || e));
+  }
+}
+
+// ============================================
+// MOSTRAR LISTA POR ID (para selección múltiple)
+// ============================================
+async function mostrarListaPorId(listaId, codigo){
+  mostrarCargando('Cargando lista...');
+  try{
+    const listas = await llamar('f_puerta_lista', {
+      p_token: tokenSesion,
+      p_dia: diaSeleccionado,
+      p_buscar: codigo
+    });
+    
+    if(!listas || listas.length === 0){
+      mostrarError('No se pudo cargar la lista.');
+      return;
+    }
+    
+    const lista = listas.find(l => l.lista_id === listaId) || listas[0];
+    mostrarListaCompleta(lista);
+  }catch(e){
+    mostrarError('Error: ' + (e.message || e));
+  }
+}
+
+// ============================================
+// MOSTRAR LISTA COMPLETA CON PERSONAS
+// ============================================
+async function mostrarListaCompleta(lista){
+  listaActualId = lista.lista_id;
+  listaActualCodigo = lista.codigo_corto;
+  
+  mostrarCargando('Cargando personas...');
+  
+  try{
     let personas = [];
     try{
       personas = await llamar('f_puerta_personas_de_lista', {
@@ -536,7 +634,28 @@ async function buscarLista(codigoLista){
     html += `<div class="dato"><strong>Talento</strong><span>${lista.talento_nombre || 'Talento'}</span></div>`;
     html += `<div class="dato"><strong>Código</strong><span class="mono">${lista.codigo_corto}</span></div>`;
     html += `<div class="dato"><strong>Estado</strong><span class="pill ${lista.estado === 'cerrada' ? 'pill-rojo' : 'pill-verde'}">${lista.estado}</span></div>`;
+    
+    // Botones de cierre/reapertura
+    html += `<div class="acciones-lista">`;
+    if(lista.estado === 'cerrada'){
+      html += `<button class="btn btn-gris" id="btnReabrirLista">🔓 Reabrir lista</button>`;
+    }else{
+      html += `<button class="btn btn-rojo" id="btnCerrarLista">🔒 Cerrar lista</button>`;
+    }
+    html += `</div>`;
+    
     html += `<div class="fila-personas">`;
+    
+    const totalPersonas = personas.length;
+    const autorizados = personas.filter(p => p.estado === 'autorizado').length;
+    const pendientes = totalPersonas - autorizados;
+    
+    html += `<div class="aviso ${lista.estado === 'cerrada' && pendientes > 0 ? 'aviso-rojo' : ''}" style="margin-bottom:12px">`;
+    html += `Total: ${totalPersonas} • ✅ Autorizados: ${autorizados} • ⏳ Pendientes: ${pendientes}`;
+    if(lista.estado === 'cerrada' && pendientes > 0){
+      html += `<br><strong>Lista cerrada: las personas pendientes NO pueden entrar.</strong>`;
+    }
+    html += `</div>`;
     
     personas.forEach((p, idx) => {
       const yaAutorizado = p.estado === 'autorizado';
@@ -546,7 +665,7 @@ async function buscarLista(codigoLista){
       html += `<div class="persona-info">`;
       html += `<div class="persona-nombre">${p.nombre} ${p.apellido}`;
       if(yaAutorizado){
-        html += `<span class="estado-badge pill-rojo">✅ Autorizado ${hora}</span>`;
+        html += `<span class="estado-badge pill-verde">✅ Autorizado ${hora}</span>`;
       }else{
         html += `<span class="estado-badge pill-amarillo">Pendiente</span>`;
       }
@@ -555,11 +674,15 @@ async function buscarLista(codigoLista){
       html += `</div>`;
       
       if(lista.estado === 'cerrada'){
-        html += `<span class="pill pill-rojo">Lista cerrada</span>`;
+        if(yaAutorizado){
+          html += `<span class="pill pill-verde">Entró</span>`;
+        }else{
+          html += `<span class="pill pill-rojo">No entra</span>`;
+        }
       }else if(yaAutorizado){
         html += `<span class="pill pill-rojo">⛔ Consumada</span>`;
       }else{
-        html += `<button class="btn" data-persona="${p.persona_id}" data-nombre="${p.nombre} ${p.apellido}">✅ Autorizar</button>`;
+        html += `<button class="btn btn-mini" data-persona="${p.persona_id}" data-nombre="${p.nombre} ${p.apellido}">✅ Autorizar</button>`;
       }
       html += `</div>`;
     });
@@ -569,6 +692,7 @@ async function buscarLista(codigoLista){
     panelResultado.innerHTML = html;
     panelResultado.style.display = 'block';
     
+    // Listeners para autorizar personas
     panelResultado.querySelectorAll('button[data-persona]').forEach(btn => {
       btn.addEventListener('click', async () => {
         const personaId = btn.getAttribute('data-persona');
@@ -583,9 +707,9 @@ async function buscarLista(codigoLista){
           });
           if(ok){
             alert('✅ Entrada autorizada para ' + nombre);
-            buscarLista(codigoLista);
+            buscarListaPorCodigo(listaActualCodigo);
           }else{
-            alert('No se pudo autorizar. Verifica que la lista no esté cerrada.');
+            alert('No se pudo autorizar.');
             btn.disabled = false;
             btn.textContent = '✅ Autorizar';
           }
@@ -597,8 +721,70 @@ async function buscarLista(codigoLista){
       });
     });
     
+    // Listener para cerrar lista
+    const btnCerrar = document.getElementById('btnCerrarLista');
+    if(btnCerrar){
+      btnCerrar.addEventListener('click', async () => {
+        if(!confirm('¿Cerrar esta lista?\n\nLas personas pendientes ya no podrán entrar hasta que reabras la lista.')){
+          return;
+        }
+        btnCerrar.disabled = true;
+        btnCerrar.textContent = 'Cerrando...';
+        try{
+          const ok = await llamar('f_puerta_cerrar_lista', {
+            p_token: tokenSesion,
+            p_lista_id: listaActualId,
+            p_cerrada: true
+          });
+          if(ok){
+            alert('🔒 Lista cerrada.');
+            buscarListaPorCodigo(listaActualCodigo);
+          }else{
+            alert('No se pudo cerrar la lista.');
+            btnCerrar.disabled = false;
+            btnCerrar.textContent = '🔒 Cerrar lista';
+          }
+        }catch(e){
+          alert('Error: ' + (e.message || e));
+          btnCerrar.disabled = false;
+          btnCerrar.textContent = '🔒 Cerrar lista';
+        }
+      });
+    }
+    
+    // Listener para reabrir lista
+    const btnReabrir = document.getElementById('btnReabrirLista');
+    if(btnReabrir){
+      btnReabrir.addEventListener('click', async () => {
+        if(!confirm('¿Reabrir esta lista?\n\nPodrás autorizar a las personas pendientes.')){
+          return;
+        }
+        btnReabrir.disabled = true;
+        btnReabrir.textContent = 'Reabriendo...';
+        try{
+          const ok = await llamar('f_puerta_cerrar_lista', {
+            p_token: tokenSesion,
+            p_lista_id: listaActualId,
+            p_cerrada: false
+          });
+          if(ok){
+            alert('🔓 Lista reabierta.');
+            buscarListaPorCodigo(listaActualCodigo);
+          }else{
+            alert('No se pudo reabrir la lista.');
+            btnReabrir.disabled = false;
+            btnReabrir.textContent = '🔓 Reabrir lista';
+          }
+        }catch(e){
+          alert('Error: ' + (e.message || e));
+          btnReabrir.disabled = false;
+          btnReabrir.textContent = '🔓 Reabrir lista';
+        }
+      });
+    }
+    
   }catch(e){
-    mostrarError('Error al buscar lista: ' + (e.message || e));
+    mostrarError('Error al cargar la lista: ' + (e.message || e));
   }
 }
 
