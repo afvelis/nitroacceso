@@ -76,7 +76,7 @@ th { color: var(--suave); font-weight: 600; }
 
   <div id="formLote" class="tarjeta" style="display:none;">
     <h2>Datos del negocio</h2>
-    <p style="color:var(--suave);margin:0 0 4px;">Se escriben una sola vez y aplican a todas las personas de la lista.</p>
+    <p style="color:var(--suave);margin:0 0 4px;">Si ya estaban llenos, es lo que registraste antes: puedes dejarlos así o cambiarlos.</p>
     <label>Empresa *</label><input type="text" id="inEmpresa" />
     <label>Qué vende *</label><input type="text" id="inVende" />
 
@@ -157,6 +157,17 @@ function tituloRegistrados() {
     ? 'Patrocinantes con QR asignado'
     : 'Comerciantes con QR asignado';
 }
+function precargarNegocio() {
+  const v0 = datosStand.vendedores.length ? datosStand.vendedores[0] : null;
+  const emp = datosStand.empresa || (v0 ? v0.empresa : '') || datosStand.nombre || '';
+  const ven = datosStand.vende || (v0 ? v0.vende : '') || '';
+  if (!document.getElementById('inEmpresa').value) {
+    document.getElementById('inEmpresa').value = emp;
+  }
+  if (!document.getElementById('inVende').value) {
+    document.getElementById('inVende').value = ven;
+  }
+}
 
 async function cargar() {
   if (!codigoLink) {
@@ -210,9 +221,7 @@ function renderStand(conResultados) {
     document.getElementById('formLote').style.display = 'block';
     document.getElementById('recuperarQR').style.display = 'block';
     hayForm = true;
-    if (!document.getElementById('inEmpresa').value) {
-      document.getElementById('inEmpresa').value = datosStand.nombre || '';
-    }
+    precargarNegocio();
     renderTabla();
   }
 
