@@ -121,10 +121,6 @@ th { color: var(--suave); font-weight: 600; }
     <div id="listaQRs"></div>
     <div class="botones-finales">
       <button class="btn btn-gris" id="btnVolver">Volver al stand</button>
-      <button class="btn btn-rojo" id="btnCerrar">Cerrar esta pestaña</button>
-    </div>
-    <div id="avisoCierre" class="tarjeta aviso" style="display:none; margin-top:20px;">
-      Tu navegador no permite cerrar la pestaña automáticamente. Por favor, ciérrala manualmente con la X de arriba o deslizando hacia abajo en tu móvil. ¡Gracias!
     </div>
   </div>
 </div>
@@ -507,18 +503,6 @@ document.getElementById('btnTermine').onclick = function(){
 
 document.getElementById('btnVolver').onclick = function(){
   renderStand(false);
-};
-
-document.getElementById('btnCerrar').onclick = function(){
-  let intentos = 0;
-  const intentarCerrar = function(){
-    window.open('about:blank', '_self');
-    window.close();
-    intentos++;
-    if (intentos < 3) setTimeout(intentarCerrar, 500);
-    else document.getElementById('avisoCierre').style.display = 'block';
-  };
-  intentarCerrar();
 };
 
 cargar();
