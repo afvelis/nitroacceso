@@ -24,6 +24,8 @@ h2{margin:0 0 12px;font-size:22px;}
 h3{margin:14px 0 6px;font-size:19px;color:var(--acento2);}
 main{max-width:860px;margin:0 auto;padding:0 16px 110px;display:flex;flex-direction:column;gap:20px;}
 .tarjeta{background:var(--tarjeta);border:1px solid var(--borde);border-radius:16px;padding:20px;box-shadow:0 8px 24px rgba(0,0,0,.35);}
+.tarjeta-aviso{background:#2a2410;border:2px solid var(--aviso);}
+.tarjeta-aviso h2{color:var(--aviso);}
 input{width:100%;padding:12px;border-radius:10px;border:1px solid var(--borde);background:#0d1526;color:var(--texto);font-size:17px;}
 .btn{display:inline-block;border:none;border-radius:12px;padding:12px 18px;font-size:17px;font-weight:600;color:#06281a;background:linear-gradient(135deg,var(--acento),#2bb673);cursor:pointer;text-decoration:none;}
 .btn-gris{background:#2a3648;color:var(--texto);}
@@ -66,6 +68,12 @@ th{background:#0d1526;color:var(--suave);}
   <section class="tarjeta" id="cardError" hidden>
     <h2>Link no valido</h2>
     <p id="msgError" class="suave"></p>
+  </section>
+
+  <section class="tarjeta tarjeta-aviso" id="cardAnulado" hidden>
+    <h2>⚠️ Este link fue modificado</h2>
+    <p class="suave">Tu coordinador actualizó este talento y generó un link nuevo. Este link ya no funciona para registrar personas.</p>
+    <p class="suave">Pídele a tu coordinador el link actualizado para continuar.</p>
   </section>
 
   <section class="tarjeta" id="cardTalento" hidden>
@@ -149,12 +157,22 @@ function fallarLink(txt){
   $('msgError').textContent = txt;
 }
 
+function fallarAnulado(){
+  $('cardCarga').hidden = true;
+  $('cardTalento').hidden = true;
+  $('cardFinal').hidden = true;
+  $('barraFinal').hidden = true;
+  $('cardAnulado').hidden = false;
+  window.scrollTo(0, 0);
+}
+
 async function cargar(){
   var t = param('t');
   if (!t) { fallarLink('Link incompleto: falta el codigo del talento. Pidele el link completo a tu coordinador.'); return; }
   try {
     var d = await llamar('f_link_talento_ver', { p_codigo_link: t });
     if (!d) { fallarLink('Este link no existe o fue revocado. Pidele uno nuevo a tu coordinador.'); return; }
+    if (d.anulado === true) { fallarAnulado(); return; }
     DATA = d;
     CODIGO = t;
     render();
@@ -180,6 +198,7 @@ function personasDia1(){
 function render(){
   $('cardCarga').hidden = true;
   $('cardFinal').hidden = true;
+  $('cardAnulado').hidden = true;
   $('cardTalento').hidden = false;
   $('tituloTalento').textContent = nombreTalento();
   if (DATA.edicion_abierta) {
