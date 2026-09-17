@@ -37,6 +37,7 @@ input,select{width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1p
 .codigo{background:#0d1526;border:1px solid var(--borde);border-radius:10px;padding:12px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:18px;letter-spacing:1px;margin-top:8px;word-break:break-all;}
 .item{border:1px solid var(--borde);border-radius:12px;padding:14px;margin-top:12px;background:#0e1728;}
 .panel-edit{margin-top:14px;border-top:1px dashed var(--borde);padding-top:8px;}
+.badge-renov{display:inline-block;padding:4px 10px;border-radius:999px;font-size:17px;margin-left:8px;background:#4a3a12;color:var(--aviso);vertical-align:middle;}
 details.ayuda{margin-top:14px;border:1px dashed var(--borde);border-radius:12px;padding:10px 14px;}
 summary{cursor:pointer;color:var(--acento2);font-size:17px;}
 ul{margin:6px 0;padding-left:22px;}
@@ -75,7 +76,7 @@ li{margin:4px 0;}
         <li><strong>Copiar:</strong> copia el link y pegalo donde tu quieras (chat, correo, documento). El boton te avisara cuando ya este copiado.</li>
         <li><strong>WhatsApp:</strong> abre WhatsApp con el link ya escrito en un mensaje; solo eliges el contacto y envias.</li>
         <li><strong>Correo:</strong> intenta abrir tu aplicacion de correo con un borrador listo. Si tu equipo no tiene aplicacion de correo, el mensaje queda copiado para que lo pegues donde prefieras.</li>
-        <li><strong>Edicion del link:</strong> si te equivocaste en un dato del stand o del talento, abre el panel, corrige y guarda. El correo y el codigo del link no se cambian porque son su llave unica.</li>
+        <li><strong>Edicion del link:</strong> si corriges los datos de un link, al guardar se genera un link NUEVO y el anterior queda anulado: reenvia el nuevo al contacto. El correo y el codigo no se cambian porque son su llave unica.</li>
         <li>Cada link es unico y esta amarrado a un correo irrepetible: no lo publiques en redes, envialo solo a la persona indicada.</li>
       </ul>
     </details>
@@ -261,8 +262,10 @@ function renderLinks(){
     var div = document.createElement('div');
     div.className = 'item';
     div.innerHTML =
-      '<div><strong>' + esc(item.titulo) + '</strong></div>' +
+      '<div><strong>' + esc(item.titulo) + '</strong>' +
+      (item.renovado ? '<span class="badge-renov">Renovado</span>' : '') + '</div>' +
       '<div class="codigo">' + esc(link) + '</div>' +
+      (item.renovado ? '<p class="suave" style="margin:8px 0 0;">El link anterior de este registro quedo anulado: usa y reenvia solo este.</p>' : '') +
       '<div class="fila"></div>' +
       '<div class="panel-edit" hidden></div>';
     var fila = div.querySelector('.fila');
@@ -321,7 +324,7 @@ async function abrirPanelEdit(panel, item, idx){
     try {
       datos = await llamar('f_link_stand_ver', { p_codigo_link: item.codigo });
     } catch (e) { datos = null; }
-    if (!datos) { panel.innerHTML = '<p class="suave">No se pudieron cargar los datos del stand. Intenta de nuevo.</p>'; return; }
+    if (!datos || datos.anulado) { panel.innerHTML = '<p class="suave">No se pudieron cargar los datos del stand. Intenta de nuevo.</p>'; return; }
   }
   panel.innerHTML = '';
 
@@ -343,6 +346,10 @@ async function abrirPanelEdit(panel, item, idx){
     panel.appendChild(lNu); panel.appendChild(iNu);
     panel.appendChild(lC); panel.appendChild(iC);
     panel.appendChild(lT); panel.appendChild(iT);
+    var notaRot = document.createElement('p');
+    notaRot.className = 'suave';
+    notaRot.textContent = 'Al guardar cambios se genera un link NUEVO y el anterior queda anulado: deberas reenviar el link nuevo al contacto del stand.';
+    panel.appendChild(notaRot);
   } else {
     var lNT = document.createElement('label'); lNT.textContent = 'Nombre del talento u organizacion';
     var iNT = document.createElement('input'); iNT.value = item.titulo || '';
@@ -366,35 +373,59 @@ async function abrirPanelEdit(panel, item, idx){
   bGuardar.onclick = async function(){
     var r;
     if (item.tipo === 'stands') {
-      r = await llamar('f_coord_editar_stand', {
-        p_codigo_coord: coord.codigo,
-        p_codigo_link: item.codigo,
-        p_nombre: iN.value.trim(),
-        p_numero: iNu.value.trim(),
-        p_cupo: parseInt(iC.value, 10),
-        p_tipo: iT.value
-      });
-    } else {
+      try {
+        r = await llamar('f_coord_editar_stand', {
+          p_codigo_coord: coord.codigo,
+          p_codigo_link: item.codigo,
+          p_nombre: iN.value.trim(),
+          p_numero: iNu.value.trim(),
+          p_cupo: parseInt(iC.value, 10),
+          p_tipo: iT.value
+        });
+      } catch (e) { msg.textContent = 'No se pudo conectar: ' + e.message; msg.style.color = 'var(--aviso)'; return; }
+      if (r && r.indexOf('STD-') === 0) {
+        var arrS = leerLinks();
+        item.codigo = r;
+        item.titulo = 'Stand ' + iNu.value.trim() + ' — ' + iN.value.trim();
+        item.renovado = true;
+        arrS[idx] = item;
+        guardarLinksEnSesion(arrS);
+        avisoMsg('msgLinks', 'Guardado. Usted modifico este link con parametros nuevos: se genero un link nuevo y el anterior quedo anulado. Reenvie el link nuevo al contacto del stand.', false);
+        renderLinks();
+        return;
+      }
+      msg.textContent = msgError(r, false);
+      msg.style.color = 'var(--aviso)';
+      return;
+    }
+    try {
       r = await llamar('f_coord_editar_talento', {
         p_codigo_coord: coord.codigo,
         p_codigo_link: item.codigo,
         p_nombre: iNT.value.trim()
       });
-    }
+    } catch (e) { msg.textContent = 'No se pudo conectar: ' + e.message; msg.style.color = 'var(--aviso)'; return; }
     if (r === 'ok') {
-      var arr = leerLinks();
-      if (item.tipo === 'stands') {
-        item.titulo = 'Stand ' + iNu.value.trim() + ' — ' + iN.value.trim();
-      } else {
-        item.titulo = iNT.value.trim();
-      }
-      arr[idx] = item;
-      guardarLinksEnSesion(arr);
+      var arrT = leerLinks();
+      item.titulo = iNT.value.trim();
+      arrT[idx] = item;
+      guardarLinksEnSesion(arrT);
       avisoMsg('msgLinks', 'Cambios guardados correctamente.', true);
       renderLinks();
       return;
     }
-    msg.textContent = msgError(r, item.tipo === 'talentos');
+    if (r && r.indexOf('TAL-') === 0) {
+      var arrT2 = leerLinks();
+      item.codigo = r;
+      item.titulo = iNT.value.trim();
+      item.renovado = true;
+      arrT2[idx] = item;
+      guardarLinksEnSesion(arrT2);
+      avisoMsg('msgLinks', 'Guardado. Usted modifico este link: se genero un link nuevo y el anterior quedo anulado. Reenvie el link nuevo al representante.', false);
+      renderLinks();
+      return;
+    }
+    msg.textContent = msgError(r, true);
     msg.style.color = 'var(--aviso)';
   };
   var bCancelar = document.createElement('button');
