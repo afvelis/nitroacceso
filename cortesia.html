@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nitrotoon Control de acceso - Cortesía</title>
+<script src="config.js"></script>
+<style>
+:root{
+  --fondo:#0b1220;--tarjeta:#121c2e;--borde:#24344d;--texto:#eef3f8;
+  --suave:#9fb0c3;--acento:#35d07f;--acento2:#1fa2ff;--aviso:#ffd33d;
+  --rojo:#e05252;--rojo2:#c73e3e;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--fondo);color:var(--texto);font-size:17px;line-height:1.5;min-height:100vh;padding-bottom:40px}
+.franja{height:6px;background:linear-gradient(90deg,var(--acento),var(--acento2))}
+.cabecera{display:flex;align-items:center;gap:14px;padding:18px 20px;background:var(--tarjeta);border-bottom:1px solid var(--borde)}
+.logo{font-size:28px;background:linear-gradient(135deg,var(--acento),var(--acento2));width:48px;height:48px;display:flex;align-items:center;justify-content:center;border-radius:10px}
+.titulo{font-size:20px;font-weight:700}
+.subtitulo{font-size:14px;color:var(--suave)}
+.contenedor{max-width:760px;margin:20px auto;padding:0 16px}
+.tarjeta{background:var(--tarjeta);border:1px solid var(--borde);border-radius:16px;padding:20px;margin-bottom:18px;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.tarjeta h2{font-size:19px;margin-bottom:12px;color:var(--acento)}
+.aviso{padding:12px 14px;border-radius:10px;background:rgba(255,211,61,.12);border:1px solid var(--aviso);color:var(--aviso);margin-bottom:14px;font-size:15px}
+.aviso-rojo{background:rgba(224,82,82,.12);border-color:var(--rojo);color:var(--rojo)}
+.aviso-verde{background:rgba(53,208,127,.12);border-color:var(--acento);color:var(--acento)}
+.dato{margin-bottom:8px}
+.dato strong{color:var(--suave);font-size:14px;display:block}
+.dato span{font-size:17px}
+.pill{display:inline-block;padding:4px 10px;border-radius:20px;font-size:13px;font-weight:600}
+.pill-verde{background:rgba(53,208,127,.18);color:var(--acento)}
+.pill-azul{background:rgba(31,162,255,.18);color:var(--acento2)}
+.pill-morado{background:rgba(186,104,255,.18);color:#c68cff}
+.qr-box{background:white;border-radius:14px;padding:14px;display:inline-block;margin:12px 0}
+.qr-box img{width:240px;height:240px;display:block}
+.qr-box .qr-texto{color:#0b1220;font-weight:700;text-align:center;margin-top:8px;font-family:ui-monospace,Menlo,Consolas,monospace}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:1px}
+.btn{display:inline-block;padding:12px 18px;border:none;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;color:white;background:linear-gradient(135deg,var(--acento),#26a866);text-decoration:none;transition:transform .1s}
+.btn:active{transform:scale(.97)}
+.btn-azul{background:linear-gradient(135deg,var(--acento2),#147acc)}
+.btn-gris{background:#2a3648}
+.fila-botones{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.nombres{margin-top:10px;padding-left:20px;color:var(--suave);font-size:15px}
+.link-box{background:#0d1626;border:1px solid var(--borde);border-radius:10px;padding:10px;font-size:14px;word-break:break-all;color:var(--suave);margin-bottom:10px}
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header class="cabecera">
+  <div class="logo">🚀</div>
+  <div>
+    <div class="titulo">Nitrotoon Control de acceso</div>
+    <div class="subtitulo">Pase de cortesía</div>
+  </div>
+</header>
+
+<main class="contenedor" id="contenido">
+  <div class="tarjeta"><p style="color:var(--suave)">Cargando cortesía...</p></div>
+</main>
+
+<script>
+const params = new URLSearchParams(location.search);
+const codigo = (params.get('c') || '').trim();
+const contenido = document.getElementById('contenido');
+
+function razonLegible(r, causa){
+  const map = { prensa:'Prensa', vinculo_familiar:'Vínculo familiar', premio:'Premio', autoridad:'Autoridad', otros:'Otros' };
+  let t = map[r] || r;
+  if(r === 'otros' && causa) t += ': ' + causa;
+  return t;
+}
+
+function diasTexto(d1, d2){
+  if(d1 && d2) return 'Día 1 y Día 2';
+  if(d1) return 'Día 1';
+  if(d2) return 'Día 2';
+  return '-';
+}
+
+function urlWA(texto){ return 'https://wa.me/?text=' + encodeURIComponent(texto); }
+function urlMail(asunto, cuerpo){ return 'mailto:?subject=' + encodeURIComponent(asunto) + '&body=' + encodeURIComponent(cuerpo); }
+
+async function copiarTexto(texto, btn){
+  const original = btn.textContent;
+  try{
+    await navigator.clipboard.writeText(texto);
+    btn.textContent = '¡Copiado!';
+    setTimeout(() => { btn.textContent = original; }, 2000);
+  }catch(e){
+    const ta = document.createElement('textarea');
+    ta.value = texto;
+    document.body.appendChild(ta);
+    ta.select();
+    try{
+      document.execCommand('copy');
+      btn.textContent = '¡Copiado!';
+      setTimeout(() => { btn.textContent = original; }, 2000);
+    }catch(e2){
+      alert('No se pudo copiar automático. Copia manual: ' + texto);
+    }
+    document.body.removeChild(ta);
+  }
+}
+
+function tarjetaError(titulo, texto){
+  contenido.innerHTML = `
+    <div class="tarjeta">
+      <h2>${titulo}</h2>
+      <div class="aviso aviso-rojo">${texto}</div>
+    </div>`;
+}
+
+function renderizar(d){
+  const esLista = d.tipo === 'lista';
+  const tituloPrincipal = esLista ? d.nombre_organizacion : (d.individuales ? d.individuales.nombre + ' ' + d.individuales.apellido : '');
+  const linkEntrega = BASE + 'cortesia.html?c=' + codigo;
+  
+  let mensajeWA;
+  if(esLista){
+    mensajeWA = `Hola, aquí está el pase de cortesía de ${d.nombre_organizacion} para Nitrotoon (${razonLegible(d.razon, d.causa)}). Abre este link para ver los QR: ${linkEntrega}`;
+  }else{
+    mensajeWA = `Hola ${tituloPrincipal}, aquí está tu pase de cortesía para Nitrotoon (${razonLegible(d.razon, d.causa)}). Abre este link para ver tu QR: ${linkEntrega}`;
+  }
+  
+  let html = '';
+  
+  // Información
+  html += `<div class="tarjeta">
+    <h2>🎁 Pase de cortesía</h2>
+    <div class="dato"><strong>${esLista ? 'Organización' : 'Beneficiario'}</strong><span>${tituloPrincipal}</span></div>
+    <div class="dato"><strong>Razón</strong><span class="pill pill-morado">${razonLegible(d.razon, d.causa)}</span></div>
+    <div class="dato"><strong>Válido para</strong><span class="pill pill-azul">${diasTexto(d.dia1, d.dia2)}</span></div>
+    <div class="dato"><strong>Modalidad</strong><span class="pill pill-verde">${esLista ? 'Lista (' + (d.listas ? d.listas.length : 0) + ' QR por día)' : 'Pase individual'}</span></div>
+  </div>`;
+  
+  // QR
+  if(esLista && d.listas){
+    d.listas.forEach(l => {
+      html += `<div class="tarjeta">
+        <h2>📅 QR del Día ${l.dia}</h2>
+        <p style="color:var(--suave);font-size:15px">Muestra este QR en la puerta el Día ${l.dia}. Todas las personas de la lista entran con este único QR.</p>
+        <div class="qr-box" id="qr-dia-${l.dia}"></div>
+        <div><strong style="color:var(--suave);font-size:14px">Personas en esta lista:</strong>
+          <ul class="nombres">${l.personas.map(p => `<li>${p.nombre} ${p.apellido}</li>`).join('')}</ul>
+        </div>
+      </div>`;
+    });
+  }else if(d.individuales){
+    html += `<div class="tarjeta">
+      <h2>🎟️ Tu QR personal</h2>
+      <p style="color:var(--suave);font-size:15px">Muestra este QR en la puerta los días aprobados. Es personal e intransferible.</p>
+      <div class="qr-box" id="qr-ind"></div>
+    </div>`;
+  }
+  
+  // Compartir link
+  html += `<div class="tarjeta">
+    <h2>📤 Compartir este pase</h2>
+    <div class="link-box">${linkEntrega}</div>
+    <div class="fila-botones">
+      <button class="btn" id="btnCopiarLink">📋 Copiar link</button>
+      <a class="btn btn-azul" id="btnWA" target="_blank" rel="noopener">📱 WhatsApp</a>
+      <a class="btn btn-gris" id="btnMail">✉️ Correo</a>
+    </div>
+    <div class="aviso aviso-verde" style="margin-top:14px">Si el QR no escanea en la puerta, el personal puede escribir el código que aparece debajo del QR.</div>
+  </div>`;
+  
+  contenido.innerHTML = html;
+  
+  // Dibujar QR
+  if(esLista && d.listas){
+    d.listas.forEach(l => {
+      ponerQR(document.getElementById('qr-dia-' + l.dia), urlPuerta('cl', l.codigo_corto), l.codigo_corto);
+    });
+  }else if(d.individuales){
+    ponerQR(document.getElementById('qr-ind'), urlPuerta('ci', d.individuales.codigo_qr), d.individuales.codigo_qr);
+  }
+  
+  // Botones de compartir
+  document.getElementById('btnCopiarLink').addEventListener('click', (e) => copiarTexto(linkEntrega, e.target));
+  document.getElementById('btnWA').href = urlWA(mensajeWA);
+  document.getElementById('btnMail').href = urlMail('Pase de cortesía Nitrotoon', mensajeWA);
+}
+
+(function(){
+  if(!codigo){
+    tarjetaError('⚠️ Link incompleto', 'Este link no tiene código de cortesía. Verifica que copiaste el link completo o comunícate con el administrador.');
+    return;
+  }
+  
+  llamar('f_cortesia_ver', { p_codigo_link: codigo })
+    .then(d => {
+      if(!d){
+        tarjetaError('⚠️ Link no válido', 'Este código de cortesía no existe. Comunícate con el administrador.');
+        return;
+      }
+      if(d.anulada){
+        tarjetaError('⛔ Cortesía anulada', 'Esta cortesía fue anulada por el administrador y ya no es válida. Comunícate con el administrador si crees que es un error.');
+        return;
+      }
+      renderizar(d);
+    })
+    .catch(e => {
+      tarjetaError('⚠️ Error', 'No se pudo cargar la cortesía: ' + (e.message || e));
+    });
+})();
+</script>
+</body>
+</html>
