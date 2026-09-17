@@ -62,7 +62,7 @@ th { color: var(--suave); }
     <label>Apellido *</label><input type="text" id="inApellido" />
     <label>Cédula *</label><input type="text" id="inCedula" />
     <label>Qué vende *</label><input type="text" id="inVende" />
-    <label>Empresa (opcional)</label><input type="text" id="inEmpresa" />
+    <label>Empresa *</label><input type="text" id="inEmpresa" />
     <button class="btn" id="btnRegistrar">Registrar y obtener mi QR</button>
     <div id="msgError" class="error"></div>
   </div>
@@ -168,9 +168,9 @@ function renderStand(conQRGuardado) {
   }
 
   if (reg > 0) {
-    let html = '<table><thead><tr><th>Nombre</th><th>Cédula</th><th>Vende</th></tr></thead><tbody>';
+    let html = '<table><thead><tr><th>Nombre</th><th>Cédula</th><th>Vende</th><th>Empresa</th></tr></thead><tbody>';
     datosStand.vendedores.forEach(v => {
-      html += '<tr><td>' + v.nombre + ' ' + v.apellido + '</td><td>' + v.cedula + '</td><td>' + v.vende + '</td></tr>';
+      html += '<tr><td>' + v.nombre + ' ' + v.apellido + '</td><td>' + v.cedula + '</td><td>' + v.vende + '</td><td>' + (v.empresa || '') + '</td></tr>';
     });
     html += '</tbody></table>';
     document.getElementById('tablaReg').innerHTML = html;
@@ -198,8 +198,8 @@ document.getElementById('btnRegistrar').onclick = async () => {
   const errDiv = document.getElementById('msgError');
   errDiv.textContent = '';
 
-  if (!nombre || !apellido || !cedula || !vende) {
-    errDiv.textContent = 'Por favor completa todos los campos obligatorios.'; return;
+  if (!nombre || !apellido || !cedula || !vende || !empresa) {
+    errDiv.textContent = 'Por favor completa todos los campos obligatorios, incluida la empresa.'; return;
   }
 
   try {
