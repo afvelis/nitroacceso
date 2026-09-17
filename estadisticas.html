@@ -68,7 +68,6 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;backgr
 .mini-stat{background:#0e1728;border:1px solid var(--borde);border-radius:10px;padding:10px;text-align:center}
 .mini-stat .num{font-size:22px;font-weight:700;color:var(--acento)}
 .mini-stat .lbl{font-size:12px;color:var(--suave)}
-.separador{height:1px;background:var(--borde);margin:18px 0}
 </style>
 </head>
 <body>
@@ -95,6 +94,11 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;backgr
     <section class="tarjeta" id="metricas">
       <h2>📊 Foto general del evento</h2>
       <div id="zonaMetricas"></div>
+    </section>
+
+    <section class="tarjeta" id="tiempos">
+      <h2>⏱️ Tiempos de gestión del equipo</h2>
+      <div id="zonaTiempos"></div>
     </section>
 
     <section class="tarjeta" id="patrocinantes">
@@ -165,6 +169,76 @@ function claseBarra(porcentaje){
   return 'baja';
 }
 
+function fmtHoras(h){
+  if(h === null || h === undefined) return '-';
+  if(h < 1) return Math.round(h * 60) + ' min';
+  return h + ' h';
+}
+
+function renderTiempos(t){
+  if(!t){
+    document.getElementById('zonaTiempos').innerHTML = '<p class="suave">No hay datos de tiempos disponibles todavía.</p>';
+    return;
+  }
+
+  const coords = t.coordinadores || [];
+  const talT = t.talentos_tiempos || [];
+  const staT = t.stands_tiempos || [];
+
+  // Promedios globales
+  const promReaccion = coords.length ? (coords.reduce((s,c) => s + (c.horas_reaccion || 0), 0) / coords.length) : null;
+  const promTal = talT.filter(x => x.horas_hasta_primera !== null);
+  const promTalH = promTal.length ? (promTal.reduce((s,x) => s + x.horas_hasta_primera, 0) / promTal.length) : null;
+  const promSta = staT.filter(x => x.horas_hasta_primero !== null);
+  const promStaH = promSta.length ? (promSta.reduce((s,x) => s + x.horas_hasta_primero, 0) / promSta.length) : null;
+
+  let html = `
+    <div class="resumen-categoria">
+      <div class="mini-stat"><div class="num">${fmtHoras(promReaccion !== null ? Math.round(promReaccion*10)/10 : null)}</div><div class="lbl">Reacción promedio de coordinadores</div></div>
+      <div class="mini-stat"><div class="num">${fmtHoras(promTalH !== null ? Math.round(promTalH*10)/10 : null)}</div><div class="lbl">1er registro de talento (prom.)</div></div>
+      <div class="mini-stat"><div class="num">${fmtHoras(promStaH !== null ? Math.round(promStaH*10)/10 : null)}</div><div class="lbl">1er vendedor de stand (prom.)</div></div>
+    </div>
+  `;
+
+  // Coordinadores
+  html += '<h3>👥 Coordinadores — tiempo desde su creación hasta su primer talento o stand</h3>';
+  if(coords.length){
+    html += '<div class="tabla-wrap"><table class="tabla"><tr><th>Coordinador</th><th>Tipo</th><th>Talentos</th><th>Stands</th><th>⏱️ Reacción</th></tr>';
+    coords.forEach(c => {
+      html += `<tr><td>${esc(c.nombre)}</td><td>${c.tipo === 'talentos' ? 'Talentos' : 'Stands'}</td><td>${c.num_talentos}</td><td>${c.num_stands}</td><td>${fmtHoras(c.horas_reaccion)}</td></tr>`;
+    });
+    html += '</table></div>';
+  } else {
+    html += '<p class="suave">Sin coordinadores.</p>';
+  }
+
+  // Talentos
+  html += '<h3>🎭 Talentos — tiempo desde crear el link hasta registrar personas</h3>';
+  if(talT.length){
+    html += '<div class="tabla-wrap"><table class="tabla"><tr><th>Talento</th><th>Coordinador</th><th>Personas</th><th>⏱️ Hasta 1ra</th><th>⏱️ Hasta última</th><th>⏱️ Registro→entrada</th></tr>';
+    talT.forEach(x => {
+      html += `<tr><td>${esc(x.nombre)}</td><td>${esc(x.coordinador || '-')}</td><td>${x.total_personas}</td><td>${fmtHoras(x.horas_hasta_primera)}</td><td>${fmtHoras(x.horas_hasta_ultima)}</td><td>${fmtHoras(x.horas_prom_registro_entrada)}</td></tr>`;
+    });
+    html += '</table></div>';
+  } else {
+    html += '<p class="suave">Sin talentos.</p>';
+  }
+
+  // Stands
+  html += '<h3>🏪 Stands — tiempo desde crear el link hasta registrar vendedores</h3>';
+  if(staT.length){
+    html += '<div class="tabla-wrap"><table class="tabla"><tr><th>Stand</th><th>Tipo</th><th>Coordinador</th><th>Vend.</th><th>⏱️ Hasta 1ro</th><th>⏱️ Hasta último</th><th>⏱️ Registro→entrada</th></tr>';
+    staT.forEach(x => {
+      html += `<tr><td>${esc(x.nombre || ('Stand ' + x.numero))}</td><td>${x.tipo === 'patrocinante' ? 'Patrocinante' : 'Pagado'}</td><td>${esc(x.coordinador || '-')}</td><td>${x.total_vendedores}</td><td>${fmtHoras(x.horas_hasta_primero)}</td><td>${fmtHoras(x.horas_hasta_ultimo)}</td><td>${fmtHoras(x.horas_prom_registro_entrada)}</td></tr>`;
+    });
+    html += '</table></div>';
+  } else {
+    html += '<p class="suave">Sin stands.</p>';
+  }
+
+  document.getElementById('zonaTiempos').innerHTML = html;
+}
+
 function renderizar(d){
   // ============ RESUMEN POR DÍA ============
   function cajaDia(titulo, dia){
@@ -220,8 +294,6 @@ function renderizar(d){
       return '<p class="suave">Sin registros en esta categoría todavía.</p>';
     }
 
-    // Para stands: ranking por vendedores presentes (aut_dia1 + aut_dia2)
-    // Para talentos: ranking por participantes autorizados
     let ranking;
     if(tipo === 'stand'){
       ranking = lista.map(s => ({
@@ -361,6 +433,14 @@ function renderizar(d){
       return;
     }
     renderizar(d);
+
+    // Cargar tiempos de gestión (no bloquea si falla)
+    try{
+      const t = await llamar('f_admin_tiempos', { p_token: token });
+      renderTiempos(t);
+    }catch(e){
+      document.getElementById('zonaTiempos').innerHTML = '<p class="suave">No se pudieron cargar los tiempos: ' + (e.message || e) + '</p>';
+    }
   }catch(e){
     document.getElementById('panelCarga').innerHTML = `<p class="suave" style="color:var(--rojo)">Error al cargar: ${e.message || e}</p>`;
   }
