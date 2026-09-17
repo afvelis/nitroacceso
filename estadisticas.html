@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nitrotoon Control de acceso - Estadísticas</title>
+<script src="config.js"></script>
+<style>
+:root{
+  --fondo:#0b1220;--tarjeta:#121c2e;--borde:#24344d;--texto:#eef3f8;
+  --suave:#9fb0c3;--acento:#35d07f;--acento2:#1fa2ff;--aviso:#ffd33d;
+  --rojo:#e05252;--rojo2:#c73e3e;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--fondo);color:var(--texto);font-size:17px;line-height:1.5;min-height:100vh;padding-bottom:40px}
+.franja{height:6px;background:linear-gradient(90deg,var(--acento),var(--acento2))}
+.cabecera{display:flex;align-items:center;gap:14px;padding:18px 20px;background:var(--tarjeta);border-bottom:1px solid var(--borde)}
+.logo{font-size:28px;background:linear-gradient(135deg,var(--acento),var(--acento2));width:48px;height:48px;display:flex;align-items:center;justify-content:center;border-radius:10px}
+.titulo{font-size:20px;font-weight:700}
+.subtitulo{font-size:14px;color:var(--suave)}
+.contenedor{max-width:1000px;margin:20px auto;padding:0 16px}
+.barra-volver{display:flex;justify-content:flex-start;margin-bottom:14px}
+.btn-volver{padding:10px 18px;border-radius:10px;background:#2a3648;color:var(--texto);text-decoration:none;font-weight:600;font-size:15px}
+.btn-volver:active{transform:scale(.97)}
+.tarjeta{background:var(--tarjeta);border:1px solid var(--borde);border-radius:16px;padding:20px;margin-bottom:18px;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.tarjeta h2{font-size:19px;margin-bottom:14px;color:var(--acento)}
+.tarjeta h3{font-size:16px;margin:14px 0 8px;color:var(--acento2)}
+.grid-dias{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.dia-caja{background:#0e1728;border:1px solid var(--borde);border-radius:12px;padding:14px}
+.dia-caja h3{margin:0 0 10px;font-size:17px;color:var(--texto)}
+.dia-fila{display:flex;justify-content:space-between;font-size:15px;padding:4px 0;border-bottom:1px dashed var(--borde)}
+.dia-fila.ultima{border-bottom:none}
+.dia-fila strong{color:var(--acento)}
+.tabla-wrap{overflow-x:auto}
+.tabla{width:100%;border-collapse:collapse;font-size:15px}
+.tabla th,.tabla td{border:1px solid var(--borde);padding:8px;text-align:left}
+.tabla th{background:#0d1626;color:var(--suave)}
+.pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:13px;font-weight:600}
+.pill-verde{background:rgba(53,208,127,.18);color:var(--acento)}
+.pill-rojo{background:rgba(224,82,82,.18);color:var(--rojo)}
+.pill-azul{background:rgba(31,162,255,.18);color:var(--acento2)}
+.pill-morado{background:rgba(186,104,255,.18);color:#c68cff}
+.suave{color:var(--suave);font-size:15px}
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header class="cabecera">
+  <div class="logo">🚀</div>
+  <div>
+    <div class="titulo">Nitrotoon Control de acceso</div>
+    <div class="subtitulo">Estadísticas detalladas del evento</div>
+  </div>
+</header>
+
+<main class="contenedor">
+  <div class="barra-volver"><a href="dashboard.html" class="btn-volver">← Volver al dashboard</a></div>
+
+  <div id="panelCarga" class="tarjeta"><p class="suave">Cargando estadísticas...</p></div>
+
+  <div id="contenido" style="display:none">
+    <section class="tarjeta" id="resumen">
+      <h2>📅 Resumen por día</h2>
+      <div class="grid-dias" id="gridDias"></div>
+    </section>
+
+    <section class="tarjeta" id="talentos">
+      <h2>🎭 Talentos y sus listas</h2>
+      <div class="tabla-wrap" id="tablaTalentos"></div>
+    </section>
+
+    <section class="tarjeta" id="stands">
+      <h2>🏪 Stands segmentados</h2>
+      <div id="zonaStands"></div>
+    </section>
+
+    <section class="tarjeta" id="cortesias">
+      <h2>🎁 Cortesías</h2>
+      <div class="tabla-wrap" id="tablaCortesias"></div>
+    </section>
+
+    <section class="tarjeta" id="rubros">
+      <h2>🛍️ Rubros de venta</h2>
+      <div id="zonaRubros"></div>
+    </section>
+
+    <section class="tarjeta" id="coordinadores">
+      <h2>👥 Coordinadores</h2>
+      <div class="tabla-wrap" id="tablaCoordinadores"></div>
+    </section>
+  </div>
+
+  <div class="barra-volver"><a href="dashboard.html" class="btn-volver">← Volver al dashboard</a></div>
+</main>
+
+<script>
+const token = leerSesion()?.token;
+const rol = leerSesion()?.rol;
+
+if(!token || rol !== 'admin'){
+  location.href = 'index.html';
+}
+
+function esc(t){
+  return String(t == null ? '' : t)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function razonLegible(r, causa){
+  const map = { prensa:'Prensa', vinculo_familiar:'Vínculo familiar', premio:'Premio', autoridad:'Autoridad', otros:'Otros' };
+  let t = map[r] || r;
+  if(r === 'otros' && causa) t += ': ' + causa;
+  return t;
+}
+
+function diasTexto(d1, d2){
+  if(d1 && d2) return 'Día 1 y Día 2';
+  if(d1) return 'Día 1';
+  if(d2) return 'Día 2';
+  return '-';
+}
+
+function renderizar(d){
+  // Resumen por día
+  function cajaDia(titulo, dia){
+    const autTot = dia.talentos_autorizados + dia.vendedores_autorizados + dia.cortesia_autorizados;
+    const penTot = dia.talentos_pendientes + dia.vendedores_pendientes + dia.cortesia_pendientes;
+    return `<div class="dia-caja">
+      <h3>${titulo}</h3>
+      <div class="dia-fila"><span>🎭 Talentos</span><span>✅ ${dia.talentos_autorizados} / ⏳ ${dia.talentos_pendientes}</span></div>
+      <div class="dia-fila"><span>🏪 Vendedores</span><span>✅ ${dia.vendedores_autorizados} / ⏳ ${dia.vendedores_pendientes}</span></div>
+      <div class="dia-fila"><span>🎁 Cortesías</span><span>✅ ${dia.cortesia_autorizados} / ⏳ ${dia.cortesia_pendientes}</span></div>
+      <div class="dia-fila ultima"><span><strong>Total</strong></span><span><strong>✅ ${autTot} / ⏳ ${penTot}</strong></span></div>
+    </div>`;
+  }
+  document.getElementById('gridDias').innerHTML =
+    cajaDia('📅 Día 1', d.por_dia.dia1) + cajaDia('📅 Día 2', d.por_dia.dia2);
+  
+  // Talentos
+  if(!d.talentos || d.talentos.length === 0){
+    document.getElementById('tablaTalentos').innerHTML = '<p class="suave">Sin talentos registrados todavía.</p>';
+  }else{
+    let h = `<table class="tabla"><tr><th>Talento</th><th>Días</th><th>Personas</th><th>Autorizados</th><th>Pendientes</th></tr>`;
+    d.talentos.forEach(t => {
+      h += `<tr><td>${esc(t.nombre)}</td><td>${diasTexto(t.dia1, t.dia2)}</td><td>${t.total_personas}</td><td>${t.autorizados}</td><td>${t.pendientes}</td></tr>`;
+    });
+    h += `</table>`;
+    document.getElementById('tablaTalentos').innerHTML = h;
+  }
+  
+  // Stands segmentados
+  function tablaStands(tipo, titulo){
+    const filas = (d.stands || []).filter(s => s.tipo === tipo);
+    if(filas.length === 0) return `<h3>${titulo}</h3><p class="suave">Sin stands de este tipo.</p>`;
+    let h = `<h3>${titulo}</h3><table class="tabla"><tr><th>N°</th><th>Nombre</th><th>Empresa</th><th>Vende</th><th>Cupo</th><th>Registrados</th><th>✅ D1</th><th>✅ D2</th></tr>`;
+    filas.forEach(s => {
+      h += `<tr><td>${esc(s.numero)}</td><td>${esc(s.nombre)}</td><td>${esc(s.empresa || '-')}</td><td>${esc(s.vende || '-')}</td><td>${s.cupo}</td><td>${s.total_vendedores}</td><td>${s.aut_dia1}</td><td>${s.aut_dia2}</td></tr>`;
+    });
+    h += `</table>`;
+    return h;
+  }
+  document.getElementById('zonaStands').innerHTML =
+    tablaStands('patrocinante', '🏪 Patrocinantes') + tablaStands('pagado', '💰 Pagados');
+  
+  // Cortesías
+  if(!d.cortesias || d.cortesias.length === 0){
+    document.getElementById('tablaCortesias').innerHTML = '<p class="suave">Sin cortesías creadas todavía.</p>';
+  }else{
+    let h = `<table class="tabla"><tr><th>Beneficiario</th><th>Tipo</th><th>Razón</th><th>Días</th><th>Estado</th><th>Personas</th><th>✅ D1</th><th>✅ D2</th></tr>`;
+    d.cortesias.forEach(c => {
+      const nombre = c.tipo === 'lista' ? (c.nombre_organizacion || 'Lista') : 'Pase individual';
+      const estado = c.estado === 'activa' ? '<span class="pill pill-verde">Activa</span>' : '<span class="pill pill-rojo">Anulada</span>';
+      h += `<tr><td>${esc(nombre)}</td><td>${c.tipo === 'lista' ? 'Lista' : 'Individual'}</td><td>${esc(razonLegible(c.razon, c.causa))}</td><td>${diasTexto(c.dia1, c.dia2)}</td><td>${estado}</td><td>${c.total_personas}</td><td>${c.aut_dia1}</td><td>${c.aut_dia2}</td></tr>`;
+    });
+    h += `</table>`;
+    document.getElementById('tablaCortesias').innerHTML = h;
+  }
+  
+  // Rubros
+  let rh = `<p class="suave">Rubros distintos: <strong>${d.rubros_distintos || 0}</strong></p>`;
+  if(d.rubros && d.rubros.length > 0){
+    rh += `<h3>Top de rubros repetidos</h3><table class="tabla"><tr><th>Rubro</th><th>Cantidad</th></tr>`;
+    d.rubros.slice(0, 10).forEach(r => {
+      rh += `<tr><td>${esc(r.vende)}</td><td>${r.cantidad}</td></tr>`;
+    });
+    rh += `</table>`;
+  }else{
+    rh += `<p class="suave">Sin rubros registrados todavía.</p>`;
+  }
+  document.getElementById('zonaRubros').innerHTML = rh;
+  
+  // Coordinadores
+  if(!d.coordinadores || d.coordinadores.length === 0){
+    document.getElementById('tablaCoordinadores').innerHTML = '<p class="suave">Sin coordinadores creados.</p>';
+  }else{
+    let h = `<table class="tabla"><tr><th>Tipo</th><th>Nombre</th><th>Código</th><th>Estado</th></tr>`;
+    d.coordinadores.forEach(c => {
+      const estado = c.activo ? '<span class="pill pill-verde">Activo</span>' : '<span class="pill pill-rojo">Revocado</span>';
+      h += `<tr><td>${c.tipo === 'talentos' ? 'Talentos' : 'Stands'}</td><td>${esc(c.nombre)}</td><td>${esc(c.codigo)}</td><td>${estado}</td></tr>`;
+    });
+    h += `</table>`;
+    document.getElementById('tablaCoordinadores').innerHTML = h;
+  }
+  
+  document.getElementById('panelCarga').style.display = 'none';
+  document.getElementById('contenido').style.display = 'block';
+}
+
+(async () => {
+  try{
+    const d = await llamar('f_admin_segmentacion', { p_token: token });
+    if(!d){
+      alert('No se pudo cargar la segmentación. Verifica tu sesión.');
+      borrarSesion();
+      location.href = 'index.html';
+      return;
+    }
+    renderizar(d);
+  }catch(e){
+    document.getElementById('panelCarga').innerHTML = `<p class="suave" style="color:var(--rojo)">Error al cargar: ${e.message || e}</p>`;
+  }
+})();
+</script>
+</body>
+</html>
