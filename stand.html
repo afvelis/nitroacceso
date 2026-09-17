@@ -440,4 +440,102 @@ document.getElementById('btnRecuperar').onclick = async function(){
 };
 
 function mostrarResultados() {
-  ['infoStand','avisoCerrado','formLote
+  ['infoStand','avisoCerrado','formLote','listaReg','recuperarQR','barraFija','cardFinalizar'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+  const cont = document.getElementById('listaQRs');
+  cont.innerHTML = '';
+  loteActual.personas.forEach(function(per){
+    const card = document.createElement('div');
+    card.className = 'tarjeta brazalete';
+    card.innerHTML =
+      '<div class="braz-ceja">Nitrotoon · Control de acceso</div>' +
+      '<div class="braz-titulo"></div>' +
+      '<div class="braz-stand"></div>' +
+      '<div class="braz-pill">Válido Día 1 y Día 2</div>' +
+      '<div class="qr-box"></div>' +
+      '<div class="braz-datos">' +
+      '<div class="braz-dato"><span class="braz-label">Cédula</span><span class="braz-valor"></span></div>' +
+      '<div class="braz-dato"><span class="braz-label">Empresa</span><span class="braz-valor"></span></div>' +
+      '<div class="braz-dato"><span class="braz-label">Qué vende</span><span class="braz-valor"></span></div>' +
+      '</div>' +
+      '<div class="botones-qr">' +
+      '<button class="btn btn-gris">📋 Copiar QR</button>' +
+      '<button class="btn">💬 WhatsApp</button>' +
+      '<button class="btn btn-azul">✉️ Correo</button>' +
+      '</div>';
+    card.querySelector('.braz-titulo').textContent = per.nombre + ' ' + per.apellido;
+    card.querySelector('.braz-stand').textContent = nombreStand();
+    const vals = card.querySelectorAll('.braz-valor');
+    vals[0].textContent = per.cedula;
+    vals[1].textContent = per.empresa || '—';
+    vals[2].textContent = per.vende || '—';
+
+    const urlP = urlPuerta('v', per.codigo_qr);
+    const qrCont = card.querySelector('.qr-box');
+    ponerQR(qrCont, urlP, per.codigo_qr);
+
+    const textoRespaldo = 'QR de ' + per.nombre + ' ' + per.apellido + ' para Nitrotoon\n' + nombreStand() + '\nCodigo: ' + per.codigo_qr + '\nLink: ' + urlP;
+    const botones = card.querySelectorAll('.botones-qr .btn');
+    botones[0].onclick = async function(){
+      const img = qrCont.querySelector('img');
+      if (img) {
+        try {
+          const data = await fetch(img.src);
+          const blob = await data.blob();
+          await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+          alert('✅ Imagen del QR de ' + per.nombre + ' copiada.');
+          return;
+        } catch (e) {}
+      }
+      await navigator.clipboard.writeText(textoRespaldo);
+      alert('⚠️ No se pudo copiar la imagen. Copiamos el texto con código y link como respaldo.');
+    };
+    botones[1].onclick = function(){
+      window.open(urlWA(textoRespaldo), '_blank');
+    };
+    botones[2].onclick = function(){
+      window.location.href = urlMail('Mi QR para Nitrotoon', textoRespaldo);
+      navigator.clipboard.writeText(textoRespaldo).catch(()=>{});
+      setTimeout(() => alert('Si no abrió tu app de correo, el texto ya está copiado en tu portapapeles como respaldo.'), 500);
+    };
+    cont.appendChild(card);
+  });
+  document.getElementById('pantallaQR').style.display = 'block';
+}
+
+document.getElementById('btnTermine').onclick = function(){
+  if (!datosStand || !datosStand.vendedores.length) {
+    alert('Todavía no hay personas registradas en este stand.');
+    return;
+  }
+  loteActual = { personas: personasDelStand() };
+  mostrarResultados();
+};
+
+document.getElementById('btnVolver').onclick = function(){
+  renderStand();
+};
+
+document.getElementById('btnFinalizar').onclick = function(){
+  listaPersonas = [];
+  loteActual = null;
+  editIndex = -1;
+  salirDeEdicion();
+  limpiarInputs();
+  document.getElementById('inEmpresa').value = '';
+  document.getElementById('inVende').value = '';
+  ['msgRec','msgPersona','msgError','msgReg'].forEach(function(id){
+    document.getElementById(id).textContent = '';
+  });
+  renderStand();
+  document.getElementById('cardFinalizar').style.display = 'none';
+  document.getElementById('cardAdios').style.display = 'block';
+  window.scrollTo(0, 0);
+  try { window.close(); } catch (e) {}
+};
+
+cargar();
+</script>
+</body>
+</html>
