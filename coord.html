@@ -97,7 +97,10 @@ li{margin:4px 0;}
 
     <div id="formStands" hidden>
       <h3>Crear stand y su link de registro</h3>
-      <label>Numero o nombre del stand
+      <label>Nombre del stand o negocio (obligatorio)
+        <input id="sNombre" placeholder="Ej.: Dulceria Karina">
+      </label>
+      <label>Numero del stand (obligatorio)
         <input id="sNumero" placeholder="Ej.: 12">
       </label>
       <label>Cupo de vendedores (maximo que permite el link)
@@ -288,7 +291,7 @@ function msgError(r, esTalento){
   if (r === 'ERR_DATOS') {
     return esTalento
       ? 'Revisa: nombre obligatorio y al menos un dia marcado.'
-      : 'Revisa: numero obligatorio, cupo mayor que cero y tipo elegido.';
+      : 'Revisa: nombre y numero del stand obligatorios, cupo mayor que cero y tipo elegido.';
   }
   return 'No se pudo crear. Intenta de nuevo o avisa al administrador.';
 }
@@ -321,22 +324,25 @@ async function crearTalento(){
 }
 
 async function crearStand(){
+  var nombre = $('sNombre').value.trim();
   var numero = $('sNumero').value.trim();
   var cupo = parseInt($('sCupo').value, 10);
   var tipo = $('sTipo').value;
   var correo = $('sCorreo').value.trim();
-  if (!numero) { avisoMsg('msgStand', 'Escribe el numero o nombre del stand.', false); return; }
+  if (!nombre) { avisoMsg('msgStand', 'Escribe el nombre del stand o negocio: es obligatorio.', false); return; }
+  if (!numero) { avisoMsg('msgStand', 'Escribe el numero del stand: es obligatorio.', false); return; }
   if (!cupo || cupo <= 0) { avisoMsg('msgStand', 'El cupo debe ser un numero mayor que cero.', false); return; }
   if (!correo) { avisoMsg('msgStand', 'El correo del contacto es obligatorio.', false); return; }
   try {
     var r = await llamar('f_coord_crear_stand', {
-      p_codigo_coord: coord.codigo, p_numero: numero, p_cupo: cupo, p_tipo: tipo, p_correo: correo
+      p_codigo_coord: coord.codigo, p_nombre: nombre, p_numero: numero, p_cupo: cupo, p_tipo: tipo, p_correo: correo
     });
     if (r && r.indexOf('STD-') === 0) {
       avisoMsg('msgStand', 'Stand creado y link listo abajo.', true);
+      $('sNombre').value = '';
       $('sNumero').value = '';
       $('sCorreo').value = '';
-      guardarLink({ tipo: 'stands', codigo: r, titulo: 'Stand ' + numero });
+      guardarLink({ tipo: 'stands', codigo: r, titulo: 'Stand ' + numero + ' — ' + nombre });
       return;
     }
     avisoMsg('msgStand', msgError(r, false), false);
