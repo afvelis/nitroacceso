@@ -62,6 +62,7 @@ label{display:block;margin-bottom:6px;color:var(--suave);font-size:15px}
 .acciones-lista{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
 .acciones-lista button{flex:1;min-width:140px}
 .mono{font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:1px}
+.barra-siguiente{margin-top:18px;padding-top:14px;border-top:2px dashed var(--borde)}
 </style>
 </head>
 <body>
@@ -126,6 +127,10 @@ label{display:block;margin-bottom:6px;color:var(--suave);font-size:15px}
       </div>
 
       <div id="panelResultado" style="display:none;margin-top:20px"></div>
+
+      <div id="barraSiguiente" class="barra-siguiente" style="display:none">
+        <button class="btn btn-grande" id="btnSiguiente">🔄 Escanear siguiente entrada</button>
+      </div>
     </div>
 
     <div style="margin-top:20px">
@@ -156,6 +161,8 @@ const visorContainer = document.getElementById('visorContainer');
 const visorQR = document.getElementById('visorQR');
 const btnDetenerScan = document.getElementById('btnDetenerScan');
 const panelResultado = document.getElementById('panelResultado');
+const barraSiguiente = document.getElementById('barraSiguiente');
+const btnSiguiente = document.getElementById('btnSiguiente');
 const btnSalir = document.getElementById('btnSalir');
 
 let diaSeleccionado = null;
@@ -314,6 +321,38 @@ btnSalir.addEventListener('click', () => {
 });
 
 // ============================================
+// HELPERS DE PANEL DE RESULTADO
+// ============================================
+function mostrarPanel(html){
+  panelResultado.innerHTML = html;
+  panelResultado.style.display = 'block';
+  barraSiguiente.style.display = 'block';
+  try{ panelResultado.scrollIntoView({ behavior: 'smooth', block: 'start' }); }catch(e){}
+}
+
+function mostrarCargando(msg){
+  panelResultado.innerHTML = `<div class="aviso">${msg}</div>`;
+  panelResultado.style.display = 'block';
+  barraSiguiente.style.display = 'none';
+}
+
+function mostrarError(msg){
+  panelResultado.innerHTML = `<div class="aviso aviso-rojo">${msg}</div>`;
+  panelResultado.style.display = 'block';
+  barraSiguiente.style.display = 'block';
+}
+
+function siguienteEscaneo(){
+  panelResultado.innerHTML = '';
+  panelResultado.style.display = 'none';
+  barraSiguiente.style.display = 'none';
+  inputManual.value = '';
+  iniciarScanner();
+}
+
+btnSiguiente.addEventListener('click', siguienteEscaneo);
+
+// ============================================
 // CARGA DE jsQR DESDE CDN (Capa 2)
 // ============================================
 function cargarJsQR(callback){
@@ -331,8 +370,12 @@ function cargarJsQR(callback){
 async function iniciarScanner(){
   if(!diaSeleccionado){ alert('Selecciona un día primero.'); return; }
   
-  visorContainer.style.display = 'block';
+  // Ocultar resultado y botón siguiente al abrir la cámara
+  panelResultado.innerHTML = '';
   panelResultado.style.display = 'none';
+  barraSiguiente.style.display = 'none';
+  
+  visorContainer.style.display = 'block';
   
   try{
     streamVideo = await navigator.mediaDevices.getUserMedia({
@@ -495,8 +538,7 @@ async function buscarVendedor(codigoQR){
     }
     html += `</div>`;
     
-    panelResultado.innerHTML = html;
-    panelResultado.style.display = 'block';
+    mostrarPanel(html);
     
     if(!yaAutorizado){
       document.getElementById('btnAutorizarVendedor').addEventListener('click', async () => {
@@ -511,7 +553,6 @@ async function buscarVendedor(codigoQR){
             p_estado: 'autorizado'
           });
           if(ok){
-            alert('✅ Entrada autorizada para ' + vendedor.nombre + ' ' + vendedor.apellido);
             buscarVendedor(codigoQR);
           }else{
             alert('No se pudo autorizar.');
@@ -547,14 +588,12 @@ async function buscarCortesiaLista(codigo){
     }
     
     if(d.anulada){
-      panelResultado.innerHTML = `<div class="resultado bloqueado"><div class="aviso aviso-rojo">⛔ CORTESÍA ANULADA<br>Este pase fue anulado por el administrador. No autorices el ingreso y notifica al administrador.</div></div>`;
-      panelResultado.style.display = 'block';
+      mostrarPanel(`<div class="resultado bloqueado"><div class="aviso aviso-rojo">⛔ CORTESÍA ANULADA<br>Este pase fue anulado por el administrador. No autorices el ingreso y notifica al administrador.</div></div>`);
       return;
     }
     
     if(d.dia !== diaSeleccionado){
-      panelResultado.innerHTML = `<div class="resultado bloqueado"><div class="aviso aviso-rojo">⚠️ Este QR de cortesía es del Día ${d.dia}, pero estás controlando el Día ${diaSeleccionado}. No autorices con este QR en este día.</div></div>`;
-      panelResultado.style.display = 'block';
+      mostrarPanel(`<div class="resultado bloqueado"><div class="aviso aviso-rojo">⚠️ Este QR de cortesía es del Día ${d.dia}, pero estás controlando el Día ${diaSeleccionado}. No autorices con este QR en este día.</div></div>`);
       return;
     }
     
@@ -586,8 +625,7 @@ async function buscarCortesiaLista(codigo){
     
     html += `</div></div>`;
     
-    panelResultado.innerHTML = html;
-    panelResultado.style.display = 'block';
+    mostrarPanel(html);
     
     panelResultado.querySelectorAll('button[data-cpersona]').forEach(btn => {
       btn.addEventListener('click', async () => {
@@ -603,7 +641,6 @@ async function buscarCortesiaLista(codigo){
             p_estado: 'autorizado'
           });
           if(ok){
-            alert('✅ Entrada autorizada para ' + nombre);
             buscarCortesiaLista(codigo);
           }else{
             alert('No se pudo autorizar esta cortesía.');
@@ -639,8 +676,7 @@ async function buscarCortesiaIndividual(codigo){
     }
     
     if(d.anulada){
-      panelResultado.innerHTML = `<div class="resultado bloqueado"><div class="aviso aviso-rojo">⛔ CORTESÍA ANULADA<br>Este pase fue anulado por el administrador. No autorices el ingreso y notifica al administrador.</div></div>`;
-      panelResultado.style.display = 'block';
+      mostrarPanel(`<div class="resultado bloqueado"><div class="aviso aviso-rojo">⛔ CORTESÍA ANULADA<br>Este pase fue anulado por el administrador. No autorices el ingreso y notifica al administrador.</div></div>`);
       return;
     }
     
@@ -665,8 +701,7 @@ async function buscarCortesiaIndividual(codigo){
     }
     html += `</div>`;
     
-    panelResultado.innerHTML = html;
-    panelResultado.style.display = 'block';
+    mostrarPanel(html);
     
     const b = document.getElementById('btnAutCortesia');
     if(b){
@@ -681,7 +716,6 @@ async function buscarCortesiaIndividual(codigo){
             p_estado: 'autorizado'
           });
           if(ok){
-            alert('✅ Entrada autorizada para ' + d.nombre + ' ' + d.apellido);
             buscarCortesiaIndividual(codigo);
           }else{
             alert('No se pudo autorizar esta cortesía.');
@@ -761,8 +795,7 @@ async function buscarListaPorNombre(nombre){
     
     html += `</div></div>`;
     
-    panelResultado.innerHTML = html;
-    panelResultado.style.display = 'block';
+    mostrarPanel(html);
     
     panelResultado.querySelectorAll('button[data-lista-id]').forEach(btn => {
       btn.addEventListener('click', async () => {
@@ -883,8 +916,7 @@ async function mostrarListaCompleta(lista){
     
     html += `</div></div>`;
     
-    panelResultado.innerHTML = html;
-    panelResultado.style.display = 'block';
+    mostrarPanel(html);
     
     panelResultado.querySelectorAll('button[data-persona]').forEach(btn => {
       btn.addEventListener('click', async () => {
@@ -899,7 +931,6 @@ async function mostrarListaCompleta(lista){
             p_estado: 'autorizado'
           });
           if(ok){
-            alert('✅ Entrada autorizada para ' + nombre);
             buscarListaPorCodigo(listaActualCodigo);
           }else{
             alert('No se pudo autorizar.');
@@ -929,7 +960,6 @@ async function mostrarListaCompleta(lista){
             p_cerrada: true
           });
           if(ok){
-            alert('🔒 Lista cerrada.');
             buscarListaPorCodigo(listaActualCodigo);
           }else{
             alert('No se pudo cerrar la lista.');
@@ -959,7 +989,6 @@ async function mostrarListaCompleta(lista){
             p_cerrada: false
           });
           if(ok){
-            alert('🔓 Lista reabierta.');
             buscarListaPorCodigo(listaActualCodigo);
           }else{
             alert('No se pudo reabrir la lista.');
@@ -977,19 +1006,6 @@ async function mostrarListaCompleta(lista){
   }catch(e){
     mostrarError('Error al cargar la lista: ' + (e.message || e));
   }
-}
-
-// ============================================
-// UTILIDADES UI
-// ============================================
-function mostrarCargando(msg){
-  panelResultado.innerHTML = `<div class="aviso">${msg}</div>`;
-  panelResultado.style.display = 'block';
-}
-
-function mostrarError(msg){
-  panelResultado.innerHTML = `<div class="aviso aviso-rojo">${msg}</div>`;
-  panelResultado.style.display = 'block';
 }
 
 // ============================================
