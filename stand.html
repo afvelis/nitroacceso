@@ -12,12 +12,12 @@
 }
 body { background: var(--fondo); color: var(--texto); font-family: system-ui, -apple-system, sans-serif; font-size: 17px; margin: 0; padding: 0; }
 .franja { height: 6px; background: linear-gradient(90deg, var(--acento), var(--acento2)); }
-.container { max-width: 600px; margin: 0 auto; padding: 20px; padding-bottom: 100px; }
+.container { max-width: 640px; margin: 0 auto; padding: 20px; padding-bottom: 100px; }
 .logo-box { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; }
 .logo { font-size: 32px; background: linear-gradient(135deg, var(--acento), var(--acento2)); padding: 10px; border-radius: 12px; line-height: 1; }
 h1 { font-size: 20px; margin: 0; color: var(--texto); }
 h2 { margin-top: 0; color: var(--acento); font-size: 20px; }
-h3 { color: var(--acento2); font-size: 18px; margin: 18px 0 6px; }
+h3 { color: var(--acento2); font-size: 18px; margin: 20px 0 6px; }
 .tarjeta { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 18px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
 .tarjeta.aviso { background: #2d2412; border-color: var(--aviso); color: var(--aviso); }
 label { display: block; margin-top: 12px; margin-bottom: 6px; color: var(--suave); font-size: 17px; }
@@ -27,13 +27,14 @@ input { width: 100%; box-sizing: border-box; padding: 12px; font-size: 17px; bac
 .btn-gris { background: #2a3648; color: var(--texto); }
 .btn-rojo { background: linear-gradient(135deg, #e05252, #c73e3e); color: white; }
 .btn:disabled { opacity: .45; cursor: not-allowed; }
+.fila-botones { display: flex; gap: 10px; flex-wrap: wrap; }
+.fila-botones .btn { flex: 1; min-width: 150px; }
+.btn-mini { display: inline-block; width: auto; padding: 8px 12px; margin: 0 6px 0 0; font-size: 17px; border-radius: 10px; }
 .error { color: #ff7b7b; margin-top: 10px; font-weight: 600; min-height: 20px; }
 table { width: 100%; border-collapse: collapse; font-size: 17px; margin-top: 10px; }
-th, td { padding: 8px; border-bottom: 1px solid var(--borde); text-align: left; }
+th, td { padding: 8px; border-bottom: 1px solid var(--borde); text-align: left; vertical-align: middle; }
 th { color: var(--suave); font-weight: 600; }
-.fila-persona { border: 1px solid var(--borde); border-radius: 12px; padding: 12px 14px; margin-top: 12px; background: #0e1728; }
-.fila-persona label { margin-top: 8px; }
-.fila-persona .btn { margin-top: 10px; }
+.celd-acciones { white-space: nowrap; }
 .barra-fija { position: fixed; bottom: 0; left: 0; right: 0; background: var(--tarjeta); border-top: 2px solid var(--borde); padding: 15px 20px; box-shadow: 0 -4px 12px rgba(0,0,0,0.3); z-index: 100; }
 .barra-fija .btn { margin: 0; }
 .brazalete { padding: 26px 22px; text-align: center; }
@@ -75,13 +76,27 @@ th { color: var(--suave); font-weight: 600; }
 
   <div id="formLote" class="tarjeta" style="display:none;">
     <h2>Datos del negocio</h2>
-    <p style="color:var(--suave);margin:0 0 4px;">Se escriben una sola vez y aplican a todas las personas del cuadro.</p>
+    <p style="color:var(--suave);margin:0 0 4px;">Se escriben una sola vez y aplican a todas las personas de la lista.</p>
     <label>Empresa *</label><input type="text" id="inEmpresa" />
     <label>Qué vende *</label><input type="text" id="inVende" />
-    <h3>Personas autorizadas</h3>
-    <div id="filasPersonas"></div>
-    <button class="btn btn-azul" id="btnAgregar">Agregar persona</button>
-    <p id="msgCupo" style="color:var(--suave);"></p>
+
+    <h3>Agregar persona autorizada</h3>
+    <label>Nombre *</label><input type="text" id="inNombre" placeholder="Ej.: Maria" />
+    <label>Apellido *</label><input type="text" id="inApellido" placeholder="Ej.: Perez" />
+    <label>Cédula *</label><input type="text" id="inCedula" placeholder="Ej.: V-12345678" />
+    <div class="fila-botones">
+      <button class="btn btn-azul" id="btnAgregar">Agregar a la lista</button>
+      <button class="btn btn-gris" id="btnCancelarEdit" style="display:none;">Cancelar modificacion</button>
+    </div>
+    <div id="msgPersona" class="error"></div>
+
+    <h3>Lista de personas autorizadas</h3>
+    <p id="msgCupo" style="color:var(--suave);margin:0;"></p>
+    <table>
+      <thead><tr><th>Nombre</th><th>Apellido</th><th>Cédula</th><th>Acciones</th></tr></thead>
+      <tbody id="cuerpoTabla"></tbody>
+    </table>
+
     <button class="btn" id="btnRegistrar">Registrar y generar los QR</button>
     <p style="color:var(--suave);">Si registras menos personas que los lugares disponibles, solo se generan esos QR. Puedes volver con este mismo link para agregar los faltantes mientras el administrador no cierre la edición. Una vez cerrada, no se puede agregar ni quitar: quien quedó con QR entra, y quien no esté registrado paga entrada.</p>
     <div id="msgError" class="error"></div>
@@ -123,6 +138,8 @@ const params = new URLSearchParams(window.location.search);
 const codigoLink = params.get('s');
 let datosStand = null;
 let loteActual = null;
+let listaPersonas = [];
+let editIndex = -1;
 
 function urlWA(texto) { return 'https://wa.me/?text=' + encodeURIComponent(texto); }
 function urlMail(asunto, texto) { return 'mailto:?subject=' + encodeURIComponent(asunto) + '&body=' + encodeURIComponent(texto); }
@@ -194,10 +211,7 @@ function renderStand(conResultados) {
     if (!document.getElementById('inEmpresa').value) {
       document.getElementById('inEmpresa').value = datosStand.nombre || '';
     }
-    if (document.getElementById('filasPersonas').children.length === 0) {
-      agregarFila();
-    }
-    actualizarCupo();
+    renderTabla();
   }
 
   if (datosStand.vendedores.length > 0) {
@@ -222,30 +236,101 @@ function renderStand(conResultados) {
   document.getElementById('barraFija').style.display = (hayForm && vio) ? 'block' : 'none';
 }
 
-function agregarFila() {
-  const div = document.createElement('div');
-  div.className = 'fila-persona';
-  div.innerHTML =
-    '<label>Nombre *<input class="fp-nombre" placeholder="Ej.: Maria"></label>' +
-    '<label>Apellido *<input class="fp-apellido" placeholder="Ej.: Perez"></label>' +
-    '<label>Cédula *<input class="fp-cedula" placeholder="Ej.: V-12345678"></label>';
-  const b = document.createElement('button');
-  b.className = 'btn btn-rojo';
-  b.textContent = 'Quitar';
-  b.onclick = function(){ div.remove(); actualizarCupo(); };
-  div.appendChild(b);
-  document.getElementById('filasPersonas').appendChild(div);
+function leerInputs() {
+  return {
+    nombre: document.getElementById('inNombre').value.trim(),
+    apellido: document.getElementById('inApellido').value.trim(),
+    cedula: document.getElementById('inCedula').value.trim()
+  };
+}
+function limpiarInputs() {
+  document.getElementById('inNombre').value = '';
+  document.getElementById('inApellido').value = '';
+  document.getElementById('inCedula').value = '';
+}
+function salirDeEdicion() {
+  editIndex = -1;
+  document.getElementById('btnAgregar').textContent = 'Agregar a la lista';
+  document.getElementById('btnCancelarEdit').style.display = 'none';
+}
+function iniciarEdicion(i) {
+  editIndex = i;
+  const p = listaPersonas[i];
+  document.getElementById('inNombre').value = p.nombre;
+  document.getElementById('inApellido').value = p.apellido;
+  document.getElementById('inCedula').value = p.cedula;
+  document.getElementById('btnAgregar').textContent = 'Guardar modificacion';
+  document.getElementById('btnCancelarEdit').style.display = 'block';
+  document.getElementById('msgPersona').textContent = '';
+  document.getElementById('formLote').scrollIntoView({ behavior: 'smooth' });
+}
+function quitarPersona(i) {
+  listaPersonas.splice(i, 1);
+  if (editIndex === i) { salirDeEdicion(); limpiarInputs(); }
+  else if (editIndex > i) { editIndex--; }
+  renderTabla();
+}
+
+function renderTabla() {
+  const tbody = document.getElementById('cuerpoTabla');
+  tbody.innerHTML = '';
+  if (!listaPersonas.length) {
+    tbody.innerHTML = '<tr><td colspan="4" style="color:var(--suave);">Todavía no hay personas en la lista.</td></tr>';
+  } else {
+    listaPersonas.forEach(function(p, i){
+      const tr = document.createElement('tr');
+      tr.innerHTML = '<td></td><td></td><td></td><td class="celd-acciones"></td>';
+      tr.children[0].textContent = p.nombre;
+      tr.children[1].textContent = p.apellido;
+      tr.children[2].textContent = p.cedula;
+      const td = tr.children[3];
+      const bM = document.createElement('button');
+      bM.className = 'btn btn-gris btn-mini';
+      bM.textContent = 'Modificar';
+      bM.onclick = function(){ iniciarEdicion(i); };
+      const bQ = document.createElement('button');
+      bQ.className = 'btn btn-rojo btn-mini';
+      bQ.textContent = 'Quitar';
+      bQ.onclick = function(){ quitarPersona(i); };
+      td.appendChild(bM);
+      td.appendChild(bQ);
+      tbody.appendChild(tr);
+    });
+  }
   actualizarCupo();
 }
 
 function actualizarCupo() {
-  const filas = document.getElementById('filasPersonas').children.length;
   const quedan = lugaresRestantes();
-  document.getElementById('msgCupo').textContent = 'Lugares restantes en el stand: ' + quedan + '. Personas en el cuadro: ' + filas + '.';
-  document.getElementById('btnAgregar').disabled = filas >= quedan;
+  const n = listaPersonas.length;
+  document.getElementById('msgCupo').textContent = 'Lugares restantes del stand: ' + quedan + '. Personas en la lista: ' + n + '.';
+  document.getElementById('btnAgregar').disabled = (editIndex === -1 && n >= quedan);
+  document.getElementById('btnRegistrar').disabled = (n === 0);
 }
 
-document.getElementById('btnAgregar').onclick = function(){ agregarFila(); };
+document.getElementById('btnAgregar').onclick = function(){
+  const msg = document.getElementById('msgPersona');
+  msg.textContent = '';
+  const p = leerInputs();
+  if (!p.nombre || !p.apellido || !p.cedula) { msg.textContent = 'Completa nombre, apellido y cédula.'; return; }
+  if (editIndex === -1) {
+    if (listaPersonas.length >= lugaresRestantes()) { msg.textContent = 'No hay lugares restantes en el stand para agregar más personas.'; return; }
+    if (listaPersonas.some(function(x){ return x.cedula === p.cedula; })) { msg.textContent = 'Esa cédula ya está en la lista de abajo.'; return; }
+    listaPersonas.push(p);
+  } else {
+    if (listaPersonas.some(function(x, i){ return i !== editIndex && x.cedula === p.cedula; })) { msg.textContent = 'Esa cédula ya está en la lista de abajo.'; return; }
+    listaPersonas[editIndex] = p;
+    salirDeEdicion();
+  }
+  limpiarInputs();
+  renderTabla();
+};
+
+document.getElementById('btnCancelarEdit').onclick = function(){
+  salirDeEdicion();
+  limpiarInputs();
+  document.getElementById('msgPersona').textContent = '';
+};
 
 document.getElementById('btnRegistrar').onclick = async function(){
   const empresa = document.getElementById('inEmpresa').value.trim();
@@ -254,24 +339,12 @@ document.getElementById('btnRegistrar').onclick = async function(){
   errDiv.textContent = '';
 
   if (!empresa || !vende) {
-    errDiv.textContent = 'Escribe la empresa y qué vende: aplican a todo el cuadro.'; return;
+    errDiv.textContent = 'Escribe la empresa y qué vende: aplican a toda la lista.'; return;
   }
-  const cajas = document.querySelectorAll('#filasPersonas .fila-persona');
-  if (!cajas.length) {
-    errDiv.textContent = 'Agrega al menos una persona al cuadro.'; return;
+  if (!listaPersonas.length) {
+    errDiv.textContent = 'Agrega al menos una persona a la lista.'; return;
   }
-  const personas = [];
-  for (const c of cajas) {
-    const p = {
-      nombre: c.querySelector('.fp-nombre').value.trim(),
-      apellido: c.querySelector('.fp-apellido').value.trim(),
-      cedula: c.querySelector('.fp-cedula').value.trim()
-    };
-    if (!p.nombre || !p.apellido || !p.cedula) {
-      errDiv.textContent = 'Hay una persona con campos vacíos en el cuadro. Completa nombre, apellido y cédula.'; return;
-    }
-    personas.push(p);
-  }
+  const personas = listaPersonas.slice();
 
   const quedan = lugaresRestantes();
   if (personas.length < quedan) {
@@ -289,12 +362,15 @@ document.getElementById('btnRegistrar').onclick = async function(){
     if (!res.ok) {
       if (res.error === 'ERR_DATOS') errDiv.textContent = 'Faltan datos o el enlace es inválido.';
       else if (res.error === 'ERR_EDICION_CERRADA') errDiv.textContent = 'Las inscripciones acaban de cerrarse.';
-      else if (res.error === 'ERR_CUPO_LLENO') errDiv.textContent = 'El cupo no alcanza para todas las personas del cuadro.';
+      else if (res.error === 'ERR_CUPO_LLENO') errDiv.textContent = 'El cupo no alcanza para todas las personas de la lista.';
       else if (res.error === 'ERR_CEDULA_REPETIDA') errDiv.textContent = 'La cédula ' + res.cedula + ' ya está registrada en este stand.';
       else errDiv.textContent = 'Error inesperado al registrar.';
       return;
     }
     sessionStorage.setItem(claveVioQR(), '1');
+    listaPersonas = [];
+    salirDeEdicion();
+    limpiarInputs();
     try { datosStand = await llamar('f_link_stand_ver', { p_codigo_link: codigoLink }); } catch (e) {}
     loteActual = { personas: personasDelStand() };
     mostrarResultados();
@@ -382,7 +458,7 @@ function mostrarResultados() {
 
 document.getElementById('btnTermine').onclick = function(){
   const vio = sessionStorage.getItem(claveVioQR());
-  if (!vio && !loteActual) { alert('Primero registra el cuadro o recupera un QR con tu cédula.'); return; }
+  if (!vio && !loteActual) { alert('Primero registra la lista o recupera un QR con tu cédula.'); return; }
   if (!loteActual || !loteActual.personas.length) {
     loteActual = { personas: personasDelStand() };
   }
