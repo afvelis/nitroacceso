@@ -130,8 +130,8 @@ li{margin:4px 0;}
   </section>
 
   <section class="tarjeta" id="cardLinks" hidden>
-    <h2>Links creados en esta sesion</h2>
-    <p class="suave">Aqui quedan tus links mientras trabajas. Copialos o envialos por WhatsApp o correo con los botones de cada uno, o corregir sus datos con "Edicion del link".</p>
+    <h2>Tus links creados</h2>
+    <p class="suave">Aqui ves TODOS los links que has creado (los vigentes). Copialos o envialos por WhatsApp o correo con los botones de cada uno, o corrige sus datos con "Edicion del link".</p>
     <div id="listaLinks"></div>
     <p id="msgLinks" class="suave"></p>
   </section>
@@ -176,24 +176,14 @@ async function copiarTexto(txt){
 }
 
 var coord = null;
+var misLinks = [];
+var linksRenovados = {}; // guarda los codigos viejos que ya fueron renovados en esta sesion
 
 function leerCoordGuardado(){
   try { return JSON.parse(sessionStorage.getItem('na_coord') || 'null'); } catch (e) { return null; }
 }
-function leerLinks(){
-  try { return JSON.parse(sessionStorage.getItem('na_coord_links_' + coord.codigo) || '[]'); } catch (e) { return []; }
-}
-function guardarLinksEnSesion(arr){
-  sessionStorage.setItem('na_coord_links_' + coord.codigo, JSON.stringify(arr));
-}
-function guardarLink(item){
-  var arr = leerLinks();
-  arr.unshift(item);
-  guardarLinksEnSesion(arr);
-  renderLinks();
-}
 function linkCompleto(item){
-  return (item.tipo === 'talentos')
+  return (coord.tipo === 'talentos')
     ? BASE + 'talento.html?t=' + item.codigo
     : BASE + 'stand.html?s=' + item.codigo;
 }
@@ -234,6 +224,17 @@ function mostrarTrabajo(){
     $('formTalentos').hidden = true;
     $('formStands').hidden = true;
   }
+  cargarMisLinks();
+}
+
+async function cargarMisLinks(){
+  misLinks = [];
+  try {
+    var arr = await llamar('f_coord_mis_links', { p_codigo_coord: coord.codigo });
+    misLinks = Array.isArray(arr) ? arr : [];
+  } catch (e) {
+    misLinks = [];
+  }
   renderLinks();
 }
 
@@ -252,20 +253,20 @@ function msgError(r, esTalento){
 
 function renderLinks(){
   var cont = $('listaLinks');
-  var arr = leerLinks();
-  if (!arr.length) { $('cardLinks').hidden = true; cont.innerHTML = ''; return; }
+  if (!misLinks.length) { $('cardLinks').hidden = true; cont.innerHTML = ''; return; }
   $('cardLinks').hidden = false;
   cont.innerHTML = '';
-  arr.forEach(function(item, idx){
+  misLinks.forEach(function(item, idx){
     var link = linkCompleto(item);
     var textoWA = 'Hola, te comparto el link de registro de ' + item.titulo + ' para Nitrotoon: ' + link;
     var div = document.createElement('div');
     div.className = 'item';
+    var renovado = !!linksRenovados[item.codigo];
     div.innerHTML =
       '<div><strong>' + esc(item.titulo) + '</strong>' +
-      (item.renovado ? '<span class="badge-renov">Renovado</span>' : '') + '</div>' +
+      (renovado ? '<span class="badge-renov">Renovado</span>' : '') + '</div>' +
       '<div class="codigo">' + esc(link) + '</div>' +
-      (item.renovado ? '<p class="suave" style="margin:8px 0 0;">El link anterior de este registro quedo anulado: usa y reenvia solo este.</p>' : '') +
+      (renovado ? '<p class="suave" style="margin:8px 0 0;">El link anterior de este registro quedo anulado: usa y reenvia solo este.</p>' : '') +
       '<div class="fila"></div>' +
       '<div class="panel-edit" hidden></div>';
     var fila = div.querySelector('.fila');
@@ -320,7 +321,7 @@ async function abrirPanelEdit(panel, item, idx){
   panel.hidden = false;
   panel.innerHTML = '<p class="suave">Cargando datos del link...</p>';
   var datos = null;
-  if (item.tipo === 'stands') {
+  if (coord.tipo === 'stands') {
     try {
       datos = await llamar('f_link_stand_ver', { p_codigo_link: item.codigo });
     } catch (e) { datos = null; }
@@ -331,7 +332,7 @@ async function abrirPanelEdit(panel, item, idx){
   var msg = document.createElement('p');
   msg.className = 'suave';
 
-  if (item.tipo === 'stands') {
+  if (coord.tipo === 'stands') {
     var lN = document.createElement('label'); lN.textContent = 'Nombre del stand o negocio';
     var iN = document.createElement('input'); iN.value = datos.nombre || '';
     var lNu = document.createElement('label'); lNu.textContent = 'Numero del stand';
@@ -372,7 +373,7 @@ async function abrirPanelEdit(panel, item, idx){
   bGuardar.textContent = 'Guardar cambios';
   bGuardar.onclick = async function(){
     var r;
-    if (item.tipo === 'stands') {
+    if (coord.tipo === 'stands') {
       try {
         r = await llamar('f_coord_editar_stand', {
           p_codigo_coord: coord.codigo,
@@ -384,14 +385,9 @@ async function abrirPanelEdit(panel, item, idx){
         });
       } catch (e) { msg.textContent = 'No se pudo conectar: ' + e.message; msg.style.color = 'var(--aviso)'; return; }
       if (r && r.indexOf('STD-') === 0) {
-        var arrS = leerLinks();
-        item.codigo = r;
-        item.titulo = 'Stand ' + iNu.value.trim() + ' — ' + iN.value.trim();
-        item.renovado = true;
-        arrS[idx] = item;
-        guardarLinksEnSesion(arrS);
+        linksRenovados[r] = true;
         avisoMsg('msgLinks', 'Guardado. Usted modifico este link con parametros nuevos: se genero un link nuevo y el anterior quedo anulado. Reenvie el link nuevo al contacto del stand.', false);
-        renderLinks();
+        await cargarMisLinks();
         return;
       }
       msg.textContent = msgError(r, false);
@@ -406,23 +402,14 @@ async function abrirPanelEdit(panel, item, idx){
       });
     } catch (e) { msg.textContent = 'No se pudo conectar: ' + e.message; msg.style.color = 'var(--aviso)'; return; }
     if (r === 'ok') {
-      var arrT = leerLinks();
-      item.titulo = iNT.value.trim();
-      arrT[idx] = item;
-      guardarLinksEnSesion(arrT);
       avisoMsg('msgLinks', 'Cambios guardados correctamente.', true);
-      renderLinks();
+      await cargarMisLinks();
       return;
     }
     if (r && r.indexOf('TAL-') === 0) {
-      var arrT2 = leerLinks();
-      item.codigo = r;
-      item.titulo = iNT.value.trim();
-      item.renovado = true;
-      arrT2[idx] = item;
-      guardarLinksEnSesion(arrT2);
+      linksRenovados[r] = true;
       avisoMsg('msgLinks', 'Guardado. Usted modifico este link: se genero un link nuevo y el anterior quedo anulado. Reenvie el link nuevo al representante.', false);
-      renderLinks();
+      await cargarMisLinks();
       return;
     }
     msg.textContent = msgError(r, true);
@@ -456,7 +443,7 @@ async function crearTalento(){
       $('tDia1').checked = false;
       $('tDia2').checked = false;
       $('tCorreo').value = '';
-      guardarLink({ tipo: 'talentos', codigo: r, titulo: nombre });
+      await cargarMisLinks();
       return;
     }
     avisoMsg('msgTalento', msgError(r, true), false);
@@ -484,7 +471,7 @@ async function crearStand(){
       $('sNombre').value = '';
       $('sNumero').value = '';
       $('sCorreo').value = '';
-      guardarLink({ tipo: 'stands', codigo: r, titulo: 'Stand ' + numero + ' — ' + nombre });
+      await cargarMisLinks();
       return;
     }
     avisoMsg('msgStand', msgError(r, false), false);
@@ -496,6 +483,7 @@ async function crearStand(){
 function salir(){
   sessionStorage.removeItem('na_coord');
   coord = null;
+  misLinks = [];
   $('cardTrabajo').hidden = true;
   $('cardLinks').hidden = true;
   $('cardEntrada').hidden = false;
