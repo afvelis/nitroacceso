@@ -103,8 +103,9 @@ th { color: var(--suave); font-weight: 600; }
   </div>
 
   <div id="listaReg" class="tarjeta" style="display:none;">
-    <h2>Personas ya registradas</h2>
+    <h2 id="tituloReg"></h2>
     <div id="tablaReg"></div>
+    <p id="msgReg" class="suave" style="min-height:20px;"></p>
   </div>
 
   <div id="recuperarQR" class="tarjeta" style="display:none;">
@@ -155,6 +156,11 @@ function personasDelStand() {
   });
 }
 function claveVioQR() { return 'na_stand_vio_qr_' + codigoLink; }
+function tituloRegistrados() {
+  return (datosStand.tipo === 'patrocinante')
+    ? 'Patrocinantes con QR asignado'
+    : 'Comerciantes con QR asignado';
+}
 
 async function cargar() {
   if (!codigoLink) {
@@ -215,13 +221,23 @@ function renderStand(conResultados) {
   }
 
   if (datosStand.vendedores.length > 0) {
-    let html = '<table><thead><tr><th>Nombre</th><th>Cédula</th></tr></thead><tbody>';
-    datosStand.vendedores.forEach(v => {
-      html += '<tr><td>' + v.nombre + ' ' + v.apellido + '</td><td>' + v.cedula + '</td></tr>';
+    document.getElementById('tituloReg').textContent = tituloRegistrados();
+    const conAcciones = datosStand.edicion_abierta;
+    let html = '<table><thead><tr><th>Nombre</th><th>Cédula</th>' + (conAcciones ? '<th>Acciones</th>' : '') + '</tr></thead><tbody>';
+    datosStand.vendedores.forEach(function(v, i){
+      html += '<tr><td>' + v.nombre + ' ' + v.apellido + '</td><td>' + v.cedula + '</td>' + (conAcciones ? '<td class="celd-acciones"><button class="btn btn-rojo btn-mini" data-ced="' + i + '">Quitar y anular QR</button></td>' : '') + '</tr>';
     });
     html += '</tbody></table>';
     document.getElementById('tablaReg').innerHTML = html;
     document.getElementById('listaReg').style.display = 'block';
+    if (conAcciones) {
+      document.querySelectorAll('#tablaReg button[data-ced]').forEach(function(b){
+        b.onclick = function(){
+          const v = datosStand.vendedores[parseInt(b.getAttribute('data-ced'), 10)];
+          quitarVendedor(v);
+        };
+      });
+    }
   } else {
     document.getElementById('listaReg').style.display = 'none';
   }
@@ -234,6 +250,30 @@ function renderStand(conResultados) {
   }
   document.getElementById('pantallaQR').style.display = 'none';
   document.getElementById('barraFija').style.display = (hayForm && vio) ? 'block' : 'none';
+}
+
+async function quitarVendedor(v) {
+  const msg = document.getElementById('msgReg');
+  msg.style.color = 'var(--suave)';
+  msg.textContent = '';
+  const seguro = confirm('Quitar a ' + v.nombre + ' ' + v.apellido + ' del stand? Su QR quedara anulado de inmediato y su lugar quedara libre para otra persona. Esta accion no se puede deshacer.');
+  if (!seguro) return;
+  try {
+    const r = await llamar('f_link_stand_quitar_vendedor', { p_codigo_link: codigoLink, p_cedula: v.cedula });
+    if (r === 'ok') {
+      msg.style.color = 'var(--acento)';
+      msg.textContent = 'Se quitó a ' + v.nombre + ' ' + v.apellido + ' y su QR quedó anulado. El lugar quedó libre.';
+      loteActual = null;
+      try { datosStand = await llamar('f_link_stand_ver', { p_codigo_link: codigoLink }); } catch (e) {}
+      renderStand(false);
+      return;
+    }
+    if (r === 'ERR_EDICION_CERRADA') msg.textContent = 'La edición está cerrada: ya no se puede quitar personas.';
+    else if (r === 'ERR_NO_EXISTE') msg.textContent = 'Esa persona ya no aparece registrada. Recarga la página.';
+    else msg.textContent = 'No se pudo quitar. Intenta de nuevo.';
+  } catch (e) {
+    msg.textContent = 'Error de conexión: ' + e.message;
+  }
 }
 
 function leerInputs() {
