@@ -17,6 +17,7 @@ body { background: var(--fondo); color: var(--texto); font-family: system-ui, -a
 .logo { font-size: 32px; background: linear-gradient(135deg, var(--acento), var(--acento2)); padding: 10px; border-radius: 12px; line-height: 1; }
 h1 { font-size: 20px; margin: 0; color: var(--texto); }
 h2 { margin-top: 0; color: var(--acento); font-size: 20px; }
+h3 { color: var(--acento2); font-size: 18px; margin: 18px 0 6px; }
 .tarjeta { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 18px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
 .tarjeta.aviso { background: #2d2412; border-color: var(--aviso); color: var(--aviso); }
 label { display: block; margin-top: 12px; margin-bottom: 6px; color: var(--suave); font-size: 17px; }
@@ -25,10 +26,14 @@ input { width: 100%; box-sizing: border-box; padding: 12px; font-size: 17px; bac
 .btn-azul { background: linear-gradient(135deg, var(--acento2), #147acc); color: white; }
 .btn-gris { background: #2a3648; color: var(--texto); }
 .btn-rojo { background: linear-gradient(135deg, #e05252, #c73e3e); color: white; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
 .error { color: #ff7b7b; margin-top: 10px; font-weight: 600; min-height: 20px; }
 table { width: 100%; border-collapse: collapse; font-size: 17px; margin-top: 10px; }
 th, td { padding: 8px; border-bottom: 1px solid var(--borde); text-align: left; }
 th { color: var(--suave); font-weight: 600; }
+.fila-persona { border: 1px solid var(--borde); border-radius: 12px; padding: 12px 14px; margin-top: 12px; background: #0e1728; }
+.fila-persona label { margin-top: 8px; }
+.fila-persona .btn { margin-top: 10px; }
 .barra-fija { position: fixed; bottom: 0; left: 0; right: 0; background: var(--tarjeta); border-top: 2px solid var(--borde); padding: 15px 20px; box-shadow: 0 -4px 12px rgba(0,0,0,0.3); z-index: 100; }
 .barra-fija .btn { margin: 0; }
 .brazalete { padding: 26px 22px; text-align: center; }
@@ -68,19 +73,21 @@ th { color: var(--suave); font-weight: 600; }
 
   <div id="avisoCerrado" class="tarjeta aviso" style="display:none;"></div>
 
-  <div id="formRegistro" class="tarjeta" style="display:none;">
-    <h2>Registro de vendedor</h2>
-    <label>Nombre *</label><input type="text" id="inNombre" />
-    <label>Apellido *</label><input type="text" id="inApellido" />
-    <label>Cédula *</label><input type="text" id="inCedula" />
-    <label>Qué vende *</label><input type="text" id="inVende" />
+  <div id="formLote" class="tarjeta" style="display:none;">
+    <h2>Datos del negocio</h2>
+    <p class="suave" style="color:var(--suave);margin:0 0 4px;">Se escriben una sola vez y aplican a todas las personas del cuadro.</p>
     <label>Empresa *</label><input type="text" id="inEmpresa" />
-    <button class="btn" id="btnRegistrar">Registrar y obtener mi QR</button>
+    <label>Qué vende *</label><input type="text" id="inVende" />
+    <h3>Personas autorizadas</h3>
+    <div id="filasPersonas"></div>
+    <button class="btn btn-azul" id="btnAgregar">Agregar persona</button>
+    <p id="msgCupo" style="color:var(--suave);"></p>
+    <button class="btn" id="btnRegistrar">Registrar y generar los QR</button>
     <div id="msgError" class="error"></div>
   </div>
 
   <div id="listaReg" class="tarjeta" style="display:none;">
-    <h2>Vendedores registrados</h2>
+    <h2>Personas ya registradas</h2>
     <div id="tablaReg"></div>
   </div>
 
@@ -93,25 +100,8 @@ th { color: var(--suave); font-weight: 600; }
   </div>
 
   <div id="pantallaQR" style="display:none;">
-    <div class="tarjeta brazalete">
-      <div class="braz-ceja">Nitrotoon · Control de acceso</div>
-      <div class="braz-titulo">Brazalete digital de vendedor</div>
-      <div class="braz-stand" id="qrStand"></div>
-      <div class="braz-pill">Válido Día 1 y Día 2</div>
-      <div id="contenedorQR" class="qr-box"></div>
-      <div class="braz-datos">
-        <div class="braz-dato"><span class="braz-label">Nombre</span><span class="braz-valor" id="qrNombre"></span></div>
-        <div class="braz-dato"><span class="braz-label">Cédula</span><span class="braz-valor" id="qrCedula"></span></div>
-        <div class="braz-dato"><span class="braz-label">Empresa</span><span class="braz-valor" id="qrEmpresa"></span></div>
-        <div class="braz-dato"><span class="braz-label">Qué vende</span><span class="braz-valor" id="qrVende"></span></div>
-      </div>
-      <div class="botones-qr">
-        <button class="btn btn-gris" id="btnCopiarQR">📋 Copiar QR</button>
-        <button class="btn" id="btnWA">💬 WhatsApp</button>
-        <button class="btn btn-azul" id="btnCorreo">✉️ Correo</button>
-      </div>
-    </div>
-    <p class="braz-ok">✅ Tarea cumplida: tu registro quedó guardado.</p>
+    <p class="braz-ok">✅ Registro completado: estos son los brazaletes del stand.</p>
+    <div id="listaQRs"></div>
     <div class="botones-finales">
       <button class="btn btn-gris" id="btnVolver">Volver al stand</button>
       <button class="btn btn-rojo" id="btnCerrar">Cerrar esta pestaña</button>
@@ -123,7 +113,7 @@ th { color: var(--suave); font-weight: 600; }
 </div>
 
 <div class="barra-fija" id="barraFija" style="display:none;">
-  <button class="btn" id="btnTermine">✅ Terminé: ver mi QR y salir</button>
+  <button class="btn" id="btnTermine">✅ Terminé: ver mis QR y salir</button>
 </div>
 
 <script src="config.js"></script>
@@ -131,12 +121,15 @@ th { color: var(--suave); font-weight: 600; }
 const params = new URLSearchParams(window.location.search);
 const codigoLink = params.get('s');
 let datosStand = null;
-let miVendedor = null;
+let loteActual = null;
 
 function urlWA(texto) { return 'https://wa.me/?text=' + encodeURIComponent(texto); }
 function urlMail(asunto, texto) { return 'mailto:?subject=' + encodeURIComponent(asunto) + '&body=' + encodeURIComponent(texto); }
 function nombreStand() {
   return 'Stand ' + datosStand.numero + (datosStand.nombre ? ' — ' + datosStand.nombre : '');
+}
+function lugaresRestantes() {
+  return Math.max(0, datosStand.cupo - datosStand.vendedores.length);
 }
 
 async function cargar() {
@@ -167,38 +160,43 @@ async function cargar() {
   }
 }
 
-function renderStand(conQRGuardado) {
+function renderStand(conLoteGuardado) {
   document.getElementById('stTitulo').textContent = nombreStand();
   document.getElementById('stTipo').textContent = datosStand.tipo;
   document.getElementById('stCupo').textContent = datosStand.cupo;
-  const reg = datosStand.vendedores.length;
-  document.getElementById('stReg').textContent = reg;
-  document.getElementById('stQuedan').textContent = Math.max(0, datosStand.cupo - reg);
+  document.getElementById('stReg').textContent = datosStand.vendedores.length;
+  document.getElementById('stQuedan').textContent = lugaresRestantes();
   document.getElementById('infoStand').style.display = 'block';
 
   let hayForm = false;
   if (!datosStand.edicion_abierta) {
     document.getElementById('avisoCerrado').textContent = 'Las inscripciones para este stand están cerradas.';
     document.getElementById('avisoCerrado').style.display = 'block';
-    document.getElementById('formRegistro').style.display = 'none';
+    document.getElementById('formLote').style.display = 'none';
     document.getElementById('recuperarQR').style.display = 'none';
+  } else if (lugaresRestantes() === 0) {
+    document.getElementById('avisoCerrado').textContent = 'El cupo de este stand está lleno.';
+    document.getElementById('avisoCerrado').style.display = 'block';
+    document.getElementById('formLote').style.display = 'none';
+    document.getElementById('recuperarQR').style.display = 'block';
   } else {
     document.getElementById('avisoCerrado').style.display = 'none';
-    if (datosStand.cupo > reg) {
-      document.getElementById('formRegistro').style.display = 'block';
-      hayForm = true;
-    } else {
-      document.getElementById('formRegistro').style.display = 'none';
-      document.getElementById('avisoCerrado').textContent = 'El cupo de este stand está lleno.';
-      document.getElementById('avisoCerrado').style.display = 'block';
-    }
+    document.getElementById('formLote').style.display = 'block';
     document.getElementById('recuperarQR').style.display = 'block';
+    hayForm = true;
+    if (!document.getElementById('inEmpresa').value) {
+      document.getElementById('inEmpresa').value = datosStand.nombre || '';
+    }
+    if (document.getElementById('filasPersonas').children.length === 0) {
+      agregarFila();
+    }
+    actualizarCupo();
   }
 
-  if (reg > 0) {
-    let html = '<table><thead><tr><th>Nombre</th><th>Cédula</th><th>Vende</th><th>Empresa</th></tr></thead><tbody>';
+  if (datosStand.vendedores.length > 0) {
+    let html = '<table><thead><tr><th>Nombre</th><th>Cédula</th></tr></thead><tbody>';
     datosStand.vendedores.forEach(v => {
-      html += '<tr><td>' + v.nombre + ' ' + v.apellido + '</td><td>' + v.cedula + '</td><td>' + v.vende + '</td><td>' + (v.empresa || '') + '</td></tr>';
+      html += '<tr><td>' + v.nombre + ' ' + v.apellido + '</td><td>' + v.cedula + '</td></tr>';
     });
     html += '</tbody></table>';
     document.getElementById('tablaReg').innerHTML = html;
@@ -207,127 +205,180 @@ function renderStand(conQRGuardado) {
     document.getElementById('listaReg').style.display = 'none';
   }
 
-  const guardado = sessionStorage.getItem('na_stand_vendedor_' + codigoLink);
-  if (conQRGuardado && guardado) {
-    miVendedor = JSON.parse(guardado);
-    mostrarPantallaQR();
+  const guardado = sessionStorage.getItem('na_stand_lote_' + codigoLink);
+  if (conLoteGuardado && guardado) {
+    loteActual = JSON.parse(guardado);
+    mostrarResultados();
     return;
   }
   document.getElementById('pantallaQR').style.display = 'none';
-  document.getElementById('barraFija').style.display = (hayForm || datosStand.edicion_abierta) ? 'block' : 'none';
+  document.getElementById('barraFija').style.display = (hayForm && guardado) ? 'block' : 'none';
 }
 
-document.getElementById('btnRegistrar').onclick = async () => {
-  const nombre = document.getElementById('inNombre').value.trim();
-  const apellido = document.getElementById('inApellido').value.trim();
-  const cedula = document.getElementById('inCedula').value.trim();
-  const vende = document.getElementById('inVende').value.trim();
+function agregarFila() {
+  const div = document.createElement('div');
+  div.className = 'fila-persona';
+  div.innerHTML =
+    '<label>Nombre *<input class="fp-nombre" placeholder="Ej.: Maria"></label>' +
+    '<label>Apellido *<input class="fp-apellido" placeholder="Ej.: Perez"></label>' +
+    '<label>Cédula *<input class="fp-cedula" placeholder="Ej.: V-12345678"></label>';
+  const b = document.createElement('button');
+  b.className = 'btn btn-rojo';
+  b.textContent = 'Quitar';
+  b.onclick = function(){ div.remove(); actualizarCupo(); };
+  div.appendChild(b);
+  document.getElementById('filasPersonas').appendChild(div);
+  actualizarCupo();
+}
+
+function actualizarCupo() {
+  const filas = document.getElementById('filasPersonas').children.length;
+  const quedan = lugaresRestantes();
+  const msg = document.getElementById('msgCupo');
+  msg.textContent = 'Lugares restantes en el stand: ' + quedan + '. Personas en el cuadro: ' + filas + '.';
+  document.getElementById('btnAgregar').disabled = filas >= quedan;
+}
+
+document.getElementById('btnAgregar').onclick = function(){ agregarFila(); };
+
+document.getElementById('btnRegistrar').onclick = async function(){
   const empresa = document.getElementById('inEmpresa').value.trim();
+  const vende = document.getElementById('inVende').value.trim();
   const errDiv = document.getElementById('msgError');
   errDiv.textContent = '';
 
-  if (!nombre || !apellido || !cedula || !vende || !empresa) {
-    errDiv.textContent = 'Por favor completa todos los campos obligatorios, incluida la empresa.'; return;
+  if (!empresa || !vende) {
+    errDiv.textContent = 'Escribe la empresa y qué vende: aplican a todo el cuadro.'; return;
+  }
+  const cajas = document.querySelectorAll('#filasPersonas .fila-persona');
+  if (!cajas.length) {
+    errDiv.textContent = 'Agrega al menos una persona al cuadro.'; return;
+  }
+  const personas = [];
+  for (const c of cajas) {
+    const p = {
+      nombre: c.querySelector('.fp-nombre').value.trim(),
+      apellido: c.querySelector('.fp-apellido').value.trim(),
+      cedula: c.querySelector('.fp-cedula').value.trim()
+    };
+    if (!p.nombre || !p.apellido || !p.cedula) {
+      errDiv.textContent = 'Hay una persona con campos vacíos en el cuadro. Completa nombre, apellido y cédula.'; return;
+    }
+    personas.push(p);
   }
 
   try {
-    const res = await llamar('f_link_stand_registrar', {
-      p_codigo_link: codigoLink, p_nombre: nombre, p_apellido: apellido,
-      p_cedula: cedula, p_vende: vende, p_empresa: empresa
+    const res = await llamar('f_link_stand_registrar_lote', {
+      p_codigo_link: codigoLink,
+      p_empresa: empresa,
+      p_vende: vende,
+      p_personas: personas
     });
-
-    if (res === 'ERR_DATOS') errDiv.textContent = 'Faltan datos o el enlace es inválido.';
-    else if (res === 'ERR_EDICION_CERRADA') errDiv.textContent = 'Las inscripciones acaban de cerrarse.';
-    else if (res === 'ERR_CUPO_LLENO') errDiv.textContent = 'El cupo se llenó mientras te registrabas.';
-    else if (res === 'ERR_CEDULA_REPETIDA') errDiv.textContent = 'Esta cédula ya está registrada en este stand.';
-    else if (res && res.startsWith('V-')) {
-      miVendedor = { nombre, apellido, cedula, vende, empresa, codigo_qr: res };
-      sessionStorage.setItem('na_stand_vendedor_' + codigoLink, JSON.stringify(miVendedor));
-      try { datosStand = await llamar('f_link_stand_ver', { p_codigo_link: codigoLink }); } catch (e) {}
-      mostrarPantallaQR();
-    } else {
-      errDiv.textContent = 'Error inesperado al registrar.';
+    if (!res.ok) {
+      if (res.error === 'ERR_DATOS') errDiv.textContent = 'Faltan datos o el enlace es inválido.';
+      else if (res.error === 'ERR_EDICION_CERRADA') errDiv.textContent = 'Las inscripciones acaban de cerrarse.';
+      else if (res.error === 'ERR_CUPO_LLENO') errDiv.textContent = 'El cupo no alcanza para todas las personas del cuadro.';
+      else if (res.error === 'ERR_CEDULA_REPETIDA') errDiv.textContent = 'La cédula ' + res.cedula + ' ya está registrada en este stand.';
+      else errDiv.textContent = 'Error inesperado al registrar.';
+      return;
     }
+    loteActual = { empresa: empresa, vende: vende, personas: res.vendedores };
+    sessionStorage.setItem('na_stand_lote_' + codigoLink, JSON.stringify(loteActual));
+    try { datosStand = await llamar('f_link_stand_ver', { p_codigo_link: codigoLink }); } catch (e) {}
+    mostrarResultados();
   } catch (e) { errDiv.textContent = 'Error de conexión: ' + e.message; }
 };
 
-document.getElementById('btnRecuperar').onclick = async () => {
+document.getElementById('btnRecuperar').onclick = async function(){
   const cedula = document.getElementById('inCedulaRec').value.trim();
   const errDiv = document.getElementById('msgRec');
   errDiv.textContent = '';
   if (!cedula) { errDiv.textContent = 'Escribe tu cédula.'; return; }
-
   try {
     const res = await llamar('f_link_stand_mi_qr', { p_codigo_link: codigoLink, p_cedula: cedula });
-    if (!res) { errDiv.textContent = 'No encontramos esa cédula en este stand.'; }
-    else {
-      miVendedor = res;
-      sessionStorage.setItem('na_stand_vendedor_' + codigoLink, JSON.stringify(miVendedor));
-      mostrarPantallaQR();
-    }
+    if (!res) { errDiv.textContent = 'No encontramos esa cédula en este stand.'; return; }
+    loteActual = { empresa: res.empresa || '', vende: res.vende || '', personas: [res] };
+    mostrarResultados();
   } catch (e) { errDiv.textContent = 'Error: ' + e.message; }
 };
 
-function mostrarPantallaQR() {
-  ['infoStand','avisoCerrado','formRegistro','listaReg','recuperarQR','barraFija'].forEach(id => {
+function mostrarResultados() {
+  ['infoStand','avisoCerrado','formLote','listaReg','recuperarQR','barraFija'].forEach(id => {
     document.getElementById(id).style.display = 'none';
   });
-  document.getElementById('pantallaQR').style.display = 'block';
-
-  document.getElementById('qrStand').textContent = nombreStand();
-  document.getElementById('qrNombre').textContent = miVendedor.nombre + ' ' + miVendedor.apellido;
-  document.getElementById('qrCedula').textContent = miVendedor.cedula;
-  document.getElementById('qrEmpresa').textContent = miVendedor.empresa || '—';
-  document.getElementById('qrVende').textContent = miVendedor.vende;
-
-  const urlP = urlPuerta('v', miVendedor.codigo_qr);
-  const cont = document.getElementById('contenedorQR');
+  const cont = document.getElementById('listaQRs');
   cont.innerHTML = '';
-  ponerQR(cont, urlP, miVendedor.codigo_qr);
+  loteActual.personas.forEach(function(per){
+    const card = document.createElement('div');
+    card.className = 'tarjeta brazalete';
+    card.innerHTML =
+      '<div class="braz-ceja">Nitrotoon · Control de acceso</div>' +
+      '<div class="braz-titulo"></div>' +
+      '<div class="braz-stand"></div>' +
+      '<div class="braz-pill">Válido Día 1 y Día 2</div>' +
+      '<div class="qr-box"></div>' +
+      '<div class="braz-datos">' +
+      '<div class="braz-dato"><span class="braz-label">Cédula</span><span class="braz-valor"></span></div>' +
+      '<div class="braz-dato"><span class="braz-label">Empresa</span><span class="braz-valor"></span></div>' +
+      '<div class="braz-dato"><span class="braz-label">Qué vende</span><span class="braz-valor"></span></div>' +
+      '</div>' +
+      '<div class="botones-qr">' +
+      '<button class="btn btn-gris">📋 Copiar QR</button>' +
+      '<button class="btn">💬 WhatsApp</button>' +
+      '<button class="btn btn-azul">✉️ Correo</button>' +
+      '</div>';
+    card.querySelector('.braz-titulo').textContent = per.nombre + ' ' + per.apellido;
+    card.querySelector('.braz-stand').textContent = nombreStand();
+    const vals = card.querySelectorAll('.braz-valor');
+    vals[0].textContent = per.cedula;
+    vals[1].textContent = per.empresa || loteActual.empresa || '—';
+    vals[2].textContent = per.vende || loteActual.vende || '—';
 
-  const textoRespaldo = 'Mi QR para Nitrotoon\n' + nombreStand() + '\nCodigo: ' + miVendedor.codigo_qr + '\nLink: ' + urlP;
+    const urlP = urlPuerta('v', per.codigo_qr);
+    const qrCont = card.querySelector('.qr-box');
+    ponerQR(qrCont, urlP, per.codigo_qr);
 
-  document.getElementById('btnCopiarQR').onclick = async () => {
-    const img = cont.querySelector('img');
-    if (img) {
-      try {
-        const data = await fetch(img.src);
-        const blob = await data.blob();
-        await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
-        alert('✅ Imagen del QR copiada al portapapeles.');
-      } catch (e) {
-        await navigator.clipboard.writeText(textoRespaldo);
-        alert('⚠️ No se pudo copiar la imagen. Copiamos el texto con tu código y link como respaldo.');
+    const textoRespaldo = 'QR de ' + per.nombre + ' ' + per.apellido + ' para Nitrotoon\n' + nombreStand() + '\nCodigo: ' + per.codigo_qr + '\nLink: ' + urlP;
+    const botones = card.querySelectorAll('.botones-qr .btn');
+    botones[0].onclick = async function(){
+      const img = qrCont.querySelector('img');
+      if (img) {
+        try {
+          const data = await fetch(img.src);
+          const blob = await data.blob();
+          await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+          alert('✅ Imagen del QR de ' + per.nombre + ' copiada.');
+          return;
+        } catch (e) {}
       }
-    } else {
       await navigator.clipboard.writeText(textoRespaldo);
-      alert('⚠️ Copiamos el texto con tu código y link como respaldo.');
-    }
-  };
-
-  document.getElementById('btnWA').onclick = () => {
-    window.open(urlWA('Mi QR para Nitrotoon (' + nombreStand() + ')\nCodigo: ' + miVendedor.codigo_qr + '\nLink: ' + urlP), '_blank');
-  };
-
-  document.getElementById('btnCorreo').onclick = () => {
-    window.location.href = urlMail('Mi QR para Nitrotoon', textoRespaldo);
-    navigator.clipboard.writeText(textoRespaldo).catch(()=>{});
-    setTimeout(() => alert('Si no abrió tu app de correo, el texto ya está copiado en tu portapapeles como respaldo.'), 500);
-  };
+      alert('⚠️ No se pudo copiar la imagen. Copiamos el texto con código y link como respaldo.');
+    };
+    botones[1].onclick = function(){
+      window.open(urlWA(textoRespaldo), '_blank');
+    };
+    botones[2].onclick = function(){
+      window.location.href = urlMail('Mi QR para Nitrotoon', textoRespaldo);
+      navigator.clipboard.writeText(textoRespaldo).catch(()=>{});
+      setTimeout(() => alert('Si no abrió tu app de correo, el texto ya está copiado en tu portapapeles como respaldo.'), 500);
+    };
+    cont.appendChild(card);
+  });
+  document.getElementById('pantallaQR').style.display = 'block';
 }
 
-document.getElementById('btnTermine').onclick = () => {
-  if (!miVendedor) { alert('Primero debes registrarte o recuperar tu QR.'); return; }
-  mostrarPantallaQR();
+document.getElementById('btnTermine').onclick = function(){
+  if (!loteActual) { alert('Primero registra el cuadro o recupera un QR con tu cédula.'); return; }
+  mostrarResultados();
 };
 
-document.getElementById('btnVolver').onclick = () => {
+document.getElementById('btnVolver').onclick = function(){
   renderStand(false);
 };
 
-document.getElementById('btnCerrar').onclick = () => {
+document.getElementById('btnCerrar').onclick = function(){
   let intentos = 0;
-  const intentarCerrar = () => {
+  const intentarCerrar = function(){
     window.open('about:blank', '_self');
     window.close();
     intentos++;
