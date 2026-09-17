@@ -35,8 +35,10 @@ input{width:100%;padding:12px 14px;border:1px solid var(--borde);border-radius:1
 input:focus{outline:2px solid var(--acento2);border-color:var(--acento2)}
 label{display:block;margin-bottom:6px;color:var(--suave);font-size:15px}
 .selector-dia{display:flex;gap:10px;margin-bottom:16px}
-.selector-dia button{flex:1;padding:16px;border:2px solid var(--borde);background:#0d1626;color:var(--suave);border-radius:10px;cursor:pointer;font-size:18px;font-weight:700;transition:all .2s}
+.selector-dia button{flex:1;padding:16px;border:2px solid var(--borde);background:#0d1626;color:var(--suave);border-radius:10px;cursor:pointer;font-size:18px;font-weight:700;transition:all .2s;position:relative}
 .selector-dia button.activo{background:linear-gradient(135deg,var(--acento),#26a866);border-color:var(--acento);color:white}
+.selector-dia button:disabled{opacity:.6;cursor:not-allowed}
+.selector-dia .candado{font-size:12px;display:block;margin-top:4px;color:var(--aviso)}
 #visorQR{width:100%;max-width:500px;aspect-ratio:4/3;background:#000;border-radius:12px;margin:14px auto;display:block;border:2px solid var(--acento)}
 .resultado{border-left:6px solid var(--acento);padding-left:14px;margin-top:14px}
 .resultado.bloqueado{border-left-color:var(--rojo)}
@@ -77,14 +79,29 @@ label{display:block;margin-bottom:6px;color:var(--suave);font-size:15px}
     <div style="margin-top:14px"><button class="btn" id="btnEntrar">Entrar</button></div>
   </div>
 
+  <!-- EVENTO ABIERTO -->
+  <div class="tarjeta" id="tarjetaEventoAbierto" style="display:none">
+    <h2>⚠️ Evento aún abierto</h2>
+    <div class="aviso aviso-rojo">
+      <strong>La base de datos no está congelada.</strong><br><br>
+      El evento todavía se encuentra en modo de edición. El módulo de puerta no puede usarse hasta que el administrador cierre la edición.<br><br>
+      Comuníquese con el administrador para que cierre el evento y habilite el control de acceso.
+    </div>
+    <button class="btn btn-gris" id="btnSalirEventoAbierto">🚪 Salir</button>
+  </div>
+
   <!-- PRINCIPAL -->
   <div class="tarjeta" id="tarjetaPrincipal" style="display:none">
     <h2>🎯 Control de acceso</h2>
     
-    <label>¿Qué día se está controlando hoy?</label>
+    <label>Día de control</label>
     <div class="selector-dia">
-      <button id="btnDia1">📅 DÍA 1</button>
-      <button id="btnDia2">📅 DÍA 2</button>
+      <button id="btnDia1">📅 DÍA 1<span class="candado" id="estadoDia1"></span></button>
+      <button id="btnDia2">📅 DÍA 2<span class="candado" id="estadoDia2"></span></button>
+    </div>
+
+    <div id="panelCerrarDia1" style="display:none;margin-bottom:16px">
+      <button class="btn btn-rojo btn-grande" id="btnCerrarDia1">🔒 Cerrar Día 1 y activar Día 2</button>
     </div>
 
     <div id="panelEscaneo" style="display:none">
@@ -116,9 +133,15 @@ label{display:block;margin-bottom:6px;color:var(--suave);font-size:15px}
 const elPin = document.getElementById('pin');
 const btnEntrar = document.getElementById('btnEntrar');
 const tarjetaLogin = document.getElementById('tarjetaLogin');
+const tarjetaEventoAbierto = document.getElementById('tarjetaEventoAbierto');
 const tarjetaPrincipal = document.getElementById('tarjetaPrincipal');
+const btnSalirEventoAbierto = document.getElementById('btnSalirEventoAbierto');
 const btnDia1 = document.getElementById('btnDia1');
 const btnDia2 = document.getElementById('btnDia2');
+const estadoDia1 = document.getElementById('estadoDia1');
+const estadoDia2 = document.getElementById('estadoDia2');
+const panelCerrarDia1 = document.getElementById('panelCerrarDia1');
+const btnCerrarDia1 = document.getElementById('btnCerrarDia1');
 const panelEscaneo = document.getElementById('panelEscaneo');
 const avisoDia = document.getElementById('avisoDia');
 const btnEscanear = document.getElementById('btnEscanear');
@@ -131,17 +154,47 @@ const panelResultado = document.getElementById('panelResultado');
 const btnSalir = document.getElementById('btnSalir');
 
 let diaSeleccionado = null;
+let diaActivo = 1;
 let tokenSesion = null;
 let streamVideo = null;
 let scanningInterval = null;
-let usandoJsQR = false;
 
 function mostrarPrincipal(){
   tarjetaLogin.style.display = 'none';
+  tarjetaEventoAbierto.style.display = 'none';
   tarjetaPrincipal.style.display = 'block';
 }
 
-function seleccionarDia(dia){
+function mostrarEventoAbierto(){
+  tarjetaLogin.style.display = 'none';
+  tarjetaPrincipal.style.display = 'none';
+  tarjetaEventoAbierto.style.display = 'block';
+}
+
+function actualizarSelectorDia(){
+  if(diaActivo === 1){
+    btnDia1.disabled = false;
+    btnDia2.disabled = true;
+    estadoDia1.textContent = '';
+    estadoDia2.textContent = '🔒 Disponible al cerrar Día 1';
+    panelCerrarDia1.style.display = 'block';
+  }else{
+    btnDia1.disabled = true;
+    btnDia2.disabled = false;
+    estadoDia1.textContent = '✅ Cerrado';
+    estadoDia2.textContent = '';
+    panelCerrarDia1.style.display = 'none';
+  }
+  
+  // Seleccionar automáticamente el día activo
+  seleccionarDia(diaActivo, false);
+}
+
+function seleccionarDia(dia, permitirCambio = true){
+  if(dia !== diaActivo){
+    alert('No puedes cambiar a un día que no está activo.');
+    return;
+  }
   diaSeleccionado = dia;
   if(dia === 1){
     btnDia1.classList.add('activo');
@@ -156,6 +209,53 @@ function seleccionarDia(dia){
 
 btnDia1.addEventListener('click', () => seleccionarDia(1));
 btnDia2.addEventListener('click', () => seleccionarDia(2));
+
+btnCerrarDia1.addEventListener('click', async () => {
+  if(!confirm('¿Cerrar definitivamente el Día 1 y activar el Día 2?\n\nEsta acción no se puede deshacer. Asegúrate de que todas las listas del Día 1 estén cerradas.')){
+    return;
+  }
+  btnCerrarDia1.disabled = true;
+  btnCerrarDia1.textContent = 'Cerrando Día 1...';
+  try{
+    const ok = await llamar('f_puerta_activar_dia2', { p_token: tokenSesion });
+    if(ok){
+      diaActivo = 2;
+      actualizarSelectorDia();
+      alert('✅ Día 1 cerrado. Día 2 activado.');
+    }else{
+      alert('No se pudo cerrar el Día 1. Verifica que todas las listas del Día 1 estén cerradas.');
+      btnCerrarDia1.disabled = false;
+      btnCerrarDia1.textContent = '🔒 Cerrar Día 1 y activar Día 2';
+    }
+  }catch(e){
+    alert('Error: ' + (e.message || e));
+    btnCerrarDia1.disabled = false;
+    btnCerrarDia1.textContent = '🔒 Cerrar Día 1 y activar Día 2';
+  }
+});
+
+async function verificarEstadoEvento(){
+  try{
+    const estado = await llamar('f_puerta_estado', { p_token: tokenSesion });
+    if(!estado){
+      alert('No se pudo verificar el estado del evento.');
+      borrarSesion();
+      location.reload();
+      return;
+    }
+    
+    if(estado.edicion_abierta){
+      mostrarEventoAbierto();
+      return;
+    }
+    
+    diaActivo = estado.dia_activo || 1;
+    mostrarPrincipal();
+    actualizarSelectorDia();
+  }catch(e){
+    alert('Error al verificar el evento: ' + (e.message || e));
+  }
+}
 
 btnEntrar.addEventListener('click', async () => {
   const pin = elPin.value.trim();
@@ -172,12 +272,17 @@ btnEntrar.addEventListener('click', async () => {
     }
     guardarSesion(r[0].token, r[0].rol);
     tokenSesion = r[0].token;
-    mostrarPrincipal();
+    await verificarEstadoEvento();
   }catch(e){
     alert('Error al entrar: ' + (e.message || e));
   }
   btnEntrar.disabled = false;
   btnEntrar.textContent = 'Entrar';
+});
+
+btnSalirEventoAbierto.addEventListener('click', () => {
+  borrarSesion();
+  location.reload();
 });
 
 btnSalir.addEventListener('click', () => {
@@ -246,7 +351,6 @@ async function iniciarScanner(){
       detenerScanner();
       return;
     }
-    usandoJsQR = true;
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     
@@ -276,11 +380,9 @@ function detenerScanner(){
     streamVideo = null;
   }
   visorContainer.style.display = 'none';
-  usandoJsQR = false;
 }
 
 function extraerCodigo(valor){
-  // Intentar parsear como URL
   try{
     const url = new URL(valor);
     const params = url.searchParams;
@@ -288,7 +390,6 @@ function extraerCodigo(valor){
     if(params.has('v')) return params.get('v');
   }catch(e){}
   
-  // Si no es URL, ver si es código directo
   const limpio = valor.trim().toUpperCase();
   if(limpio.startsWith('L-') || limpio.startsWith('V-')) return limpio;
   
@@ -377,7 +478,7 @@ async function buscarVendedor(codigoQR){
           });
           if(ok){
             alert('✅ Entrada autorizada para ' + vendedor.nombre + ' ' + vendedor.apellido);
-            buscarVendedor(codigoQR); // Refrescar para mostrar estado bloqueado
+            buscarVendedor(codigoQR);
           }else{
             alert('No se pudo autorizar. Verifica que la lista no esté cerrada.');
             btn.disabled = false;
@@ -401,7 +502,6 @@ async function buscarVendedor(codigoQR){
 async function buscarLista(codigoLista){
   mostrarCargando('Buscando lista...');
   try{
-    // Buscar la lista por código corto
     const listas = await llamar('f_puerta_lista', {
       p_token: tokenSesion,
       p_dia: diaSeleccionado,
@@ -415,7 +515,6 @@ async function buscarLista(codigoLista){
     
     const lista = listas[0];
     
-    // Obtener las personas de la lista
     let personas = [];
     try{
       personas = await llamar('f_puerta_personas_de_lista', {
@@ -423,7 +522,7 @@ async function buscarLista(codigoLista){
         p_lista_id: lista.lista_id
       });
     }catch(e){
-      mostrarError('Error al obtener personas. ¿Ejecutaste el SQL de f_puerta_personas_de_lista?');
+      mostrarError('Error al obtener personas de la lista.');
       return;
     }
     
@@ -470,7 +569,6 @@ async function buscarLista(codigoLista){
     panelResultado.innerHTML = html;
     panelResultado.style.display = 'block';
     
-    // Agregar listeners a los botones de autorizar
     panelResultado.querySelectorAll('button[data-persona]').forEach(btn => {
       btn.addEventListener('click', async () => {
         const personaId = btn.getAttribute('data-persona');
@@ -485,7 +583,7 @@ async function buscarLista(codigoLista){
           });
           if(ok){
             alert('✅ Entrada autorizada para ' + nombre);
-            buscarLista(codigoLista); // Refrescar
+            buscarLista(codigoLista);
           }else{
             alert('No se pudo autorizar. Verifica que la lista no esté cerrada.');
             btn.disabled = false;
@@ -524,7 +622,7 @@ function mostrarError(msg){
   const s = leerSesion();
   if(s && s.rol === 'puerta'){
     tokenSesion = s.token;
-    mostrarPrincipal();
+    verificarEstadoEvento();
   }
   
   const params = new URLSearchParams(location.search);
@@ -534,10 +632,8 @@ function mostrarError(msg){
   if(tokenSesion){
     if(vendedorParam){
       inputManual.value = vendedorParam;
-      if(diaSeleccionado) buscarVendedor(vendedorParam);
     }else if(listaParam){
       inputManual.value = listaParam;
-      if(diaSeleccionado) buscarLista(listaParam);
     }
   }
 })();
