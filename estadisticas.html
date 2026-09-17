@@ -26,6 +26,7 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;backgr
 .tarjeta h2{font-size:19px;margin-bottom:14px;color:var(--acento)}
 .tarjeta h3{font-size:16px;margin:14px 0 8px;color:var(--acento2)}
 .grid-dias{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
 .dia-caja{background:#0e1728;border:1px solid var(--borde);border-radius:12px;padding:14px}
 .dia-caja h3{margin:0 0 10px;font-size:17px;color:var(--texto)}
 .dia-fila{display:flex;justify-content:space-between;font-size:15px;padding:4px 0;border-bottom:1px dashed var(--borde)}
@@ -40,7 +41,18 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;backgr
 .pill-rojo{background:rgba(224,82,82,.18);color:var(--rojo)}
 .pill-azul{background:rgba(31,162,255,.18);color:var(--acento2)}
 .pill-morado{background:rgba(186,104,255,.18);color:#c68cff}
+.pill-amarillo{background:rgba(255,211,61,.18);color:var(--aviso)}
 .suave{color:var(--suave);font-size:15px}
+.barra-progreso{height:20px;background:#0d1626;border-radius:10px;overflow:hidden;margin:6px 0}
+.barra-fill{height:100%;background:linear-gradient(90deg,var(--acento),var(--acento2));display:flex;align-items:center;justify-content:flex-end;padding-right:8px;font-size:12px;font-weight:600;color:#0b1220}
+.destacado{background:#0e1728;border:1px solid var(--borde);border-radius:10px;padding:12px;margin:8px 0}
+.destacado .numero{font-size:28px;font-weight:700;color:var(--acento)}
+.destacado .etiqueta{font-size:14px;color:var(--suave)}
+.ranking-item{display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px dashed var(--borde)}
+.ranking-item:last-child{border-bottom:none}
+.ranking-posicion{width:28px;height:28px;background:var(--acento);color:#0b1220;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;margin-right:10px}
+.ranking-nombre{flex:1;font-size:15px}
+.ranking-valor{font-weight:700;color:var(--acento)}
 </style>
 </head>
 <body>
@@ -62,6 +74,16 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;backgr
     <section class="tarjeta" id="resumen">
       <h2>📅 Resumen por día</h2>
       <div class="grid-dias" id="gridDias"></div>
+    </section>
+
+    <section class="tarjeta" id="analisis">
+      <h2>📊 Análisis post evento</h2>
+      <div id="zonaAnalisis"></div>
+    </section>
+
+    <section class="tarjeta" id="rankings">
+      <h2>🏆 Rankings destacados</h2>
+      <div class="grid-2" id="gridRankings"></div>
     </section>
 
     <section class="tarjeta" id="talentos">
@@ -137,13 +159,96 @@ function renderizar(d){
   document.getElementById('gridDias').innerHTML =
     cajaDia('📅 Día 1', d.por_dia.dia1) + cajaDia('📅 Día 2', d.por_dia.dia2);
   
+  // ANÁLISIS POST EVENTO
+  const totalDia1 = d.por_dia.dia1.talentos_autorizados + d.por_dia.dia1.vendedores_autorizados + d.por_dia.dia1.cortesia_autorizados;
+  const totalDia2 = d.por_dia.dia2.talentos_autorizados + d.por_dia.dia2.vendedores_autorizados + d.por_dia.dia2.cortesia_autorizados;
+  
+  const stands = d.stands || [];
+  const standsLlenos = stands.filter(s => s.total_vendedores >= s.cupo).length;
+  const standsDisponibles = stands.length - standsLlenos;
+  
+  const talentos = d.talentos || [];
+  const talentoTop = talentos.length > 0 ? talentos.reduce((max, t) => t.total_personas > max.total_personas ? t : max) : null;
+  
+  const cortesias = d.cortesias || [];
+  const cortesiasActivas = cortesias.filter(c => c.estado === 'activa').length;
+  const cortesiasAnuladas = cortesias.filter(c => c.estado === 'anulada').length;
+  const cortesiasLista = cortesias.filter(c => c.tipo === 'lista').length;
+  const cortesiasIndividual = cortesias.filter(c => c.tipo === 'individual').length;
+  
+  let analisis = `
+    <div class="grid-2">
+      <div class="destacado">
+        <div class="numero">${totalDia1 + totalDia2}</div>
+        <div class="etiqueta">Total de personas autorizadas (ambos días)</div>
+      </div>
+      <div class="destacado">
+        <div class="numero">${totalDia1 > totalDia2 ? 'Día 1' : totalDia2 > totalDia1 ? 'Día 2' : 'Empate'}</div>
+        <div class="etiqueta">Día con más asistencia (${totalDia1} vs ${totalDia2})</div>
+      </div>
+    </div>
+    
+    <div class="grid-2">
+      <div class="destacado">
+        <div class="numero">${standsLlenos} / ${stands.length}</div>
+        <div class="etiqueta">Stands con cupo completo</div>
+      </div>
+      <div class="destacado">
+        <div class="numero">${talentoTop ? talentoTop.nombre : 'Sin datos'}</div>
+        <div class="etiqueta">Talento con más participantes (${talentoTop ? talentoTop.total_personas : 0})</div>
+      </div>
+    </div>
+    
+    <div class="grid-2">
+      <div class="destacado">
+        <div class="numero">${cortesiasActivas}</div>
+        <div class="etiqueta">Cortesías activas</div>
+      </div>
+      <div class="destacado">
+        <div class="numero">${cortesiasAnuladas}</div>
+        <div class="etiqueta">Cortesías anuladas</div>
+      </div>
+    </div>
+  `;
+  document.getElementById('zonaAnalisis').innerHTML = analisis;
+  
+  // RANKINGS
+  let rankings = '<div>';
+  
+  // Top 5 talentos
+  rankings += '<h3>🎭 Top 5 talentos por participantes</h3>';
+  const topTalentos = [...talentos].sort((a, b) => b.total_personas - a.total_personas).slice(0, 5);
+  if(topTalentos.length > 0){
+    topTalentos.forEach((t, i) => {
+      rankings += `<div class="ranking-item"><span class="ranking-posicion">${i+1}</span><span class="ranking-nombre">${esc(t.nombre)}</span><span class="ranking-valor">${t.total_personas}</span></div>`;
+    });
+  }else{
+    rankings += '<p class="suave">Sin talentos registrados.</p>';
+  }
+  rankings += '</div>';
+  
+  // Top 5 stands
+  rankings += '<div><h3>🏪 Top 5 stands por vendedores</h3>';
+  const topStands = [...stands].sort((a, b) => b.total_vendedores - a.total_vendedores).slice(0, 5);
+  if(topStands.length > 0){
+    topStands.forEach((s, i) => {
+      rankings += `<div class="ranking-item"><span class="ranking-posicion">${i+1}</span><span class="ranking-nombre">${esc(s.nombre || 'Stand ' + s.numero)}</span><span class="ranking-valor">${s.total_vendedores}</span></div>`;
+    });
+  }else{
+    rankings += '<p class="suave">Sin stands registrados.</p>';
+  }
+  rankings += '</div>';
+  
+  document.getElementById('gridRankings').innerHTML = rankings;
+  
   // Talentos
   if(!d.talentos || d.talentos.length === 0){
     document.getElementById('tablaTalentos').innerHTML = '<p class="suave">Sin talentos registrados todavía.</p>';
   }else{
-    let h = `<table class="tabla"><tr><th>Talento</th><th>Días</th><th>Personas</th><th>Autorizados</th><th>Pendientes</th></tr>`;
+    let h = `<table class="tabla"><tr><th>Talento</th><th>Días</th><th>Personas</th><th>Autorizados</th><th>Pendientes</th><th>% Asistencia</th></tr>`;
     d.talentos.forEach(t => {
-      h += `<tr><td>${esc(t.nombre)}</td><td>${diasTexto(t.dia1, t.dia2)}</td><td>${t.total_personas}</td><td>${t.autorizados}</td><td>${t.pendientes}</td></tr>`;
+      const porcentaje = t.total_personas > 0 ? Math.round((t.autorizados / t.total_personas) * 100) : 0;
+      h += `<tr><td>${esc(t.nombre)}</td><td>${diasTexto(t.dia1, t.dia2)}</td><td>${t.total_personas}</td><td>${t.autorizados}</td><td>${t.pendientes}</td><td><div class="barra-progreso"><div class="barra-fill" style="width:${porcentaje}%">${porcentaje}%</div></div></td></tr>`;
     });
     h += `</table>`;
     document.getElementById('tablaTalentos').innerHTML = h;
@@ -153,9 +258,11 @@ function renderizar(d){
   function tablaStands(tipo, titulo){
     const filas = (d.stands || []).filter(s => s.tipo === tipo);
     if(filas.length === 0) return `<h3>${titulo}</h3><p class="suave">Sin stands de este tipo.</p>`;
-    let h = `<h3>${titulo}</h3><table class="tabla"><tr><th>N°</th><th>Nombre</th><th>Empresa</th><th>Vende</th><th>Cupo</th><th>Registrados</th><th>✅ D1</th><th>✅ D2</th></tr>`;
+    let h = `<h3>${titulo}</h3><table class="tabla"><tr><th>N°</th><th>Nombre</th><th>Empresa</th><th>Vende</th><th>Cupo</th><th>Registrados</th><th>Ocupación</th><th>✅ D1</th><th>✅ D2</th></tr>`;
     filas.forEach(s => {
-      h += `<tr><td>${esc(s.numero)}</td><td>${esc(s.nombre)}</td><td>${esc(s.empresa || '-')}</td><td>${esc(s.vende || '-')}</td><td>${s.cupo}</td><td>${s.total_vendedores}</td><td>${s.aut_dia1}</td><td>${s.aut_dia2}</td></tr>`;
+      const porcentaje = s.cupo > 0 ? Math.round((s.total_vendedores / s.cupo) * 100) : 0;
+      const color = porcentaje >= 100 ? 'var(--rojo)' : porcentaje >= 75 ? 'var(--aviso)' : 'var(--acento)';
+      h += `<tr><td>${esc(s.numero)}</td><td>${esc(s.nombre)}</td><td>${esc(s.empresa || '-')}</td><td>${esc(s.vende || '-')}</td><td>${s.cupo}</td><td>${s.total_vendedores}</td><td><div class="barra-progreso"><div class="barra-fill" style="width:${Math.min(porcentaje, 100)}%;background:${color}">${porcentaje}%</div></div></td><td>${s.aut_dia1}</td><td>${s.aut_dia2}</td></tr>`;
     });
     h += `</table>`;
     return h;
@@ -180,9 +287,11 @@ function renderizar(d){
   // Rubros
   let rh = `<p class="suave">Rubros distintos: <strong>${d.rubros_distintos || 0}</strong></p>`;
   if(d.rubros && d.rubros.length > 0){
-    rh += `<h3>Top de rubros repetidos</h3><table class="tabla"><tr><th>Rubro</th><th>Cantidad</th></tr>`;
+    rh += `<h3>Top de rubros repetidos</h3><table class="tabla"><tr><th>Rubro</th><th>Cantidad</th><th>% del total</th></tr>`;
+    const totalRubros = d.rubros.reduce((sum, r) => sum + r.cantidad, 0);
     d.rubros.slice(0, 10).forEach(r => {
-      rh += `<tr><td>${esc(r.vende)}</td><td>${r.cantidad}</td></tr>`;
+      const porcentaje = totalRubros > 0 ? Math.round((r.cantidad / totalRubros) * 100) : 0;
+      rh += `<tr><td>${esc(r.vende)}</td><td>${r.cantidad}</td><td>${porcentaje}%</td></tr>`;
     });
     rh += `</table>`;
   }else{
