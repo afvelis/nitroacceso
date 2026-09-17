@@ -26,20 +26,23 @@ h2{margin:0 0 12px;font-size:22px;}
 h3{margin:14px 0 6px;font-size:19px;color:var(--acento2);}
 label{display:block;margin:10px 0;font-size:17px;}
 select,input{width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1px solid var(--borde);background:#0d1526;color:var(--texto);font-size:17px;}
-.btn{display:inline-block;border:none;border-radius:12px;padding:12px 18px;font-size:17px;font-weight:600;color:#06281a;background:linear-gradient(135deg,var(--acento),#2bb673);cursor:pointer;}
+.btn{display:inline-block;border:none;border-radius:12px;padding:12px 18px;font-size:17px;font-weight:600;color:#06281a;background:linear-gradient(135deg,var(--acento),#2bb673);cursor:pointer;text-decoration:none;}
 .btn-gris{background:#2a3648;color:var(--texto);}
 .btn-rojo{background:linear-gradient(135deg,#e05252,#c73e3e);color:#fff;}
 .btn-verde{background:linear-gradient(135deg,var(--acento),#2bb673);color:#06281a;}
+.btn-azul{background:linear-gradient(135deg,var(--acento2),#147acc);color:#fff;}
 .btn:disabled{opacity:.45;cursor:not-allowed;}
 .fila{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;}
 .suave{color:var(--suave);}
 .codigo{background:#0d1526;border:1px solid var(--borde);border-radius:10px;padding:12px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:20px;letter-spacing:2px;margin-top:8px;word-break:break-all;}
+.codigo.link{font-size:17px;letter-spacing:0;}
 .item{border:1px solid var(--borde);border-radius:12px;padding:14px;margin-top:12px;background:#0e1728;}
 .badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:17px;margin-left:8px;vertical-align:middle;}
 .badge-tipo{background:#123a5c;color:#9fd2ff;}
 .badge-ok{background:#12402c;color:#7ee2ae;}
 .badge-no{background:#4a1a1a;color:#ff9d9d;}
 .panel-edit{margin-top:12px;border-top:1px dashed var(--borde);padding-top:6px;}
+.msg-item{min-height:22px;margin:10px 0 0;}
 ul{margin:6px 0;padding-left:22px;}
 li{margin:4px 0;}
 </style>
@@ -87,7 +90,7 @@ li{margin:4px 0;}
 
   <section class="tarjeta">
     <h2>Coordinadores creados</h2>
-    <p class="suave">Aqui ves quien tiene llave de entrada. El boton "Eliminar" revoca la llave sin borrar lo creado; y sobre un coordinador ya revocado aparece "Eliminar definitivamente" para sacarlo de esta lista para siempre.</p>
+    <p class="suave">Aqui ves quien tiene llave de entrada. Enviale el link por WhatsApp o correo: al abrirlo entra directo a su espacio de coordinador. El boton "Eliminar" revoca la llave sin borrar lo creado; y sobre un coordinador ya revocado aparece "Eliminar definitivamente" para sacarlo de esta lista para siempre.</p>
     <div id="listaCoords"><p class="suave">Consultando...</p></div>
   </section>
 
@@ -125,10 +128,12 @@ function esc(t){
     .replace(/&/g,'&amp;').replace(/</g,'&lt;')
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-function aviso(id, texto, ok){
-  var el = $(id);
+function avisoEl(el, texto, ok){
   el.textContent = texto;
   el.style.color = ok ? 'var(--acento)' : 'var(--aviso)';
+}
+function aviso(id, texto, ok){
+  avisoEl($(id), texto, ok);
 }
 function boton(texto, clase, fn){
   var b = document.createElement('button');
@@ -140,14 +145,69 @@ function boton(texto, clase, fn){
 async function copiarTexto(txt){
   try {
     await navigator.clipboard.writeText(txt);
+    return true;
   } catch (e) {
-    var ta = document.createElement('textarea');
-    ta.value = txt;
-    document.body.appendChild(ta);
-    ta.select();
-    try { document.execCommand('copy'); } catch (e2) {}
-    document.body.removeChild(ta);
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = txt;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      ta.setSelectionRange(0, 99999);
+      var ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return ok;
+    } catch (e2) {
+      return false;
+    }
   }
+}
+function botonCopiar(textoInicial, obtenerTexto, fnAviso){
+  var b = document.createElement('button');
+  b.className = 'btn btn-gris';
+  b.textContent = textoInicial;
+  b.onclick = async function(){
+    var ok = await copiarTexto(obtenerTexto());
+    if (ok) {
+      b.textContent = '¡Copiado!';
+      if (fnAviso) fnAviso('Copiado al portapapeles. Pegalo donde quieras.', true);
+      setTimeout(function(){ b.textContent = textoInicial; }, 2000);
+    } else if (fnAviso) {
+      fnAviso('Tu navegador no dejo copiar solo. Selecciona el texto con el mouse o el dedo y copialo manual.', false);
+    } else {
+      alert('Tu navegador no dejo copiar solo. Selecciona el texto con el mouse o el dedo y copialo manual.');
+    }
+  };
+  return b;
+}
+function urlWA(texto){ return 'https://wa.me/?text=' + encodeURIComponent(texto); }
+function urlMail(asunto, texto){ return 'mailto:?subject=' + encodeURIComponent(asunto) + '&body=' + encodeURIComponent(texto); }
+function linkCoord(codigo){ return BASE + 'coord.html?c=' + encodeURIComponent(codigo); }
+function textoCompartir(nombre, tipoTxt, link){
+  return 'Hola ' + nombre + ', aqui esta tu acceso de coordinador de ' + tipoTxt + ' para Nitrotoon. Abre este link y entra directo a tu espacio: ' + link;
+}
+function filaCompartir(link, textoComp, fnAviso){
+  var fila = document.createElement('div');
+  fila.className = 'fila';
+  fila.appendChild(botonCopiar('Copiar link', function(){ return link; }, fnAviso));
+  var aWA = document.createElement('a');
+  aWA.className = 'btn';
+  aWA.textContent = 'WhatsApp';
+  aWA.target = '_blank';
+  aWA.href = urlWA(textoComp);
+  fila.appendChild(aWA);
+  var bMail = document.createElement('button');
+  bMail.className = 'btn btn-azul';
+  bMail.textContent = 'Correo';
+  bMail.onclick = async function(){
+    await copiarTexto(textoComp);
+    fnAviso('Intentamos abrir tu aplicacion de correo. Si no se abrio nada, el mensaje ya quedo copiado: pegalo en tu correo o en WhatsApp.', true);
+    window.location.href = urlMail('Nitrotoon - acceso de coordinador', textoComp);
+  };
+  fila.appendChild(bMail);
+  return fila;
 }
 function fechaBonita(iso){
   try {
@@ -191,19 +251,36 @@ async function crearCoord(){
       p_token: ses.token, p_tipo: tipo, p_nombre: nombre, p_correo: correo || null
     });
     if (!codigo) { aviso('msgCrear', 'No se pudo crear el coordinador. Intenta de nuevo.', false); return; }
+    var nombreCoord = nombre;
+    var tipoTxt = (tipo === 'talentos') ? 'Talentos' : 'Stands';
+    var link = linkCoord(codigo);
     var cont = $('resultadoCoord');
     cont.innerHTML = '';
     var caja = document.createElement('div');
     caja.className = 'codigo';
     caja.textContent = codigo;
-    var fila = document.createElement('div');
-    fila.className = 'fila';
-    fila.appendChild(boton('Copiar codigo', 'btn-gris', function(){ copiarTexto(codigo); }));
+    var pLink = document.createElement('p');
+    pLink.className = 'suave';
+    pLink.textContent = 'Link de entrada del coordinador (enviaselo):';
+    var cajaLink = document.createElement('div');
+    cajaLink.className = 'codigo link';
+    cajaLink.textContent = link;
+    var msgEl = document.createElement('p');
+    msgEl.className = 'suave msg-item';
+    function fnAviso(t, ok){ avisoEl(msgEl, t, ok); }
+    var fComp = filaCompartir(link, textoCompartir(nombreCoord, tipoTxt, link), fnAviso);
+    var fGes = document.createElement('div');
+    fGes.className = 'fila';
+    fGes.appendChild(botonCopiar('Copiar codigo', function(){ return codigo; }, fnAviso));
     var nota = document.createElement('p');
     nota.className = 'suave';
-    nota.textContent = 'Entregale este codigo a tu coordinador: con el entra en coord.html y crea los links de registro.';
+    nota.textContent = 'Enviale el link por WhatsApp o correo: al abrirlo entra directo a su espacio. El codigo sirve si prefiere escribirlo a mano en coord.html.';
     cont.appendChild(caja);
-    cont.appendChild(fila);
+    cont.appendChild(pLink);
+    cont.appendChild(cajaLink);
+    cont.appendChild(fComp);
+    cont.appendChild(fGes);
+    cont.appendChild(msgEl);
     cont.appendChild(nota);
     $('cNombre').value = '';
     $('cCorreo').value = '';
@@ -232,21 +309,34 @@ function tarjetaCoord(c){
   div.className = 'item';
   var tipoTxt = (c.tipo === 'talentos') ? 'Talentos' : 'Stands';
   var fecha = fechaBonita(c.creada_at);
+  var link = linkCoord(c.codigo);
   div.innerHTML =
     '<div><strong>' + esc(c.nombre) + '</strong>' +
     '<span class="badge badge-tipo">' + tipoTxt + '</span>' +
     '<span class="badge ' + (c.activo ? 'badge-ok">Activo' : 'badge-no">Revocado') + '</span></div>' +
     '<div class="codigo">' + esc(c.codigo) + '</div>' +
+    '<p class="suave" style="margin:10px 0 0;">Link de entrada (enviaselo):</p>' +
+    '<div class="codigo link">' + esc(link) + '</div>' +
     '<p class="suave">' + (c.correo ? esc(c.correo) : 'Sin correo registrado') + (fecha ? ' · Creado el ' + fecha : '') + '</p>' +
-    '<div class="fila"></div>';
-  var fila = div.querySelector('.fila');
-  fila.appendChild(boton('Copiar codigo', 'btn-gris', function(){ copiarTexto(c.codigo); }));
-  fila.appendChild(boton('Editar', 'btn-gris', function(){ mostrarEdicion(div, c); }));
+    '<div class="zona-compartir"></div>' +
+    '<div class="fila fila-gestion"></div>' +
+    '<p class="suave msg-item"></p>';
+  var nota = div.querySelector('.msg-item');
+  function fnAviso(t, ok){ avisoEl(nota, t, ok); }
+  var zonaComp = div.querySelector('.zona-compartir');
   if (c.activo) {
-    fila.appendChild(boton('Eliminar', 'btn-rojo', function(){ revocar(c, false); }));
+    zonaComp.appendChild(filaCompartir(link, textoCompartir(c.nombre, tipoTxt, link), fnAviso));
   } else {
-    fila.appendChild(boton('Reactivar', 'btn-verde', function(){ revocar(c, true); }));
-    fila.appendChild(boton('Eliminar definitivamente', 'btn-rojo', function(){ borrarDefinitivo(c); }));
+    zonaComp.innerHTML = '<p class="suave">Revocado: su link de entrada ya no funciona. Reactivalo para poder compartirlo de nuevo.</p>';
+  }
+  var fGes = div.querySelector('.fila-gestion');
+  fGes.appendChild(botonCopiar('Copiar codigo', function(){ return c.codigo; }, fnAviso));
+  fGes.appendChild(boton('Editar', 'btn-gris', function(){ mostrarEdicion(div, c); }));
+  if (c.activo) {
+    fGes.appendChild(boton('Eliminar', 'btn-rojo', function(){ revocar(c, false); }));
+  } else {
+    fGes.appendChild(boton('Reactivar', 'btn-verde', function(){ revocar(c, true); }));
+    fGes.appendChild(boton('Eliminar definitivamente', 'btn-rojo', function(){ borrarDefinitivo(c); }));
   }
   return div;
 }
