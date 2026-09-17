@@ -27,7 +27,7 @@ h3{margin:14px 0 6px;font-size:19px;color:var(--acento2);}
 label{display:block;margin:10px 0;font-size:17px;}
 select,input{width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1px solid var(--borde);background:#0d1526;color:var(--texto);font-size:17px;}
 input[type=checkbox]{width:auto;margin-right:8px;}
-.btn{display:inline-block;border:none;border-radius:12px;padding:12px 18px;font-size:17px;font-weight:600;color:#06281a;background:linear-gradient(135deg,var(--acento),#2bb673);cursor:pointer;}
+.btn{display:inline-block;border:none;border-radius:12px;padding:12px 18px;font-size:17px;font-weight:600;color:#06281a;background:linear-gradient(135deg,var(--acento),#2bb673);cursor:pointer;text-decoration:none;}
 .btn-gris{background:#2a3648;color:var(--texto);}
 .btn-rojo{background:linear-gradient(135deg,#e05252,#c73e3e);color:#fff;}
 .btn-verde{background:linear-gradient(135deg,var(--acento),#2bb673);color:#06281a;}
@@ -187,10 +187,10 @@ li{margin:4px 0;}
 
   <section class="tarjeta" id="estadistica">
     <h2>Estadistica</h2>
+    <p class="suave">Abre la pagina completa de estadisticas del evento: segmentacion, tiempos y rankings.</p>
     <div class="fila">
-      <button class="btn" id="btnStats">Ver estadisticas</button>
+      <a class="btn" href="estadisticas.html">Ver estadisticas</a>
     </div>
-    <div id="zonaStats"></div>
   </section>
 
   <div class="fila">
@@ -770,18 +770,6 @@ function htmlStats(s){
   return html;
 }
 
-async function verStats(){
-  var zona = $('zonaStats');
-  zona.innerHTML = '<p class="suave">Consultando...</p>';
-  try {
-    var s = await llamar('f_admin_stats', { p_token: ses.token });
-    if (!s) { zona.innerHTML = '<p class="suave">Tu sesion expiro: entra de nuevo con tu PIN.</p>'; return; }
-    zona.innerHTML = htmlStats(s);
-  } catch (e) {
-    zona.innerHTML = '<p class="suave">Fallo al consultar estadisticas: ' + e.message + '</p>';
-  }
-}
-
 async function guardarInforme(){
   var nombre = prompt('Nombre del evento para el historico (ej.: Nitrotoon 2026):', 'Nitrotoon ' + new Date().getFullYear());
   if (nombre === null) return;
@@ -1046,7 +1034,6 @@ if (!ses || ses.rol !== 'admin') {
   $('btnCerrarEdicion').onclick = function(){ cambiarEdicion(false); };
   $('btnAbrirEdicion').onclick = function(){ cambiarEdicion(true); };
   $('btnCrearCoord').onclick = crearCoord;
-  $('btnStats').onclick = verStats;
   $('btnGuardarInforme').onclick = guardarInforme;
   $('btnLimpiarTodo').onclick = limpiarTodo;
   $('btnVolver').onclick = function(){ location.replace('dashboard.html'); };
