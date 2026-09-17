@@ -49,7 +49,7 @@ th { color: var(--suave); }
   <div id="cargando" class="tarjeta">Cargando información del stand...</div>
 
   <div id="infoStand" class="tarjeta" style="display:none;">
-    <h2>Stand <span id="stNumero"></span></h2>
+    <h2 id="stTitulo"></h2>
     <p>Tipo: <strong id="stTipo"></strong></p>
     <p>Cupo: <strong id="stCupo"></strong> | Registrados: <strong id="stReg"></strong> | Quedan: <strong id="stQuedan"></strong></p>
   </div>
@@ -114,6 +114,9 @@ let miVendedor = null;
 
 function urlWA(texto) { return 'https://wa.me/?text=' + encodeURIComponent(texto); }
 function urlMail(asunto, texto) { return 'mailto:?subject=' + encodeURIComponent(asunto) + '&body=' + encodeURIComponent(texto); }
+function nombreStand() {
+  return 'Stand ' + datosStand.numero + (datosStand.nombre ? ' — ' + datosStand.nombre : '');
+}
 
 async function cargar() {
   if (!codigoLink) {
@@ -123,16 +126,21 @@ async function cargar() {
   }
   try {
     datosStand = await llamar('f_link_stand_ver', { p_codigo_link: codigoLink });
+    if (!datosStand) {
+      document.getElementById('cargando').className = 'tarjeta aviso';
+      document.getElementById('cargando').innerHTML = 'Enlace inválido o stand no encontrado.';
+      return;
+    }
     document.getElementById('cargando').style.display = 'none';
-    renderStand();
+    renderStand(true);
   } catch (e) {
     document.getElementById('cargando').className = 'tarjeta aviso';
-    document.getElementById('cargando').innerHTML = 'Enlace inválido o stand no encontrado.<br><small>' + e.message + '</small>';
+    document.getElementById('cargando').innerHTML = 'No se pudo conectar con la base de datos.<br><small>' + e.message + '</small>';
   }
 }
 
-function renderStand() {
-  document.getElementById('stNumero').textContent = datosStand.numero;
+function renderStand(conQRGuardado) {
+  document.getElementById('stTitulo').textContent = nombreStand();
   document.getElementById('stTipo').textContent = datosStand.tipo;
   document.getElementById('stCupo').textContent = datosStand.cupo;
   const reg = datosStand.vendedores.length;
@@ -140,13 +148,19 @@ function renderStand() {
   document.getElementById('stQuedan').textContent = Math.max(0, datosStand.cupo - reg);
   document.getElementById('infoStand').style.display = 'block';
 
+  let hayForm = false;
   if (!datosStand.edicion_abierta) {
     document.getElementById('avisoCerrado').textContent = 'Las inscripciones para este stand están cerradas.';
     document.getElementById('avisoCerrado').style.display = 'block';
+    document.getElementById('formRegistro').style.display = 'none';
+    document.getElementById('recuperarQR').style.display = 'none';
   } else {
+    document.getElementById('avisoCerrado').style.display = 'none';
     if (datosStand.cupo > reg) {
       document.getElementById('formRegistro').style.display = 'block';
+      hayForm = true;
     } else {
+      document.getElementById('formRegistro').style.display = 'none';
       document.getElementById('avisoCerrado').textContent = 'El cupo de este stand está lleno.';
       document.getElementById('avisoCerrado').style.display = 'block';
     }
@@ -156,22 +170,23 @@ function renderStand() {
   if (reg > 0) {
     let html = '<table><thead><tr><th>Nombre</th><th>Cédula</th><th>Vende</th></tr></thead><tbody>';
     datosStand.vendedores.forEach(v => {
-      html += `<tr><td>${v.nombre} ${v.apellido}</td><td>${v.cedula}</td><td>${v.vende}</td></tr>`;
+      html += '<tr><td>' + v.nombre + ' ' + v.apellido + '</td><td>' + v.cedula + '</td><td>' + v.vende + '</td></tr>';
     });
     html += '</tbody></table>';
     document.getElementById('tablaReg').innerHTML = html;
     document.getElementById('listaReg').style.display = 'block';
+  } else {
+    document.getElementById('listaReg').style.display = 'none';
   }
 
   const guardado = sessionStorage.getItem('na_stand_vendedor_' + codigoLink);
-  if (guardado) {
+  if (conQRGuardado && guardado) {
     miVendedor = JSON.parse(guardado);
     mostrarPantallaQR();
-  } else {
-    if (miVendedor || document.getElementById('formRegistro').style.display === 'block' || document.getElementById('recuperarQR').style.display === 'block') {
-      document.getElementById('barraFija').style.display = 'block';
-    }
+    return;
   }
+  document.getElementById('pantallaQR').style.display = 'none';
+  document.getElementById('barraFija').style.display = (hayForm || datosStand.edicion_abierta) ? 'block' : 'none';
 }
 
 document.getElementById('btnRegistrar').onclick = async () => {
@@ -200,6 +215,7 @@ document.getElementById('btnRegistrar').onclick = async () => {
     else if (res && res.startsWith('V-')) {
       miVendedor = { nombre, apellido, cedula, vende, empresa, codigo_qr: res };
       sessionStorage.setItem('na_stand_vendedor_' + codigoLink, JSON.stringify(miVendedor));
+      try { datosStand = await llamar('f_link_stand_ver', { p_codigo_link: codigoLink }); } catch (e) {}
       mostrarPantallaQR();
     } else {
       errDiv.textContent = 'Error inesperado al registrar.';
@@ -229,14 +245,14 @@ function mostrarPantallaQR() {
     document.getElementById(id).style.display = 'none';
   });
   document.getElementById('pantallaQR').style.display = 'block';
-  
+
   const urlP = urlPuerta('v', miVendedor.codigo_qr);
   const cont = document.getElementById('contenedorQR');
   cont.innerHTML = '';
   ponerQR(cont, urlP, miVendedor.codigo_qr);
-  
-  const textoRespaldo = `Mi QR para Nitrotoon\nStand: ${datosStand.numero}\nCodigo: ${miVendedor.codigo_qr}\nLink: ${urlP}`;
-  
+
+  const textoRespaldo = 'Mi QR para Nitrotoon\n' + nombreStand() + '\nCodigo: ' + miVendedor.codigo_qr + '\nLink: ' + urlP;
+
   document.getElementById('btnCopiarQR').onclick = async () => {
     const img = cont.querySelector('img');
     if (img) {
@@ -254,11 +270,11 @@ function mostrarPantallaQR() {
       alert('⚠️ Copiamos el texto con tu código y link como respaldo.');
     }
   };
-  
+
   document.getElementById('btnWA').onclick = () => {
-    window.open(urlWA(`Mi QR para Nitrotoon (Stand ${datosStand.numero})\nCodigo: ${miVendedor.codigo_qr}\nLink: ${urlP}`), '_blank');
+    window.open(urlWA('Mi QR para Nitrotoon (' + nombreStand() + ')\nCodigo: ' + miVendedor.codigo_qr + '\nLink: ' + urlP), '_blank');
   };
-  
+
   document.getElementById('btnCorreo').onclick = () => {
     window.location.href = urlMail('Mi QR para Nitrotoon', textoRespaldo);
     navigator.clipboard.writeText(textoRespaldo).catch(()=>{});
@@ -272,14 +288,7 @@ document.getElementById('btnTermine').onclick = () => {
 };
 
 document.getElementById('btnVolver').onclick = () => {
-  document.getElementById('pantallaQR').style.display = 'none';
-  document.getElementById('infoStand').style.display = 'block';
-  if (datosStand.edicion_abierta && datosStand.cupo > datosStand.vendedores.length) {
-    document.getElementById('formRegistro').style.display = 'block';
-  }
-  if (datosStand.vendedores.length > 0) document.getElementById('listaReg').style.display = 'block';
-  document.getElementById('recuperarQR').style.display = 'block';
-  document.getElementById('barraFija').style.display = 'block';
+  renderStand(false);
 };
 
 document.getElementById('btnCerrar').onclick = () => {
