@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registro de Stand - Nitrotoon</title>
+<style>
+:root {
+  --fondo: #0b1220; --tarjeta: #121c2e; --borde: #24344d;
+  --texto: #eef3f8; --suave: #9fb0c3; --acento: #35d07f;
+  --acento2: #1fa2ff; --aviso: #ffd33d;
+}
+body { background: var(--fondo); color: var(--texto); font-family: system-ui, -apple-system, sans-serif; font-size: 17px; margin: 0; padding: 0; }
+.franja { height: 6px; background: linear-gradient(90deg, var(--acento), var(--acento2)); }
+.container { max-width: 600px; margin: 0 auto; padding: 20px; padding-bottom: 100px; }
+.logo-box { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; }
+.logo { font-size: 32px; background: linear-gradient(135deg, var(--acento), var(--acento2)); padding: 10px; border-radius: 12px; line-height: 1; }
+h1 { font-size: 20px; margin: 0; color: var(--texto); }
+h2 { margin-top: 0; color: var(--acento); font-size: 20px; }
+.tarjeta { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 18px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+.tarjeta.aviso { background: #2d2412; border-color: var(--aviso); color: var(--aviso); }
+label { display: block; margin-top: 12px; margin-bottom: 6px; color: var(--suave); font-size: 16px; }
+input { width: 100%; box-sizing: border-box; padding: 12px; font-size: 17px; background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; color: var(--texto); }
+.btn { display: block; width: 100%; box-sizing: border-box; padding: 14px; font-size: 17px; font-weight: bold; border: none; border-radius: 12px; background: linear-gradient(135deg, var(--acento), #28a864); color: #051409; cursor: pointer; margin-top: 15px; text-align: center; text-decoration: none; }
+.btn-azul { background: linear-gradient(135deg, var(--acento2), #147acc); color: white; }
+.btn-gris { background: #2a3648; color: var(--texto); }
+.btn-rojo { background: linear-gradient(135deg, #e05252, #c73e3e); color: white; }
+.error { color: #ff7b7b; margin-top: 10px; font-weight: bold; min-height: 20px; }
+table { width: 100%; border-collapse: collapse; font-size: 16px; margin-top: 10px; }
+th, td { padding: 8px; border-bottom: 1px solid var(--borde); text-align: left; }
+th { color: var(--suave); }
+.qr-box { text-align: center; background: white; padding: 20px; border-radius: 12px; margin: 20px 0; }
+.qr-box img { max-width: 100%; height: auto; }
+.qr-box p { color: black; margin: 10px 0 0; font-weight: bold; }
+.botones-qr { display: flex; flex-direction: column; gap: 10px; }
+.botones-finales { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+.barra-fija { position: fixed; bottom: 0; left: 0; right: 0; background: var(--tarjeta); border-top: 2px solid var(--borde); padding: 15px 20px; box-shadow: 0 -4px 12px rgba(0,0,0,0.3); z-index: 100; }
+.barra-fija .btn { margin: 0; }
+</style>
+</head>
+<body>
+<header class="franja"></header>
+<div class="container">
+  <div class="logo-box">
+    <div class="logo">🚀</div>
+    <h1>Nitrotoon Control de acceso</h1>
+  </div>
+
+  <div id="cargando" class="tarjeta">Cargando información del stand...</div>
+
+  <div id="infoStand" class="tarjeta" style="display:none;">
+    <h2>Stand <span id="stNumero"></span></h2>
+    <p>Tipo: <strong id="stTipo"></strong></p>
+    <p>Cupo: <strong id="stCupo"></strong> | Registrados: <strong id="stReg"></strong> | Quedan: <strong id="stQuedan"></strong></p>
+  </div>
+
+  <div id="avisoCerrado" class="tarjeta aviso" style="display:none;"></div>
+
+  <div id="formRegistro" class="tarjeta" style="display:none;">
+    <h2>Registro de vendedor</h2>
+    <label>Nombre *</label><input type="text" id="inNombre" />
+    <label>Apellido *</label><input type="text" id="inApellido" />
+    <label>Cédula *</label><input type="text" id="inCedula" />
+    <label>Qué vende *</label><input type="text" id="inVende" />
+    <label>Empresa (opcional)</label><input type="text" id="inEmpresa" />
+    <button class="btn" id="btnRegistrar">Registrar y obtener mi QR</button>
+    <div id="msgError" class="error"></div>
+  </div>
+
+  <div id="listaReg" class="tarjeta" style="display:none;">
+    <h2>Vendedores registrados</h2>
+    <div id="tablaReg"></div>
+  </div>
+
+  <div id="recuperarQR" class="tarjeta" style="display:none;">
+    <h2>¿Ya te registraste?</h2>
+    <p>Escribe tu cédula para recuperar tu QR.</p>
+    <input type="text" id="inCedulaRec" placeholder="Cédula" />
+    <button class="btn btn-azul" id="btnRecuperar">Recuperar mi QR</button>
+    <div id="msgRec" class="error"></div>
+  </div>
+
+  <div id="pantallaQR" style="display:none;">
+    <div class="tarjeta">
+      <h2>✅ Tarea cumplida</h2>
+      <p>Este es tu brazalete para ambos días. Muéstralo en la puerta.</p>
+      <div id="contenedorQR" class="qr-box"></div>
+      <div class="botones-qr">
+        <button class="btn" id="btnCopiarQR">📋 Copiar QR</button>
+        <button class="btn btn-azul" id="btnWA">💬 WhatsApp</button>
+        <button class="btn btn-gris" id="btnCorreo">✉️ Correo</button>
+      </div>
+    </div>
+    <div class="botones-finales">
+      <button class="btn btn-gris" id="btnVolver">Volver al stand</button>
+      <button class="btn btn-rojo" id="btnCerrar">Cerrar esta pestaña</button>
+    </div>
+    <div id="avisoCierre" class="tarjeta aviso" style="display:none; margin-top:20px;">
+      Tu navegador no permite cerrar la pestaña automáticamente. Por favor, ciérrala manualmente con la X de arriba o deslizando hacia abajo en tu móvil. ¡Gracias!
+    </div>
+  </div>
+</div>
+
+<div class="barra-fija" id="barraFija" style="display:none;">
+  <button class="btn" id="btnTermine">✅ Terminé: ver mi QR y salir</button>
+</div>
+
+<script src="config.js"></script>
+<script>
+const params = new URLSearchParams(window.location.search);
+const codigoLink = params.get('s');
+let datosStand = null;
+let miVendedor = null;
+
+function urlWA(texto) { return 'https://wa.me/?text=' + encodeURIComponent(texto); }
+function urlMail(asunto, texto) { return 'mailto:?subject=' + encodeURIComponent(asunto) + '&body=' + encodeURIComponent(texto); }
+
+async function cargar() {
+  if (!codigoLink) {
+    document.getElementById('cargando').className = 'tarjeta aviso';
+    document.getElementById('cargando').innerHTML = 'Enlace inválido. Falta el código de stand.';
+    return;
+  }
+  try {
+    datosStand = await llamar('f_link_stand_ver', { p_codigo_link: codigoLink });
+    document.getElementById('cargando').style.display = 'none';
+    renderStand();
+  } catch (e) {
+    document.getElementById('cargando').className = 'tarjeta aviso';
+    document.getElementById('cargando').innerHTML = 'Enlace inválido o stand no encontrado.<br><small>' + e.message + '</small>';
+  }
+}
+
+function renderStand() {
+  document.getElementById('stNumero').textContent = datosStand.numero;
+  document.getElementById('stTipo').textContent = datosStand.tipo;
+  document.getElementById('stCupo').textContent = datosStand.cupo;
+  const reg = datosStand.vendedores.length;
+  document.getElementById('stReg').textContent = reg;
+  document.getElementById('stQuedan').textContent = Math.max(0, datosStand.cupo - reg);
+  document.getElementById('infoStand').style.display = 'block';
+
+  if (!datosStand.edicion_abierta) {
+    document.getElementById('avisoCerrado').textContent = 'Las inscripciones para este stand están cerradas.';
+    document.getElementById('avisoCerrado').style.display = 'block';
+  } else {
+    if (datosStand.cupo > reg) {
+      document.getElementById('formRegistro').style.display = 'block';
+    } else {
+      document.getElementById('avisoCerrado').textContent = 'El cupo de este stand está lleno.';
+      document.getElementById('avisoCerrado').style.display = 'block';
+    }
+    document.getElementById('recuperarQR').style.display = 'block';
+  }
+
+  if (reg > 0) {
+    let html = '<table><thead><tr><th>Nombre</th><th>Cédula</th><th>Vende</th></tr></thead><tbody>';
+    datosStand.vendedores.forEach(v => {
+      html += `<tr><td>${v.nombre} ${v.apellido}</td><td>${v.cedula}</td><td>${v.vende}</td></tr>`;
+    });
+    html += '</tbody></table>';
+    document.getElementById('tablaReg').innerHTML = html;
+    document.getElementById('listaReg').style.display = 'block';
+  }
+
+  const guardado = sessionStorage.getItem('na_stand_vendedor_' + codigoLink);
+  if (guardado) {
+    miVendedor = JSON.parse(guardado);
+    mostrarPantallaQR();
+  } else {
+    if (miVendedor || document.getElementById('formRegistro').style.display === 'block' || document.getElementById('recuperarQR').style.display === 'block') {
+      document.getElementById('barraFija').style.display = 'block';
+    }
+  }
+}
+
+document.getElementById('btnRegistrar').onclick = async () => {
+  const nombre = document.getElementById('inNombre').value.trim();
+  const apellido = document.getElementById('inApellido').value.trim();
+  const cedula = document.getElementById('inCedula').value.trim();
+  const vende = document.getElementById('inVende').value.trim();
+  const empresa = document.getElementById('inEmpresa').value.trim();
+  const errDiv = document.getElementById('msgError');
+  errDiv.textContent = '';
+
+  if (!nombre || !apellido || !cedula || !vende) {
+    errDiv.textContent = 'Por favor completa todos los campos obligatorios.'; return;
+  }
+
+  try {
+    const res = await llamar('f_link_stand_registrar', {
+      p_codigo_link: codigoLink, p_nombre: nombre, p_apellido: apellido,
+      p_cedula: cedula, p_vende: vende, p_empresa: empresa
+    });
+
+    if (res === 'ERR_DATOS') errDiv.textContent = 'Faltan datos o el enlace es inválido.';
+    else if (res === 'ERR_EDICION_CERRADA') errDiv.textContent = 'Las inscripciones acaban de cerrarse.';
+    else if (res === 'ERR_CUPO_LLENO') errDiv.textContent = 'El cupo se llenó mientras te registrabas.';
+    else if (res === 'ERR_CEDULA_REPETIDA') errDiv.textContent = 'Esta cédula ya está registrada en este stand.';
+    else if (res && res.startsWith('V-')) {
+      miVendedor = { nombre, apellido, cedula, vende, empresa, codigo_qr: res };
+      sessionStorage.setItem('na_stand_vendedor_' + codigoLink, JSON.stringify(miVendedor));
+      mostrarPantallaQR();
+    } else {
+      errDiv.textContent = 'Error inesperado al registrar.';
+    }
+  } catch (e) { errDiv.textContent = 'Error de conexión: ' + e.message; }
+};
+
+document.getElementById('btnRecuperar').onclick = async () => {
+  const cedula = document.getElementById('inCedulaRec').value.trim();
+  const errDiv = document.getElementById('msgRec');
+  errDiv.textContent = '';
+  if (!cedula) { errDiv.textContent = 'Escribe tu cédula.'; return; }
+
+  try {
+    const res = await llamar('f_link_stand_mi_qr', { p_codigo_link: codigoLink, p_cedula: cedula });
+    if (!res) { errDiv.textContent = 'No encontramos esa cédula en este stand.'; }
+    else {
+      miVendedor = res;
+      sessionStorage.setItem('na_stand_vendedor_' + codigoLink, JSON.stringify(miVendedor));
+      mostrarPantallaQR();
+    }
+  } catch (e) { errDiv.textContent = 'Error: ' + e.message; }
+};
+
+function mostrarPantallaQR() {
+  ['infoStand','avisoCerrado','formRegistro','listaReg','recuperarQR','barraFija'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+  document.getElementById('pantallaQR').style.display = 'block';
+  
+  const urlP = urlPuerta('v', miVendedor.codigo_qr);
+  const cont = document.getElementById('contenedorQR');
+  cont.innerHTML = '';
+  ponerQR(cont, urlP, miVendedor.codigo_qr);
+  
+  const textoRespaldo = `Mi QR para Nitrotoon\nStand: ${datosStand.numero}\nCodigo: ${miVendedor.codigo_qr}\nLink: ${urlP}`;
+  
+  document.getElementById('btnCopiarQR').onclick = async () => {
+    const img = cont.querySelector('img');
+    if (img) {
+      try {
+        const data = await fetch(img.src);
+        const blob = await data.blob();
+        await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+        alert('✅ Imagen del QR copiada al portapapeles.');
+      } catch (e) {
+        await navigator.clipboard.writeText(textoRespaldo);
+        alert('⚠️ No se pudo copiar la imagen. Copiamos el texto con tu código y link como respaldo.');
+      }
+    } else {
+      await navigator.clipboard.writeText(textoRespaldo);
+      alert('⚠️ Copiamos el texto con tu código y link como respaldo.');
+    }
+  };
+  
+  document.getElementById('btnWA').onclick = () => {
+    window.open(urlWA(`Mi QR para Nitrotoon (Stand ${datosStand.numero})\nCodigo: ${miVendedor.codigo_qr}\nLink: ${urlP}`), '_blank');
+  };
+  
+  document.getElementById('btnCorreo').onclick = () => {
+    window.location.href = urlMail('Mi QR para Nitrotoon', textoRespaldo);
+    navigator.clipboard.writeText(textoRespaldo).catch(()=>{});
+    setTimeout(() => alert('Si no abrió tu app de correo, el texto ya está copiado en tu portapapeles como respaldo.'), 500);
+  };
+}
+
+document.getElementById('btnTermine').onclick = () => {
+  if (!miVendedor) { alert('Primero debes registrarte o recuperar tu QR.'); return; }
+  mostrarPantallaQR();
+};
+
+document.getElementById('btnVolver').onclick = () => {
+  document.getElementById('pantallaQR').style.display = 'none';
+  document.getElementById('infoStand').style.display = 'block';
+  if (datosStand.edicion_abierta && datosStand.cupo > datosStand.vendedores.length) {
+    document.getElementById('formRegistro').style.display = 'block';
+  }
+  if (datosStand.vendedores.length > 0) document.getElementById('listaReg').style.display = 'block';
+  document.getElementById('recuperarQR').style.display = 'block';
+  document.getElementById('barraFija').style.display = 'block';
+};
+
+document.getElementById('btnCerrar').onclick = () => {
+  let intentos = 0;
+  const intentarCerrar = () => {
+    window.open('about:blank', '_self');
+    window.close();
+    intentos++;
+    if (intentos < 3) setTimeout(intentarCerrar, 500);
+    else document.getElementById('avisoCierre').style.display = 'block';
+  };
+  intentarCerrar();
+};
+
+cargar();
+</script>
+</body>
+</html>
