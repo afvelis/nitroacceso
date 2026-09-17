@@ -97,7 +97,7 @@ li{margin:4px 0;}
 
   <section class="tarjeta" id="cortesias">
     <h2>🎁 Cortesias (pases de regalo)</h2>
-    <p class="suave">Solo tu, como administrador, creas pases de cortesia. Al crearlo se genera un link con el o los QR listos para entregar. Puedes modificarlo o anularlo cuando quieras.</p>
+    <p class="suave">Solo tu, como administrador, creas pases de cortesia. Al crearlo se genera un link con el o los QR listos para entregar. Puedes modificarlo o anularlo cuando quieras, incluso con el evento cerrado.</p>
 
     <label>Modalidad
       <select id="kModo">
@@ -753,6 +753,12 @@ function htmlStats(s){
     '<li>Rubros distintos: ' + n(s.rubros_distintos) + '</li>' +
     '<li>Stands patrocinantes: ' + n(s.stands_patrocinantes) + '</li>' +
     '<li>Stands pagados: ' + n(s.stands_pagados) + '</li>' +
+    '</ul>' +
+    '<h3>Cortesias</h3><ul>' +
+    '<li>Pases activos: ' + n(s.cortesias_activas) + '</li>' +
+    '<li>Pases anulados: ' + n(s.cortesias_anuladas) + '</li>' +
+    '<li>Dia 1: ' + n(s.cortesia_autorizados_dia1) + ' autorizados de ' + n(s.cortesia_personas_dia1) + ' personas</li>' +
+    '<li>Dia 2: ' + n(s.cortesia_autorizados_dia2) + ' autorizados de ' + n(s.cortesia_personas_dia2) + ' personas</li>' +
     '</ul>';
   if (Array.isArray(s.rubros) && s.rubros.length) {
     html += '<h3>Rubros que mas se repiten</h3><ul>';
@@ -891,7 +897,7 @@ function htmlInforme(d){
 
 async function limpiarTodo(){
   if (!historialHay) { alert('Primero guarda un informe del evento: es tu candado de seguridad.'); return; }
-  if (!confirm('Esto vaciara TODAS las tablas de trabajo (personas, listas, talentos, vendedores, stands, coordinadores y sesiones) para empezar el proximo evento. El historial y sus informes NO se tocan. Continuar?')) return;
+  if (!confirm('Esto vaciara TODAS las tablas de trabajo (personas, listas, talentos, vendedores, stands, coordinadores y sesiones) para empezar el proximo evento. El historial y sus informes NO se tocan. Las cortesias tambien se vacian. Continuar?')) return;
   if (!confirm('SEGUNDA CONFIRMACION: despues de esto tu sesion se cerrara y tendras que entrar de nuevo con tu PIN. Seguro quieres limpiar?')) return;
   try {
     var ok = await llamar('f_admin_limpiar_todo', { p_token: ses.token });
