@@ -26,10 +26,11 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;backgr
 .estado-pill{display:inline-block;padding:8px 16px;border-radius:24px;font-size:16px;font-weight:700}
 .estado-abierto{background:rgba(53,208,127,.18);color:var(--acento);border:1px solid var(--acento)}
 .estado-cerrado{background:rgba(224,82,82,.18);color:var(--rojo);border:1px solid var(--rojo)}
-.grid-contadores{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:18px}
+.grid-contadores{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:18px}
 .contador{background:var(--tarjeta);border:1px solid var(--borde);border-radius:14px;padding:18px;text-align:center;box-shadow:0 4px 14px rgba(0,0,0,.2)}
 .contador .numero{font-size:32px;font-weight:800;color:var(--acento);display:block}
-.contador .etiqueta{font-size:14px;color:var(--suave);margin-top:6px;display:block}
+.contador .etiqueta{font-size:14px;color:var(--texto);margin-top:6px;display:block;font-weight:600}
+.contador .sub{font-size:12px;color:var(--suave);display:block;margin-top:4px}
 .progreso-dia{margin-bottom:18px}
 .progreso-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px}
 .progreso-titulo{font-weight:700;font-size:16px}
@@ -77,7 +78,7 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;backgr
       </div>
     </div>
 
-    <!-- CONTADORES -->
+    <!-- CONTADORES SEGMENTADOS -->
     <div class="grid-contadores" id="gridContadores"></div>
 
     <!-- PROGRESO DE PUERTA -->
@@ -151,19 +152,21 @@ function renderizar(){
   }
   diaActivo.textContent = 'Día ' + (ev.dia_activo || 1);
   
-  // Contadores
+  // Contadores segmentados
+  const totalPersonas = cont.personas_talento + cont.vendedores_patrocinantes + cont.vendedores_pagados;
   const tarjetas = [
-    { num: cont.talentos, label: '🎭 Talentos' },
-    { num: cont.stands, label: '🏪 Stands' },
-    { num: cont.coordinadores_activos, label: '👥 Coordinadores activos' },
-    { num: cont.personas_talento, label: '📋 Personas en listas' },
-    { num: cont.vendedores_stand, label: '🧑‍💼 Vendedores' }
+    { num: totalPersonas, label: '🧍 Personas en el evento', sub: 'Suma de listas y stands' },
+    { num: cont.talentos, label: '🎭 Talentos', sub: cont.personas_talento + ' personas en sus listas' },
+    { num: cont.stands_patrocinantes, label: '🏪 Stands patrocinantes', sub: cont.vendedores_patrocinantes + ' personas registradas' },
+    { num: cont.stands_pagados, label: '💰 Stands pagados', sub: cont.vendedores_pagados + ' personas registradas' },
+    { num: cont.coordinadores_activos, label: '👥 Coordinadores activos', sub: cont.coordinadores_revocados + ' revocados' }
   ];
   
   gridContadores.innerHTML = tarjetas.map(t => `
     <div class="contador">
       <span class="numero">${t.num}</span>
       <span class="etiqueta">${t.label}</span>
+      <span class="sub">${t.sub}</span>
     </div>
   `).join('');
   
@@ -184,7 +187,7 @@ function renderizar(){
     <div class="progreso-dia">
       <div class="progreso-header">
         <span class="progreso-titulo">📅 Día 1</span>
-        <span class="progreso-stats">✅ ${p1.totalAutorizados} / ⏳ ${p1.totalGeneral - p1.totalAutorizados} pendientes</span>
+        <span class="progreso-stats">✅ ${p1.totalAutorizados} autorizados / ⏳ ${p1.totalGeneral - p1.totalAutorizados} pendientes</span>
       </div>
       <div class="barra-fondo">
         <div class="barra-relleno" style="width:${p1.pct}%">${p1.pct}%</div>
@@ -193,7 +196,7 @@ function renderizar(){
     <div class="progreso-dia">
       <div class="progreso-header">
         <span class="progreso-titulo">📅 Día 2</span>
-        <span class="progreso-stats">✅ ${p2.totalAutorizados} / ⏳ ${p2.totalGeneral - p2.totalAutorizados} pendientes</span>
+        <span class="progreso-stats">✅ ${p2.totalAutorizados} autorizados / ⏳ ${p2.totalGeneral - p2.totalAutorizados} pendientes</span>
       </div>
       <div class="barra-fondo">
         <div class="barra-relleno" style="width:${p2.pct}%">${p2.pct}%</div>
