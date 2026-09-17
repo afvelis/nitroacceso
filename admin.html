@@ -194,7 +194,7 @@ li{margin:4px 0;}
   </section>
 
   <div class="fila">
-    <button class="btn btn-gris" id="btnSalir">Salir</button>
+    <button class="btn btn-gris" id="btnVolver">← Volver al dashboard</button>
   </div>
 
 </main>
@@ -627,7 +627,6 @@ async function verDetalleCortesia(div, c){
         if (!nom || !ape || !ced) { alert('Nombre, apellido y cedula son obligatorios.'); return; }
         var r = await llamar('f_admin_cortesia_agregar_persona', { p_token: ses.token, p_codigo_link: c.codigo_link, p_dia: dia, p_nombre: nom, p_apellido: ape, p_cedula: ced });
         if (r !== 'ok') { alert(msgErrorCortesia(r)); return; }
-        verDetalleCortesia(div, c); verDetalleCortesia(div, c);
         await cargarCortesias();
       };
     });
@@ -912,7 +911,7 @@ if (!ses || ses.rol !== 'admin') {
   $('btnStats').onclick = verStats;
   $('btnGuardarInforme').onclick = guardarInforme;
   $('btnLimpiarTodo').onclick = limpiarTodo;
-  $('btnSalir').onclick = function(){ borrarSesion(); location.replace('index.html'); };
+  $('btnVolver').onclick = function(){ location.replace('dashboard.html'); };
   $('kModo').onchange = actualizarVisibilidadCortesia;
   $('kRazon').onchange = actualizarVisibilidadCortesia;
   $('kDia1').onchange = actualizarVisibilidadCortesia;
