@@ -859,6 +859,127 @@ function tablaVendedores(rows){
   return h;
 }
 
+/* ====== NUEVAS SECCIONES DEL INFORME (segmentacion y tiempos) ====== */
+
+function tablaRankingStands(arr){
+  if (!arr.length) return '<p>Sin registros en esta categoria.</p>';
+  var h = '<table><tr><th>Stand</th><th>Empresa</th><th>Rubro</th><th>Cupo</th><th>Registrados</th><th>Dia 1</th><th>Dia 2</th><th>Tasa</th></tr>';
+  arr.forEach(function(s){
+    var totalDias = (s.aut_dia1 > 0 && s.aut_dia2 > 0) ? 2 : 1;
+    var tasa = s.total_vendedores > 0 ? Math.round(((s.aut_dia1 + s.aut_dia2) / (s.total_vendedores * totalDias)) * 100) : 0;
+    h += '<tr><td>' + esc(s.nombre || ('Stand ' + s.numero)) + '</td><td>' + esc(s.empresa || '-') + '</td><td>' + esc(s.vende || '-') + '</td><td>' + s.cupo + '</td><td>' + s.total_vendedores + '</td><td>' + s.aut_dia1 + '</td><td>' + s.aut_dia2 + '</td><td>' + tasa + '%</td></tr>';
+  });
+  h += '</table>';
+  return h;
+}
+
+function tablaRankingTalentos(arr){
+  if (!arr.length) return '<p>Sin registros en esta categoria.</p>';
+  var h = '<table><tr><th>Talento</th><th>Dias</th><th>Personas</th><th>Autorizados</th><th>Pendientes</th><th>Tasa</th></tr>';
+  arr.forEach(function(t){
+    var tasa = t.total_personas > 0 ? Math.round((t.autorizados / t.total_personas) * 100) : 0;
+    h += '<tr><td>' + esc(t.nombre) + '</td><td>' + diasTexto(t.dia1, t.dia2) + '</td><td>' + t.total_personas + '</td><td>' + t.autorizados + '</td><td>' + t.pendientes + '</td><td>' + tasa + '%</td></tr>';
+  });
+  h += '</table>';
+  return h;
+}
+
+function htmlSegmentacion(seg){
+  if (!seg || !seg.por_dia) return '<p>Sin datos de segmentacion.</p>';
+  var d1 = seg.por_dia.dia1 || {};
+  var d2 = seg.por_dia.dia2 || {};
+  var h = '';
+  h += '<h3>Resumen por dia</h3>';
+  h += '<table><tr><th>Categoria</th><th>Dia 1</th><th>Dia 2</th></tr>' +
+    '<tr><td>Talentos autorizados / pendientes</td><td>' + (d1.talentos_autorizados||0) + ' / ' + (d1.talentos_pendientes||0) + '</td><td>' + (d2.talentos_autorizados||0) + ' / ' + (d2.talentos_pendientes||0) + '</td></tr>' +
+    '<tr><td>Vendedores autorizados / pendientes</td><td>' + (d1.vendedores_autorizados||0) + ' / ' + (d1.vendedores_pendientes||0) + '</td><td>' + (d2.vendedores_autorizados||0) + ' / ' + (d2.vendedores_pendientes||0) + '</td></tr>' +
+    '<tr><td>Cortesias autorizadas / pendientes</td><td>' + (d1.cortesia_autorizados||0) + ' / ' + (d1.cortesia_pendientes||0) + '</td><td>' + (d2.cortesia_autorizados||0) + ' / ' + (d2.cortesia_pendientes||0) + '</td></tr>' +
+    '</table>';
+
+  var stands = seg.stands || [];
+  var patro = stands.filter(function(s){ return s.tipo === 'patrocinante'; });
+  var pagados = stands.filter(function(s){ return s.tipo === 'pagado'; });
+
+  h += '<h3>Patrocinantes (los que hacen posible el evento)</h3>';
+  h += tablaRankingStands(patro);
+  h += '<h3>Stands pagados (los que pagan por participar)</h3>';
+  h += tablaRankingStands(pagados);
+  h += '<h3>Talentos (los que atraen al publico)</h3>';
+  h += tablaRankingTalentos(seg.talentos || []);
+
+  if (seg.rubros && seg.rubros.length) {
+    h += '<h3>Rubros mas promocionados</h3><table><tr><th>Rubro</th><th>Cantidad</th></tr>';
+    seg.rubros.slice(0, 10).forEach(function(r){
+      h += '<tr><td>' + esc(r.vende) + '</td><td>' + r.cantidad + '</td></tr>';
+    });
+    h += '</table>';
+  }
+
+  var cortesias = seg.cortesias || [];
+  h += '<h3>Cortesias</h3>';
+  if (!cortesias.length) {
+    h += '<p>Sin cortesias creadas.</p>';
+  } else {
+    h += '<table><tr><th>Beneficiario</th><th>Tipo</th><th>Razon</th><th>Dias</th><th>Estado</th><th>Personas</th><th>Dia 1</th><th>Dia 2</th></tr>';
+    cortesias.forEach(function(c){
+      var nombre = c.tipo === 'lista' ? (c.nombre_organizacion || 'Lista') : 'Pase individual';
+      h += '<tr><td>' + esc(nombre) + '</td><td>' + (c.tipo === 'lista' ? 'Lista' : 'Individual') + '</td><td>' + esc(razonLegible(c.razon, c.causa)) + '</td><td>' + diasTexto(c.dia1, c.dia2) + '</td><td>' + esc(c.estado) + '</td><td>' + c.total_personas + '</td><td>' + c.aut_dia1 + '</td><td>' + c.aut_dia2 + '</td></tr>';
+    });
+    h += '</table>';
+  }
+
+  var coords = seg.coordinadores || [];
+  h += '<h3>Coordinadores</h3>';
+  if (!coords.length) {
+    h += '<p>Sin coordinadores creados.</p>';
+  } else {
+    h += '<table><tr><th>Tipo</th><th>Nombre</th><th>Codigo</th><th>Estado</th></tr>';
+    coords.forEach(function(c){
+      h += '<tr><td>' + (c.tipo === 'talentos' ? 'Talentos' : 'Stands') + '</td><td>' + esc(c.nombre) + '</td><td>' + esc(c.codigo) + '</td><td>' + (c.activo ? 'Activo' : 'Revocado') + '</td></tr>';
+    });
+    h += '</table>';
+  }
+  return h;
+}
+
+function htmlTiempos(t){
+  if (!t) return '<p>Sin datos de tiempos.</p>';
+  var h = '';
+  var coords = t.coordinadores || [];
+  var talT = t.talentos_tiempos || [];
+  var staT = t.stands_tiempos || [];
+
+  h += '<h3>Coordinadores - tiempo de reaccion</h3>';
+  if (coords.length) {
+    h += '<table><tr><th>Coordinador</th><th>Tipo</th><th>Talentos</th><th>Stands</th><th>Reaccion (horas)</th></tr>';
+    coords.forEach(function(c){
+      h += '<tr><td>' + esc(c.nombre) + '</td><td>' + (c.tipo === 'talentos' ? 'Talentos' : 'Stands') + '</td><td>' + c.num_talentos + '</td><td>' + c.num_stands + '</td><td>' + (c.horas_reaccion == null ? '-' : c.horas_reaccion) + '</td></tr>';
+    });
+    h += '</table>';
+  } else { h += '<p>Sin coordinadores.</p>'; }
+
+  h += '<h3>Talentos - tiempo desde crear el link hasta registrar personas</h3>';
+  if (talT.length) {
+    h += '<table><tr><th>Talento</th><th>Coordinador</th><th>Personas</th><th>Hasta 1ra (h)</th><th>Hasta ultima (h)</th><th>Registro a entrada (h)</th></tr>';
+    talT.forEach(function(x){
+      h += '<tr><td>' + esc(x.nombre) + '</td><td>' + esc(x.coordinador || '-') + '</td><td>' + x.total_personas + '</td><td>' + (x.horas_hasta_primera == null ? '-' : x.horas_hasta_primera) + '</td><td>' + (x.horas_hasta_ultima == null ? '-' : x.horas_hasta_ultima) + '</td><td>' + (x.horas_prom_registro_entrada == null ? '-' : x.horas_prom_registro_entrada) + '</td></tr>';
+    });
+    h += '</table>';
+  } else { h += '<p>Sin talentos.</p>'; }
+
+  h += '<h3>Stands - tiempo desde crear el link hasta registrar vendedores</h3>';
+  if (staT.length) {
+    h += '<table><tr><th>Stand</th><th>Tipo</th><th>Coordinador</th><th>Vendedores</th><th>Hasta 1ro (h)</th><th>Hasta ultimo (h)</th><th>Registro a entrada (h)</th></tr>';
+    staT.forEach(function(x){
+      h += '<tr><td>' + esc(x.nombre || ('Stand ' + x.numero)) + '</td><td>' + (x.tipo === 'patrocinante' ? 'Patrocinante' : 'Pagado') + '</td><td>' + esc(x.coordinador || '-') + '</td><td>' + x.total_vendedores + '</td><td>' + (x.horas_hasta_primero == null ? '-' : x.horas_hasta_primero) + '</td><td>' + (x.horas_hasta_ultimo == null ? '-' : x.horas_hasta_ultimo) + '</td><td>' + (x.horas_prom_registro_entrada == null ? '-' : x.horas_prom_registro_entrada) + '</td></tr>';
+    });
+    h += '</table>';
+  } else { h += '<p>Sin stands.</p>'; }
+  return h;
+}
+
+/* ====== FIN NUEVAS SECCIONES ====== */
+
 function htmlInforme(d){
   var h = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Informe ' + esc(d.nombre) + '</title><style>' +
     'body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:17px;color:#111;background:#fff;margin:28px;}' +
@@ -873,19 +994,30 @@ function htmlInforme(d){
     '<h1>Informe del evento: ' + esc(d.nombre) + '</h1>' +
     '<p>Guardado el: ' + fechaBonita(d.creado_at) + '</p>' +
     '<h2>Estadisticas generales</h2>' + htmlStats(d.stats || {});
+
+  var seg = (d.detalle && d.detalle.segmentacion) || null;
+  var tie = (d.detalle && d.detalle.tiempos) || null;
+
+  if (seg) {
+    h += '<h2>Segmentacion por valor</h2>' + htmlSegmentacion(seg);
+  }
+  if (tie) {
+    h += '<h2>Tiempos de gestion del equipo</h2>' + htmlTiempos(tie);
+  }
+
   var talentos = (d.detalle && d.detalle.talentos) || [];
   var stands = (d.detalle && d.detalle.stands) || [];
-  h += '<h2>Talentos y sus listas</h2>';
+  h += '<h2>Talentos y sus listas (detalle)</h2>';
   if (!talentos.length) { h += '<p>Sin talentos registrados.</p>'; }
   talentos.forEach(function(t){
     var dias = (t.dia1 ? 'Dia 1' : '') + (t.dia1 && t.dia2 ? ' y ' : '') + (t.dia2 ? 'Dia 2' : '');
     h += '<h3>' + esc(t.talento) + ' (' + dias + ')</h3>';
     (t.listas || []).forEach(function(l){
-      h += '<p>Dia ' + l.dia + ' — estado: ' + esc(l.estado) + ' — codigo corto: ' + esc(l.codigo_corto) + '</p>';
+      h += '<p>Dia ' + l.dia + ' - estado: ' + esc(l.estado) + ' - codigo corto: ' + esc(l.codigo_corto) + '</p>';
       h += tablaPersonas(l.personas);
     });
   });
-  h += '<h2>Stands y sus vendedores</h2>';
+  h += '<h2>Stands y sus vendedores (detalle)</h2>';
   if (!stands.length) { h += '<p>Sin stands registrados.</p>'; }
   stands.forEach(function(s){
     h += '<h3>Stand ' + esc(s.numero) + ' (' + esc(s.tipo) + ', cupo ' + esc(s.cupo) + ')</h3>';
