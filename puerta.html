@@ -108,13 +108,17 @@ label{display:block;margin-bottom:6px;color:var(--suave);font-size:15px}
 }
 .selector-dia button{
   flex:1;padding:14px;border:2px solid var(--borde);
-  background:transparent;color:var(--texto);
+  background:#0d1626;color:var(--suave);
   border-radius:10px;cursor:pointer;font-size:17px;font-weight:600;
   transition:all .2s;
+}
+.selector-dia button:hover{
+  border-color:var(--acento);
 }
 .selector-dia button.activo{
   background:linear-gradient(135deg,var(--acento),#26a866);
   border-color:var(--acento);
+  color:white;
 }
 .modo-tabs{
   display:flex;gap:8px;margin-bottom:16px;
@@ -126,6 +130,19 @@ label{display:block;margin-bottom:6px;color:var(--suave);font-size:15px}
 }
 .modo-tabs button.activo{
   background:var(--borde);color:var(--texto);
+}
+#visorQR{
+  width:100%;
+  max-width:500px;
+  aspect-ratio:4/3;
+  background:#000;
+  border-radius:12px;
+  margin:14px auto;
+  display:block;
+  border:2px solid var(--acento);
+}
+.scan-line{
+  position:relative;
 }
 </style>
 </head>
@@ -153,10 +170,10 @@ label{display:block;margin-bottom:6px;color:var(--suave);font-size:15px}
   <div class="tarjeta" id="tarjetaPrincipal" style="display:none">
     <h2>🎯 Control de acceso</h2>
     
-    <label>Selecciona el día</label>
+    <label>Selecciona el día (solo uno activo a la vez)</label>
     <div class="selector-dia">
-      <button id="btnDia1">Día 1</button>
-      <button id="btnDia2">Día 2</button>
+      <button id="btnDia1">📅 Día 1</button>
+      <button id="btnDia2">📅 Día 2</button>
     </div>
 
     <div id="panelDia" style="display:none">
@@ -170,17 +187,25 @@ label{display:block;margin-bottom:6px;color:var(--suave);font-size:15px}
       <div id="panelLista">
         <label for="codigoLista">Código corto de lista (L-XXXXXX) o nombre</label>
         <input type="text" id="codigoLista" placeholder="Ej: L-43B2CD o nombre del talento">
-        <div style="margin-top:12px">
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn" id="btnBuscarLista">Buscar lista</button>
+          <button class="btn btn-azul" id="btnEscanearLista">📷 Escanear QR</button>
         </div>
       </div>
 
       <div id="panelVendedor" style="display:none">
         <label for="codigoVendedor">Código QR del vendedor (V-XXXXXXXX) o cédula</label>
         <input type="text" id="codigoVendedor" placeholder="Ej: V-A1B2C3D4 o 12345678">
-        <div style="margin-top:12px">
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn" id="btnBuscarVendedor">Buscar vendedor</button>
+          <button class="btn btn-azul" id="btnEscanearVendedor">📷 Escanear QR</button>
         </div>
+      </div>
+
+      <div id="visorContainer" style="display:none;margin-top:16px">
+        <video id="visorQR" autoplay playsinline muted></video>
+        <p style="text-align:center;color:var(--suave);font-size:14px">Apunta la cámara al código QR</p>
+        <button class="btn btn-rojo" id="btnDetenerScan" style="display:block;margin:10px auto">⏹ Detener cámara</button>
       </div>
     </div>
 
@@ -207,10 +232,19 @@ const codigoLista = document.getElementById('codigoLista');
 const codigoVendedor = document.getElementById('codigoVendedor');
 const btnBuscarLista = document.getElementById('btnBuscarLista');
 const btnBuscarVendedor = document.getElementById('btnBuscarVendedor');
+const btnEscanearLista = document.getElementById('btnEscanearLista');
+const btnEscanearVendedor = document.getElementById('btnEscanearVendedor');
+const visorContainer = document.getElementById('visorContainer');
+const visorQR = document.getElementById('visorQR');
+const btnDetenerScan = document.getElementById('btnDetenerScan');
 const btnSalir = document.getElementById('btnSalir');
 
 let diaSeleccionado = null;
 let tokenSesion = null;
+let streamVideo = null;
+let detectorQR = null;
+let scanningInterval = null;
+let modoScanActual = null; // 'lista' o 'vendedor'
 
 function mostrarPrincipal(){
   tarjetaLogin.style.display = 'none';
@@ -219,10 +253,16 @@ function mostrarPrincipal(){
 
 function seleccionarDia(dia){
   diaSeleccionado = dia;
-  btnDia1.classList.toggle('activo', dia === 1);
-  btnDia2.classList.toggle('activo', dia === 2);
+  // Exclusividad visual: solo uno activo
+  if(dia === 1){
+    btnDia1.classList.add('activo');
+    btnDia2.classList.remove('activo');
+  }else{
+    btnDia2.classList.add('activo');
+    btnDia1.classList.remove('activo');
+  }
   panelDia.style.display = 'block';
-  avisoDia.textContent = `Controlando entrada del Día ${dia}`;
+  avisoDia.textContent = `✓ Controlando entrada del Día ${dia}`;
 }
 
 btnDia1.addEventListener('click', () => seleccionarDia(1));
@@ -267,6 +307,7 @@ btnEntrar.addEventListener('click', async () => {
 
 btnSalir.addEventListener('click', () => {
   if(confirm('¿Cerrar sesión de puerta?')){
+    detenerScanner();
     borrarSesion();
     location.reload();
   }
@@ -327,6 +368,93 @@ btnBuscarVendedor.addEventListener('click', async () => {
   btnBuscarVendedor.textContent = 'Buscar vendedor';
 });
 
+// === LECTOR DE QR CON CÁMARA (API nativa BarcodeDetector) ===
+async function iniciarScanner(modo){
+  if(!('BarcodeDetector' in window)){
+    alert('Tu navegador no soporta lectura de QR por cámara. Escribe el código manualmente.');
+    return;
+  }
+  if(!diaSeleccionado){
+    alert('Selecciona un día primero.');
+    return;
+  }
+  
+  modoScanActual = modo;
+  try{
+    streamVideo = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+    });
+    visorQR.srcObject = streamVideo;
+    visorContainer.style.display = 'block';
+    
+    detectorQR = new BarcodeDetector({ formats: ['qr_code'] });
+    
+    scanningInterval = setInterval(async () => {
+      if(!visorQR.videoWidth) return;
+      try{
+        const codigos = await detectorQR.detect(visorQR);
+        if(codigos && codigos.length > 0){
+          const valor = codigos[0].rawValue;
+          procesarQRLeido(valor);
+        }
+      }catch(e){
+        // Silenciar errores de detección
+      }
+    }, 300);
+  }catch(e){
+    alert('No se pudo acceder a la cámara: ' + e.message);
+  }
+}
+
+function detenerScanner(){
+  if(scanningInterval){
+    clearInterval(scanningInterval);
+    scanningInterval = null;
+  }
+  if(streamVideo){
+    streamVideo.getTracks().forEach(t => t.stop());
+    streamVideo = null;
+  }
+  visorContainer.style.display = 'none';
+}
+
+function procesarQRLeido(valor){
+  detenerScanner();
+  // El QR codifica una URL como https://afvelis.github.io/nitroacceso/puerta.html?lista=L-XXXXX o ?v=V-XXXXX
+  try{
+    const url = new URL(valor);
+    const params = url.searchParams;
+    if(params.has('lista')){
+      codigoLista.value = params.get('lista');
+      tabLista.click();
+      btnBuscarLista.click();
+    }else if(params.has('v')){
+      codigoVendedor.value = params.get('v');
+      tabVendedor.click();
+      btnBuscarVendedor.click();
+    }else{
+      alert('QR leído pero no contiene datos de lista ni vendedor: ' + valor);
+    }
+  }catch(e){
+    // Si no es URL válida, intentar usar el valor directo
+    if(valor.toUpperCase().startsWith('V-')){
+      codigoVendedor.value = valor;
+      tabVendedor.click();
+      btnBuscarVendedor.click();
+    }else if(valor.toUpperCase().startsWith('L-')){
+      codigoLista.value = valor;
+      tabLista.click();
+      btnBuscarLista.click();
+    }else{
+      alert('QR leído: ' + valor + '\nNo se reconoce el formato.');
+    }
+  }
+}
+
+btnEscanearLista.addEventListener('click', () => iniciarScanner('lista'));
+btnEscanearVendedor.addEventListener('click', () => iniciarScanner('vendedor'));
+btnDetenerScan.addEventListener('click', detenerScanner);
+
 // Al cargar: verificar sesión existente y parámetros URL
 (function(){
   const s = leerSesion();
@@ -341,7 +469,7 @@ btnBuscarVendedor.addEventListener('click', async () => {
   
   if(listaParam){
     codigoLista.value = listaParam;
-    if(tokenSesion) seleccionarDia(1); // Por defecto día 1
+    if(tokenSesion) seleccionarDia(1);
   }
   if(vendedorParam){
     codigoVendedor.value = vendedorParam;
