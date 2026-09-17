@@ -103,6 +103,30 @@ label{display:block;margin-bottom:6px;color:var(--suave);font-size:15px}
 .pill-amarillo{background:rgba(255,211,61,.18);color:var(--aviso)}
 .pill-azul{background:rgba(31,162,255,.18);color:var(--acento2)}
 .mono{font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:1px}
+.selector-dia{
+  display:flex;gap:10px;margin-bottom:16px;
+}
+.selector-dia button{
+  flex:1;padding:14px;border:2px solid var(--borde);
+  background:transparent;color:var(--texto);
+  border-radius:10px;cursor:pointer;font-size:17px;font-weight:600;
+  transition:all .2s;
+}
+.selector-dia button.activo{
+  background:linear-gradient(135deg,var(--acento),#26a866);
+  border-color:var(--acento);
+}
+.modo-tabs{
+  display:flex;gap:8px;margin-bottom:16px;
+}
+.modo-tabs button{
+  flex:1;padding:10px;border:1px solid var(--borde);
+  background:transparent;color:var(--suave);
+  border-radius:8px;cursor:pointer;font-size:15px;
+}
+.modo-tabs button.activo{
+  background:var(--borde);color:var(--texto);
+}
 </style>
 </head>
 <body>
@@ -116,7 +140,7 @@ label{display:block;margin-bottom:6px;color:var(--suave);font-size:15px}
 </header>
 
 <main class="contenedor">
-  <div class="tarjeta">
+  <div class="tarjeta" id="tarjetaLogin">
     <h2>🔐 Sesión de puerta</h2>
     <p style="color:var(--suave);margin-bottom:14px">Ingresa el PIN de puerta para comenzar.</p>
     <label for="pin">PIN de puerta</label>
@@ -125,11 +149,98 @@ label{display:block;margin-bottom:6px;color:var(--suave);font-size:15px}
       <button class="btn" id="btnEntrar">Entrar</button>
     </div>
   </div>
+
+  <div class="tarjeta" id="tarjetaPrincipal" style="display:none">
+    <h2>🎯 Control de acceso</h2>
+    
+    <label>Selecciona el día</label>
+    <div class="selector-dia">
+      <button id="btnDia1">Día 1</button>
+      <button id="btnDia2">Día 2</button>
+    </div>
+
+    <div id="panelDia" style="display:none">
+      <div class="aviso" id="avisoDia"></div>
+
+      <div class="modo-tabs">
+        <button class="activo" id="tabLista">📋 Lista de talento</button>
+        <button id="tabVendedor">👤 Vendedor de stand</button>
+      </div>
+
+      <div id="panelLista">
+        <label for="codigoLista">Código corto de lista (L-XXXXXX) o nombre</label>
+        <input type="text" id="codigoLista" placeholder="Ej: L-43B2CD o nombre del talento">
+        <div style="margin-top:12px">
+          <button class="btn" id="btnBuscarLista">Buscar lista</button>
+        </div>
+      </div>
+
+      <div id="panelVendedor" style="display:none">
+        <label for="codigoVendedor">Código QR del vendedor (V-XXXXXXXX) o cédula</label>
+        <input type="text" id="codigoVendedor" placeholder="Ej: V-A1B2C3D4 o 12345678">
+        <div style="margin-top:12px">
+          <button class="btn" id="btnBuscarVendedor">Buscar vendedor</button>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:20px">
+      <button class="btn btn-gris" id="btnSalir">🚪 Cerrar sesión</button>
+    </div>
+  </div>
 </main>
 
 <script>
 const elPin = document.getElementById('pin');
 const btnEntrar = document.getElementById('btnEntrar');
+const tarjetaLogin = document.getElementById('tarjetaLogin');
+const tarjetaPrincipal = document.getElementById('tarjetaPrincipal');
+const btnDia1 = document.getElementById('btnDia1');
+const btnDia2 = document.getElementById('btnDia2');
+const panelDia = document.getElementById('panelDia');
+const avisoDia = document.getElementById('avisoDia');
+const tabLista = document.getElementById('tabLista');
+const tabVendedor = document.getElementById('tabVendedor');
+const panelLista = document.getElementById('panelLista');
+const panelVendedor = document.getElementById('panelVendedor');
+const codigoLista = document.getElementById('codigoLista');
+const codigoVendedor = document.getElementById('codigoVendedor');
+const btnBuscarLista = document.getElementById('btnBuscarLista');
+const btnBuscarVendedor = document.getElementById('btnBuscarVendedor');
+const btnSalir = document.getElementById('btnSalir');
+
+let diaSeleccionado = null;
+let tokenSesion = null;
+
+function mostrarPrincipal(){
+  tarjetaLogin.style.display = 'none';
+  tarjetaPrincipal.style.display = 'block';
+}
+
+function seleccionarDia(dia){
+  diaSeleccionado = dia;
+  btnDia1.classList.toggle('activo', dia === 1);
+  btnDia2.classList.toggle('activo', dia === 2);
+  panelDia.style.display = 'block';
+  avisoDia.textContent = `Controlando entrada del Día ${dia}`;
+}
+
+btnDia1.addEventListener('click', () => seleccionarDia(1));
+btnDia2.addEventListener('click', () => seleccionarDia(2));
+
+tabLista.addEventListener('click', () => {
+  tabLista.classList.add('activo');
+  tabVendedor.classList.remove('activo');
+  panelLista.style.display = 'block';
+  panelVendedor.style.display = 'none';
+});
+
+tabVendedor.addEventListener('click', () => {
+  tabVendedor.classList.add('activo');
+  tabLista.classList.remove('activo');
+  panelVendedor.style.display = 'block';
+  panelLista.style.display = 'none';
+});
 
 btnEntrar.addEventListener('click', async () => {
   const pin = elPin.value.trim();
@@ -145,8 +256,8 @@ btnEntrar.addEventListener('click', async () => {
       return;
     }
     guardarSesion(r[0].token, r[0].rol);
-    // Aquí seguirá el resto del flujo en el próximo paso
-    alert('Sesión de puerta iniciada. Siguiente paso: selector de día.');
+    tokenSesion = r[0].token;
+    mostrarPrincipal();
   }catch(e){
     alert('Error al entrar: ' + (e.message || e));
   }
@@ -154,11 +265,88 @@ btnEntrar.addEventListener('click', async () => {
   btnEntrar.textContent = 'Entrar';
 });
 
-// Si ya hay sesión de puerta activa, la detectamos
+btnSalir.addEventListener('click', () => {
+  if(confirm('¿Cerrar sesión de puerta?')){
+    borrarSesion();
+    location.reload();
+  }
+});
+
+btnBuscarLista.addEventListener('click', async () => {
+  if(!diaSeleccionado){ alert('Selecciona un día primero.'); return; }
+  const buscar = codigoLista.value.trim();
+  if(!buscar){ alert('Escribe un código o nombre.'); return; }
+  btnBuscarLista.disabled = true;
+  btnBuscarLista.textContent = 'Buscando...';
+  try{
+    const listas = await llamar('f_puerta_lista', {
+      p_token: tokenSesion,
+      p_dia: diaSeleccionado,
+      p_buscar: buscar
+    });
+    if(!listas || listas.length === 0){
+      alert('No se encontraron listas.');
+    }else{
+      alert(`Se encontraron ${listas.length} lista(s). Siguiente paso: mostrar resultados.`);
+    }
+  }catch(e){
+    alert('Error: ' + (e.message || e));
+  }
+  btnBuscarLista.disabled = false;
+  btnBuscarLista.textContent = 'Buscar lista';
+});
+
+btnBuscarVendedor.addEventListener('click', async () => {
+  if(!diaSeleccionado){ alert('Selecciona un día primero.'); return; }
+  const codigo = codigoVendedor.value.trim();
+  if(!codigo){ alert('Escribe un código o cédula.'); return; }
+  btnBuscarVendedor.disabled = true;
+  btnBuscarVendedor.textContent = 'Buscando...';
+  try{
+    let vendedor = null;
+    if(codigo.toUpperCase().startsWith('V-')){
+      vendedor = await llamar('f_puerta_vendedor_por_qr', {
+        p_token: tokenSesion,
+        p_codigo_qr: codigo
+      });
+    }else{
+      vendedor = await llamar('f_puerta_vendedor_por_cedula', {
+        p_token: tokenSesion,
+        p_cedula: codigo
+      });
+    }
+    if(!vendedor){
+      alert('No se encontró el vendedor.');
+    }else{
+      alert(`Vendedor encontrado: ${vendedor.nombre} ${vendedor.apellido}. Siguiente paso: mostrar detalles.`);
+    }
+  }catch(e){
+    alert('Error: ' + (e.message || e));
+  }
+  btnBuscarVendedor.disabled = false;
+  btnBuscarVendedor.textContent = 'Buscar vendedor';
+});
+
+// Al cargar: verificar sesión existente y parámetros URL
 (function(){
   const s = leerSesion();
   if(s && s.rol === 'puerta'){
-    alert('Ya tienes sesión de puerta activa. Siguiente paso: selector de día.');
+    tokenSesion = s.token;
+    mostrarPrincipal();
+  }
+  
+  const params = new URLSearchParams(location.search);
+  const listaParam = params.get('lista');
+  const vendedorParam = params.get('v');
+  
+  if(listaParam){
+    codigoLista.value = listaParam;
+    if(tokenSesion) seleccionarDia(1); // Por defecto día 1
+  }
+  if(vendedorParam){
+    codigoVendedor.value = vendedorParam;
+    tabVendedor.click();
+    if(tokenSesion) seleccionarDia(1);
   }
 })();
 </script>
