@@ -26,25 +26,26 @@ h2{margin:0 0 12px;font-size:22px;}
 h3{margin:14px 0 6px;font-size:19px;color:var(--acento2);}
 label{display:block;margin:10px 0;font-size:17px;}
 select,input{width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1px solid var(--borde);background:#0d1526;color:var(--texto);font-size:17px;}
-.btn{display:inline-block;border:none;border-radius:12px;padding:12px 18px;font-size:17px;font-weight:600;color:#06281a;background:linear-gradient(135deg,var(--acento),#2bb673);cursor:pointer;text-decoration:none;}
+input[type=checkbox]{width:auto;margin-right:8px;}
+.btn{display:inline-block;border:none;border-radius:12px;padding:12px 18px;font-size:17px;font-weight:600;color:#06281a;background:linear-gradient(135deg,var(--acento),#2bb673);cursor:pointer;}
 .btn-gris{background:#2a3648;color:var(--texto);}
 .btn-rojo{background:linear-gradient(135deg,#e05252,#c73e3e);color:#fff;}
 .btn-verde{background:linear-gradient(135deg,var(--acento),#2bb673);color:#06281a;}
-.btn-azul{background:linear-gradient(135deg,var(--acento2),#147acc);color:#fff;}
 .btn:disabled{opacity:.45;cursor:not-allowed;}
 .fila{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;}
 .suave{color:var(--suave);}
 .codigo{background:#0d1526;border:1px solid var(--borde);border-radius:10px;padding:12px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:20px;letter-spacing:2px;margin-top:8px;word-break:break-all;}
-.codigo.link{font-size:17px;letter-spacing:0;}
 .item{border:1px solid var(--borde);border-radius:12px;padding:14px;margin-top:12px;background:#0e1728;}
 .badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:17px;margin-left:8px;vertical-align:middle;}
 .badge-tipo{background:#123a5c;color:#9fd2ff;}
 .badge-ok{background:#12402c;color:#7ee2ae;}
 .badge-no{background:#4a1a1a;color:#ff9d9d;}
+.badge-morado{background:#3a2350;color:#d3a6ff;}
 .panel-edit{margin-top:12px;border-top:1px dashed var(--borde);padding-top:6px;}
-.msg-item{min-height:22px;margin:10px 0 0;}
 ul{margin:6px 0;padding-left:22px;}
 li{margin:4px 0;}
+.fila-persona{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px;}
+.fila-persona input{flex:1;min-width:110px;margin-top:0;}
 </style>
 </head>
 <body>
@@ -90,8 +91,85 @@ li{margin:4px 0;}
 
   <section class="tarjeta">
     <h2>Coordinadores creados</h2>
-    <p class="suave">Aqui ves quien tiene llave de entrada. Enviale el link por WhatsApp o correo: al abrirlo entra directo a su espacio de coordinador. El boton "Eliminar" revoca la llave sin borrar lo creado; y sobre un coordinador ya revocado aparece "Eliminar definitivamente" para sacarlo de esta lista para siempre.</p>
+    <p class="suave">Aqui ves quien tiene llave de entrada. El boton "Eliminar" revoca la llave sin borrar lo creado; y sobre un coordinador ya revocado aparece "Eliminar definitivamente" para sacarlo de esta lista para siempre.</p>
     <div id="listaCoords"><p class="suave">Consultando...</p></div>
+  </section>
+
+  <section class="tarjeta">
+    <h2>🎁 Cortesias (pases de regalo)</h2>
+    <p class="suave">Solo tu, como administrador, creas pases de cortesia. Al crearlo se genera un link con el o los QR listos para entregar. Puedes modificarlo o anularlo cuando quieras.</p>
+
+    <label>Modalidad
+      <select id="kModo">
+        <option value="lista">Lista (una organizacion, un QR por dia)</option>
+        <option value="individual">Individual (un pase con QR propio)</option>
+      </select>
+    </label>
+
+    <div id="zonaOrg">
+      <label>Nombre de la organizacion
+        <input id="kOrg" placeholder="Ej.: Prensa de Aragua">
+      </label>
+    </div>
+
+    <div id="zonaInd" style="display:none">
+      <label>Nombre
+        <input id="kNom" placeholder="Ej.: Juan">
+      </label>
+      <label>Apellido
+        <input id="kApe" placeholder="Ej.: Gomez">
+      </label>
+      <label>Cedula
+        <input id="kCed" placeholder="Ej.: 12345678">
+      </label>
+    </div>
+
+    <label>Razon de la cortesia
+      <select id="kRazon">
+        <option value="prensa">Prensa</option>
+        <option value="vinculo_familiar">Vinculo familiar</option>
+        <option value="premio">Premio</option>
+        <option value="autoridad">Autoridad</option>
+        <option value="otros">Otros</option>
+      </select>
+    </label>
+    <div id="zonaCausa" style="display:none">
+      <label>Causa especifica
+        <input id="kCausa" placeholder="Ej.: Invitado especial del alcalde">
+      </label>
+      <p class="suave" style="color:var(--aviso)">Indique la causa de la cortesia: este texto quedara registrado en el sistema.</p>
+    </div>
+
+    <label>Dias aprobados</label>
+    <div class="fila">
+      <label style="margin:0"><input type="checkbox" id="kDia1" checked> Dia 1</label>
+      <label style="margin:0"><input type="checkbox" id="kDia2"> Dia 2</label>
+    </div>
+
+    <div id="zonaListas">
+      <h3>Personas del Dia 1</h3>
+      <div id="rowsDia1"></div>
+      <div class="fila">
+        <button class="btn btn-gris" id="btnAddRow1">+ Agregar persona</button>
+        <button class="btn btn-gris" id="btnCopiar1a2">📋 Copiar lista al Dia 2</button>
+      </div>
+      <div id="bloqueDia2">
+        <h3>Personas del Dia 2</h3>
+        <div id="rowsDia2"></div>
+        <div class="fila">
+          <button class="btn btn-gris" id="btnAddRow2">+ Agregar persona</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="fila">
+      <button class="btn" id="btnCrearCortesia">Crear cortesia</button>
+    </div>
+    <p id="msgCortesia" class="suave"></p>
+    <div id="resultadoCortesia"></div>
+
+    <h3>Cortesias creadas</h3>
+    <div id="listaCortesias"><p class="suave">Consultando...</p></div>
   </section>
 
   <section class="tarjeta">
@@ -128,12 +206,10 @@ function esc(t){
     .replace(/&/g,'&amp;').replace(/</g,'&lt;')
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-function avisoEl(el, texto, ok){
+function aviso(id, texto, ok){
+  var el = $(id);
   el.textContent = texto;
   el.style.color = ok ? 'var(--acento)' : 'var(--aviso)';
-}
-function aviso(id, texto, ok){
-  avisoEl($(id), texto, ok);
 }
 function boton(texto, clase, fn){
   var b = document.createElement('button');
@@ -145,74 +221,46 @@ function boton(texto, clase, fn){
 async function copiarTexto(txt){
   try {
     await navigator.clipboard.writeText(txt);
-    return true;
   } catch (e) {
-    try {
-      var ta = document.createElement('textarea');
-      ta.value = txt;
-      ta.setAttribute('readonly', '');
-      ta.style.position = 'fixed';
-      ta.style.left = '-9999px';
-      document.body.appendChild(ta);
-      ta.select();
-      ta.setSelectionRange(0, 99999);
-      var ok = document.execCommand('copy');
-      document.body.removeChild(ta);
-      return ok;
-    } catch (e2) {
-      return false;
-    }
+    var ta = document.createElement('textarea');
+    ta.value = txt;
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch (e2) {}
+    document.body.removeChild(ta);
   }
-}
-function botonCopiar(textoInicial, obtenerTexto, fnAviso){
-  var b = document.createElement('button');
-  b.className = 'btn btn-gris';
-  b.textContent = textoInicial;
-  b.onclick = async function(){
-    var ok = await copiarTexto(obtenerTexto());
-    if (ok) {
-      b.textContent = '¡Copiado!';
-      if (fnAviso) fnAviso('Copiado al portapapeles. Pegalo donde quieras.', true);
-      setTimeout(function(){ b.textContent = textoInicial; }, 2000);
-    } else if (fnAviso) {
-      fnAviso('Tu navegador no dejo copiar solo. Selecciona el texto con el mouse o el dedo y copialo manual.', false);
-    } else {
-      alert('Tu navegador no dejo copiar solo. Selecciona el texto con el mouse o el dedo y copialo manual.');
-    }
-  };
-  return b;
-}
-function urlWA(texto){ return 'https://wa.me/?text=' + encodeURIComponent(texto); }
-function urlMail(asunto, texto){ return 'mailto:?subject=' + encodeURIComponent(asunto) + '&body=' + encodeURIComponent(texto); }
-function linkCoord(codigo){ return BASE + 'coord.html?c=' + encodeURIComponent(codigo); }
-function textoCompartir(nombre, tipoTxt, link){
-  return 'Hola ' + nombre + ', aqui esta tu acceso de coordinador de ' + tipoTxt + ' para Nitrotoon. Abre este link y entra directo a tu espacio: ' + link;
-}
-function filaCompartir(link, textoComp, fnAviso){
-  var fila = document.createElement('div');
-  fila.className = 'fila';
-  fila.appendChild(botonCopiar('Copiar link', function(){ return link; }, fnAviso));
-  var aWA = document.createElement('a');
-  aWA.className = 'btn';
-  aWA.textContent = 'WhatsApp';
-  aWA.target = '_blank';
-  aWA.href = urlWA(textoComp);
-  fila.appendChild(aWA);
-  var bMail = document.createElement('button');
-  bMail.className = 'btn btn-azul';
-  bMail.textContent = 'Correo';
-  bMail.onclick = async function(){
-    await copiarTexto(textoComp);
-    fnAviso('Intentamos abrir tu aplicacion de correo. Si no se abrio nada, el mensaje ya quedo copiado: pegalo en tu correo o en WhatsApp.', true);
-    window.location.href = urlMail('Nitrotoon - acceso de coordinador', textoComp);
-  };
-  fila.appendChild(bMail);
-  return fila;
 }
 function fechaBonita(iso){
   try {
     return new Date(iso).toLocaleDateString('es-VE', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
   } catch (e) { return ''; }
+}
+function urlWA(texto){ return 'https://wa.me/?text=' + encodeURIComponent(texto); }
+function urlMail(asunto, cuerpo){ return 'mailto:?subject=' + encodeURIComponent(asunto) + '&body=' + encodeURIComponent(cuerpo); }
+function razonLegible(r, causa){
+  var map = { prensa:'Prensa', vinculo_familiar:'Vinculo familiar', premio:'Premio', autoridad:'Autoridad', otros:'Otros' };
+  var t = map[r] || r;
+  if (r === 'otros' && causa) t += ': ' + causa;
+  return t;
+}
+function diasTexto(d1, d2){
+  if (d1 && d2) return 'Dia 1 y Dia 2';
+  if (d1) return 'Dia 1';
+  if (d2) return 'Dia 2';
+  return '-';
+}
+function msgErrorCortesia(r){
+  var map = {
+    ERR_DATOS: 'Faltan datos obligatorios o hay campos vacios. Revisa el formulario.',
+    ERR_CEDULA_REPETIDA: 'Hay una cedula repetida dentro del mismo dia. Cada persona debe aparecer una sola vez por dia.',
+    ERR_NO_EXISTE: 'Esa cortesia ya no existe. Recarga la pagina.',
+    ERR_ANULADA: 'Esa cortesia esta anulada: ya no se puede modificar.',
+    ERR_MODO: 'Esa accion no aplica para esta modalidad de cortesia.',
+    ERR_YA_EXISTE: 'Ese dia ya esta agregado en esta cortesia.',
+    ERR_USADA: 'No se puede quitar o editar: esa persona ya entro por la puerta.',
+    ERR_NO_LISTA: 'Esa cortesia no tiene lista para ese dia.'
+  };
+  return map[r] || ('El sistema respondio: ' + r);
 }
 
 var ses = leerSesion();
@@ -251,36 +299,19 @@ async function crearCoord(){
       p_token: ses.token, p_tipo: tipo, p_nombre: nombre, p_correo: correo || null
     });
     if (!codigo) { aviso('msgCrear', 'No se pudo crear el coordinador. Intenta de nuevo.', false); return; }
-    var nombreCoord = nombre;
-    var tipoTxt = (tipo === 'talentos') ? 'Talentos' : 'Stands';
-    var link = linkCoord(codigo);
     var cont = $('resultadoCoord');
     cont.innerHTML = '';
     var caja = document.createElement('div');
     caja.className = 'codigo';
     caja.textContent = codigo;
-    var pLink = document.createElement('p');
-    pLink.className = 'suave';
-    pLink.textContent = 'Link de entrada del coordinador (enviaselo):';
-    var cajaLink = document.createElement('div');
-    cajaLink.className = 'codigo link';
-    cajaLink.textContent = link;
-    var msgEl = document.createElement('p');
-    msgEl.className = 'suave msg-item';
-    function fnAviso(t, ok){ avisoEl(msgEl, t, ok); }
-    var fComp = filaCompartir(link, textoCompartir(nombreCoord, tipoTxt, link), fnAviso);
-    var fGes = document.createElement('div');
-    fGes.className = 'fila';
-    fGes.appendChild(botonCopiar('Copiar codigo', function(){ return codigo; }, fnAviso));
+    var fila = document.createElement('div');
+    fila.className = 'fila';
+    fila.appendChild(boton('Copiar codigo', 'btn-gris', function(){ copiarTexto(codigo); }));
     var nota = document.createElement('p');
     nota.className = 'suave';
-    nota.textContent = 'Enviale el link por WhatsApp o correo: al abrirlo entra directo a su espacio. El codigo sirve si prefiere escribirlo a mano en coord.html.';
+    nota.textContent = 'Entregale este codigo a tu coordinador: con el entra en coord.html y crea los links de registro.';
     cont.appendChild(caja);
-    cont.appendChild(pLink);
-    cont.appendChild(cajaLink);
-    cont.appendChild(fComp);
-    cont.appendChild(fGes);
-    cont.appendChild(msgEl);
+    cont.appendChild(fila);
     cont.appendChild(nota);
     $('cNombre').value = '';
     $('cCorreo').value = '';
@@ -309,34 +340,21 @@ function tarjetaCoord(c){
   div.className = 'item';
   var tipoTxt = (c.tipo === 'talentos') ? 'Talentos' : 'Stands';
   var fecha = fechaBonita(c.creada_at);
-  var link = linkCoord(c.codigo);
   div.innerHTML =
     '<div><strong>' + esc(c.nombre) + '</strong>' +
     '<span class="badge badge-tipo">' + tipoTxt + '</span>' +
     '<span class="badge ' + (c.activo ? 'badge-ok">Activo' : 'badge-no">Revocado') + '</span></div>' +
     '<div class="codigo">' + esc(c.codigo) + '</div>' +
-    '<p class="suave" style="margin:10px 0 0;">Link de entrada (enviaselo):</p>' +
-    '<div class="codigo link">' + esc(link) + '</div>' +
     '<p class="suave">' + (c.correo ? esc(c.correo) : 'Sin correo registrado') + (fecha ? ' · Creado el ' + fecha : '') + '</p>' +
-    '<div class="zona-compartir"></div>' +
-    '<div class="fila fila-gestion"></div>' +
-    '<p class="suave msg-item"></p>';
-  var nota = div.querySelector('.msg-item');
-  function fnAviso(t, ok){ avisoEl(nota, t, ok); }
-  var zonaComp = div.querySelector('.zona-compartir');
+    '<div class="fila"></div>';
+  var fila = div.querySelector('.fila');
+  fila.appendChild(boton('Copiar codigo', 'btn-gris', function(){ copiarTexto(c.codigo); }));
+  fila.appendChild(boton('Editar', 'btn-gris', function(){ mostrarEdicion(div, c); }));
   if (c.activo) {
-    zonaComp.appendChild(filaCompartir(link, textoCompartir(c.nombre, tipoTxt, link), fnAviso));
+    fila.appendChild(boton('Eliminar', 'btn-rojo', function(){ revocar(c, false); }));
   } else {
-    zonaComp.innerHTML = '<p class="suave">Revocado: su link de entrada ya no funciona. Reactivalo para poder compartirlo de nuevo.</p>';
-  }
-  var fGes = div.querySelector('.fila-gestion');
-  fGes.appendChild(botonCopiar('Copiar codigo', function(){ return c.codigo; }, fnAviso));
-  fGes.appendChild(boton('Editar', 'btn-gris', function(){ mostrarEdicion(div, c); }));
-  if (c.activo) {
-    fGes.appendChild(boton('Eliminar', 'btn-rojo', function(){ revocar(c, false); }));
-  } else {
-    fGes.appendChild(boton('Reactivar', 'btn-verde', function(){ revocar(c, true); }));
-    fGes.appendChild(boton('Eliminar definitivamente', 'btn-rojo', function(){ borrarDefinitivo(c); }));
+    fila.appendChild(boton('Reactivar', 'btn-verde', function(){ revocar(c, true); }));
+    fila.appendChild(boton('Eliminar definitivamente', 'btn-rojo', function(){ borrarDefinitivo(c); }));
   }
   return div;
 }
@@ -401,6 +419,319 @@ async function borrarDefinitivo(c){
     alert('No se pudo borrar. Puede que tu sesion expirara o que el coordinador ya no exista. Recarga la pagina.');
   } catch (e) { alert('Fallo al borrar: ' + e.message); }
 }
+
+/* ============ CORTESIAS ============ */
+
+function agregarFilaPersona(contId){
+  var cont = $(contId);
+  var fila = document.createElement('div');
+  fila.className = 'fila-persona';
+  fila.innerHTML =
+    '<input placeholder="Nombre" class="pNom">' +
+    '<input placeholder="Apellido" class="pApe">' +
+    '<input placeholder="Cedula" class="pCed">';
+  var q = boton('Quitar', 'btn-rojo', function(){ fila.remove(); });
+  fila.appendChild(q);
+  cont.appendChild(fila);
+}
+
+function leerFilas(contId){
+  var filas = $(contId).querySelectorAll('.fila-persona');
+  var out = [];
+  for (var i = 0; i < filas.length; i++) {
+    var nom = filas[i].querySelector('.pNom').value.trim();
+    var ape = filas[i].querySelector('.pApe').value.trim();
+    var ced = filas[i].querySelector('.pCed').value.trim();
+    if (!nom && !ape && !ced) continue;
+    if (!nom || !ape || !ced) return { error: 'Hay una fila de persona incompleta: nombre, apellido y cedula son obligatorios.' };
+    out.push({ nombre: nom, apellido: ape, cedula: ced });
+  }
+  return { personas: out };
+}
+
+function actualizarVisibilidadCortesia(){
+  var modo = $('kModo').value;
+  $('zonaOrg').style.display = (modo === 'lista') ? 'block' : 'none';
+  $('zonaListas').style.display = (modo === 'lista') ? 'block' : 'none';
+  $('zonaInd').style.display = (modo === 'individual') ? 'block' : 'none';
+  $('zonaCausa').style.display = ($('kRazon').value === 'otros') ? 'block' : 'none';
+  $('bloqueDia2').style.display = $('kDia2').checked ? 'block' : 'none';
+}
+
+async function crearCortesia(){
+  var modo = $('kModo').value;
+  var razon = $('kRazon').value;
+  var causa = $('kCausa').value.trim();
+  var d1 = $('kDia1').checked;
+  var d2 = $('kDia2').checked;
+  if (!d1 && !d2) { aviso('msgCortesia', 'Marca al menos un dia para la cortesia.', false); return; }
+  if (razon === 'otros' && !causa) { aviso('msgCortesia', 'Indique la causa de la cortesia.', false); return; }
+
+  var codigo;
+  try {
+    if (modo === 'individual') {
+      var nom = $('kNom').value.trim();
+      var ape = $('kApe').value.trim();
+      var ced = $('kCed').value.trim();
+      if (!nom || !ape || !ced) { aviso('msgCortesia', 'Nombre, apellido y cedula son obligatorios.', false); return; }
+      codigo = await llamar('f_admin_crear_cortesia_individual', {
+        p_token: ses.token, p_nombre: nom, p_apellido: ape, p_cedula: ced,
+        p_razon: razon, p_causa: causa || null, p_dia1: d1, p_dia2: d2
+      });
+    } else {
+      var org = $('kOrg').value.trim();
+      if (!org) { aviso('msgCortesia', 'Escribe el nombre de la organizacion.', false); return; }
+      var r1 = leerFilas('rowsDia1');
+      if (r1.error) { aviso('msgCortesia', r1.error, false); return; }
+      var r2 = leerFilas('rowsDia2');
+      if (r2.error) { aviso('msgCortesia', r2.error, false); return; }
+      if (d1 && r1.personas.length === 0) { aviso('msgCortesia', 'Agrega al menos una persona a la lista del Dia 1.', false); return; }
+      if (d2 && r2.personas.length === 0) { aviso('msgCortesia', 'Agrega al menos una persona a la lista del Dia 2.', false); return; }
+      codigo = await llamar('f_admin_crear_cortesia_lista', {
+        p_token: ses.token, p_nombre_organizacion: org, p_razon: razon, p_causa: causa || null,
+        p_dia1: d1, p_dia2: d2,
+        p_personas_dia1: d1 ? r1.personas : [],
+        p_personas_dia2: d2 ? r2.personas : []
+      });
+    }
+    if (!codigo) { aviso('msgCortesia', 'Tu sesion expiro: entra de nuevo con tu PIN.', false); return; }
+    if (String(codigo).indexOf('ERR_') === 0) { aviso('msgCortesia', msgErrorCortesia(codigo), false); return; }
+
+    var link = BASE + 'cortesia.html?c=' + codigo;
+    var cont = $('resultadoCortesia');
+    cont.innerHTML = '';
+    var caja = document.createElement('div');
+    caja.className = 'codigo';
+    caja.textContent = codigo;
+    var linkBox = document.createElement('div');
+    linkBox.className = 'codigo';
+    linkBox.style.fontSize = '15px';
+    linkBox.textContent = link;
+    var fila = document.createElement('div');
+    fila.className = 'fila';
+    fila.appendChild(boton('Copiar link', 'btn-gris', function(){ copiarTexto(link); }));
+    var wa = document.createElement('a');
+    wa.className = 'btn btn-gris';
+    wa.target = '_blank';
+    wa.rel = 'noopener';
+    wa.textContent = 'WhatsApp';
+    wa.href = urlWA('Hola, aqui esta el pase de cortesia para Nitrotoon (' + razonLegible(razon, causa) + '). Abre este link para ver los QR: ' + link);
+    fila.appendChild(wa);
+    var ml = document.createElement('a');
+    ml.className = 'btn btn-gris';
+    ml.textContent = 'Correo';
+    ml.href = urlMail('Pase de cortesia Nitrotoon', 'Hola, aqui esta el pase de cortesia para Nitrotoon (' + razonLegible(razon, causa) + '). Abre este link para ver los QR: ' + link);
+    fila.appendChild(ml);
+    cont.appendChild(caja);
+    cont.appendChild(linkBox);
+    cont.appendChild(fila);
+    aviso('msgCortesia', 'Cortesia creada. Entrega el link con los QR listos.', true);
+    $('rowsDia1').innerHTML = '';
+    $('rowsDia2').innerHTML = '';
+    $('kOrg').value = '';
+    $('kNom').value = ''; $('kApe').value = ''; $('kCed').value = '';
+    await cargarCortesias();
+  } catch (e) {
+    aviso('msgCortesia', 'Fallo al crear: ' + e.message, false);
+  }
+}
+
+async function cargarCortesias(){
+  var cont = $('listaCortesias');
+  try {
+    var arr = await llamar('f_admin_listar_cortesias', { p_token: ses.token });
+    if (!arr) { cont.innerHTML = '<p class="suave">Tu sesion expiro: entra de nuevo con tu PIN.</p>'; return; }
+    cont.innerHTML = '';
+    if (!arr.length) { cont.innerHTML = '<p class="suave">Todavia no hay cortesias creadas.</p>'; return; }
+    arr.forEach(function(c){ cont.appendChild(tarjetaCortesia(c)); });
+  } catch (e) {
+    cont.innerHTML = '<p class="suave">No se pudo cargar la lista: ' + e.message + '</p>';
+  }
+}
+
+function tarjetaCortesia(c){
+  var div = document.createElement('div');
+  div.className = 'item';
+  var titulo = (c.tipo === 'lista') ? (c.nombre_organizacion || 'Lista') : ('Cortesia individual');
+  div.innerHTML =
+    '<div><strong>' + esc(titulo) + '</strong>' +
+    '<span class="badge badge-tipo">' + (c.tipo === 'lista' ? 'Lista' : 'Individual') + '</span>' +
+    '<span class="badge badge-morado">' + esc(razonLegible(c.razon, c.causa)) + '</span>' +
+    '<span class="badge ' + (c.estado === 'activa' ? 'badge-ok">Activa' : 'badge-no">Anulada') + '</span></div>' +
+    '<p class="suave">' + esc(diasTexto(c.dia1, c.dia2)) + ' · ' + c.total_personas + ' persona(s) · Creada el ' + fechaBonita(c.creada_at) + '</p>' +
+    '<div class="codigo">' + esc(c.codigo_link) + '</div>' +
+    '<div class="fila"></div>';
+  var fila = div.querySelector('.fila');
+  var link = BASE + 'cortesia.html?c=' + c.codigo_link;
+  fila.appendChild(boton('Ver detalle', 'btn-gris', function(){ verDetalleCortesia(div, c); }));
+  fila.appendChild(boton('Copiar link', 'btn-gris', function(){ copiarTexto(link); }));
+  if (c.estado === 'activa') {
+    fila.appendChild(boton('Editar', 'btn-gris', function(){ editarCortesia(div, c); }));
+    fila.appendChild(boton('Anular', 'btn-rojo', function(){ anularCortesia(c); }));
+  }
+  return div;
+}
+
+async function verDetalleCortesia(div, c){
+  var existente = div.querySelector('.panel-edit');
+  if (existente) { existente.remove(); return; }
+  var panel = document.createElement('div');
+  panel.className = 'panel-edit';
+  panel.innerHTML = '<p class="suave">Consultando detalle...</p>';
+  div.appendChild(panel);
+  try {
+    var d = await llamar('f_admin_ver_cortesia', { p_token: ses.token, p_codigo_link: c.codigo_link });
+    if (!d) { panel.innerHTML = '<p class="suave">No se pudo cargar el detalle.</p>'; return; }
+    var html = '';
+    if (d.tipo === 'lista') {
+      (d.listas || []).forEach(function(l){
+        html += '<h3>Dia ' + l.dia + ' — codigo ' + esc(l.codigo_corto) + '</h3><ul>';
+        (l.personas || []).forEach(function(p){
+          html += '<li>' + esc(p.nombre) + ' ' + esc(p.apellido) + ' — CI ' + esc(p.cedula) +
+            ' — <strong>' + esc(p.estado) + '</strong>' + (p.marcado_at ? ' (' + fechaBonita(p.marcado_at) + ')' : '') + '</li>';
+        });
+        html += '</ul>';
+        if (d.estado === 'activa') {
+          html += '<div class="fila-persona" data-dia="' + l.dia + '">' +
+            '<input placeholder="Nombre" class="aNom"><input placeholder="Apellido" class="aApe"><input placeholder="Cedula" class="aCed"></div>' +
+            '<div class="fila"><button class="btn btn-gris" data-agregar="' + l.dia + '">+ Agregar a este dia</button>' +
+            '<button class="btn btn-rojo" data-quitar-dia="' + l.dia + '">Quitar este dia</button></div>';
+        }
+      });
+      if (d.estado === 'activa') {
+        var falta1 = !d.dia1, falta2 = !d.dia2;
+        if (falta1 || falta2) {
+          html += '<div class="fila">';
+          if (falta1) html += '<button class="btn btn-gris" data-agregar-dia="1">Agregar Dia 1</button>';
+          if (falta2) html += '<button class="btn btn-gris" data-agregar-dia="2">Agregar Dia 2</button>';
+          html += '</div>';
+        }
+      }
+    } else {
+      (d.individuales || []).forEach(function(p){
+        html += '<h3>' + esc(p.nombre) + ' ' + esc(p.apellido) + '</h3>' +
+          '<p class="suave">CI ' + esc(p.cedula) + ' · QR: ' + esc(p.codigo_qr) + '</p>' +
+          '<p class="suave">Dia 1: ' + esc(p.estado_dia1) + (p.marcado_dia1_at ? ' (' + fechaBonita(p.marcado_dia1_at) + ')' : '') +
+          ' · Dia 2: ' + esc(p.estado_dia2) + (p.marcado_dia2_at ? ' (' + fechaBonita(p.marcado_dia2_at) + ')' : '') + '</p>';
+      });
+    }
+    panel.innerHTML = html;
+
+    panel.querySelectorAll('button[data-agregar]').forEach(function(b){
+      b.onclick = async function(){
+        var dia = parseInt(b.getAttribute('data-agregar'), 10);
+        var filaP = panel.querySelector('.fila-persona[data-dia="' + dia + '"]');
+        var nom = filaP.querySelector('.aNom').value.trim();
+        var ape = filaP.querySelector('.aApe').value.trim();
+        var ced = filaP.querySelector('.aCed').value.trim();
+        if (!nom || !ape || !ced) { alert('Nombre, apellido y cedula son obligatorios.'); return; }
+        var r = await llamar('f_admin_cortesia_agregar_persona', { p_token: ses.token, p_codigo_link: c.codigo_link, p_dia: dia, p_nombre: nom, p_apellido: ape, p_cedula: ced });
+        if (r !== 'ok') { alert(msgErrorCortesia(r)); return; }
+        verDetalleCortesia(div, c); verDetalleCortesia(div, c);
+        await cargarCortesias();
+      };
+    });
+    panel.querySelectorAll('button[data-quitar-dia]').forEach(function(b){
+      b.onclick = async function(){
+        var dia = parseInt(b.getAttribute('data-quitar-dia'), 10);
+        if (!confirm('Quitar el Dia ' + dia + ' de esta cortesia? Se borrara su lista y su QR de ese dia. Solo funciona si nadie entro todavia por esa lista.')) return;
+        var r = await llamar('f_admin_cortesia_quitar_dia', { p_token: ses.token, p_codigo_link: c.codigo_link, p_dia: dia });
+        if (r !== 'ok') { alert(msgErrorCortesia(r)); return; }
+        await cargarCortesias();
+      };
+    });
+    panel.querySelectorAll('button[data-agregar-dia]').forEach(function(b){
+      b.onclick = async function(){
+        var dia = parseInt(b.getAttribute('data-agregar-dia'), 10);
+        var r = await llamar('f_admin_cortesia_agregar_dia', { p_token: ses.token, p_codigo_link: c.codigo_link, p_dia: dia });
+        if (r !== 'ok') { alert(msgErrorCortesia(r)); return; }
+        await cargarCortesias();
+      };
+    });
+  } catch (e) {
+    panel.innerHTML = '<p class="suave">Fallo al cargar el detalle: ' + e.message + '</p>';
+  }
+}
+
+function editarCortesia(div, c){
+  var existente = div.querySelector('.panel-edit');
+  if (existente) { existente.remove(); return; }
+  var panel = document.createElement('div');
+  panel.className = 'panel-edit';
+  var l1 = document.createElement('label');
+  l1.textContent = 'Razon de la cortesia';
+  var s1 = document.createElement('select');
+  ['prensa','vinculo_familiar','premio','autoridad','otros'].forEach(function(v){
+    var o = document.createElement('option');
+    o.value = v;
+    o.textContent = razonLegible(v, '');
+    if (v === c.razon) o.selected = true;
+    s1.appendChild(o);
+  });
+  l1.appendChild(s1);
+  var l2 = document.createElement('label');
+  l2.textContent = 'Causa especifica (obligatoria si eliges Otros)';
+  var i2 = document.createElement('input');
+  i2.value = c.causa || '';
+  l2.appendChild(i2);
+  panel.appendChild(l1);
+  panel.appendChild(l2);
+  var chk1 = null, chk2 = null;
+  if (c.tipo === 'individual') {
+    var ld = document.createElement('label');
+    ld.textContent = 'Dias aprobados';
+    var wrap = document.createElement('div');
+    wrap.className = 'fila';
+    var lb1 = document.createElement('label');
+    lb1.style.margin = '0';
+    chk1 = document.createElement('input');
+    chk1.type = 'checkbox';
+    chk1.checked = !!c.dia1;
+    lb1.appendChild(chk1);
+    lb1.appendChild(document.createTextNode(' Dia 1'));
+    var lb2 = document.createElement('label');
+    lb2.style.margin = '0';
+    chk2 = document.createElement('input');
+    chk2.type = 'checkbox';
+    chk2.checked = !!c.dia2;
+    lb2.appendChild(chk2);
+    lb2.appendChild(document.createTextNode(' Dia 2'));
+    wrap.appendChild(lb1);
+    wrap.appendChild(lb2);
+    ld.appendChild(wrap);
+    panel.appendChild(ld);
+  }
+  var fila = document.createElement('div');
+  fila.className = 'fila';
+  fila.appendChild(boton('Guardar cambios', 'btn-verde', async function(){
+    var razon = s1.value;
+    var causa = i2.value.trim();
+    if (razon === 'otros' && !causa) { alert('Indique la causa de la cortesia.'); return; }
+    try {
+      var r = await llamar('f_admin_editar_cortesia', { p_token: ses.token, p_codigo_link: c.codigo_link, p_razon: razon, p_causa: causa || null });
+      if (r !== 'ok') { alert(msgErrorCortesia(r)); return; }
+      if (chk1 && chk2) {
+        var r2 = await llamar('f_admin_editar_cortesia_dias', { p_token: ses.token, p_codigo_link: c.codigo_link, p_dia1: chk1.checked, p_dia2: chk2.checked });
+        if (r2 !== 'ok') { alert(msgErrorCortesia(r2)); return; }
+      }
+      await cargarCortesias();
+    } catch (e) { alert('Fallo al guardar: ' + e.message); }
+  }));
+  fila.appendChild(boton('Cancelar', 'btn-gris', function(){ panel.remove(); }));
+  panel.appendChild(fila);
+  div.appendChild(panel);
+}
+
+async function anularCortesia(c){
+  if (!confirm('Anular esta cortesia? Todos sus QR dejan de funcionar de inmediato en la puerta. Esta accion no se puede deshacer.')) return;
+  try {
+    var r = await llamar('f_admin_anular_cortesia', { p_token: ses.token, p_codigo_link: c.codigo_link });
+    if (r !== 'ok') { alert(msgErrorCortesia(r)); return; }
+    await cargarCortesias();
+  } catch (e) { alert('Fallo al anular: ' + e.message); }
+}
+
+/* ============ FIN CORTESIAS ============ */
 
 function htmlStats(s){
   var n = function(v){ return (v === null || v === undefined) ? 0 : v; };
@@ -582,8 +913,32 @@ if (!ses || ses.rol !== 'admin') {
   $('btnGuardarInforme').onclick = guardarInforme;
   $('btnLimpiarTodo').onclick = limpiarTodo;
   $('btnSalir').onclick = function(){ borrarSesion(); location.replace('index.html'); };
+  $('kModo').onchange = actualizarVisibilidadCortesia;
+  $('kRazon').onchange = actualizarVisibilidadCortesia;
+  $('kDia1').onchange = actualizarVisibilidadCortesia;
+  $('kDia2').onchange = actualizarVisibilidadCortesia;
+  $('btnAddRow1').onclick = function(){ agregarFilaPersona('rowsDia1'); };
+  $('btnAddRow2').onclick = function(){ agregarFilaPersona('rowsDia2'); };
+  $('btnCopiar1a2').onclick = function(){
+    var r1 = leerFilas('rowsDia1');
+    if (r1.error) { aviso('msgCortesia', r1.error, false); return; }
+    $('rowsDia2').innerHTML = '';
+    r1.personas.forEach(function(p){
+      agregarFilaPersona('rowsDia2');
+      var filas = $('rowsDia2').querySelectorAll('.fila-persona');
+      var ultima = filas[filas.length - 1];
+      ultima.querySelector('.pNom').value = p.nombre;
+      ultima.querySelector('.pApe').value = p.apellido;
+      ultima.querySelector('.pCed').value = p.cedula;
+    });
+    aviso('msgCortesia', 'Lista del Dia 1 copiada al Dia 2. Edita lo que necesites.', true);
+  };
+  $('btnCrearCortesia').onclick = crearCortesia;
+  agregarFilaPersona('rowsDia1');
+  actualizarVisibilidadCortesia();
   cargarEstado();
   cargarLista();
+  cargarCortesias();
   cargarHistorial();
 }
 </script>
