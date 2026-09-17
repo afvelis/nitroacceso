@@ -159,13 +159,14 @@ function renderizar(){
   }
   diaActivo.textContent = 'Día ' + (ev.dia_activo || 1);
   
-  // Contadores segmentados
-  const totalPersonas = cont.personas_talento + cont.vendedores_patrocinantes + cont.vendedores_pagados;
+  // Contadores segmentados (incluye cortesías)
+  const totalPersonas = cont.personas_talento + cont.vendedores_patrocinantes + cont.vendedores_pagados + cont.personas_cortesia;
   const tarjetas = [
-    { num: totalPersonas, label: '🧍 Personas en el evento', sub: 'Suma de listas y stands' },
+    { num: totalPersonas, label: '🧍 Personas en el evento', sub: 'Listas, stands y cortesías' },
     { num: cont.talentos, label: '🎭 Talentos', sub: cont.personas_talento + ' personas en sus listas' },
     { num: cont.stands_patrocinantes, label: '🏪 Stands patrocinantes', sub: cont.vendedores_patrocinantes + ' personas registradas' },
     { num: cont.stands_pagados, label: '💰 Stands pagados', sub: cont.vendedores_pagados + ' personas registradas' },
+    { num: cont.personas_cortesia, label: '🎁 Cortesías', sub: cont.cortesias_activas + ' pases activos · ' + cont.cortesias_anuladas + ' anulados' },
     { num: cont.coordinadores_activos, label: '👥 Coordinadores activos', sub: cont.coordinadores_revocados + ' revocados' }
   ];
   
@@ -177,12 +178,13 @@ function renderizar(){
     </div>
   `).join('');
   
-  // Progreso de puerta
+  // Progreso de puerta (incluye cortesías)
   function calcularProgreso(dia){
     const totalPersonas = dia.personas_autorizadas + dia.personas_pendientes;
     const totalVendedores = dia.vendedores_autorizados + dia.vendedores_pendientes;
-    const totalAutorizados = dia.personas_autorizadas + dia.vendedores_autorizados;
-    const totalGeneral = totalPersonas + totalVendedores;
+    const totalCortesias = (dia.cortesia_autorizados || 0) + (dia.cortesia_pendientes || 0);
+    const totalAutorizados = dia.personas_autorizadas + dia.vendedores_autorizados + (dia.cortesia_autorizados || 0);
+    const totalGeneral = totalPersonas + totalVendedores + totalCortesias;
     const pct = totalGeneral > 0 ? Math.round((totalAutorizados / totalGeneral) * 100) : 0;
     return { totalAutorizados, totalGeneral, pct };
   }
@@ -232,6 +234,10 @@ function renderizar(){
     alertas.push({ tipo: 'amarilla', texto: `👥 Hay ${cont.coordinadores_revocados} coordinador(es) revocado(s). Puedes eliminarlos definitivamente desde gestión completa.` });
   }
   
+  if(cont.cortesias_anuladas > 0){
+    alertas.push({ tipo: 'amarilla', texto: `🎁 Hay ${cont.cortesias_anuladas} cortesía(s) anulada(s). Sus QR ya no funcionan en puerta.` });
+  }
+  
   if(alertas.length === 0){
     alertas.push({ tipo: 'verde', texto: '✅ Todo en orden.' });
   }
@@ -245,7 +251,7 @@ function renderizar(){
 btnToggleEdicion.addEventListener('click', async () => {
   const estadoActual = datosDashboard?.evento?.edicion_abierta;
   const mensaje = estadoActual
-    ? '¿Cerrar la edición del evento?\n\nLa puerta podrá empezar a operar, pero ya no se podrán editar listas, talentos ni stands.'
+    ? '¿Cerrar la edición del evento?\n\nLa puerta podrá empezar a operar, pero ya no se podrán editar listas, talentos ni stands. Las cortesías sí se pueden seguir creando.'
     : '¿Reabrir la edición del evento?\n\nLa puerta dejará de funcionar hasta que cierres de nuevo.';
   
   if(!confirm(mensaje)) return;
