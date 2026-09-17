@@ -75,7 +75,7 @@ th { color: var(--suave); font-weight: 600; }
 
   <div id="formLote" class="tarjeta" style="display:none;">
     <h2>Datos del negocio</h2>
-    <p class="suave" style="color:var(--suave);margin:0 0 4px;">Se escriben una sola vez y aplican a todas las personas del cuadro.</p>
+    <p style="color:var(--suave);margin:0 0 4px;">Se escriben una sola vez y aplican a todas las personas del cuadro.</p>
     <label>Empresa *</label><input type="text" id="inEmpresa" />
     <label>Qué vende *</label><input type="text" id="inVende" />
     <h3>Personas autorizadas</h3>
@@ -83,6 +83,7 @@ th { color: var(--suave); font-weight: 600; }
     <button class="btn btn-azul" id="btnAgregar">Agregar persona</button>
     <p id="msgCupo" style="color:var(--suave);"></p>
     <button class="btn" id="btnRegistrar">Registrar y generar los QR</button>
+    <p style="color:var(--suave);">Si registras menos personas que los lugares disponibles, solo se generan esos QR. Puedes volver con este mismo link para agregar los faltantes mientras el administrador no cierre la edición. Una vez cerrada, no se puede agregar ni quitar: quien quedó con QR entra, y quien no esté registrado paga entrada.</p>
     <div id="msgError" class="error"></div>
   </div>
 
@@ -131,6 +132,12 @@ function nombreStand() {
 function lugaresRestantes() {
   return Math.max(0, datosStand.cupo - datosStand.vendedores.length);
 }
+function personasDelStand() {
+  return datosStand.vendedores.map(function(v){
+    return { nombre: v.nombre, apellido: v.apellido, cedula: v.cedula, codigo_qr: v.codigo_qr, empresa: v.empresa || '', vende: v.vende || '' };
+  });
+}
+function claveVioQR() { return 'na_stand_vio_qr_' + codigoLink; }
 
 async function cargar() {
   if (!codigoLink) {
@@ -160,7 +167,7 @@ async function cargar() {
   }
 }
 
-function renderStand(conLoteGuardado) {
+function renderStand(conResultados) {
   document.getElementById('stTitulo').textContent = nombreStand();
   document.getElementById('stTipo').textContent = datosStand.tipo;
   document.getElementById('stCupo').textContent = datosStand.cupo;
@@ -170,7 +177,7 @@ function renderStand(conLoteGuardado) {
 
   let hayForm = false;
   if (!datosStand.edicion_abierta) {
-    document.getElementById('avisoCerrado').textContent = 'Las inscripciones para este stand están cerradas.';
+    document.getElementById('avisoCerrado').textContent = 'Las inscripciones para este stand están cerradas: no se puede agregar ni quitar personas.';
     document.getElementById('avisoCerrado').style.display = 'block';
     document.getElementById('formLote').style.display = 'none';
     document.getElementById('recuperarQR').style.display = 'none';
@@ -205,14 +212,14 @@ function renderStand(conLoteGuardado) {
     document.getElementById('listaReg').style.display = 'none';
   }
 
-  const guardado = sessionStorage.getItem('na_stand_lote_' + codigoLink);
-  if (conLoteGuardado && guardado) {
-    loteActual = JSON.parse(guardado);
+  const vio = sessionStorage.getItem(claveVioQR());
+  if (conResultados && vio && datosStand.vendedores.length > 0) {
+    loteActual = { personas: personasDelStand() };
     mostrarResultados();
     return;
   }
   document.getElementById('pantallaQR').style.display = 'none';
-  document.getElementById('barraFija').style.display = (hayForm && guardado) ? 'block' : 'none';
+  document.getElementById('barraFija').style.display = (hayForm && vio) ? 'block' : 'none';
 }
 
 function agregarFila() {
@@ -234,8 +241,7 @@ function agregarFila() {
 function actualizarCupo() {
   const filas = document.getElementById('filasPersonas').children.length;
   const quedan = lugaresRestantes();
-  const msg = document.getElementById('msgCupo');
-  msg.textContent = 'Lugares restantes en el stand: ' + quedan + '. Personas en el cuadro: ' + filas + '.';
+  document.getElementById('msgCupo').textContent = 'Lugares restantes en el stand: ' + quedan + '. Personas en el cuadro: ' + filas + '.';
   document.getElementById('btnAgregar').disabled = filas >= quedan;
 }
 
@@ -267,6 +273,12 @@ document.getElementById('btnRegistrar').onclick = async function(){
     personas.push(p);
   }
 
+  const quedan = lugaresRestantes();
+  if (personas.length < quedan) {
+    const seguir = confirm('Vas a registrar ' + personas.length + ' de ' + quedan + ' lugares disponibles. Solo se generaran ' + personas.length + ' QR por ahora. Podras agregar los faltantes despues con este mismo link, hasta que el administrador cierre la edicion. Continuar?');
+    if (!seguir) return;
+  }
+
   try {
     const res = await llamar('f_link_stand_registrar_lote', {
       p_codigo_link: codigoLink,
@@ -282,9 +294,9 @@ document.getElementById('btnRegistrar').onclick = async function(){
       else errDiv.textContent = 'Error inesperado al registrar.';
       return;
     }
-    loteActual = { empresa: empresa, vende: vende, personas: res.vendedores };
-    sessionStorage.setItem('na_stand_lote_' + codigoLink, JSON.stringify(loteActual));
+    sessionStorage.setItem(claveVioQR(), '1');
     try { datosStand = await llamar('f_link_stand_ver', { p_codigo_link: codigoLink }); } catch (e) {}
+    loteActual = { personas: personasDelStand() };
     mostrarResultados();
   } catch (e) { errDiv.textContent = 'Error de conexión: ' + e.message; }
 };
@@ -297,7 +309,8 @@ document.getElementById('btnRecuperar').onclick = async function(){
   try {
     const res = await llamar('f_link_stand_mi_qr', { p_codigo_link: codigoLink, p_cedula: cedula });
     if (!res) { errDiv.textContent = 'No encontramos esa cédula en este stand.'; return; }
-    loteActual = { empresa: res.empresa || '', vende: res.vende || '', personas: [res] };
+    sessionStorage.setItem(claveVioQR(), '1');
+    loteActual = { personas: [res] };
     mostrarResultados();
   } catch (e) { errDiv.textContent = 'Error: ' + e.message; }
 };
@@ -331,8 +344,8 @@ function mostrarResultados() {
     card.querySelector('.braz-stand').textContent = nombreStand();
     const vals = card.querySelectorAll('.braz-valor');
     vals[0].textContent = per.cedula;
-    vals[1].textContent = per.empresa || loteActual.empresa || '—';
-    vals[2].textContent = per.vende || loteActual.vende || '—';
+    vals[1].textContent = per.empresa || '—';
+    vals[2].textContent = per.vende || '—';
 
     const urlP = urlPuerta('v', per.codigo_qr);
     const qrCont = card.querySelector('.qr-box');
@@ -368,7 +381,11 @@ function mostrarResultados() {
 }
 
 document.getElementById('btnTermine').onclick = function(){
-  if (!loteActual) { alert('Primero registra el cuadro o recupera un QR con tu cédula.'); return; }
+  const vio = sessionStorage.getItem(claveVioQR());
+  if (!vio && !loteActual) { alert('Primero registra el cuadro o recupera un QR con tu cédula.'); return; }
+  if (!loteActual || !loteActual.personas.length) {
+    loteActual = { personas: personasDelStand() };
+  }
   mostrarResultados();
 };
 
