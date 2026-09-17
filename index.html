@@ -4,102 +4,109 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Nitrotoon Control de acceso</title>
+<script src="config.js"></script>
 <style>
-  :root {
-    --fondo: #0b1220;
-    --tarjeta: #121c2e;
-    --borde: #24344d;
-    --texto: #eef3f8;
-    --suave: #9fb0c3;
-    --acento: #35d07f;
-    --acento2: #1fa2ff;
-    --aviso: #ffd33d;
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-    font-size: 18px;
-    color: var(--texto);
-    background: radial-gradient(1200px 600px at 80% -10%, #16233c 0%, var(--fondo) 55%);
-  }
-  .barra { height: 6px; background: linear-gradient(90deg, var(--acento), var(--acento2)); }
-  main { flex: 1; display: flex; align-items: center; justify-content: center; padding: 32px 20px; }
-  .tarjeta {
-    width: 100%;
-    max-width: 460px;
-    background: var(--tarjeta);
-    border: 1px solid var(--borde);
-    border-radius: 18px;
-    padding: 36px 32px;
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
-  }
-  .logo {
-    width: 64px; height: 64px; border-radius: 16px;
-    display: flex; align-items: center; justify-content: center;
-    background: linear-gradient(135deg, var(--acento), var(--acento2));
-    font-size: 32px;
-    margin-bottom: 18px;
-  }
-  .etiqueta { letter-spacing: 3px; font-size: 17px; text-transform: uppercase; color: var(--suave); margin: 0 0 6px; }
-  h1 { margin: 0 0 10px; font-size: 30px; line-height: 1.2; }
-  .nota { color: var(--suave); font-size: 17px; line-height: 1.55; margin: 0 0 26px; }
-  label { display: block; font-weight: 600; margin-bottom: 8px; }
-  input {
-    width: 100%; font-size: 20px; padding: 14px 16px;
-    border-radius: 12px; border: 1px solid var(--borde);
-    background: #0b1524; color: var(--texto);
-    outline: none; transition: border-color .15s, box-shadow .15s;
-  }
-  input:focus { border-color: var(--acento2); box-shadow: 0 0 0 4px rgba(31, 162, 255, 0.25); }
-  button {
-    width: 100%; margin-top: 20px; padding: 15px;
-    font-size: 19px; font-weight: 700; letter-spacing: .3px;
-    color: #06131f; background: linear-gradient(135deg, var(--acento), #2bb673);
-    border: none; border-radius: 12px; cursor: pointer;
-    transition: transform .06s, filter .15s;
-  }
-  button:hover { filter: brightness(1.08); }
-  button:active { transform: scale(.985); }
-  .aviso { min-height: 26px; margin: 14px 0 0; font-weight: 600; color: var(--aviso); }
-  footer { padding: 18px; text-align: center; color: var(--suave); font-size: 17px; }
+:root{
+  --fondo:#0b1220;--tarjeta:#121c2e;--borde:#24344d;--texto:#eef3f8;
+  --suave:#9fb0c3;--acento:#35d07f;--acento2:#1fa2ff;--aviso:#ffd33d;
+  --rojo:#e05252;--rojo2:#c73e3e;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--fondo);color:var(--texto);font-size:17px;line-height:1.5;min-height:100vh;display:flex;flex-direction:column}
+.franja{height:6px;background:linear-gradient(90deg,var(--acento),var(--acento2))}
+.cabecera{display:flex;align-items:center;gap:14px;padding:18px 20px;background:var(--tarjeta);border-bottom:1px solid var(--borde)}
+.logo{font-size:28px;background:linear-gradient(135deg,var(--acento),var(--acento2));width:48px;height:48px;display:flex;align-items:center;justify-content:center;border-radius:10px}
+.titulo{font-size:20px;font-weight:700}
+.subtitulo{font-size:14px;color:var(--suave)}
+.contenedor{flex:1;display:flex;align-items:center;justify-content:center;padding:20px}
+.tarjeta{background:var(--tarjeta);border:1px solid var(--borde);border-radius:16px;padding:30px;width:100%;max-width:420px;box-shadow:0 4px 14px rgba(0,0,0,.25);text-align:center}
+.tarjeta h2{font-size:20px;margin-bottom:18px;color:var(--acento)}
+input{width:100%;padding:14px;border:1px solid var(--borde);border-radius:10px;background:#0d1626;color:var(--texto);font-size:20px;text-align:center;letter-spacing:4px;font-family:inherit}
+input:focus{outline:2px solid var(--acento2);border-color:var(--acento2)}
+.btn{width:100%;padding:14px;border:none;border-radius:10px;font-size:18px;font-weight:700;cursor:pointer;color:white;background:linear-gradient(135deg,var(--acento),#26a866);margin-top:16px;transition:transform .1s}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.aviso-error{margin-top:14px;padding:10px;border-radius:8px;background:rgba(224,82,82,.12);border:1px solid var(--rojo);color:var(--rojo);font-size:15px;display:none}
 </style>
 </head>
 <body>
-  <div class="barra"></div>
-  <main>
-    <section class="tarjeta">
-      <div class="logo" aria-hidden="true">🚀</div>
-      <p class="etiqueta">Sistema oficial del evento</p>
-      <h1 id="titulo">Nitrotoon Control de acceso</h1>
-      <p class="nota">Los enlaces de registro de talentos y stands llegan por WhatsApp o correo. Esta entrada es exclusiva para personal autorizado.</p>
-      <label for="pin">PIN de personal</label>
-      <input id="pin" type="password" inputmode="numeric" autocomplete="off" placeholder="Escribe tu PIN">
-      <button id="botonEntrar">Entrar</button>
-      <p class="aviso" id="aviso"></p>
-    </section>
-  </main>
-  <footer>Evento privado · Personal autorizado</footer>
-<script src="config.js"></script>
+<div class="franja"></div>
+<header class="cabecera">
+  <div class="logo">🚀</div>
+  <div>
+    <div class="titulo">Nitrotoon Control de acceso</div>
+    <div class="subtitulo">Sistema de control de acceso</div>
+  </div>
+</header>
+
+<main class="contenedor">
+  <div class="tarjeta">
+    <h2>🔐 Ingreso al sistema</h2>
+    <label for="pin" style="display:block;margin-bottom:10px;color:var(--suave);font-size:15px">Escribe tu PIN</label>
+    <input type="password" id="pin" inputmode="numeric" maxlength="6" placeholder="••••" autocomplete="off">
+    <button class="btn" id="btnEntrar">Entrar</button>
+    <div class="aviso-error" id="msgError"></div>
+  </div>
+</main>
+
 <script>
-  document.getElementById("botonEntrar").addEventListener("click", async function () {
-    const pin = document.getElementById("pin").value.trim();
-    const aviso = document.getElementById("aviso");
-    aviso.textContent = "";
-    if (pin === "") { aviso.textContent = "Escribe tu PIN para continuar."; return; }
-    try {
-      const filas = await llamar("f_login", { p_pin: pin });
-      if (!filas || filas.length === 0) { aviso.textContent = "PIN incorrecto. Intenta de nuevo."; return; }
-      guardarSesion(filas[0].token, filas[0].rol);
-      if (filas[0].rol === "admin") { window.location.href = "admin.html"; }
-      else { window.location.href = "puerta.html"; }
-    } catch (e) {
-      aviso.textContent = "No se pudo conectar con la base de datos. Revisa tu internet y vuelve a intentar.";
+const elPin = document.getElementById('pin');
+const btnEntrar = document.getElementById('btnEntrar');
+const msgError = document.getElementById('msgError');
+
+function redirigirPorRol(rol){
+  if(rol === 'admin'){
+    location.href = 'dashboard.html';
+  }else if(rol === 'puerta'){
+    location.href = 'puerta.html';
+  }
+}
+
+// Si ya hay sesión activa, redirigir directamente
+(function(){
+  const s = leerSesion();
+  if(s && s.token && s.rol){
+    redirigirPorRol(s.rol);
+  }
+})();
+
+btnEntrar.addEventListener('click', async () => {
+  const pin = elPin.value.trim();
+  if(!pin){
+    msgError.textContent = 'Escribe un PIN.';
+    msgError.style.display = 'block';
+    return;
+  }
+  
+  btnEntrar.disabled = true;
+  btnEntrar.textContent = 'Entrando...';
+  msgError.style.display = 'none';
+  
+  try{
+    const r = await llamar('f_login', { p_pin: pin });
+    if(!r || r.length === 0){
+      msgError.textContent = 'PIN incorrecto.';
+      msgError.style.display = 'block';
+      btnEntrar.disabled = false;
+      btnEntrar.textContent = 'Entrar';
+      return;
     }
-  });
+    
+    guardarSesion(r[0].token, r[0].rol);
+    redirigirPorRol(r[0].rol);
+  }catch(e){
+    msgError.textContent = 'Error al entrar: ' + (e.message || e);
+    msgError.style.display = 'block';
+    btnEntrar.disabled = false;
+    btnEntrar.textContent = 'Entrar';
+  }
+});
+
+elPin.addEventListener('keydown', (e) => {
+  if(e.key === 'Enter'){
+    btnEntrar.click();
+  }
+});
 </script>
 </body>
 </html>
