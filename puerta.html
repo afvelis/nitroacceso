@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nitrotoon Control de acceso - Puerta</title>
+<script src="config.js"></script>
+<style>
+:root{
+  --fondo:#0b1220;
+  --tarjeta:#121c2e;
+  --borde:#24344d;
+  --texto:#eef3f8;
+  --suave:#9fb0c3;
+  --acento:#35d07f;
+  --acento2:#1fa2ff;
+  --aviso:#ffd33d;
+  --rojo:#e05252;
+  --rojo2:#c73e3e;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  background:var(--fondo);
+  color:var(--texto);
+  font-size:17px;
+  line-height:1.5;
+  min-height:100vh;
+  padding-bottom:40px;
+}
+.franja{height:6px;background:linear-gradient(90deg,var(--acento),var(--acento2));width:100%}
+.cabecera{
+  display:flex;align-items:center;gap:14px;
+  padding:18px 20px;
+  background:var(--tarjeta);
+  border-bottom:1px solid var(--borde);
+}
+.logo{
+  font-size:28px;
+  background:linear-gradient(135deg,var(--acento),var(--acento2));
+  width:48px;height:48px;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:10px;
+}
+.titulo{font-size:20px;font-weight:700}
+.subtitulo{font-size:14px;color:var(--suave)}
+.contenedor{max-width:900px;margin:20px auto;padding:0 16px}
+.tarjeta{
+  background:var(--tarjeta);
+  border:1px solid var(--borde);
+  border-radius:16px;
+  padding:20px;
+  margin-bottom:18px;
+  box-shadow:0 4px 14px rgba(0,0,0,.25);
+}
+.tarjeta h2{font-size:19px;margin-bottom:12px;color:var(--acento)}
+.aviso{
+  padding:12px 14px;border-radius:10px;
+  background:rgba(255,211,61,.12);
+  border:1px solid var(--aviso);
+  color:var(--aviso);
+  margin-bottom:14px;
+  font-size:15px;
+}
+.btn{
+  display:inline-block;
+  padding:12px 20px;
+  border:none;border-radius:10px;
+  font-size:17px;font-weight:600;
+  cursor:pointer;
+  text-decoration:none;
+  color:white;
+  background:linear-gradient(135deg,var(--acento),#26a866);
+  transition:transform .1s;
+}
+.btn:active{transform:scale(.97)}
+.btn-gris{background:#2a3648;color:var(--texto)}
+.btn-rojo{background:linear-gradient(135deg,var(--rojo),var(--rojo2))}
+.btn-azul{background:linear-gradient(135deg,var(--acento2),#147acc)}
+input,select{
+  width:100%;
+  padding:12px 14px;
+  border:1px solid var(--borde);
+  border-radius:10px;
+  background:#0d1626;
+  color:var(--texto);
+  font-size:17px;
+  font-family:inherit;
+}
+input:focus,select:focus{outline:2px solid var(--acento2);border-color:var(--acento2)}
+label{display:block;margin-bottom:6px;color:var(--suave);font-size:15px}
+.fila{display:flex;gap:10px;flex-wrap:wrap}
+.fila > *{flex:1;min-width:120px}
+.pill{
+  display:inline-block;
+  padding:4px 10px;
+  border-radius:20px;
+  font-size:13px;
+  font-weight:600;
+}
+.pill-verde{background:rgba(53,208,127,.18);color:var(--acento)}
+.pill-amarillo{background:rgba(255,211,61,.18);color:var(--aviso)}
+.pill-azul{background:rgba(31,162,255,.18);color:var(--acento2)}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:1px}
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header class="cabecera">
+  <div class="logo">🚀</div>
+  <div>
+    <div class="titulo">Nitrotoon Control de acceso</div>
+    <div class="subtitulo">Puerta de entrada</div>
+  </div>
+</header>
+
+<main class="contenedor">
+  <div class="tarjeta">
+    <h2>🔐 Sesión de puerta</h2>
+    <p style="color:var(--suave);margin-bottom:14px">Ingresa el PIN de puerta para comenzar.</p>
+    <label for="pin">PIN de puerta</label>
+    <input type="password" id="pin" inputmode="numeric" maxlength="6" placeholder="••••">
+    <div style="margin-top:14px">
+      <button class="btn" id="btnEntrar">Entrar</button>
+    </div>
+  </div>
+</main>
+
+<script>
+const elPin = document.getElementById('pin');
+const btnEntrar = document.getElementById('btnEntrar');
+
+btnEntrar.addEventListener('click', async () => {
+  const pin = elPin.value.trim();
+  if(!pin){ alert('Escribe el PIN de puerta.'); return; }
+  btnEntrar.disabled = true;
+  btnEntrar.textContent = 'Entrando...';
+  try{
+    const r = await llamar('f_login', { p_pin: pin });
+    if(!r || r.length === 0 || r[0].rol !== 'puerta'){
+      alert('PIN incorrecto o no es de puerta.');
+      btnEntrar.disabled = false;
+      btnEntrar.textContent = 'Entrar';
+      return;
+    }
+    guardarSesion(r[0].token, r[0].rol);
+    // Aquí seguirá el resto del flujo en el próximo paso
+    alert('Sesión de puerta iniciada. Siguiente paso: selector de día.');
+  }catch(e){
+    alert('Error al entrar: ' + (e.message || e));
+  }
+  btnEntrar.disabled = false;
+  btnEntrar.textContent = 'Entrar';
+});
+
+// Si ya hay sesión de puerta activa, la detectamos
+(function(){
+  const s = leerSesion();
+  if(s && s.rol === 'puerta'){
+    alert('Ya tienes sesión de puerta activa. Siguiente paso: selector de día.');
+  }
+})();
+</script>
+</body>
+</html>
