@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nitrotoon Control de acceso - Dashboard</title>
+<script src="config.js"></script>
+<style>
+:root{
+  --fondo:#0b1220;--tarjeta:#121c2e;--borde:#24344d;--texto:#eef3f8;
+  --suave:#9fb0c3;--acento:#35d07f;--acento2:#1fa2ff;--aviso:#ffd33d;
+  --rojo:#e05252;--rojo2:#c73e3e;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--fondo);color:var(--texto);font-size:17px;line-height:1.5;min-height:100vh;padding-bottom:40px}
+.franja{height:6px;background:linear-gradient(90deg,var(--acento),var(--acento2))}
+.cabecera{display:flex;align-items:center;gap:14px;padding:18px 20px;background:var(--tarjeta);border-bottom:1px solid var(--borde)}
+.logo{font-size:28px;background:linear-gradient(135deg,var(--acento),var(--acento2));width:48px;height:48px;display:flex;align-items:center;justify-content:center;border-radius:10px}
+.titulo{font-size:20px;font-weight:700}
+.subtitulo{font-size:14px;color:var(--suave)}
+.contenedor{max-width:1000px;margin:20px auto;padding:0 16px}
+.tarjeta{background:var(--tarjeta);border:1px solid var(--borde);border-radius:16px;padding:20px;margin-bottom:18px;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.tarjeta h2{font-size:19px;margin-bottom:14px;color:var(--acento)}
+.estado-evento{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px}
+.estado-info{flex:1;min-width:200px}
+.estado-pill{display:inline-block;padding:8px 16px;border-radius:24px;font-size:16px;font-weight:700}
+.estado-abierto{background:rgba(53,208,127,.18);color:var(--acento);border:1px solid var(--acento)}
+.estado-cerrado{background:rgba(224,82,82,.18);color:var(--rojo);border:1px solid var(--rojo)}
+.grid-contadores{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:18px}
+.contador{background:var(--tarjeta);border:1px solid var(--borde);border-radius:14px;padding:18px;text-align:center;box-shadow:0 4px 14px rgba(0,0,0,.2)}
+.contador .numero{font-size:32px;font-weight:800;color:var(--acento);display:block}
+.contador .etiqueta{font-size:14px;color:var(--suave);margin-top:6px;display:block}
+.progreso-dia{margin-bottom:18px}
+.progreso-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px}
+.progreso-titulo{font-weight:700;font-size:16px}
+.progreso-stats{font-size:14px;color:var(--suave)}
+.barra-fondo{height:22px;background:#0d1626;border-radius:12px;overflow:hidden;border:1px solid var(--borde)}
+.barra-relleno{height:100%;background:linear-gradient(90deg,var(--acento),#26a866);border-radius:12px;transition:width .6s ease;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;font-size:12px;font-weight:700;color:white}
+.accesos-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.btn{display:inline-block;padding:14px 18px;border:none;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;color:white;background:linear-gradient(135deg,var(--acento),#26a866);text-align:center;text-decoration:none;transition:transform .1s}
+.btn:active{transform:scale(.97)}
+.btn-azul{background:linear-gradient(135deg,var(--acento2),#147acc)}
+.btn-gris{background:#2a3648}
+.btn-rojo{background:linear-gradient(135deg,var(--rojo),var(--rojo2))}
+.alerta{padding:12px 14px;border-radius:10px;margin-bottom:10px;font-size:15px}
+.alerta-amarilla{background:rgba(255,211,61,.12);border:1px solid var(--aviso);color:var(--aviso)}
+.alerta-roja{background:rgba(224,82,82,.12);border:1px solid var(--rojo);color:var(--rojo)}
+.alerta-verde{background:rgba(53,208,127,.12);border:1px solid var(--acento);color:var(--acento)}
+.pill-dia{display:inline-block;padding:4px 10px;border-radius:14px;font-size:13px;font-weight:700;background:rgba(31,162,255,.18);color:var(--acento2)}
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header class="cabecera">
+  <div class="logo">🚀</div>
+  <div>
+    <div class="titulo">Nitrotoon Control de acceso</div>
+    <div class="subtitulo">Panel principal del administrador</div>
+  </div>
+</header>
+
+<main class="contenedor">
+  <div id="panelCarga" class="tarjeta">
+    <p style="color:var(--suave)">Cargando resumen...</p>
+  </div>
+
+  <div id="panelContenido" style="display:none">
+    <!-- ESTADO DEL EVENTO -->
+    <div class="tarjeta">
+      <h2>📌 Estado del evento</h2>
+      <div class="estado-evento">
+        <div class="estado-info">
+          <div style="margin-bottom:8px"><span id="pillEstado" class="estado-pill estado-abierto">Cargando...</span></div>
+          <div style="color:var(--suave);font-size:15px">Día activo: <span id="diaActivo" class="pill-dia">-</span></div>
+        </div>
+        <button class="btn btn-rojo" id="btnToggleEdicion">🔒 Cerrar edición</button>
+      </div>
+    </div>
+
+    <!-- CONTADORES -->
+    <div class="grid-contadores" id="gridContadores"></div>
+
+    <!-- PROGRESO DE PUERTA -->
+    <div class="tarjeta">
+      <h2>🚪 Control de puerta por día</h2>
+      <div id="progresoDias"></div>
+    </div>
+
+    <!-- ACCESOS RÁPIDOS -->
+    <div class="tarjeta">
+      <h2>⚡ Accesos rápidos</h2>
+      <div class="accesos-grid">
+        <a href="admin.html" class="btn btn-azul">🛠️ Gestión completa</a>
+        <a href="admin.html" class="btn btn-gris">📊 Estadísticas</a>
+        <a href="admin.html" class="btn btn-gris">📄 Historial e informes</a>
+        <a href="admin.html" class="btn btn-gris">➕ Crear coordinador</a>
+      </div>
+    </div>
+
+    <!-- ALERTAS -->
+    <div class="tarjeta">
+      <h2>🔔 Alertas</h2>
+      <div id="panelAlertas"></div>
+    </div>
+
+    <div class="tarjeta" style="text-align:center">
+      <button class="btn btn-gris" id="btnSalir">🚪 Salir</button>
+    </div>
+  </div>
+</main>
+
+<script>
+const token = leerSesion()?.token;
+const rol = leerSesion()?.rol;
+
+if(!token || rol !== 'admin'){
+  location.href = 'index.html';
+}
+
+const panelCarga = document.getElementById('panelCarga');
+const panelContenido = document.getElementById('panelContenido');
+const pillEstado = document.getElementById('pillEstado');
+const diaActivo = document.getElementById('diaActivo');
+const btnToggleEdicion = document.getElementById('btnToggleEdicion');
+const gridContadores = document.getElementById('gridContadores');
+const progresoDias = document.getElementById('progresoDias');
+const panelAlertas = document.getElementById('panelAlertas');
+const btnSalir = document.getElementById('btnSalir');
+
+let datosDashboard = null;
+
+function renderizar(){
+  if(!datosDashboard) return;
+  
+  const ev = datosDashboard.evento;
+  const cont = datosDashboard.contadores;
+  const d1 = datosDashboard.puerta_dia1;
+  const d2 = datosDashboard.puerta_dia2;
+  
+  // Estado del evento
+  if(ev.edicion_abierta){
+    pillEstado.textContent = '🟢 Evento abierto (editando)';
+    pillEstado.className = 'estado-pill estado-abierto';
+    btnToggleEdicion.textContent = '🔒 Cerrar edición';
+    btnToggleEdicion.className = 'btn btn-rojo';
+  }else{
+    pillEstado.textContent = '🔒 Evento cerrado (listo para puerta)';
+    pillEstado.className = 'estado-pill estado-cerrado';
+    btnToggleEdicion.textContent = '🔓 Reabrir edición';
+    btnToggleEdicion.className = 'btn btn-gris';
+  }
+  diaActivo.textContent = 'Día ' + (ev.dia_activo || 1);
+  
+  // Contadores
+  const tarjetas = [
+    { num: cont.talentos, label: '🎭 Talentos' },
+    { num: cont.stands, label: '🏪 Stands' },
+    { num: cont.coordinadores_activos, label: '👥 Coordinadores activos' },
+    { num: cont.personas_talento, label: '📋 Personas en listas' },
+    { num: cont.vendedores_stand, label: '🧑‍💼 Vendedores' }
+  ];
+  
+  gridContadores.innerHTML = tarjetas.map(t => `
+    <div class="contador">
+      <span class="numero">${t.num}</span>
+      <span class="etiqueta">${t.label}</span>
+    </div>
+  `).join('');
+  
+  // Progreso de puerta
+  function calcularProgreso(dia){
+    const totalPersonas = dia.personas_autorizadas + dia.personas_pendientes;
+    const totalVendedores = dia.vendedores_autorizados + dia.vendedores_pendientes;
+    const totalAutorizados = dia.personas_autorizadas + dia.vendedores_autorizados;
+    const totalGeneral = totalPersonas + totalVendedores;
+    const pct = totalGeneral > 0 ? Math.round((totalAutorizados / totalGeneral) * 100) : 0;
+    return { totalAutorizados, totalGeneral, pct };
+  }
+  
+  const p1 = calcularProgreso(d1);
+  const p2 = calcularProgreso(d2);
+  
+  progresoDias.innerHTML = `
+    <div class="progreso-dia">
+      <div class="progreso-header">
+        <span class="progreso-titulo">📅 Día 1</span>
+        <span class="progreso-stats">✅ ${p1.totalAutorizados} / ⏳ ${p1.totalGeneral - p1.totalAutorizados} pendientes</span>
+      </div>
+      <div class="barra-fondo">
+        <div class="barra-relleno" style="width:${p1.pct}%">${p1.pct}%</div>
+      </div>
+    </div>
+    <div class="progreso-dia">
+      <div class="progreso-header">
+        <span class="progreso-titulo">📅 Día 2</span>
+        <span class="progreso-stats">✅ ${p2.totalAutorizados} / ⏳ ${p2.totalGeneral - p2.totalAutorizados} pendientes</span>
+      </div>
+      <div class="barra-fondo">
+        <div class="barra-relleno" style="width:${p2.pct}%">${p2.pct}%</div>
+      </div>
+    </div>
+  `;
+  
+  // Alertas
+  let alertas = [];
+  
+  if(ev.edicion_abierta){
+    alertas.push({ tipo: 'amarilla', texto: '⚠️ El evento está abierto. El módulo de puerta no funcionará hasta que cierres la edición.' });
+  }else{
+    alertas.push({ tipo: 'verde', texto: '✅ El evento está cerrado. La puerta puede operar con normalidad.' });
+  }
+  
+  if(d1.listas_abiertas > 0 && ev.dia_activo === 1){
+    alertas.push({ tipo: 'amarilla', texto: `📋 Hay ${d1.listas_abiertas} lista(s) del Día 1 sin cerrar. El staff puede cerrarlas desde puerta.` });
+  }
+  
+  if(d2.listas_abiertas > 0 && ev.dia_activo === 2){
+    alertas.push({ tipo: 'amarilla', texto: `📋 Hay ${d2.listas_abiertas} lista(s) del Día 2 sin cerrar.` });
+  }
+  
+  if(cont.coordinadores_revocados > 0){
+    alertas.push({ tipo: 'amarilla', texto: `👥 Hay ${cont.coordinadores_revocados} coordinador(es) revocado(s). Puedes eliminarlos definitivamente desde gestión completa.` });
+  }
+  
+  if(alertas.length === 0){
+    alertas.push({ tipo: 'verde', texto: '✅ Todo en orden.' });
+  }
+  
+  panelAlertas.innerHTML = alertas.map(a => `<div class="alerta alerta-${a.tipo}">${a.texto}</div>`).join('');
+  
+  panelCarga.style.display = 'none';
+  panelContenido.style.display = 'block';
+}
+
+btnToggleEdicion.addEventListener('click', async () => {
+  const estadoActual = datosDashboard?.evento?.edicion_abierta;
+  const mensaje = estadoActual
+    ? '¿Cerrar la edición del evento?\n\nLa puerta podrá empezar a operar, pero ya no se podrán editar listas, talentos ni stands.'
+    : '¿Reabrir la edición del evento?\n\nLa puerta dejará de funcionar hasta que cierres de nuevo.';
+  
+  if(!confirm(mensaje)) return;
+  
+  btnToggleEdicion.disabled = true;
+  btnToggleEdicion.textContent = 'Cambiando estado...';
+  
+  try{
+    await llamar('f_admin_toggle_edicion', { p_token: token });
+    location.reload();
+  }catch(e){
+    alert('Error al cambiar el estado: ' + (e.message || e));
+    btnToggleEdicion.disabled = false;
+    btnToggleEdicion.textContent = datosDashboard?.evento?.edicion_abierta ? '🔒 Cerrar edición' : '🔓 Reabrir edición';
+  }
+});
+
+btnSalir.addEventListener('click', () => {
+  if(confirm('¿Cerrar sesión de administrador?')){
+    borrarSesion();
+    location.href = 'index.html';
+  }
+});
+
+(async () => {
+  try{
+    const datos = await llamar('f_admin_dashboard', { p_token: token });
+    if(!datos){
+      alert('No se pudo cargar el dashboard. Verifica tu sesión.');
+      borrarSesion();
+      location.href = 'index.html';
+      return;
+    }
+    datosDashboard = datos;
+    renderizar();
+  }catch(e){
+    panelCarga.innerHTML = `<div class="alerta alerta-roja">Error al cargar: ${e.message || e}</div>`;
+  }
+})();
+</script>
+</body>
+</html>
