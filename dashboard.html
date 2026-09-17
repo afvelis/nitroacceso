@@ -19,6 +19,9 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;backgr
 .titulo{font-size:20px;font-weight:700}
 .subtitulo{font-size:14px;color:var(--suave)}
 .contenedor{max-width:1000px;margin:20px auto;padding:0 16px}
+.atajo{display:flex;justify-content:flex-end;margin-bottom:12px}
+.btn-atajo{padding:8px 16px;border-radius:999px;background:linear-gradient(135deg,#b06aff,#7a3ff2);color:white;text-decoration:none;font-weight:700;font-size:14px;box-shadow:0 3px 10px rgba(0,0,0,.3)}
+.btn-atajo:active{transform:scale(.97)}
 .tarjeta{background:var(--tarjeta);border:1px solid var(--borde);border-radius:16px;padding:20px;margin-bottom:18px;box-shadow:0 4px 14px rgba(0,0,0,.25)}
 .tarjeta h2{font-size:19px;margin-bottom:14px;color:var(--acento)}
 .estado-evento{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px}
@@ -61,6 +64,10 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;backgr
 </header>
 
 <main class="contenedor">
+  <div class="atajo">
+    <a href="admin.html#cortesias" class="btn-atajo">🎁 Nueva cortesía</a>
+  </div>
+
   <div id="panelCarga" class="tarjeta">
     <p style="color:var(--suave)">Cargando resumen...</p>
   </div>
@@ -247,7 +254,7 @@ btnToggleEdicion.addEventListener('click', async () => {
   btnToggleEdicion.textContent = 'Cambiando estado...';
   
   try{
-    await llamar('f_admin_toggle_edicion', { p_token: token });
+    await llamar('f_admin_toggle_edicion', { p_token: token, p_abierta: !estadoActual });
     location.reload();
   }catch(e){
     alert('Error al cambiar el estado: ' + (e.message || e));
