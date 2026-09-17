@@ -12,7 +12,7 @@
 }
 body { background: var(--fondo); color: var(--texto); font-family: system-ui, -apple-system, sans-serif; font-size: 17px; margin: 0; padding: 0; }
 .franja { height: 6px; background: linear-gradient(90deg, var(--acento), var(--acento2)); }
-.container { max-width: 640px; margin: 0 auto; padding: 20px; padding-bottom: 100px; }
+.container { max-width: 640px; margin: 0 auto; padding: 20px; padding-bottom: 40px; }
 .logo-box { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; }
 .logo { font-size: 32px; background: linear-gradient(135deg, var(--acento), var(--acento2)); padding: 10px; border-radius: 12px; line-height: 1; }
 h1 { font-size: 20px; margin: 0; color: var(--texto); }
@@ -104,12 +104,6 @@ th { color: var(--suave); font-weight: 600; }
     <button class="btn" id="btnRegistrar">Registrar y generar los QR</button>
     <p style="color:var(--suave);">Si registras menos personas que los lugares disponibles, solo se generan esos QR. Puedes volver con este mismo link para agregar los faltantes mientras el administrador no cierre la edición. Una vez cerrada, no se puede agregar ni quitar: quien quedó con QR entra, y quien no esté registrado paga entrada.</p>
     <div id="msgError" class="error"></div>
-  </div>
-
-  <div id="listaReg" class="tarjeta" style="display:none;">
-    <h2 id="tituloReg"></h2>
-    <div id="tablaReg"></div>
-    <p id="msgReg" class="suave" style="min-height:20px;"></p>
   </div>
 
   <div id="recuperarQR" class="tarjeta" style="display:none;">
@@ -217,72 +211,50 @@ function renderStand() {
   document.getElementById('stQuedan').textContent = lugaresRestantes();
   document.getElementById('infoStand').style.display = 'block';
 
+  // ============ EVENTO CERRADO ============
   if (!datosStand.edicion_abierta) {
-    document.getElementById('avisoCerrado').textContent = 'Las inscripciones para este stand están cerradas: no se puede agregar ni quitar personas. Puedes ver tu QR desde la lista de abajo o recuperarlo por cédula.';
-    document.getElementById('avisoCerrado').style.display = 'block';
     document.getElementById('formLote').style.display = 'none';
-    document.getElementById('recuperarQR').style.display = 'block';
-  } else if (lugaresRestantes() === 0) {
+    document.getElementById('recuperarQR').style.display = 'none';
+    document.getElementById('cardFinalizar').style.display = 'none';
+    document.getElementById('barraFija').style.display = 'none';
+
+    if (datosStand.vendedores.length > 0) {
+      // Mostrar directamente los brazaletes de todos los vendedores
+      document.getElementById('avisoCerrado').textContent = 'Las inscripciones para este stand están cerradas. Aquí están tus QR para entrar al evento.';
+      document.getElementById('avisoCerrado').style.display = 'block';
+      loteActual = { personas: personasDelStand() };
+      mostrarResultados(true);
+    } else {
+      // No hay vendedores registrados
+      document.getElementById('avisoCerrado').textContent = 'Las inscripciones para este stand están cerradas y aún no hay vendedores registrados.';
+      document.getElementById('avisoCerrado').style.display = 'block';
+      document.getElementById('pantallaQR').style.display = 'none';
+    }
+    return;
+  }
+
+  // ============ EVENTO ABIERTO (edición) ============
+  document.getElementById('avisoCerrado').style.display = 'none';
+  document.getElementById('recuperarQR').style.display = 'block';
+  document.getElementById('cardFinalizar').style.display = 'block';
+  document.getElementById('pantallaQR').style.display = 'none';
+
+  if (lugaresRestantes() === 0) {
     document.getElementById('avisoCerrado').textContent = 'El cupo de este stand está lleno.';
     document.getElementById('avisoCerrado').style.display = 'block';
     document.getElementById('formLote').style.display = 'none';
-    document.getElementById('recuperarQR').style.display = 'block';
   } else {
     document.getElementById('avisoCerrado').style.display = 'none';
     document.getElementById('formLote').style.display = 'block';
-    document.getElementById('recuperarQR').style.display = 'block';
     precargarNegocio();
     renderTabla();
   }
 
-  if (datosStand.vendedores.length > 0) {
-    document.getElementById('tituloReg').textContent = tituloRegistrados();
-    const conAcciones = datosStand.edicion_abierta;
-    let html = '<table><thead><tr><th>Nombre</th><th>Cédula</th><th>' + (conAcciones ? 'Acciones' : 'Tu QR') + '</th></tr></thead><tbody>';
-    datosStand.vendedores.forEach(function(v, i){
-      html += '<tr><td>' + v.nombre + ' ' + v.apellido + '</td><td>' + v.cedula + '</td>';
-      if (conAcciones) {
-        html += '<td class="celd-acciones"><button class="btn btn-rojo btn-mini" data-ced="' + i + '">Quitar y anular QR</button></td>';
-      } else {
-        html += '<td class="celd-acciones"><button class="btn btn-azul btn-mini" data-ver="' + i + '">Ver mi QR</button></td>';
-      }
-      html += '</tr>';
-    });
-    html += '</tbody></table>';
-    document.getElementById('tablaReg').innerHTML = html;
-    document.getElementById('listaReg').style.display = 'block';
-    if (conAcciones) {
-      document.querySelectorAll('#tablaReg button[data-ced]').forEach(function(b){
-        b.onclick = function(){
-          const v = datosStand.vendedores[parseInt(b.getAttribute('data-ced'), 10)];
-          quitarVendedor(v);
-        };
-      });
-    } else {
-      document.querySelectorAll('#tablaReg button[data-ver]').forEach(function(b){
-        b.onclick = function(){
-          const v = datosStand.vendedores[parseInt(b.getAttribute('data-ver'), 10)];
-          loteActual = { personas: [{
-            nombre: v.nombre, apellido: v.apellido, cedula: v.cedula,
-            codigo_qr: v.codigo_qr,
-            empresa: v.empresa || datosStand.empresa || '',
-            vende: v.vende || datosStand.vende || ''
-          }] };
-          mostrarResultados();
-        };
-      });
-    }
-  } else {
-    document.getElementById('listaReg').style.display = 'none';
-  }
-
-  document.getElementById('pantallaQR').style.display = 'none';
-  document.getElementById('cardFinalizar').style.display = 'block';
   document.getElementById('barraFija').style.display = (datosStand.vendedores.length > 0) ? 'block' : 'none';
 }
 
 async function quitarVendedor(v) {
-  const msg = document.getElementById('msgReg');
+  const msg = document.getElementById('msgRec');
   msg.style.color = 'var(--suave)';
   msg.textContent = '';
   const seguro = confirm('Quitar a ' + v.nombre + ' ' + v.apellido + ' del stand? Su QR quedara anulado de inmediato y su lugar quedara libre para otra persona. Esta accion no se puede deshacer.');
@@ -441,7 +413,7 @@ document.getElementById('btnRegistrar').onclick = async function(){
     limpiarInputs();
     try { datosStand = await llamar('f_link_stand_ver', { p_codigo_link: codigoLink }); } catch (e) {}
     loteActual = { personas: personasDelStand() };
-    mostrarResultados();
+    mostrarResultados(false);
   } catch (e) { errDiv.textContent = 'Error de conexión: ' + e.message; }
 };
 
@@ -454,14 +426,23 @@ document.getElementById('btnRecuperar').onclick = async function(){
     const res = await llamar('f_link_stand_mi_qr', { p_codigo_link: codigoLink, p_cedula: cedula });
     if (!res) { errDiv.textContent = 'No encontramos esa cédula en este stand.'; return; }
     loteActual = { personas: [res] };
-    mostrarResultados();
+    mostrarResultados(false);
   } catch (e) { errDiv.textContent = 'Error: ' + e.message; }
 };
 
-function mostrarResultados() {
-  ['infoStand','avisoCerrado','formLote','listaReg','recuperarQR','barraFija','cardFinalizar'].forEach(id => {
-    document.getElementById(id).style.display = 'none';
-  });
+function mostrarResultados(soloLectura) {
+  if (soloLectura) {
+    // Modo cerrado: mantener info + aviso visibles, ocultar el resto
+    ['formLote','recuperarQR','cardFinalizar','barraFija'].forEach(id => {
+      document.getElementById(id).style.display = 'none';
+    });
+  } else {
+    // Modo normal: ocultar todo excepto pantallaQR
+    ['infoStand','avisoCerrado','formLote','recuperarQR','barraFija','cardFinalizar'].forEach(id => {
+      document.getElementById(id).style.display = 'none';
+    });
+  }
+
   const cont = document.getElementById('listaQRs');
   cont.innerHTML = '';
   loteActual.personas.forEach(function(per){
@@ -520,6 +501,9 @@ function mostrarResultados() {
     };
     cont.appendChild(card);
   });
+
+  // Botón "Cerrar" solo en modo normal (edición abierta)
+  document.getElementById('btnVolver').style.display = soloLectura ? 'none' : 'block';
   document.getElementById('pantallaQR').style.display = 'block';
 }
 
@@ -529,7 +513,7 @@ document.getElementById('btnTermine').onclick = function(){
     return;
   }
   loteActual = { personas: personasDelStand() };
-  mostrarResultados();
+  mostrarResultados(false);
 };
 
 document.getElementById('btnVolver').onclick = function(){
@@ -545,7 +529,8 @@ document.getElementById('btnFinalizar').onclick = function(){
   document.getElementById('inEmpresa').value = '';
   document.getElementById('inVende').value = '';
   ['msgRec','msgPersona','msgError','msgReg'].forEach(function(id){
-    document.getElementById(id).textContent = '';
+    const el = document.getElementById(id);
+    if (el) el.textContent = '';
   });
   renderStand();
   document.getElementById('cardFinalizar').style.display = 'none';
