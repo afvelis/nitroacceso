@@ -238,19 +238,20 @@ btnDia1.addEventListener('click', () => seleccionarDia(1));
 btnDia2.addEventListener('click', () => seleccionarDia(2));
 
 btnCerrarDia1.addEventListener('click', async () => {
-  if(!confirm('¿Cerrar definitivamente el Día 1 y activar el Día 2?\n\nEsta acción no se puede deshacer. Asegúrate de que todas las listas del Día 1 estén cerradas.')){
+  if(!confirm('¿Cerrar el Día 1 y activar el Día 2?\n\nAl confirmar:\n• Se cerrarán TODAS las listas abiertas del Día 1.\n• Las personas pendientes de esas listas ya no podrán entrar.\n• El control pasará al Día 2.\n\nEsta acción no se puede deshacer.')){
     return;
   }
   btnCerrarDia1.disabled = true;
   btnCerrarDia1.textContent = 'Cerrando Día 1...';
   try{
-    const ok = await llamar('f_puerta_activar_dia2', { p_token: tokenSesion });
-    if(ok){
-      diaActivo = 2;
+    const res = await llamar('f_puerta_cerrar_dia_y_activar_siguiente', { p_token: tokenSesion });
+    if(res && res.ok){
+      diaActivo = res.dia_nuevo;
       actualizarSelectorDia();
-      alert('✅ Día 1 cerrado. Día 2 activado.');
+      alert('✅ Día ' + res.dia_cerrado + ' cerrado.\nListas cerradas: ' + res.listas_cerradas + '.\nDía ' + res.dia_nuevo + ' activado.');
     }else{
-      alert('No se pudo cerrar el Día 1. Verifica que todas las listas del Día 1 estén cerradas.');
+      const err = (res && res.error) || 'desconocido';
+      alert('No se pudo cerrar el Día 1 (' + err + ').');
       btnCerrarDia1.disabled = false;
       btnCerrarDia1.textContent = '🔒 Cerrar Día 1 y activar Día 2';
     }
@@ -370,7 +371,6 @@ function cargarJsQR(callback){
 async function iniciarScanner(){
   if(!diaSeleccionado){ alert('Selecciona un día primero.'); return; }
   
-  // Ocultar resultado y botón siguiente al abrir la cámara
   panelResultado.innerHTML = '';
   panelResultado.style.display = 'none';
   barraSiguiente.style.display = 'none';
@@ -786,7 +786,7 @@ async function buscarListaPorNombre(nombre){
     listas.forEach((l, idx) => {
       html += `<div class="persona-item ${idx === listas.length - 1 ? 'ultimo' : ''}">`;
       html += `<div class="persona-info">`;
-      html += `<div class="persona-nombre">${l.talento_nombre || 'Talento'}</div>`;
+      html += `<div class="persona-nombre">${l.talento || 'Talento'}</div>`;
       html += `<div class="persona-detalle">Código: ${l.codigo_corto} • Estado: ${l.estado}</div>`;
       html += `</div>`;
       html += `<button class="btn btn-mini" data-lista-id="${l.lista_id}" data-codigo="${l.codigo_corto}">Abrir</button>`;
@@ -859,7 +859,7 @@ async function mostrarListaCompleta(lista){
     
     let html = `<div class="resultado">`;
     html += `<div class="dato"><strong>Tipo</strong><span class="pill pill-azul">Lista de talento</span></div>`;
-    html += `<div class="dato"><strong>Talento</strong><span>${lista.talento_nombre || 'Talento'}</span></div>`;
+    html += `<div class="dato"><strong>Talento</strong><span>${lista.talento || 'Talento'}</span></div>`;
     html += `<div class="dato"><strong>Código</strong><span class="mono">${lista.codigo_corto}</span></div>`;
     html += `<div class="dato"><strong>Estado</strong><span class="pill ${lista.estado === 'cerrada' ? 'pill-rojo' : 'pill-verde'}">${lista.estado}</span></div>`;
     
