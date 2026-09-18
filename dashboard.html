@@ -50,7 +50,19 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;backgr
 .alerta-amarilla{background:rgba(255,211,61,.12);border:1px solid var(--aviso);color:var(--aviso)}
 .alerta-roja{background:rgba(224,82,82,.12);border:1px solid var(--rojo);color:var(--rojo)}
 .alerta-verde{background:rgba(53,208,127,.12);border:1px solid var(--acento);color:var(--acento)}
+.alerta-clickeable{cursor:pointer;transition:opacity .15s}
+.alerta-clickeable:hover{opacity:.85}
 .pill-dia{display:inline-block;padding:4px 10px;border-radius:14px;font-size:13px;font-weight:700;background:rgba(31,162,255,.18);color:var(--acento2)}
+.detalle-listas{margin-top:10px;padding-top:10px;border-top:1px dashed var(--aviso)}
+.item-lista{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;background:rgba(0,0,0,.25);border-radius:8px;margin-bottom:6px;flex-wrap:wrap}
+.item-lista .info{flex:1;min-width:200px}
+.item-lista .nombre{font-weight:600;font-size:15px}
+.item-lista .meta{font-size:13px;color:var(--suave);margin-top:2px}
+.item-lista .link-box{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;background:#0d1626;padding:4px 8px;border-radius:6px;word-break:break-all;color:var(--suave);margin-top:4px;display:block}
+.btn-mini{padding:6px 12px;font-size:13px;border-radius:8px}
+.pill-tipo{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;margin-right:6px}
+.pill-tipo-talento{background:rgba(31,162,255,.2);color:var(--acento2)}
+.pill-tipo-cortesia{background:rgba(186,104,255,.2);color:#c68cff}
 </style>
 </head>
 <body>
@@ -132,6 +144,28 @@ const btnSalir = document.getElementById('btnSalir');
 
 let datosDashboard = null;
 
+async function copiarTexto(texto, btn){
+  const original = btn.textContent;
+  try{
+    await navigator.clipboard.writeText(texto);
+    btn.textContent = '¡Copiado!';
+    setTimeout(() => { btn.textContent = original; }, 1500);
+  }catch(e){
+    const ta = document.createElement('textarea');
+    ta.value = texto;
+    document.body.appendChild(ta);
+    ta.select();
+    try{
+      document.execCommand('copy');
+      btn.textContent = '¡Copiado!';
+      setTimeout(() => { btn.textContent = original; }, 1500);
+    }catch(e2){
+      alert('No se pudo copiar: ' + texto);
+    }
+    document.body.removeChild(ta);
+  }
+}
+
 function renderizar(){
   if(!datosDashboard) return;
   
@@ -141,7 +175,7 @@ function renderizar(){
   const d2 = datosDashboard.puerta_dia2;
   
   if(ev.edicion_abierta){
-    pillEstado.textContent = '🟢 Evento abierto (editando)';
+    pillEstado.textContent = ' Evento abierto (editando)';
     pillEstado.className = 'estado-pill estado-abierto';
     btnToggleEdicion.textContent = '🔒 Cerrar edición';
     btnToggleEdicion.className = 'btn btn-rojo';
@@ -155,9 +189,9 @@ function renderizar(){
   
   const totalPersonas = cont.personas_talento + cont.vendedores_patrocinantes + cont.vendedores_pagados + cont.personas_cortesia;
   const tarjetas = [
-    { num: totalPersonas, label: '🧍 Personas en el evento', sub: 'Listas, stands y cortesías' },
+    { num: totalPersonas, label: ' Personas en el evento', sub: 'Listas, stands y cortesías' },
     { num: cont.talentos, label: '🎭 Talentos', sub: cont.personas_talento + ' personas en sus listas' },
-    { num: cont.stands_patrocinantes, label: '🏪 Stands patrocinantes', sub: cont.vendedores_patrocinantes + ' personas registradas' },
+    { num: cont.stands_patrocinantes, label: ' Stands patrocinantes', sub: cont.vendedores_patrocinantes + ' personas registradas' },
     { num: cont.stands_pagados, label: '💰 Stands pagados', sub: cont.vendedores_pagados + ' personas registradas' },
     { num: cont.personas_cortesia, label: '🎁 Cortesías', sub: cont.cortesias_activas + ' pases activos · ' + cont.cortesias_anuladas + ' anulados' },
     { num: cont.coordinadores_activos, label: '👥 Coordinadores activos', sub: cont.coordinadores_revocados + ' revocados' }
@@ -187,7 +221,7 @@ function renderizar(){
   progresoDias.innerHTML = `
     <div class="progreso-dia">
       <div class="progreso-header">
-        <span class="progreso-titulo">📅 Día 1</span>
+        <span class="progreso-titulo"> Día 1</span>
         <span class="progreso-stats">✅ ${p1.totalAutorizados} autorizados / ⏳ ${p1.totalGeneral - p1.totalAutorizados} pendientes</span>
       </div>
       <div class="barra-fondo">
@@ -197,7 +231,7 @@ function renderizar(){
     <div class="progreso-dia">
       <div class="progreso-header">
         <span class="progreso-titulo">📅 Día 2</span>
-        <span class="progreso-stats">✅ ${p2.totalAutorizados} autorizados / ⏳ ${p2.totalGeneral - p2.totalAutorizados} pendientes</span>
+        <span class="progreso-stats">✅ ${p2.totalAutorizados} autorizados /  ${p2.totalGeneral - p2.totalAutorizados} pendientes</span>
       </div>
       <div class="barra-fondo">
         <div class="barra-relleno" style="width:${p2.pct}%">${p2.pct}%</div>
@@ -205,7 +239,7 @@ function renderizar(){
     </div>
   `;
   
-  // ALERTAS: Mostrar SOLO las listas pendientes del día activo del evento
+  // ALERTAS con detalle expandible de listas pendientes
   let alertas = [];
   
   if(ev.edicion_abierta){
@@ -214,13 +248,16 @@ function renderizar(){
     alertas.push({ tipo: 'verde', texto: '✅ El evento está cerrado. La puerta puede operar con normalidad.' });
   }
   
-  // Aquí está la lógica exacta que pediste: solo del día en curso
-  if(ev.dia_activo === 1 && d1.listas_abiertas > 0){
-    alertas.push({ tipo: 'amarilla', texto: `📋 Hay ${d1.listas_abiertas} lista(s) del Día 1 sin cerrar. El staff puede cerrarlas desde puerta.` });
-  }
-  
-  if(ev.dia_activo === 2 && d2.listas_abiertas > 0){
-    alertas.push({ tipo: 'amarilla', texto: `📋 Hay ${d2.listas_abiertas} lista(s) del Día 2 sin cerrar.` });
+  // Alerta de listas abiertas del día activo con detalle expandible
+  const diaActivoData = ev.dia_activo === 1 ? d1 : d2;
+  if(ev.dia_activo && diaActivoData.listas_abiertas > 0){
+    const detalle = diaActivoData.listas_abiertas_detalle || [];
+    alertas.push({
+      tipo: 'amarilla',
+      texto: `📋 Hay ${diaActivoData.listas_abiertas} lista(s) del Día ${ev.dia_activo} sin cerrar. Toca para ver los links.`,
+      expandible: true,
+      detalle: detalle
+    });
   }
   
   if(cont.coordinadores_revocados > 0){
@@ -235,10 +272,39 @@ function renderizar(){
     alertas.push({ tipo: 'verde', texto: '✅ Todo en orden.' });
   }
   
-  panelAlertas.innerHTML = alertas.map(a => `<div class="alerta alerta-${a.tipo}">${a.texto}</div>`).join('');
+  panelAlertas.innerHTML = alertas.map((a, idx) => {
+    let html = `<div class="alerta alerta-${a.tipo}${a.expandible ? ' alerta-clickeable' : ''}" ${a.expandible ? `onclick="toggleDetalle(${idx})"` : ''}>${a.texto}</div>`;
+    if(a.expandible && a.detalle && a.detalle.length > 0){
+      html += `<div id="detalle-${idx}" class="detalle-listas" style="display:none">`;
+      a.detalle.forEach(item => {
+        const tipoCls = item.tipo === 'talento' ? 'pill-tipo-talento' : 'pill-tipo-cortesia';
+        html += `<div class="item-lista">
+          <div class="info">
+            <div class="nombre"><span class="pill-tipo ${tipoCls}">${item.tipo.toUpperCase()}</span>${item.nombre}</div>
+            <div class="meta">Código: <strong>${item.codigo}</strong></div>
+            <span class="link-box">${item.link}</span>
+          </div>
+          <button class="btn btn-azul btn-mini" onclick="event.stopPropagation(); copiarLink('${item.link}', this)">📋 Copiar link</button>
+        </div>`;
+      });
+      html += `</div>`;
+    }
+    return html;
+  }).join('');
   
   panelCarga.style.display = 'none';
   panelContenido.style.display = 'block';
+}
+
+function toggleDetalle(idx){
+  const el = document.getElementById('detalle-' + idx);
+  if(el){
+    el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  }
+}
+
+async function copiarLink(link, btn){
+  await copiarTexto(link, btn);
 }
 
 btnToggleEdicion.addEventListener('click', async () => {
