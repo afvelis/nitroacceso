@@ -91,7 +91,7 @@ li{margin:4px 0;}
 
   <section class="tarjeta" id="coordinadores">
     <h2>Coordinadores creados</h2>
-    <p class="suave">Aqui ves quien tiene llave de entrada. El boton "Eliminar" revoca la llave sin borrar lo creado; y sobre un coordinador ya revocado aparece "Eliminar definitivamente" para sacarlo de esta lista para siempre.</p>
+    <p class="suave">Aqui ves quien tiene llave de entrada. El boton "Revocar" desactiva la llave sin borrar lo creado; y sobre un coordinador ya revocado aparece "Eliminar definitivamente" para sacarlo de esta lista para siempre.</p>
     <div id="listaCoords"><p class="suave">Consultando...</p></div>
   </section>
 
@@ -215,18 +215,26 @@ function boton(texto, clase, fn){
   var b = document.createElement('button');
   b.className = 'btn ' + clase;
   b.textContent = texto;
-  b.onclick = fn;
+  b.onclick = function(e){ fn(e.target); };
   return b;
 }
-async function copiarTexto(txt){
+async function copiarTexto(txt, btn){
+  const original = btn ? btn.textContent : '';
   try {
     await navigator.clipboard.writeText(txt);
+    if(btn) {
+      btn.textContent = '¡Copiado!';
+      setTimeout(() => { btn.textContent = original; }, 1500);
+    }
   } catch (e) {
     var ta = document.createElement('textarea');
     ta.value = txt;
     document.body.appendChild(ta);
     ta.select();
-    try { document.execCommand('copy'); } catch (e2) {}
+    try { 
+      document.execCommand('copy'); 
+      if(btn) { btn.textContent = '¡Copiado!'; setTimeout(() => { btn.textContent = original; }, 1500); }
+    } catch (e2) {}
     document.body.removeChild(ta);
   }
 }
@@ -306,7 +314,7 @@ async function crearCoord(){
     caja.textContent = codigo;
     var fila = document.createElement('div');
     fila.className = 'fila';
-    fila.appendChild(boton('Copiar codigo', 'btn-gris', function(){ copiarTexto(codigo); }));
+    fila.appendChild(boton('Copiar codigo', 'btn-gris', function(btn){ copiarTexto(codigo, btn); }));
     var nota = document.createElement('p');
     nota.className = 'suave';
     nota.textContent = 'Entregale este codigo a tu coordinador: con el entra en coord.html y crea los links de registro.';
@@ -340,22 +348,45 @@ function tarjetaCoord(c){
   div.className = 'item';
   var tipoTxt = (c.tipo === 'talentos') ? 'Talentos' : 'Stands';
   var fecha = fechaBonita(c.creada_at);
+  var linkEntrada = BASE + 'coord.html?c=' + c.codigo;
+  
   div.innerHTML =
     '<div><strong>' + esc(c.nombre) + '</strong>' +
     '<span class="badge badge-tipo">' + tipoTxt + '</span>' +
     '<span class="badge ' + (c.activo ? 'badge-ok">Activo' : 'badge-no">Revocado') + '</span></div>' +
     '<div class="codigo">' + esc(c.codigo) + '</div>' +
     '<p class="suave">' + (c.correo ? esc(c.correo) : 'Sin correo registrado') + (fecha ? ' · Creado el ' + fecha : '') + '</p>' +
+    '<div class="fila" style="margin-bottom:8px"></div>' +
+    '<div class="codigo" style="font-size:14px;word-break:break-all;">' + esc(linkEntrada) + '</div>' +
     '<div class="fila"></div>';
-  var fila = div.querySelector('.fila');
-  fila.appendChild(boton('Copiar codigo', 'btn-gris', function(){ copiarTexto(c.codigo); }));
-  fila.appendChild(boton('Editar', 'btn-gris', function(){ mostrarEdicion(div, c); }));
+    
+  var fila1 = div.querySelectorAll('.fila')[0];
+  fila1.appendChild(boton('Copiar código', 'btn-gris', function(btn){ copiarTexto(c.codigo, btn); }));
+  fila1.appendChild(boton('Editar', 'btn-gris', function(){ mostrarEdicion(div, c); }));
   if (c.activo) {
-    fila.appendChild(boton('Eliminar', 'btn-rojo', function(){ revocar(c, false); }));
+    fila1.appendChild(boton('Revocar', 'btn-rojo', function(){ revocar(c, false); }));
   } else {
-    fila.appendChild(boton('Reactivar', 'btn-verde', function(){ revocar(c, true); }));
-    fila.appendChild(boton('Eliminar definitivamente', 'btn-rojo', function(){ borrarDefinitivo(c); }));
+    fila1.appendChild(boton('Reactivar', 'btn-verde', function(){ revocar(c, true); }));
+    fila1.appendChild(boton('Eliminar definitivamente', 'btn-rojo', function(){ borrarDefinitivo(c); }));
   }
+
+  var fila2 = div.querySelectorAll('.fila')[1];
+  fila2.appendChild(boton('📋 Copiar link', 'btn-gris', function(btn){ copiarTexto(linkEntrada, btn); }));
+  
+  var wa = document.createElement('a');
+  wa.className = 'btn btn-gris';
+  wa.target = '_blank';
+  wa.rel = 'noopener';
+  wa.textContent = '📱 WhatsApp';
+  wa.href = urlWA('Hola ' + esc(c.nombre) + ', aquí tienes tu link de acceso para coordinar ' + tipoTxt + ' en Nitrotoon: ' + linkEntrada);
+  fila2.appendChild(wa);
+  
+  var ml = document.createElement('a');
+  ml.className = 'btn btn-gris';
+  ml.textContent = '✉️ Correo';
+  ml.href = urlMail('Link de acceso Nitrotoon - Coordinación de ' + tipoTxt, 'Hola ' + esc(c.nombre) + ',\n\nAquí tienes tu link de acceso para coordinar ' + tipoTxt + ' en Nitrotoon:\n\n' + linkEntrada + '\n\nTu código es: ' + c.codigo);
+  fila2.appendChild(ml);
+
   return div;
 }
 
@@ -398,7 +429,7 @@ function mostrarEdicion(div, c){
 async function revocar(c, activo){
   var pregunta = activo
     ? 'Reactivar el codigo de ' + c.nombre + '? Podra volver a entrar y crear links nuevos.'
-    : 'Eliminar la llave de ' + c.nombre + '? Ya no podra entrar ni crear links nuevos. Lo que ya creo queda intacto.';
+    : 'Revocar la llave de ' + c.nombre + '? Ya no podra entrar ni crear links nuevos. Lo que ya creo queda intacto.';
   if (!confirm(pregunta)) return;
   try {
     var ok = await llamar('f_admin_activar_coordinador', { p_token: ses.token, p_id: c.id, p_activo: activo });
@@ -509,7 +540,7 @@ async function crearCortesia(){
     linkBox.textContent = link;
     var fila = document.createElement('div');
     fila.className = 'fila';
-    fila.appendChild(boton('Copiar link', 'btn-gris', function(){ copiarTexto(link); }));
+    fila.appendChild(boton('Copiar link', 'btn-gris', function(btn){ copiarTexto(link, btn); }));
     var wa = document.createElement('a');
     wa.className = 'btn btn-gris';
     wa.target = '_blank';
@@ -564,7 +595,7 @@ function tarjetaCortesia(c){
   var fila = div.querySelector('.fila');
   var link = BASE + 'cortesia.html?c=' + c.codigo_link;
   fila.appendChild(boton('Ver detalle', 'btn-gris', function(){ verDetalleCortesia(div, c); }));
-  fila.appendChild(boton('Copiar link', 'btn-gris', function(){ copiarTexto(link); }));
+  fila.appendChild(boton('Copiar link', 'btn-gris', function(btn){ copiarTexto(link, btn); }));
   if (c.estado === 'activa') {
     fila.appendChild(boton('Editar', 'btn-gris', function(){ editarCortesia(div, c); }));
     fila.appendChild(boton('Anular', 'btn-rojo', function(){ anularCortesia(c); }));
