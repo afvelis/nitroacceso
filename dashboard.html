@@ -73,7 +73,6 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;backgr
   </div>
 
   <div id="panelContenido" style="display:none">
-    <!-- ESTADO DEL EVENTO -->
     <div class="tarjeta">
       <h2>📌 Estado del evento</h2>
       <div class="estado-evento">
@@ -85,16 +84,13 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;backgr
       </div>
     </div>
 
-    <!-- CONTADORES SEGMENTADOS -->
     <div class="grid-contadores" id="gridContadores"></div>
 
-    <!-- PROGRESO DE PUERTA -->
     <div class="tarjeta">
       <h2>🚪 Control de puerta por día</h2>
       <div id="progresoDias"></div>
     </div>
 
-    <!-- ACCESOS RÁPIDOS -->
     <div class="tarjeta">
       <h2>⚡ Accesos rápidos</h2>
       <div class="accesos-grid">
@@ -105,7 +101,6 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;backgr
       </div>
     </div>
 
-    <!-- ALERTAS -->
     <div class="tarjeta">
       <h2>🔔 Alertas</h2>
       <div id="panelAlertas"></div>
@@ -145,7 +140,6 @@ function renderizar(){
   const d1 = datosDashboard.puerta_dia1;
   const d2 = datosDashboard.puerta_dia2;
   
-  // Estado del evento
   if(ev.edicion_abierta){
     pillEstado.textContent = '🟢 Evento abierto (editando)';
     pillEstado.className = 'estado-pill estado-abierto';
@@ -159,7 +153,6 @@ function renderizar(){
   }
   diaActivo.textContent = 'Día ' + (ev.dia_activo || 1);
   
-  // Contadores segmentados (incluye cortesías)
   const totalPersonas = cont.personas_talento + cont.vendedores_patrocinantes + cont.vendedores_pagados + cont.personas_cortesia;
   const tarjetas = [
     { num: totalPersonas, label: '🧍 Personas en el evento', sub: 'Listas, stands y cortesías' },
@@ -178,7 +171,6 @@ function renderizar(){
     </div>
   `).join('');
   
-  // Progreso de puerta (incluye cortesías)
   function calcularProgreso(dia){
     const totalPersonas = dia.personas_autorizadas + dia.personas_pendientes;
     const totalVendedores = dia.vendedores_autorizados + dia.vendedores_pendientes;
@@ -213,7 +205,7 @@ function renderizar(){
     </div>
   `;
   
-  // Alertas
+  // ALERTAS: Mostrar SOLO las listas pendientes del día activo del evento
   let alertas = [];
   
   if(ev.edicion_abierta){
@@ -222,11 +214,12 @@ function renderizar(){
     alertas.push({ tipo: 'verde', texto: '✅ El evento está cerrado. La puerta puede operar con normalidad.' });
   }
   
-  if(d1.listas_abiertas > 0 && ev.dia_activo === 1){
+  // Aquí está la lógica exacta que pediste: solo del día en curso
+  if(ev.dia_activo === 1 && d1.listas_abiertas > 0){
     alertas.push({ tipo: 'amarilla', texto: `📋 Hay ${d1.listas_abiertas} lista(s) del Día 1 sin cerrar. El staff puede cerrarlas desde puerta.` });
   }
   
-  if(d2.listas_abiertas > 0 && ev.dia_activo === 2){
+  if(ev.dia_activo === 2 && d2.listas_abiertas > 0){
     alertas.push({ tipo: 'amarilla', texto: `📋 Hay ${d2.listas_abiertas} lista(s) del Día 2 sin cerrar.` });
   }
   
