@@ -51,7 +51,7 @@ function ponerQR(contenedor, data, textoCodigo) {
     img2.height = 220;
     img2.src = "https://quickchart.io/qr?size=220&text=" + encodeURIComponent(data);
     img2.onerror = function () {
-      contenedor.innerHTML = "<p style='font-size:28px;font-weight:bold;'>" + textoCodigo + "</p>";
+      contenedor.innerHTML = "<p style='font-size:28px;font-weight:800;color:#000;'>" + textoCodigo + "</p>";
     };
     contenedor.innerHTML = "";
     contenedor.appendChild(img2);
@@ -59,7 +59,13 @@ function ponerQR(contenedor, data, textoCodigo) {
   contenedor.appendChild(img);
   const p = document.createElement("p");
   p.textContent = "Codigo: " + textoCodigo;
-  p.style.fontSize = "20px";
+  p.style.fontSize = "22px";
+  p.style.fontWeight = "800";
+  p.style.color = "#000";
+  p.style.letterSpacing = "2px";
+  p.style.marginTop = "12px";
+  p.style.fontFamily = "ui-monospace, Menlo, Consolas, monospace";
+  p.style.textAlign = "center";
   contenedor.appendChild(p);
 }
 
