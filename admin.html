@@ -652,13 +652,29 @@ async function verDetalleCortesia(div, c){
   }
 }
 
-function editarCortesia(div, c){
+async function editarCortesia(div, c){
   var existente = div.querySelector('.panel-edit');
   if (existente) { existente.remove(); return; }
+
   var panel = document.createElement('div');
   panel.className = 'panel-edit';
-  var l1 = document.createElement('label');
-  l1.textContent = 'Razon de la cortesia';
+  panel.innerHTML = '<p class="suave">Cargando datos de la cortesía...</p>';
+  div.appendChild(panel);
+
+  var d = null;
+  try {
+    d = await llamar('f_admin_ver_cortesia', { p_token: ses.token, p_codigo_link: c.codigo_link });
+  } catch(e) {}
+
+  if(!d){
+    panel.innerHTML = '<p class="suave">No se pudieron cargar los datos. Intenta de nuevo.</p>';
+    return;
+  }
+
+  panel.innerHTML = '';
+
+  var lRazon = document.createElement('label');
+  lRazon.textContent = 'Razon de la cortesia';
   var s1 = document.createElement('select');
   ['prensa','vinculo_familiar','premio','autoridad','otros'].forEach(function(v){
     var o = document.createElement('option');
@@ -667,39 +683,66 @@ function editarCortesia(div, c){
     if (v === c.razon) o.selected = true;
     s1.appendChild(o);
   });
-  l1.appendChild(s1);
+  lRazon.appendChild(s1);
+  panel.appendChild(lRazon);
+
   var l2 = document.createElement('label');
   l2.textContent = 'Causa especifica (obligatoria si eliges Otros)';
   var i2 = document.createElement('input');
   i2.value = c.causa || '';
   l2.appendChild(i2);
-  panel.appendChild(l1);
   panel.appendChild(l2);
+
+  var iOrg = null, iNom = null, iApe = null, iCed = null;
   var chk1 = null, chk2 = null;
-  if (c.tipo === 'individual') {
-    var ld = document.createElement('label');
-    ld.textContent = 'Dias aprobados';
-    var wrap = document.createElement('div');
-    wrap.className = 'fila';
-    var lb1 = document.createElement('label');
-    lb1.style.margin = '0';
-    chk1 = document.createElement('input');
-    chk1.type = 'checkbox';
-    chk1.checked = !!c.dia1;
-    lb1.appendChild(chk1);
-    lb1.appendChild(document.createTextNode(' Dia 1'));
-    var lb2 = document.createElement('label');
-    lb2.style.margin = '0';
-    chk2 = document.createElement('input');
-    chk2.type = 'checkbox';
-    chk2.checked = !!c.dia2;
-    lb2.appendChild(chk2);
-    lb2.appendChild(document.createTextNode(' Dia 2'));
-    wrap.appendChild(lb1);
-    wrap.appendChild(lb2);
-    ld.appendChild(wrap);
-    panel.appendChild(ld);
+
+  if(d.tipo === 'lista'){
+    var lOrg = document.createElement('label');
+    lOrg.textContent = 'Nombre de la organizacion';
+    iOrg = document.createElement('input');
+    iOrg.value = d.nombre_organizacion || '';
+    lOrg.appendChild(iOrg);
+    panel.appendChild(lOrg);
+  } else {
+    var persona = (d.individuales && d.individuales[0]) || null;
+    if(persona){
+      var lNom = document.createElement('label'); lNom.textContent = 'Nombre';
+      iNom = document.createElement('input'); iNom.value = persona.nombre || '';
+      lNom.appendChild(iNom); panel.appendChild(lNom);
+
+      var lApe = document.createElement('label'); lApe.textContent = 'Apellido';
+      iApe = document.createElement('input'); iApe.value = persona.apellido || '';
+      lApe.appendChild(iApe); panel.appendChild(lApe);
+
+      var lCed = document.createElement('label'); lCed.textContent = 'Cedula';
+      iCed = document.createElement('input'); iCed.value = persona.cedula || '';
+      lCed.appendChild(iCed); panel.appendChild(lCed);
+
+      var ld = document.createElement('label');
+      ld.textContent = 'Dias aprobados';
+      var wrap = document.createElement('div');
+      wrap.className = 'fila';
+      var lb1 = document.createElement('label');
+      lb1.style.margin = '0';
+      chk1 = document.createElement('input');
+      chk1.type = 'checkbox';
+      chk1.checked = !!(d.dia1 || c.dia1);
+      lb1.appendChild(chk1);
+      lb1.appendChild(document.createTextNode(' Dia 1'));
+      var lb2 = document.createElement('label');
+      lb2.style.margin = '0';
+      chk2 = document.createElement('input');
+      chk2.type = 'checkbox';
+      chk2.checked = !!(d.dia2 || c.dia2);
+      lb2.appendChild(chk2);
+      lb2.appendChild(document.createTextNode(' Dia 2'));
+      wrap.appendChild(lb1);
+      wrap.appendChild(lb2);
+      ld.appendChild(wrap);
+      panel.appendChild(ld);
+    }
   }
+
   var fila = document.createElement('div');
   fila.className = 'fila';
   fila.appendChild(boton('Guardar cambios', 'btn-verde', async function(){
@@ -709,10 +752,26 @@ function editarCortesia(div, c){
     try {
       var r = await llamar('f_admin_editar_cortesia', { p_token: ses.token, p_codigo_link: c.codigo_link, p_razon: razon, p_causa: causa || null });
       if (r !== 'ok') { alert(msgErrorCortesia(r)); return; }
-      if (chk1 && chk2) {
-        var r2 = await llamar('f_admin_editar_cortesia_dias', { p_token: ses.token, p_codigo_link: c.codigo_link, p_dia1: chk1.checked, p_dia2: chk2.checked });
-        if (r2 !== 'ok') { alert(msgErrorCortesia(r2)); return; }
+
+      if(d.tipo === 'lista'){
+        var rOrg = await llamar('f_admin_editar_cortesia_datos', {
+          p_token: ses.token, p_codigo_link: c.codigo_link,
+          p_nombre_organizacion: iOrg.value.trim()
+        });
+        if (rOrg !== 'ok') { alert(msgErrorCortesia(rOrg)); return; }
+      } else if(iNom && iApe && iCed){
+        var rPer = await llamar('f_admin_editar_cortesia_datos', {
+          p_token: ses.token, p_codigo_link: c.codigo_link,
+          p_nombre: iNom.value.trim(), p_apellido: iApe.value.trim(), p_cedula: iCed.value.trim()
+        });
+        if (rPer !== 'ok') { alert(msgErrorCortesia(rPer)); return; }
+
+        if (chk1 && chk2) {
+          var r2 = await llamar('f_admin_editar_cortesia_dias', { p_token: ses.token, p_codigo_link: c.codigo_link, p_dia1: chk1.checked, p_dia2: chk2.checked });
+          if (r2 !== 'ok') { alert(msgErrorCortesia(r2)); return; }
+        }
       }
+
       await cargarCortesias();
     } catch (e) { alert('Fallo al guardar: ' + e.message); }
   }));
