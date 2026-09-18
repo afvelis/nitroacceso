@@ -198,6 +198,19 @@ function renderizar(d){
         tarjetaError('⛔ Cortesía anulada', 'Esta cortesía fue anulada por el administrador y ya no es válida. Comunícate con el administrador si crees que es un error.');
         return;
       }
+      
+      // NUEVO: Verificar si es individual y ya fue consumido
+      if(d.tipo === 'individual' && d.individuales && d.individuales.consumido){
+        let msg = 'Este pase de cortesía ya fue utilizado y no puede volver a usarse.';
+        if(d.individuales.hora_consumo){
+          const fecha = new Date(d.individuales.hora_consumo).toLocaleDateString('es-VE');
+          const hora = new Date(d.individuales.hora_consumo).toLocaleTimeString('es-VE');
+          msg = `Este pase ya fue utilizado. Validado el <strong>${fecha}</strong> a las <strong>${hora}</strong>. No se puede autorizar de nuevo.`;
+        }
+        tarjetaError('⛔ Entrada ya consumada', msg);
+        return;
+      }
+      
       renderizar(d);
     })
     .catch(e => {
