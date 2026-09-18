@@ -199,7 +199,7 @@ function renderizar(d){
         return;
       }
       
-      // NUEVO: Verificar si es individual y ya fue consumido
+      // NUEVO: Verificar si es individual y ya fue consumida
       if(d.tipo === 'individual' && d.individuales && d.individuales.consumido){
         let msg = 'Este pase de cortesía ya fue utilizado y no puede volver a usarse.';
         if(d.individuales.hora_consumo){
@@ -207,7 +207,7 @@ function renderizar(d){
           const hora = new Date(d.individuales.hora_consumo).toLocaleTimeString('es-VE');
           msg = `Este pase ya fue utilizado. Validado el <strong>${fecha}</strong> a las <strong>${hora}</strong>. No se puede autorizar de nuevo.`;
         }
-        tarjetaError('⛔ Entrada ya consumada', msg);
+        tarjetaError('⛔ Entrada ya consumida', msg);
         return;
       }
       
