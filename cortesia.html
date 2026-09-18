@@ -133,17 +133,29 @@ function renderizar(d){
     <div class="dato"><strong>Modalidad</strong><span class="pill pill-verde">${esLista ? 'Lista (' + (d.listas ? d.listas.length : 0) + ' QR por día)' : 'Pase individual'}</span></div>
   </div>`;
   
-  // QR
+  // QR por día (Listas)
   if(esLista && d.listas){
     d.listas.forEach(l => {
-      html += `<div class="tarjeta">
-        <h2>📅 QR del Día ${l.dia}</h2>
-        <p style="color:var(--suave);font-size:15px">Muestra este QR en la puerta el Día ${l.dia}. Todas las personas de la lista entran con este único QR.</p>
-        <div class="qr-box" id="qr-dia-${l.dia}"></div>
-        <div><strong style="color:var(--suave);font-size:14px">Personas en esta lista:</strong>
-          <ul class="nombres">${l.personas.map(p => `<li>${p.nombre} ${p.apellido}</li>`).join('')}</ul>
-        </div>
-      </div>`;
+      const totalPersonas = l.personas.length;
+      const autorizadas = l.personas.filter(p => p.estado === 'autorizado').length;
+      const completada = totalPersonas > 0 && totalPersonas === autorizadas;
+      
+      html += `<div class="tarjeta">`;
+      if(completada){
+        html += `<h2>📅 Día ${l.dia}</h2>`;
+        html += `<div class="aviso aviso-verde">✅ LISTA COMPLETADA<br>Las ${totalPersonas} personas de esta lista ya ingresaron al evento. Este QR ya no es válido.</div>`;
+        html += `<div><strong style="color:var(--suave);font-size:14px">Personas que ingresaron:</strong>
+          <ul class="nombres">${l.personas.map(p => `<li>✅ ${p.nombre} ${p.apellido}</li>`).join('')}</ul>
+        </div>`;
+      } else {
+        html += `<h2>📅 QR del Día ${l.dia}</h2>`;
+        html += `<p style="color:var(--suave);font-size:15px">Muestra este QR en la puerta el Día ${l.dia}. Todas las personas de la lista entran con este único QR.</p>`;
+        html += `<div class="qr-box" id="qr-dia-${l.dia}"></div>`;
+        html += `<div><strong style="color:var(--suave);font-size:14px">Personas en esta lista (${autorizadas}/${totalPersonas} han entrado):</strong>
+          <ul class="nombres">${l.personas.map(p => `<li>${p.estado === 'autorizado' ? '✅ ' : '⏳ '}${p.nombre} ${p.apellido}</li>`).join('')}</ul>
+        </div>`;
+      }
+      html += `</div>`;
     });
   }else if(d.individuales){
     html += `<div class="tarjeta">
@@ -167,10 +179,16 @@ function renderizar(d){
   
   contenido.innerHTML = html;
   
-  // Dibujar QR
+  // Dibujar QR (solo si no está completado)
   if(esLista && d.listas){
     d.listas.forEach(l => {
-      ponerQR(document.getElementById('qr-dia-' + l.dia), urlPuerta('cl', l.codigo_corto), l.codigo_corto);
+      const totalPersonas = l.personas.length;
+      const autorizadas = l.personas.filter(p => p.estado === 'autorizado').length;
+      const completada = totalPersonas > 0 && totalPersonas === autorizadas;
+      if(!completada){
+        const el = document.getElementById('qr-dia-' + l.dia);
+        if(el) ponerQR(el, urlPuerta('cl', l.codigo_corto), l.codigo_corto);
+      }
     });
   }else if(d.individuales){
     ponerQR(document.getElementById('qr-ind'), urlPuerta('ci', d.individuales.codigo_qr), d.individuales.codigo_qr);
@@ -199,7 +217,7 @@ function renderizar(d){
         return;
       }
       
-      // NUEVO: Verificar si es individual y ya fue consumida
+      // Verificar si es individual y ya fue consumida
       if(d.tipo === 'individual' && d.individuales && d.individuales.consumido){
         let msg = 'Este pase de cortesía ya fue utilizado y no puede volver a usarse.';
         if(d.individuales.hora_consumo){
