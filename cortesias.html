@@ -46,6 +46,7 @@ ul{margin:6px 0;padding-left:22px;}
 li{margin:4px 0;}
 .fila-persona{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px;}
 .fila-persona input{flex:1;min-width:110px;margin-top:0;}
+.nota-info{background:rgba(31,162,255,.10);border:1px solid var(--acento2);border-radius:10px;padding:12px 14px;margin-top:14px;font-size:15px;color:var(--texto);line-height:1.5;}
 </style>
 </head>
 <body>
@@ -61,7 +62,7 @@ li{margin:4px 0;}
 
   <section class="tarjeta" id="cortesias">
     <h2>🎁 Cortesias (pases de regalo)</h2>
-    <p class="suave">Solo tu, como administrador, creas pases de cortesia. Al crearlo se genera un link con el o los QR listos para entregar. Puedes modificarlo o anularlo cuando quieras, incluso con el evento cerrado.</p>
+    <p class="suave">Solo tu, como administrador, creas pases de cortesia. Al crearlo se genera un link con el o los QR listos para entregar.</p>
 
     <label>Modalidad
       <select id="kModo">
@@ -104,10 +105,9 @@ li{margin:4px 0;}
       <p class="suave" style="color:var(--aviso)">Indique la causa de la cortesia: este texto quedara registrado en el sistema.</p>
     </div>
 
-    <label>Dias aprobados</label>
-    <div class="fila">
-      <label style="margin:0"><input type="checkbox" id="kDia1" checked> Dia 1</label>
-      <label style="margin:0"><input type="checkbox" id="kDia2"> Dia 2</label>
+    <div class="nota-info">
+      📅 Las cortesías son <strong>por defecto para el Día 1</strong> (el Día 2 se cobra en taquilla).<br>
+      Si necesita extenderla al Día 2, hágalo desde el <strong>Histórico</strong> con el botón <strong>"Extender al Día 2"</strong>, para los casos que aplique.
     </div>
 
     <div id="zonaListas">
@@ -115,13 +115,13 @@ li{margin:4px 0;}
       <div id="rowsDia1"></div>
       <div class="fila">
         <button class="btn btn-gris" id="btnAddRow1">+ Agregar persona</button>
-        <button class="btn btn-gris" id="btnCopiar1a2">📋 Copiar lista al Dia 2</button>
       </div>
-      <div id="bloqueDia2">
-        <h3>Personas del Dia 2</h3>
+      <div id="bloqueDia2" style="display:none">
+        <h3>Personas del Dia 2 (excepción)</h3>
         <div id="rowsDia2"></div>
         <div class="fila">
           <button class="btn btn-gris" id="btnAddRow2">+ Agregar persona</button>
+          <button class="btn btn-gris" id="btnCopiar1a2">📋 Copiar lista al Dia 2</button>
         </div>
       </div>
     </div>
@@ -247,21 +247,31 @@ function leerFilas(contId){
 
 function actualizarVisibilidadCortesia(){
   var modo = $('kModo').value;
+  var razon = $('kRazon').value;
+  var razonEspecial = (razon === 'prensa' || razon === 'autoridad');
   $('zonaOrg').style.display = (modo === 'lista') ? 'block' : 'none';
   $('zonaListas').style.display = (modo === 'lista') ? 'block' : 'none';
   $('zonaInd').style.display = (modo === 'individual') ? 'block' : 'none';
-  $('zonaCausa').style.display = ($('kRazon').value === 'otros') ? 'block' : 'none';
-  $('bloqueDia2').style.display = $('kDia2').checked ? 'block' : 'none';
+  $('zonaCausa').style.display = (razon === 'otros') ? 'block' : 'none';
+  $('bloqueDia2').style.display = (modo === 'lista' && razonEspecial) ? 'block' : 'none';
 }
 
 async function crearCortesia(){
   var modo = $('kModo').value;
   var razon = $('kRazon').value;
   var causa = $('kCausa').value.trim();
-  var d1 = $('kDia1').checked;
-  var d2 = $('kDia2').checked;
-  if (!d1 && !d2) { aviso('msgCortesia', 'Marca al menos un dia para la cortesia.', false); return; }
+  var d1 = true;
+  var d2 = false;
+
   if (razon === 'otros' && !causa) { aviso('msgCortesia', 'Indique la causa de la cortesia.', false); return; }
+
+  if (razon === 'prensa' || razon === 'autoridad') {
+    var etiqueta = (razon === 'prensa') ? 'Prensa' : 'Autoridad';
+    var soloDia1 = confirm(
+      'Esta cortesía es de ' + etiqueta + '.\n\n¿La quiere SOLO para el Día 1 (por defecto)?\n\nAceptar = Solo Día 1\nCancelar = Día 1 y Día 2 (excepción)'
+    );
+    if (!soloDia1) d2 = true;
+  }
 
   var codigo;
   try {
@@ -279,15 +289,20 @@ async function crearCortesia(){
       if (!org) { aviso('msgCortesia', 'Escribe el nombre de la organizacion.', false); return; }
       var r1 = leerFilas('rowsDia1');
       if (r1.error) { aviso('msgCortesia', r1.error, false); return; }
-      var r2 = leerFilas('rowsDia2');
-      if (r2.error) { aviso('msgCortesia', r2.error, false); return; }
-      if (d1 && r1.personas.length === 0) { aviso('msgCortesia', 'Agrega al menos una persona a la lista del Dia 1.', false); return; }
-      if (d2 && r2.personas.length === 0) { aviso('msgCortesia', 'Agrega al menos una persona a la lista del Dia 2.', false); return; }
+      if (r1.personas.length === 0) { aviso('msgCortesia', 'Agrega al menos una persona a la lista del Dia 1.', false); return; }
+
+      var personas2 = [];
+      if (d2) {
+        var r2 = leerFilas('rowsDia2');
+        if (r2.error) { aviso('msgCortesia', r2.error, false); return; }
+        personas2 = (r2.personas.length > 0) ? r2.personas : r1.personas.slice();
+      }
+
       codigo = await llamar('f_admin_crear_cortesia_lista', {
         p_token: ses.token, p_nombre_organizacion: org, p_razon: razon, p_causa: causa || null,
         p_dia1: d1, p_dia2: d2,
-        p_personas_dia1: d1 ? r1.personas : [],
-        p_personas_dia2: d2 ? r2.personas : []
+        p_personas_dia1: r1.personas,
+        p_personas_dia2: d2 ? personas2 : []
       });
     }
     if (!codigo) { aviso('msgCortesia', 'Tu sesion expiro: entra de nuevo con tu PIN.', false); return; }
@@ -321,7 +336,7 @@ async function crearCortesia(){
     cont.appendChild(caja);
     cont.appendChild(linkBox);
     cont.appendChild(fila);
-    aviso('msgCortesia', 'Cortesia creada. Entrega el link con los QR listos.', true);
+    aviso('msgCortesia', 'Cortesia creada (' + diasTexto(d1, d2) + '). Entrega el link con los QR listos.', true);
     $('rowsDia1').innerHTML = '';
     $('rowsDia2').innerHTML = '';
     $('kOrg').value = '';
@@ -399,7 +414,7 @@ async function verDetalleCortesia(div, c){
         if (falta1 || falta2) {
           html += '<div class="fila">';
           if (falta1) html += '<button class="btn btn-gris" data-agregar-dia="1">Agregar Dia 1</button>';
-          if (falta2) html += '<button class="btn btn-gris" data-agregar-dia="2">Agregar Dia 2</button>';
+          if (falta2) html += '<button class="btn btn-gris" data-agregar-dia="2">Extender al Dia 2</button>';
           html += '</div>';
         }
       }
@@ -593,8 +608,6 @@ if (!ses || ses.rol !== 'admin') {
   $('btnVolver').onclick = function(){ location.replace('dashboard.html'); };
   $('kModo').onchange = actualizarVisibilidadCortesia;
   $('kRazon').onchange = actualizarVisibilidadCortesia;
-  $('kDia1').onchange = actualizarVisibilidadCortesia;
-  $('kDia2').onchange = actualizarVisibilidadCortesia;
   $('btnAddRow1').onclick = function(){ agregarFilaPersona('rowsDia1'); };
   $('btnAddRow2').onclick = function(){ agregarFilaPersona('rowsDia2'); };
   $('btnCopiar1a2').onclick = function(){
