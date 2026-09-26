@@ -55,10 +55,10 @@ li{margin:4px 0;}
 .tabla-cortesias tr.fila-flash td{background:rgba(53,208,127,.28) !important;}
 .tabla-cortesias td.acciones{white-space:nowrap;}
 
-.tarjeta-ultima{border:2px solid var(--acento);position:relative;}
+.tarjeta-ultima{border:2px solid var(--acento);position:relative;transition:background-color .4s ease;}
 .tarjeta-ultima::before{content:'⭐ ÚLTIMA';position:absolute;top:-12px;left:20px;background:var(--acento);color:#06281a;font-size:12px;font-weight:800;padding:3px 10px;border-radius:999px;letter-spacing:1px;}
+.tarjeta-ultima.fila-flash{background:rgba(53,208,127,.18);}
 
-/* === MODAL ESTETICO === */
 .modal-fondo{position:fixed;inset:0;background:rgba(4,8,16,.72);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;z-index:1000;padding:18px;animation:modalFade .15s ease;}
 @keyframes modalFade{from{opacity:0}to{opacity:1}}
 .modal-caja{background:var(--tarjeta);border:1px solid var(--borde);border-radius:16px;padding:22px;max-width:480px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.55);animation:modalPop .18s ease;}
@@ -352,7 +352,7 @@ var ses = leerSesion();
 var cortesiasCache = [];
 var flashCodigo = null;
 
-/* ============ CORTESIAS — FORMULARIO DE CREACION ============ */
+/* ============ FORMULARIO DE CREACION ============ */
 
 function agregarFilaPersona(contId){
   var cont = $(contId);
@@ -462,7 +462,7 @@ async function crearCortesia(){
   }
 }
 
-/* ============ CORTESIAS — RENDER ============ */
+/* ============ RENDER ============ */
 
 function linkDe(c){ return BASE + 'cortesia.html?c=' + c.codigo_link; }
 
@@ -550,7 +550,7 @@ function renderHistorico(){
     } else {
       td.appendChild(botonMini('📋 Link', 'btn-gris', function(b){ copiarTexto(linkDe(c), b); }));
       if (c.estado === 'activa') {
-        td.appendChild(botonMini('✏️ Editar', 'btn-azul btn-gris', function(){ abrirModalEdicion(c); }));
+        td.appendChild(botonMini('✏️ Editar', 'btn-gris', function(){ abrirModalEdicion(c); }));
         td.appendChild(botonMini('🚫 Anular', 'btn-rojo', function(){ anularCortesia(c); }));
       }
     }
@@ -585,7 +585,7 @@ async function cargarCortesias(){
   }
 }
 
-/* ============ CORTESIAS — MODAL DE EDICION ============ */
+/* ============ MODAL DE EDICION ============ */
 
 var modalEdicionAbierto = null;
 
@@ -674,24 +674,16 @@ async function abrirModalEdicion(c){
     botones.innerHTML = '';
     if (d.estado !== 'activa') return;
     if (!d1){
-      botones.appendChild(botonMini('+ Agregar Día 1', 'btn-gris', function(){
-        extenderDia(c, 1);
-      }));
+      botones.appendChild(botonMini('+ Agregar Día 1', 'btn-gris', function(){ extenderDia(c, 1); }));
     }
     if (!d2){
-      botones.appendChild(botonMini('📅 Extender al Día 2', 'btn-verde', function(){
-        extenderDia(c, 2);
-      }));
+      botones.appendChild(botonMini('📅 Extender al Día 2', 'btn-verde', function(){ extenderDia(c, 2); }));
     }
     if (d1){
-      botones.appendChild(botonMini('🚫 Quitar Día 1', 'btn-rojo', function(){
-        quitarDia(c, 1);
-      }));
+      botones.appendChild(botonMini('🚫 Quitar Día 1', 'btn-rojo', function(){ quitarDia(c, 1); }));
     }
     if (d2){
-      botones.appendChild(botonMini('🚫 Quitar Día 2', 'btn-rojo', function(){
-        quitarDia(c, 2);
-      }));
+      botones.appendChild(botonMini('🚫 Quitar Día 2', 'btn-rojo', function(){ quitarDia(c, 2); }));
     }
   }
 
@@ -699,7 +691,6 @@ async function abrirModalEdicion(c){
     var cont = caja.querySelector('#eDiasBloques');
     cont.innerHTML = '';
     if (d.tipo !== 'lista'){
-      var p = (d.individuales && d.individuales[0]) || {};
       cont.innerHTML = '<p class="suave">Cortesía individual. Para editar los datos usa los campos de arriba.</p>';
       return;
     }
@@ -723,6 +714,20 @@ async function abrirModalEdicion(c){
         });
       }
       if (d.estado === 'activa'){
+        // Botón copiar: solo si ESTE día está vacío y OTRO día tiene personas
+        if (personas.length === 0){
+          var origen = null;
+          listas.forEach(function(lx){
+            if (lx.dia !== l.dia && (lx.personas || []).length > 0) origen = lx;
+          });
+          if (origen){
+            html += '<div class="fila" style="margin-top:8px">' +
+              '<button class="btn btn-verde btn-mini" data-copiar-desde="' + origen.dia + '" data-copiar-a="' + l.dia + '">' +
+                '📋 Copiar personas del Día ' + origen.dia + ' (' + origen.personas.length + ')' +
+              '</button>' +
+            '</div>';
+          }
+        }
         html +=
           '<div class="fila-persona" data-dia="' + l.dia + '">' +
             '<input placeholder="Nombre" class="aNom">' +
@@ -758,10 +763,45 @@ async function abrirModalEdicion(c){
     };
   });
 
+  caja.querySelectorAll('[data-copiar-desde]').forEach(function(b){
+    b.onclick = async function(){
+      var desde = parseInt(b.getAttribute('data-copiar-desde'), 10);
+      var hacia = parseInt(b.getAttribute('data-copiar-a'), 10);
+      var origen = (d.listas || []).filter(function(l){ return l.dia === desde; })[0];
+      if (!origen || !origen.personas || !origen.personas.length){
+        await modalAlert('Sin personas', 'El Día ' + desde + ' no tiene personas para copiar.');
+        return;
+      }
+      var ok = await modalConfirm(
+        'Copiar personas del Día ' + desde + ' al Día ' + hacia,
+        'Se van a copiar <strong>' + origen.personas.length + ' persona(s)</strong> del Día ' + desde + ' al Día ' + hacia + '.<br><br>Se copian todas (hayan entrado o no por la puerta ese día), para que en el Día ' + hacia + ' puedan reclamar su cupón.<br><br>Si alguna cédula ya existe en el Día ' + hacia + ', se omitirá.',
+        'Sí, copiar', 'Cancelar'
+      );
+      if (!ok) return;
+      var okCount = 0, errCount = 0, lastErr = '';
+      for (var i = 0; i < origen.personas.length; i++){
+        var p = origen.personas[i];
+        try {
+          var r = await llamar('f_admin_cortesia_agregar_persona', {
+            p_token: ses.token, p_codigo_link: c.codigo_link, p_dia: hacia,
+            p_nombre: p.nombre, p_apellido: p.apellido, p_cedula: p.cedula
+          });
+          if (r === 'ok') okCount++; else { errCount++; lastErr = r; }
+        } catch(e){ errCount++; lastErr = e.message; }
+      }
+      flashCodigo = c.codigo_link;
+      await cargarCortesias();
+      if (errCount > 0){
+        await modalAlert('Copia parcial', 'Se copiaron <strong>' + okCount + '</strong> persona(s).<br>' + errCount + ' no se pudieron copiar.<br><br>Último error: ' + esc(msgErrorCortesia(lastErr)));
+      }
+      abrirModalEdicion(c);
+    };
+  });
+
   var contB = caja.querySelector('.modal-botones');
   var bCancel = document.createElement('button');
   bCancel.className = 'btn btn-gris';
-  bCancel.textContent = 'Cancelar';
+  bCancel.textContent = 'Cerrar';
   bCancel.onclick = function(){
     if (fondo.parentNode) fondo.parentNode.removeChild(fondo);
     modalEdicionAbierto = null;
@@ -807,7 +847,7 @@ async function abrirModalEdicion(c){
 
 async function extenderDia(c, dia){
   var ok = await modalConfirm('Extender al Día ' + dia,
-    'Se creará el Día ' + dia + ' para esta cortesía. Después podrá agregar personas desde este mismo modal.<br><br>¿Continuar?',
+    'Se creará el Día ' + dia + ' para esta cortesía. Después podrá copiar las personas del otro día (si aplica) o agregarlas una por una.<br><br>¿Continuar?',
     'Sí, extender', 'Cancelar');
   if (!ok) return;
   var r = await llamar('f_admin_cortesia_agregar_dia', { p_token: ses.token, p_codigo_link: c.codigo_link, p_dia: dia });
