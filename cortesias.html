@@ -11,11 +11,7 @@
   --rojo:#e05252;
 }
 *{box-sizing:border-box;}
-body{
-  margin:0; background:var(--fondo); color:var(--texto);
-  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-  font-size:17px; line-height:1.5;
-}
+body{margin:0; background:var(--fondo); color:var(--texto); font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; font-size:17px; line-height:1.5;}
 .franja{height:6px;background:linear-gradient(90deg,var(--acento),var(--acento2));}
 .cabecera{display:flex;gap:14px;align-items:center;padding:20px 16px;max-width:1000px;margin:0 auto;}
 .logo{width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,var(--acento),var(--acento2));display:flex;align-items:center;justify-content:center;font-size:30px;flex:none;}
@@ -46,9 +42,11 @@ select,input{width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1p
 .badge-no{background:#4a1a1a;color:#ff9d9d;}
 .badge-morado{background:#3a2350;color:#d3a6ff;}
 .badge-congelada{background:#1f3a52;color:#9fd2ff;}
+.badge-premio{background:#5c3a12;color:#ffd39f;}
 .fila-persona{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px;}
 .fila-persona input{flex:1;min-width:110px;margin-top:0;}
 .nota-info{background:rgba(31,162,255,.10);border:1px solid var(--acento2);border-radius:10px;padding:12px 14px;margin-top:14px;font-size:15px;color:var(--texto);line-height:1.5;}
+.aviso-rojo-box{background:rgba(224,82,82,.12);border:1px solid var(--rojo);color:var(--rojo);border-radius:10px;padding:12px 14px;margin-top:14px;font-size:15px;line-height:1.5;}
 
 .tabla-cortesias{width:100%;border-collapse:collapse;margin-top:10px;font-size:15px;}
 .tabla-cortesias th,.tabla-cortesias td{border:1px solid var(--borde);padding:8px 10px;text-align:left;vertical-align:top;}
@@ -73,7 +71,6 @@ select,input{width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1p
 .modal-mensaje{font-size:16px;line-height:1.55;color:var(--texto);margin-bottom:18px;}
 .modal-botones{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:16px;}
 .modal-botones .btn{min-width:110px;padding:11px 16px;}
-.modal-input{width:100%;margin-bottom:16px;padding:12px;border-radius:10px;border:1px solid var(--borde);background:#0d1526;color:var(--texto);font-size:17px;}
 .modal-seccion{margin-bottom:14px;padding-bottom:14px;border-bottom:1px dashed var(--borde);}
 .modal-seccion:last-child{border-bottom:none;padding-bottom:0;}
 .modal-seccion h4{margin:0 0 8px;font-size:16px;color:var(--acento2);font-weight:700;}
@@ -100,10 +97,15 @@ select,input{width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1p
     <h2>🎁 Crear cortesía</h2>
     <p class="suave">Solo tu, como administrador, creas pases de cortesía. Al crearlo se genera un link con el o los QR listos para entregar.</p>
 
+    <div id="avisoEventoCerrado" class="aviso-rojo-box" style="display:none">
+      🔒 <strong>El evento ya pasó (ambos días cerrados).</strong> El módulo de premiación queda en <strong>solo lectura</strong>: no se pueden crear, editar ni anular premiaciones. Sí puedes consultarlas en el histórico.
+    </div>
+
     <label>Modalidad
       <select id="kModo">
         <option value="lista">Lista (una organizacion, un QR por dia)</option>
         <option value="individual">Individual (un pase con QR propio)</option>
+        <option value="premiacion">Premiación (ganador de concurso, con cupones)</option>
       </select>
     </label>
 
@@ -125,6 +127,24 @@ select,input{width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1p
       </label>
     </div>
 
+    <div id="zonaPremiacion" style="display:none">
+      <label>Nombre del ganador
+        <input id="kPNom" placeholder="Ej.: Maria">
+      </label>
+      <label>Apellido del ganador
+        <input id="kPApe" placeholder="Ej.: Perez">
+      </label>
+      <label>Cédula del ganador
+        <input id="kPCed" placeholder="Ej.: 12345678">
+      </label>
+      <label>Nombre del concurso
+        <input id="kPCon" placeholder="Ej.: Concurso de Cosplay Nitrotoon 2026">
+      </label>
+      <label>Cantidad de cupones ganados (número de entradas)
+        <input id="kPCup" type="number" min="1" step="1" placeholder="Ej.: 3">
+      </label>
+    </div>
+
     <label>Razon de la cortesia
       <select id="kRazon">
         <option value="prensa">Prensa</option>
@@ -141,7 +161,7 @@ select,input{width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1p
       <p class="suave" style="color:var(--aviso)">Indique la causa de la cortesia: este texto quedara registrado en el sistema.</p>
     </div>
 
-    <div class="nota-info">
+    <div class="nota-info" id="notaNormal">
       📅 Las cortesías son <strong>por defecto para el Día 1</strong> (el Día 2 se cobra en taquilla).<br>
       Si necesita extenderla al Día 2, hágalo desde la <strong>Última creada</strong> o el <strong>Histórico</strong> con el botón <strong>"Extender al Día 2"</strong>, para los casos que aplique.
     </div>
@@ -177,7 +197,7 @@ select,input{width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1p
     <h2>📜 Histórico de cortesías</h2>
     <p class="suave">Tabla de todas las cortesías creadas. La más reciente se administra desde el panel de arriba (⭐). Las anteriores se editan directamente aquí. Las cortesías con todos sus días cerrados quedan <strong>🧊 congeladas</strong> y no admiten cambios.</p>
     <div class="buscador">
-      <input type="text" id="buscarInput" placeholder="🔍 Buscar por nombre, código, razón, causa...">
+      <input type="text" id="buscarInput" placeholder="🔍 Buscar por nombre, código, razón, concurso...">
       <span class="contador-busqueda" id="contadorBusqueda"></span>
     </div>
     <div id="contenedorHistorico"><p class="suave">Consultando...</p></div>
@@ -241,50 +261,28 @@ function abrirModal(opts){
     document.body.appendChild(fondo);
   });
 }
-
-function modalAlert(titulo, mensaje){
-  return abrirModal({
-    titulo: titulo,
-    mensaje: mensaje,
-    botones: [{ texto: 'Aceptar', clase: 'btn-verde', valor: true }]
-  });
-}
-
+function modalAlert(titulo, mensaje){ return abrirModal({titulo: titulo, mensaje: mensaje, botones: [{texto:'Aceptar', clase:'btn-verde', valor:true}]}); }
 function modalConfirm(titulo, mensaje, textoOk, textoCancel){
-  return abrirModal({
-    titulo: titulo,
-    mensaje: mensaje,
-    botones: [
-      { texto: textoCancel || 'Cancelar', clase: 'btn-gris', valor: false },
-      { texto: textoOk || 'Aceptar', clase: 'btn-verde', valor: true }
-    ]
-  });
+  return abrirModal({titulo: titulo, mensaje: mensaje, botones: [
+    {texto: textoCancel || 'Cancelar', clase:'btn-gris', valor:false},
+    {texto: textoOk || 'Aceptar', clase:'btn-verde', valor:true}
+  ]});
 }
 
 async function copiarTexto(txt, btn){
   const original = btn ? btn.textContent : '';
   try {
     await navigator.clipboard.writeText(txt);
-    if(btn) {
-      btn.textContent = '¡Copiado!';
-      setTimeout(() => { btn.textContent = original; }, 1500);
-    }
+    if(btn) { btn.textContent = '¡Copiado!'; setTimeout(() => { btn.textContent = original; }, 1500); }
   } catch (e) {
-    var ta = document.createElement('textarea');
-    ta.value = txt;
-    document.body.appendChild(ta);
-    ta.select();
-    try { 
-      document.execCommand('copy'); 
-      if(btn) { btn.textContent = '¡Copiado!'; setTimeout(() => { btn.textContent = original; }, 1500); }
-    } catch (e2) {}
+    var ta = document.createElement('textarea'); ta.value = txt;
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); if(btn){ btn.textContent = '¡Copiado!'; setTimeout(() => { btn.textContent = original; }, 1500); } } catch (e2) {}
     document.body.removeChild(ta);
   }
 }
 function fechaBonita(iso){
-  try {
-    return new Date(iso).toLocaleDateString('es-VE', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
-  } catch (e) { return ''; }
+  try { return new Date(iso).toLocaleDateString('es-VE', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }); } catch (e) { return ''; }
 }
 function urlWA(texto){ return 'https://wa.me/?text=' + encodeURIComponent(texto); }
 function urlMail(asunto, cuerpo){ return 'mailto:?subject=' + encodeURIComponent(asunto) + '&body=' + encodeURIComponent(cuerpo); }
@@ -303,35 +301,33 @@ function diasTexto(d1, d2){
 function msgErrorCortesia(r){
   var map = {
     ERR_DATOS: 'Faltan datos obligatorios o hay campos vacios. Revisa el formulario.',
-    ERR_CEDULA_REPETIDA: 'Hay una cedula repetida dentro del mismo dia. Cada persona debe aparecer una sola vez por dia.',
+    ERR_CEDULA_REPETIDA: 'Hay una cedula repetida dentro del mismo dia.',
     ERR_NO_EXISTE: 'Esa cortesia ya no existe. Recarga la pagina.',
     ERR_ANULADA: 'Esa cortesia esta anulada: ya no se puede modificar.',
     ERR_MODO: 'Esa accion no aplica para esta modalidad de cortesia.',
     ERR_YA_EXISTE: 'Ese dia ya esta agregado en esta cortesia.',
-    ERR_USADA: 'No se puede quitar o editar: esa persona ya entro por la puerta.',
-    ERR_NO_LISTA: 'Esa cortesia no tiene lista para ese dia.'
+    ERR_USADA: 'No se puede editar: esa cortesia ya fue usada.',
+    ERR_NO_LISTA: 'Esa cortesia no tiene lista para ese dia.',
+    ERR_DIA: 'Ese dia no está autorizado para esta cortesía.',
+    ERR_CONFIG: 'Error de configuración del sistema.'
   };
   return map[r] || ('El sistema respondio: ' + r);
 }
 
-// Devuelve el titulo visible de la cortesia. Si es individual, prioriza el nombre real.
 function tituloCortesia(c){
   if (c.tipo === 'lista') return c.nombre_organizacion || 'Lista';
   var nom = (c.persona_nombre || '').trim();
   var ape = (c.persona_apellido || '').trim();
   var completo = (nom + ' ' + ape).trim();
+  if (c.tipo === 'premiacion'){
+    var base = completo || 'Ganador';
+    return c.concurso ? (base + ' · ' + c.concurso) : base;
+  }
   return completo || 'Cortesía individual';
 }
-
-// Texto sobre el que se aplica el buscador (todo en minúsculas)
 function textoBuscable(c){
-  var partes = [
-    tituloCortesia(c),
-    c.codigo_link,
-    razonLegible(c.razon, c.causa),
-    diasTexto(c.dia1, c.dia2),
-    c.tipo === 'lista' ? 'lista' : 'individual'
-  ];
+  var partes = [ tituloCortesia(c), c.codigo_link, razonLegible(c.razon, c.causa), diasTexto(c.dia1, c.dia2), c.tipo === 'lista' ? 'lista' : (c.tipo === 'premiacion' ? 'premiacion' : 'individual') ];
+  if (c.concurso) partes.push(c.concurso);
   return partes.join(' ').toLowerCase();
 }
 
@@ -345,25 +341,27 @@ function diaCerrado(dia){
   if (dia === 2) return !!estadoDias.dia2_cerrado;
   return false;
 }
-
+function eventoCompletoCerrado(){
+  return !!estadoDias.dia1_cerrado && !!estadoDias.dia2_cerrado;
+}
 function estaCongelada(c){
+  if (c.tipo === 'premiacion') return eventoCompletoCerrado();
   var dias = [];
   if (c.dia1) dias.push(1);
   if (c.dia2) dias.push(2);
   if (!dias.length) return true;
-  for (var i = 0; i < dias.length; i++){
-    if (!diaCerrado(dias[i])) return false;
-  }
+  for (var i = 0; i < dias.length; i++){ if (!diaCerrado(dias[i])) return false; }
   return true;
 }
-
 function textoReclamadas(c){
   var partes = [];
   if (c.dia1){
-    partes.push('D1: ' + (c.reclamadas_dia1 || 0) + '/' + (c.personas_dia1 || 0));
+    var total = (c.tipo === 'premiacion') ? (c.cupones_total || 0) : (c.personas_dia1 || 0);
+    partes.push('D1: ' + (c.reclamadas_dia1 || 0) + '/' + total);
   }
   if (c.dia2){
-    partes.push('D2: ' + (c.reclamadas_dia2 || 0) + '/' + (c.personas_dia2 || 0));
+    var total2 = (c.tipo === 'premiacion') ? (c.cupones_total || 0) : (c.personas_dia2 || 0);
+    partes.push('D2: ' + (c.reclamadas_dia2 || 0) + '/' + total2);
   }
   if (!partes.length) return '-';
   return partes.join('<br>');
@@ -373,15 +371,11 @@ function agregarFilaPersona(contId){
   var cont = $(contId);
   var fila = document.createElement('div');
   fila.className = 'fila-persona';
-  fila.innerHTML =
-    '<input placeholder="Nombre" class="pNom">' +
-    '<input placeholder="Apellido" class="pApe">' +
-    '<input placeholder="Cedula" class="pCed">';
+  fila.innerHTML = '<input placeholder="Nombre" class="pNom">' + '<input placeholder="Apellido" class="pApe">' + '<input placeholder="Cedula" class="pCed">';
   var q = boton('Quitar', 'btn-rojo', function(){ fila.remove(); });
   fila.appendChild(q);
   cont.appendChild(fila);
 }
-
 function leerFilas(contId){
   var filas = $(contId).querySelectorAll('.fila-persona');
   var out = [];
@@ -400,11 +394,22 @@ function actualizarVisibilidadCortesia(){
   var modo = $('kModo').value;
   var razon = $('kRazon').value;
   var razonEspecial = (razon === 'prensa' || razon === 'autoridad');
+  var esPremiacion = (modo === 'premiacion');
   $('zonaOrg').style.display = (modo === 'lista') ? 'block' : 'none';
   $('zonaListas').style.display = (modo === 'lista') ? 'block' : 'none';
   $('zonaInd').style.display = (modo === 'individual') ? 'block' : 'none';
-  $('zonaCausa').style.display = (razon === 'otros') ? 'block' : 'none';
+  $('zonaPremiacion').style.display = esPremiacion ? 'block' : 'none';
+  $('zonaCausa').style.display = (!esPremiacion && razon === 'otros') ? 'block' : 'none';
   $('bloqueDia2').style.display = (modo === 'lista' && razonEspecial) ? 'block' : 'none';
+  $('notaNormal').style.display = esPremiacion ? 'none' : 'block';
+  // Si el evento completo cerró, deshabilitar la creación de premiación
+  var bloqueo = eventoCompletoCerrado();
+  $('avisoEventoCerrado').style.display = bloqueo ? 'block' : 'none';
+  if (esPremiacion && bloqueo){
+    $('btnCrearCortesia').disabled = true;
+  } else {
+    $('btnCrearCortesia').disabled = false;
+  }
 }
 
 async function crearCortesia(){
@@ -414,20 +419,57 @@ async function crearCortesia(){
   var d1 = true;
   var d2 = false;
 
-  if (razon === 'otros' && !causa) {
-    await modalAlert('Falta la causa', 'Debe indicar la causa de la cortesía.');
+  if (modo === 'premiacion'){
+    if (eventoCompletoCerrado()){
+      await modalAlert('Evento ya pasó', 'El evento ya terminó (ambos días cerrados). El módulo de premiación es de solo lectura.');
+      return;
+    }
+    var pnom = $('kPNom').value.trim();
+    var pape = $('kPApe').value.trim();
+    var pced = $('kPCed').value.trim();
+    var pcon = $('kPCon').value.trim();
+    var pcup = parseInt($('kPCup').value, 10);
+    if (!pnom || !pape || !pced) { await modalAlert('Faltan datos', 'Nombre, apellido y cédula del ganador son obligatorios.'); return; }
+    if (!pcon) { await modalAlert('Falta el concurso', 'Escriba el nombre del concurso en el que ganó.'); return; }
+    if (!pcup || pcup < 1) { await modalAlert('Falta la cantidad', 'Indique cuántos cupones (entradas) ganó. Debe ser 1 o más.'); return; }
+
+    var soloDia1 = await modalConfirm(
+      'Premiación',
+      'Se creará la premiación de <strong>' + esc(pnom + ' ' + pape) + '</strong> (' + pcup + ' cupones).<br><br>¿Es <strong>solo para el Día 1</strong> (por defecto) o también para el <strong>Día 2</strong>?',
+      'Solo Día 1',
+      'Día 1 y Día 2'
+    );
+    if (!soloDia1) d2 = true;
+
+    var codigoP;
+    try {
+      codigoP = await llamar('f_admin_crear_cortesia_premiacion', {
+        p_token: ses.token, p_nombre: pnom, p_apellido: pape, p_cedula: pced,
+        p_concurso: pcon, p_cupones_total: pcup, p_dia1: d1, p_dia2: d2
+      });
+      if (!codigoP) { await modalAlert('Sesión expirada', 'Entra de nuevo con tu PIN.'); return; }
+      if (String(codigoP).indexOf('ERR_') === 0) { await modalAlert('Error', esc(msgErrorCortesia(codigoP))); return; }
+      aviso('msgCortesia', 'Premiación creada (' + diasTexto(d1, d2) + '). La verás en "⭐ Última cortesía creada".', true);
+      $('kPNom').value = ''; $('kPApe').value = ''; $('kPCed').value = ''; $('kPCon').value = ''; $('kPCup').value = '';
+      flashCodigo = codigoP;
+      await cargarCortesias();
+    } catch (e) {
+      await modalAlert('Error al crear', esc('Fallo: ' + e.message));
+    }
     return;
   }
 
+  if (razon === 'otros' && !causa) { await modalAlert('Falta la causa', 'Debe indicar la causa de la cortesía.'); return; }
+
   if (razon === 'prensa' || razon === 'autoridad') {
     var etiqueta = (razon === 'prensa') ? 'Prensa' : 'Autoridad';
-    var soloDia1 = await modalConfirm(
+    var soloDia1b = await modalConfirm(
       'Cortesía de ' + etiqueta,
       'Esta cortesía es de <strong>' + etiqueta + '</strong>.<br><br>¿La quiere <strong>solo para el Día 1</strong> (por defecto) o también para el <strong>Día 2</strong> (excepción)?',
       'Solo Día 1',
       'Día 1 y Día 2'
     );
-    if (!soloDia1) d2 = true;
+    if (!soloDia1b) d2 = true;
   }
 
   var codigo;
@@ -447,29 +489,22 @@ async function crearCortesia(){
       var r1 = leerFilas('rowsDia1');
       if (r1.error) { await modalAlert('Datos incompletos', esc(r1.error)); return; }
       if (r1.personas.length === 0) { await modalAlert('Lista vacía', 'Agregue al menos una persona a la lista del Día 1.'); return; }
-
       var personas2 = [];
       if (d2) {
         var r2 = leerFilas('rowsDia2');
         if (r2.error) { await modalAlert('Datos incompletos', esc(r2.error)); return; }
         personas2 = (r2.personas.length > 0) ? r2.personas : r1.personas.slice();
       }
-
       codigo = await llamar('f_admin_crear_cortesia_lista', {
         p_token: ses.token, p_nombre_organizacion: org, p_razon: razon, p_causa: causa || null,
-        p_dia1: d1, p_dia2: d2,
-        p_personas_dia1: r1.personas,
-        p_personas_dia2: d2 ? personas2 : []
+        p_dia1: d1, p_dia2: d2, p_personas_dia1: r1.personas, p_personas_dia2: d2 ? personas2 : []
       });
     }
     if (!codigo) { await modalAlert('Sesión expirada', 'Entra de nuevo con tu PIN.'); return; }
     if (String(codigo).indexOf('ERR_') === 0) { await modalAlert('Error', esc(msgErrorCortesia(codigo))); return; }
-
     aviso('msgCortesia', 'Cortesía creada (' + diasTexto(d1, d2) + '). La verás abajo en "⭐ Última cortesía creada".', true);
-    $('rowsDia1').innerHTML = '';
-    $('rowsDia2').innerHTML = '';
-    $('kOrg').value = '';
-    $('kNom').value = ''; $('kApe').value = ''; $('kCed').value = '';
+    $('rowsDia1').innerHTML = ''; $('rowsDia2').innerHTML = '';
+    $('kOrg').value = ''; $('kNom').value = ''; $('kApe').value = ''; $('kCed').value = '';
     flashCodigo = codigo;
     await cargarCortesias();
   } catch (e) {
@@ -491,17 +526,20 @@ function renderUltimaCreada(){
   contU.innerHTML = '';
 
   var badgeCongelada = congelada ? '<span class="badge badge-congelada">🧊 Congelada</span>' : '';
-  var badgeEstado = (c.estado === 'activa')
-    ? '<span class="badge badge-ok">Activa</span>'
-    : '<span class="badge badge-no">Anulada</span>';
+  var badgeEstado = (c.estado === 'activa') ? '<span class="badge badge-ok">Activa</span>' : '<span class="badge badge-no">Anulada</span>';
+  var badgeTipo = (c.tipo === 'lista') ? '<span class="badge badge-tipo">Lista</span>' : (c.tipo === 'premiacion' ? '<span class="badge badge-premio">Premiación</span>' : '<span class="badge badge-tipo">Individual</span>');
+
+  var extra = '';
+  if (c.tipo === 'premiacion'){
+    extra = '<p class="suave">🏆 Concurso: ' + esc(c.concurso || '-') + ' · 🎟️ ' + (c.cupones_total || 0) + ' cupones · Canjeados: ' + (c.cupones_consumidos || 0) + (c.canjeado_at ? ' el ' + fechaBonita(c.canjeado_at) + ' (Día ' + (c.canjeado_dia||'-') + ')' : '') + '</p>';
+  }
 
   var info = document.createElement('div');
   info.innerHTML =
-    '<div><strong>' + esc(tituloCortesia(c)) + '</strong> ' +
-    '<span class="badge badge-tipo">' + (c.tipo === 'lista' ? 'Lista' : 'Individual') + '</span>' +
-    '<span class="badge badge-morado">' + esc(razonLegible(c.razon, c.causa)) + '</span>' +
-    badgeEstado + badgeCongelada + '</div>' +
-    '<p class="suave">' + esc(diasTexto(c.dia1, c.dia2)) + ' · ' + c.total_personas + ' persona(s) · Creada el ' + fechaBonita(c.creada_at) + '</p>';
+    '<div><strong>' + esc(tituloCortesia(c)) + '</strong> ' + badgeTipo + ' ' +
+    '<span class="badge badge-morado">' + esc(razonLegible(c.razon, c.causa)) + '</span> ' +
+    badgeEstado + ' ' + badgeCongelada + '</div>' +
+    '<p class="suave">' + esc(diasTexto(c.dia1, c.dia2)) + ' · ' + c.total_personas + ' persona(s) · Creada el ' + fechaBonita(c.creada_at) + '</p>' + extra;
   contU.appendChild(info);
 
   var cajaLink = document.createElement('div');
@@ -512,16 +550,11 @@ function renderUltimaCreada(){
   var fila = document.createElement('div');
   fila.className = 'fila';
   fila.appendChild(boton('📋 Copiar link', 'btn-gris', function(b){ copiarTexto(linkDe(c), b); }));
-  var wa = document.createElement('a');
-  wa.className = 'btn btn-gris';
-  wa.target = '_blank'; wa.rel = 'noopener';
-  wa.textContent = '📱 WhatsApp';
-  wa.href = urlWA('Hola, aquí está el pase de cortesía para Nitrotoon (' + razonLegible(c.razon, c.causa) + '). Abre este link para ver los QR: ' + linkDe(c));
+  var wa = document.createElement('a'); wa.className='btn btn-gris'; wa.target='_blank'; wa.rel='noopener'; wa.textContent='📱 WhatsApp';
+  wa.href = urlWA('Hola, aquí está el pase de cortesía para Nitrotoon (' + razonLegible(c.razon, c.causa) + '). Abre este link: ' + linkDe(c));
   fila.appendChild(wa);
-  var ml = document.createElement('a');
-  ml.className = 'btn btn-gris';
-  ml.textContent = '✉️ Correo';
-  ml.href = urlMail('Pase de cortesía Nitrotoon', 'Hola, aquí está el pase de cortesía para Nitrotoon (' + razonLegible(c.razon, c.causa) + '). Abre este link para ver los QR: ' + linkDe(c));
+  var ml = document.createElement('a'); ml.className='btn btn-gris'; ml.textContent='✉️ Correo';
+  ml.href = urlMail('Pase de cortesía Nitrotoon', 'Hola, aquí está el pase de cortesía para Nitrotoon (' + razonLegible(c.razon, c.causa) + '). Abre este link: ' + linkDe(c));
   fila.appendChild(ml);
   if (c.estado === 'activa' && !congelada) {
     fila.appendChild(boton('✏️ Editar', 'btn-verde', function(){ abrirModalEdicion(c); }));
@@ -533,9 +566,10 @@ function renderUltimaCreada(){
 
   if (congelada) {
     var nota = document.createElement('p');
-    nota.className = 'suave';
-    nota.style.marginTop = '10px';
-    nota.innerHTML = '🧊 Esta cortesía está congelada: todos sus días ya cerraron. No admite cambios.';
+    nota.className = 'suave'; nota.style.marginTop = '10px';
+    nota.innerHTML = (c.tipo === 'premiacion')
+      ? '🧊 Esta premiación está congelada: el evento ya terminó. No admite cambios.'
+      : '🧊 Esta cortesía está congelada: todos sus días ya cerraron. No admite cambios.';
     contU.appendChild(nota);
   }
 }
@@ -548,25 +582,23 @@ function renderHistorico(){
     actualizarContador(0,0);
     return;
   }
-
   var filtro = ($('buscarInput').value || '').trim().toLowerCase();
   var visibles = cortesiasCache.filter(function(c){
     if (!filtro) return true;
     return textoBuscable(c).indexOf(filtro) !== -1;
   });
-
   if (!visibles.length){
     cont.innerHTML = '<p class="suave">No hay cortesías que coincidan con "' + esc(filtro) + '".</p>';
     actualizarContador(0, cortesiasCache.length);
     return;
   }
-
   var tabla = document.createElement('table');
   tabla.className = 'tabla-cortesias';
   tabla.innerHTML =
     '<thead><tr>' +
       '<th>Beneficiario</th>' +
-      '<th>Razón</th>' +
+      '<th>Tipo</th>' +
+      '<th>Razón / Concurso</th>' +
       '<th>Días</th>' +
       '<th>Reclamadas / Obsequiadas</th>' +
       '<th>Estado</th>' +
@@ -580,16 +612,17 @@ function renderHistorico(){
     var tr = document.createElement('tr');
     tr.setAttribute('data-codigo', c.codigo_link);
     var estado;
-    if (c.estado === 'anulada'){
-      estado = '<span class="badge badge-no">Anulada</span>';
-    } else if (congelada){
-      estado = '<span class="badge badge-congelada">🧊 Congelada</span>';
-    } else {
-      estado = '<span class="badge badge-ok">Activa</span>';
-    }
+    if (c.estado === 'anulada'){ estado = '<span class="badge badge-no">Anulada</span>'; }
+    else if (congelada){ estado = '<span class="badge badge-congelada">🧊 Congelada</span>'; }
+    else { estado = '<span class="badge badge-ok">Activa</span>'; }
+    var tipoTxt = (c.tipo === 'lista') ? 'Lista' : (c.tipo === 'premiacion' ? 'Premiación' : 'Individual');
+    var razonOConcurso;
+    if (c.tipo === 'premiacion'){ razonOConcurso = '🏆 ' + esc(c.concurso || '-') + '<div class="estado-mini">' + esc(razonLegible(c.razon, c.causa)) + '</div>'; }
+    else { razonOConcurso = esc(razonLegible(c.razon, c.causa)); }
     tr.innerHTML =
       '<td>' + esc(tituloCortesia(c)) + '<div class="estado-mini">' + esc(c.codigo_link) + '</div></td>' +
-      '<td>' + esc(razonLegible(c.razon, c.causa)) + '</td>' +
+      '<td>' + tipoTxt + '</td>' +
+      '<td>' + razonOConcurso + '</td>' +
       '<td>' + esc(diasTexto(c.dia1, c.dia2)) + '</td>' +
       '<td class="reclamadas">' + textoReclamadas(c) + '</td>' +
       '<td>' + estado + '</td>' +
@@ -623,15 +656,10 @@ function renderHistorico(){
     flashCodigo = null;
   }
 }
-
 function actualizarContador(visibles, total){
   var el = $('contadorBusqueda');
   if (!el) return;
-  if (visibles === total){
-    el.textContent = total + ' cortesía(s)';
-  } else {
-    el.textContent = visibles + ' de ' + total;
-  }
+  el.textContent = (visibles === total) ? (total + ' cortesía(s)') : (visibles + ' de ' + total);
 }
 
 async function cargarCortesias(){
@@ -643,12 +671,9 @@ async function cargarCortesias(){
     var arr = resultados[0];
     var ed = resultados[1];
     if (ed){
-      estadoDias = {
-        dia_activo: ed.dia_activo || 1,
-        dia1_cerrado: !!ed.dia1_cerrado,
-        dia2_cerrado: !!ed.dia2_cerrado
-      };
+      estadoDias = { dia_activo: ed.dia_activo || 1, dia1_cerrado: !!ed.dia1_cerrado, dia2_cerrado: !!ed.dia2_cerrado };
     }
+    actualizarVisibilidadCortesia();
     if (!arr){
       $('contenedorHistorico').innerHTML = '<p class="suave">Tu sesión expiró: entra de nuevo con tu PIN.</p>';
       $('panelUltima').style.display = 'none';
@@ -670,13 +695,14 @@ async function abrirModalEdicion(c){
     modalEdicionAbierto.parentNode.removeChild(modalEdicionAbierto);
     modalEdicionAbierto = null;
   }
-
   var congelada = estaCongelada(c);
+  var esPremiacion = (c.tipo === 'premiacion');
+  var soloLecturaPremiacion = esPremiacion && eventoCompletoCerrado();
+  var soloLectura = congelada || soloLecturaPremiacion;
+  var yaCanjeada = esPremiacion && !!c.canjeado_at;
 
   var d = null;
-  try {
-    d = await llamar('f_admin_ver_cortesia', { p_token: ses.token, p_codigo_link: c.codigo_link });
-  } catch(e){}
+  try { d = await llamar('f_admin_ver_cortesia', { p_token: ses.token, p_codigo_link: c.codigo_link }); } catch(e){}
   if (!d){ await modalAlert('Error', 'No se pudieron cargar los datos. Intenta de nuevo.'); return; }
 
   var fondo = document.createElement('div');
@@ -684,101 +710,102 @@ async function abrirModalEdicion(c){
   var caja = document.createElement('div');
   caja.className = 'modal-caja modal-caja-grande';
   caja.innerHTML =
-    '<h3 class="modal-titulo">' + (congelada ? '👁️ Detalle (congelada)' : '✏️ Editar cortesía') + ' — ' + esc(tituloCortesia(c)) + '</h3>' +
+    '<h3 class="modal-titulo">' + (soloLectura ? '👁️ Detalle' : '✏️ Editar') + (esPremiacion ? ' premiación' : ' cortesía') + ' — ' + esc(tituloCortesia(c)) + '</h3>' +
     '<div class="modal-seccion">' +
-      '<h4>Datos generales</h4>' +
-      '<label>Razón<select id="eRazon" ' + (congelada ? 'disabled' : '') + '></select></label>' +
-      '<div id="eCausaWrap" style="display:none"><label>Causa específica<input id="eCausa" type="text" ' + (congelada ? 'disabled' : '') + '></label></div>' +
-      '<div id="eOrgWrap"><label>Nombre de la organización<input id="eOrg" type="text" ' + (congelada ? 'disabled' : '') + '></label></div>' +
-      '<div id="eIndWrap" style="display:none">' +
-        '<label>Nombre<input id="eNom" type="text" ' + (congelada ? 'disabled' : '') + '></label>' +
-        '<label>Apellido<input id="eApe" type="text" ' + (congelada ? 'disabled' : '') + '></label>' +
-        '<label>Cédula<input id="eCed" type="text" ' + (congelada ? 'disabled' : '') + '></label>' +
-      '</div>' +
+      '<h4>' + (esPremiacion ? 'Datos del ganador y concurso' : 'Datos generales') + '</h4>' +
+      (esPremiacion ? '' : '<label>Razón<select id="eRazon" ' + (soloLectura ? 'disabled' : '') + '></select></label>') +
+      (esPremiacion ? '' : '<div id="eCausaWrap" style="display:none"><label>Causa específica<input id="eCausa" type="text" ' + (soloLectura ? 'disabled' : '') + '></label></div>') +
+      (esPremiacion ? '' : '<div id="eOrgWrap"><label>Nombre de la organización<input id="eOrg" type="text" ' + (soloLectura ? 'disabled' : '') + '></label></div>') +
+      (esPremiacion ? '' : '<div id="eIndWrap" style="display:none"><label>Nombre<input id="eNom" type="text" ' + (soloLectura ? 'disabled' : '') + '></label><label>Apellido<input id="eApe" type="text" ' + (soloLectura ? 'disabled' : '') + '></label><label>Cédula<input id="eCed" type="text" ' + (soloLectura ? 'disabled' : '') + '></label></div>') +
+      (esPremiacion ? (
+        '<label>Nombre<input id="pNom" type="text" ' + (soloLectura ? 'disabled' : '') + '></label>' +
+        '<label>Apellido<input id="pApe" type="text" ' + (soloLectura ? 'disabled' : '') + '></label>' +
+        '<label>Cédula<input id="pCed" type="text" ' + (soloLectura ? 'disabled' : '') + '></label>' +
+        '<label>Concurso<input id="pCon" type="text" ' + (soloLectura ? 'disabled' : '') + '></label>' +
+        '<label>Cupones<input id="pCup" type="number" min="1" step="1" ' + (soloLectura ? 'disabled' : '') + '></label>' +
+        '<p class="suave" style="margin-top:10px">Canjeado: ' + (c.cupones_consumidos || 0) + '/' + (c.cupones_total || 0) + ' cupones' + (c.canjeado_at ? ' el ' + fechaBonita(c.canjeado_at) + ' (Día ' + (c.canjeado_dia||'-') + ')' : '') + '</p>'
+      ) : '') +
     '</div>' +
     '<div class="modal-seccion">' +
       '<h4>Días aprobados</h4>' +
       '<div id="eDiasActuales" class="suave">-</div>' +
       '<div id="eDiasBotones" class="fila" style="margin-top:8px"></div>' +
     '</div>' +
-    '<div class="modal-seccion" id="ePersonasSeccion">' +
-      '<h4>Personas por día</h4>' +
-      '<div id="eDiasBloques"></div>' +
-    '</div>' +
+    (esPremiacion ? '' :
+      '<div class="modal-seccion" id="ePersonasSeccion">' +
+        '<h4>Personas por día</h4>' +
+        '<div id="eDiasBloques"></div>' +
+      '</div>') +
     '<div class="modal-botones"></div>';
 
-  var razones = ['prensa','vinculo_familiar','premio','autoridad','otros'];
-  var selR = caja.querySelector('#eRazon');
-  razones.forEach(function(v){
-    var o = document.createElement('option');
-    o.value = v; o.textContent = razonLegible(v, '');
-    if (v === c.razon) o.selected = true;
-    selR.appendChild(o);
-  });
+  // Inicializar razón solo en cortesías no-premiación
+  var selR = null, eCausa = null, eOrg = null, eNom = null, eApe = null, eCed = null;
+  if (!esPremiacion){
+    var razones = ['prensa','vinculo_familiar','premio','autoridad','otros'];
+    selR = caja.querySelector('#eRazon');
+    razones.forEach(function(v){
+      var o = document.createElement('option'); o.value = v; o.textContent = razonLegible(v, '');
+      if (v === c.razon) o.selected = true;
+      selR.appendChild(o);
+    });
+    eCausa = caja.querySelector('#eCausa'); eCausa.value = c.causa || '';
+    eOrg = caja.querySelector('#eOrg');
+    eNom = caja.querySelector('#eNom'); eApe = caja.querySelector('#eApe'); eCed = caja.querySelector('#eCed');
 
-  var eCausa = caja.querySelector('#eCausa');
-  eCausa.value = c.causa || '';
-  var eOrg = caja.querySelector('#eOrg');
-  var eNom = caja.querySelector('#eNom');
-  var eApe = caja.querySelector('#eApe');
-  var eCed = caja.querySelector('#eCed');
-
-  if (d.tipo === 'lista'){
-    eOrg.value = d.nombre_organizacion || '';
-    caja.querySelector('#eIndWrap').style.display = 'none';
-    caja.querySelector('#eOrgWrap').style.display = 'block';
+    if (d.tipo === 'lista'){
+      eOrg.value = d.nombre_organizacion || '';
+      caja.querySelector('#eIndWrap').style.display = 'none';
+      caja.querySelector('#eOrgWrap').style.display = 'block';
+    } else {
+      var p0 = (d.individuales && d.individuales[0]) || {};
+      eNom.value = p0.nombre || ''; eApe.value = p0.apellido || ''; eCed.value = p0.cedula || '';
+      caja.querySelector('#eOrgWrap').style.display = 'none';
+      caja.querySelector('#eIndWrap').style.display = 'block';
+    }
+    function refrescarCausa(){ caja.querySelector('#eCausaWrap').style.display = (selR.value === 'otros') ? 'block' : 'none'; }
+    selR.onchange = refrescarCausa; refrescarCausa();
   } else {
-    var p = (d.individuales && d.individuales[0]) || {};
-    eNom.value = p.nombre || '';
-    eApe.value = p.apellido || '';
-    eCed.value = p.cedula || '';
-    caja.querySelector('#eOrgWrap').style.display = 'none';
-    caja.querySelector('#eIndWrap').style.display = 'block';
+    var pg = (d.individuales && d.individuales[0]) || {};
+    caja.querySelector('#pNom').value = pg.nombre || '';
+    caja.querySelector('#pApe').value = pg.apellido || '';
+    caja.querySelector('#pCed').value = pg.cedula || '';
+    caja.querySelector('#pCon').value = d.concurso || '';
+    caja.querySelector('#pCup').value = d.cupones_total || 1;
   }
-
-  function refrescarCausa(){
-    caja.querySelector('#eCausaWrap').style.display = (selR.value === 'otros') ? 'block' : 'none';
-  }
-  selR.onchange = refrescarCausa;
-  refrescarCausa();
 
   function renderDias(){
     var d1 = !!d.dia1;
     var d2 = !!d.dia2;
     var d1Cerrado = diaCerrado(1);
     var d2Cerrado = diaCerrado(2);
+    var bloquearDias = soloLectura || (esPremiacion && yaCanjeada);
     caja.querySelector('#eDiasActuales').innerHTML =
       '<span class="badge ' + (d1 ? (d1Cerrado ? 'badge-congelada">Día 1 cerrado' : 'badge-ok">Día 1 activo') : 'badge-no">Sin Día 1') + '</span> ' +
       '<span class="badge ' + (d2 ? (d2Cerrado ? 'badge-congelada">Día 2 cerrado' : 'badge-ok">Día 2 activo') : 'badge-no">Sin Día 2') + '</span>';
     var botones = caja.querySelector('#eDiasBotones');
     botones.innerHTML = '';
-    if (d.estado !== 'activa' || congelada) return;
-    if (!d1 && !d1Cerrado){
-      botones.appendChild(botonMini('+ Agregar Día 1', 'btn-gris', function(){ extenderDia(c, 1); }));
+    if (d.estado !== 'activa' || bloquearDias) return;
+    if (esPremiacion){
+      // Para premiación, "quitar" o "extender" sigue disponible mientras no se haya canjeado
+      if (!d1){ botones.appendChild(botonMini('+ Agregar Día 1', 'btn-gris', function(){ extenderDia(c, 1); })); }
+      if (!d2){ botones.appendChild(botonMini('📅 Extender al Día 2', 'btn-verde', function(){ extenderDia(c, 2); })); }
+      if (d1){ botones.appendChild(botonMini('🚫 Quitar Día 1', 'btn-rojo', function(){ quitarDia(c, 1); })); }
+      if (d2){ botones.appendChild(botonMini('🚫 Quitar Día 2', 'btn-rojo', function(){ quitarDia(c, 2); })); }
+      return;
     }
-    if (!d2 && !d2Cerrado){
-      botones.appendChild(botonMini('📅 Extender al Día 2', 'btn-verde', function(){ extenderDia(c, 2); }));
-    }
-    if (d1 && !d1Cerrado){
-      botones.appendChild(botonMini('🚫 Quitar Día 1', 'btn-rojo', function(){ quitarDia(c, 1); }));
-    }
-    if (d2 && !d2Cerrado){
-      botones.appendChild(botonMini('🚫 Quitar Día 2', 'btn-rojo', function(){ quitarDia(c, 2); }));
-    }
+    if (!d1 && !d1Cerrado){ botones.appendChild(botonMini('+ Agregar Día 1', 'btn-gris', function(){ extenderDia(c, 1); })); }
+    if (!d2 && !d2Cerrado){ botones.appendChild(botonMini('📅 Extender al Día 2', 'btn-verde', function(){ extenderDia(c, 2); })); }
+    if (d1 && !d1Cerrado){ botones.appendChild(botonMini('🚫 Quitar Día 1', 'btn-rojo', function(){ quitarDia(c, 1); })); }
+    if (d2 && !d2Cerrado){ botones.appendChild(botonMini('🚫 Quitar Día 2', 'btn-rojo', function(){ quitarDia(c, 2); })); }
   }
 
   function renderPersonas(){
+    if (esPremiacion) return;
     var cont = caja.querySelector('#eDiasBloques');
     cont.innerHTML = '';
-    if (d.tipo !== 'lista'){
-      cont.innerHTML = '<p class="suave">Cortesía individual. Para editar los datos usa los campos de arriba.</p>';
-      return;
-    }
+    if (d.tipo !== 'lista'){ cont.innerHTML = '<p class="suave">Cortesía individual.</p>'; return; }
     var listas = d.listas || [];
-    if (!listas.length){
-      cont.innerHTML = '<p class="suave">Aún no hay días con personas.</p>';
-      return;
-    }
+    if (!listas.length){ cont.innerHTML = '<p class="suave">Aún no hay días con personas.</p>'; return; }
     listas.forEach(function(l){
       var cerrado = diaCerrado(l.dia);
       var bloq = document.createElement('div');
@@ -786,97 +813,59 @@ async function abrirModalEdicion(c){
       var personas = l.personas || [];
       var headerBadge = cerrado ? ' <span class="badge badge-congelada">🔒 Cerrado</span>' : '';
       var html = '<h5>Día ' + l.dia + ' — código ' + esc(l.codigo_corto) + ' (' + personas.length + ')' + headerBadge + '</h5>';
-      if (!personas.length){
-        html += '<p class="suave">Sin personas.</p>';
-      } else {
+      if (!personas.length){ html += '<p class="suave">Sin personas.</p>'; }
+      else {
         personas.forEach(function(p){
-          html += '<div class="persona-lista">' + esc(p.nombre) + ' ' + esc(p.apellido) +
-            ' — CI ' + esc(p.cedula) +
-            ' <span class="estado-mini">(' + esc(p.estado) + ')</span></div>';
+          html += '<div class="persona-lista">' + esc(p.nombre) + ' ' + esc(p.apellido) + ' — CI ' + esc(p.cedula) + ' <span class="estado-mini">(' + esc(p.estado) + ')</span></div>';
         });
       }
-      if (cerrado){
-        html += '<p class="aviso-dia-cerrado">🔒 Día ' + l.dia + ' cerrado. No admite cambios (así quedó al cierre).</p>';
-      } else if (d.estado === 'activa' && !congelada){
+      if (cerrado){ html += '<p class="aviso-dia-cerrado">🔒 Día ' + l.dia + ' cerrado. No admite cambios.</p>'; }
+      else if (d.estado === 'activa' && !soloLectura){
         if (personas.length === 0){
           var origen = null;
-          listas.forEach(function(lx){
-            if (lx.dia !== l.dia && !diaCerrado(lx.dia) && (lx.personas || []).length > 0) origen = lx;
-          });
+          listas.forEach(function(lx){ if (lx.dia !== l.dia && !diaCerrado(lx.dia) && (lx.personas||[]).length > 0) origen = lx; });
           if (origen){
-            html += '<div class="fila" style="margin-top:8px">' +
-              '<button class="btn btn-verde btn-mini" data-copiar-desde="' + origen.dia + '" data-copiar-a="' + l.dia + '">' +
-                '📋 Copiar personas del Día ' + origen.dia + ' (' + origen.personas.length + ')' +
-              '</button>' +
-            '</div>';
+            html += '<div class="fila" style="margin-top:8px"><button class="btn btn-verde btn-mini" data-copiar-desde="' + origen.dia + '" data-copiar-a="' + l.dia + '">📋 Copiar personas del Día ' + origen.dia + ' (' + origen.personas.length + ')</button></div>';
           }
         }
-        html +=
-          '<div class="fila-persona" data-dia="' + l.dia + '">' +
-            '<input placeholder="Nombre" class="aNom">' +
-            '<input placeholder="Apellido" class="aApe">' +
-            '<input placeholder="Cedula" class="aCed">' +
-            '<button class="btn btn-gris btn-mini" data-agregar-p="' + l.dia + '">+ Agregar</button>' +
-          '</div>';
+        html += '<div class="fila-persona" data-dia="' + l.dia + '"><input placeholder="Nombre" class="aNom"><input placeholder="Apellido" class="aApe"><input placeholder="Cedula" class="aCed"><button class="btn btn-gris btn-mini" data-agregar-p="' + l.dia + '">+ Agregar</button></div>';
       }
       bloq.innerHTML = html;
       cont.appendChild(bloq);
     });
   }
-
-  renderDias();
-  renderPersonas();
+  renderDias(); renderPersonas();
 
   caja.querySelectorAll('[data-agregar-p]').forEach(function(b){
     b.onclick = async function(){
       var dia = parseInt(b.getAttribute('data-agregar-p'), 10);
       var fila = caja.querySelector('.fila-persona[data-dia="' + dia + '"]');
-      var nom = fila.querySelector('.aNom').value.trim();
-      var ape = fila.querySelector('.aApe').value.trim();
-      var ced = fila.querySelector('.aCed').value.trim();
+      var nom = fila.querySelector('.aNom').value.trim(); var ape = fila.querySelector('.aApe').value.trim(); var ced = fila.querySelector('.aCed').value.trim();
       if (!nom || !ape || !ced){ await modalAlert('Faltan datos', 'Nombre, apellido y cédula son obligatorios.'); return; }
-      var r = await llamar('f_admin_cortesia_agregar_persona', {
-        p_token: ses.token, p_codigo_link: c.codigo_link, p_dia: dia,
-        p_nombre: nom, p_apellido: ape, p_cedula: ced
-      });
+      var r = await llamar('f_admin_cortesia_agregar_persona', { p_token: ses.token, p_codigo_link: c.codigo_link, p_dia: dia, p_nombre: nom, p_apellido: ape, p_cedula: ced });
       if (r !== 'ok'){ await modalAlert('Error', esc(msgErrorCortesia(r))); return; }
-      flashCodigo = c.codigo_link;
-      await cargarCortesias();
-      abrirModalEdicion(c);
+      flashCodigo = c.codigo_link; await cargarCortesias(); abrirModalEdicion(c);
     };
   });
-
   caja.querySelectorAll('[data-copiar-desde]').forEach(function(b){
     b.onclick = async function(){
-      var desde = parseInt(b.getAttribute('data-copiar-desde'), 10);
-      var hacia = parseInt(b.getAttribute('data-copiar-a'), 10);
+      var desde = parseInt(b.getAttribute('data-copiar-desde'), 10); var hacia = parseInt(b.getAttribute('data-copiar-a'), 10);
       var origen = (d.listas || []).filter(function(l){ return l.dia === desde; })[0];
-      if (!origen || !origen.personas || !origen.personas.length){
-        await modalAlert('Sin personas', 'El Día ' + desde + ' no tiene personas para copiar.');
-        return;
-      }
-      var ok = await modalConfirm(
-        'Copiar personas del Día ' + desde + ' al Día ' + hacia,
-        'Se van a copiar <strong>' + origen.personas.length + ' persona(s)</strong> del Día ' + desde + ' al Día ' + hacia + '.<br><br>Se copian todas (hayan entrado o no por la puerta ese día), para que en el Día ' + hacia + ' puedan reclamar su cupón.<br><br>Si alguna cédula ya existe en el Día ' + hacia + ', se omitirá.',
-        'Sí, copiar', 'Cancelar'
-      );
+      if (!origen || !origen.personas || !origen.personas.length){ await modalAlert('Sin personas', 'El Día ' + desde + ' no tiene personas para copiar.'); return; }
+      var ok = await modalConfirm('Copiar personas del Día ' + desde + ' al Día ' + hacia,
+        'Se copiarán <strong>' + origen.personas.length + ' persona(s)</strong>. Si alguna cédula ya existe, se omite.',
+        'Sí, copiar', 'Cancelar');
       if (!ok) return;
       var okCount = 0, errCount = 0, lastErr = '';
       for (var i = 0; i < origen.personas.length; i++){
         var p = origen.personas[i];
         try {
-          var r = await llamar('f_admin_cortesia_agregar_persona', {
-            p_token: ses.token, p_codigo_link: c.codigo_link, p_dia: hacia,
-            p_nombre: p.nombre, p_apellido: p.apellido, p_cedula: p.cedula
-          });
+          var r = await llamar('f_admin_cortesia_agregar_persona', { p_token: ses.token, p_codigo_link: c.codigo_link, p_dia: hacia, p_nombre: p.nombre, p_apellido: p.apellido, p_cedula: p.cedula });
           if (r === 'ok') okCount++; else { errCount++; lastErr = r; }
         } catch(e){ errCount++; lastErr = e.message; }
       }
-      flashCodigo = c.codigo_link;
-      await cargarCortesias();
-      if (errCount > 0){
-        await modalAlert('Copia parcial', 'Se copiaron <strong>' + okCount + '</strong> persona(s).<br>' + errCount + ' no se pudieron copiar.<br><br>Último error: ' + esc(msgErrorCortesia(lastErr)));
-      }
+      flashCodigo = c.codigo_link; await cargarCortesias();
+      if (errCount > 0){ await modalAlert('Copia parcial', 'Se copiaron ' + okCount + '. ' + errCount + ' no. Último: ' + esc(msgErrorCortesia(lastErr))); }
       abrirModalEdicion(c);
     };
   });
@@ -884,44 +873,50 @@ async function abrirModalEdicion(c){
   var contB = caja.querySelector('.modal-botones');
   var bCerrar = document.createElement('button');
   bCerrar.className = 'btn btn-gris';
-  bCerrar.textContent = congelada ? 'Cerrar' : 'Cancelar';
-  bCerrar.onclick = function(){
-    if (fondo.parentNode) fondo.parentNode.removeChild(fondo);
-    modalEdicionAbierto = null;
-  };
+  bCerrar.textContent = soloLectura ? 'Cerrar' : 'Cancelar';
+  bCerrar.onclick = function(){ if (fondo.parentNode) fondo.parentNode.removeChild(fondo); modalEdicionAbierto = null; };
   contB.appendChild(bCerrar);
 
-  if (!congelada){
+  if (!soloLectura){
     var bGuardar = document.createElement('button');
     bGuardar.className = 'btn btn-verde';
     bGuardar.textContent = 'Guardar cambios';
     bGuardar.onclick = async function(){
-      var razon = selR.value;
-      var causa = eCausa.value.trim();
-      if (razon === 'otros' && !causa){ await modalAlert('Falta la causa', 'Debe indicar la causa de la cortesía.'); return; }
       try {
-        var r1 = await llamar('f_admin_editar_cortesia', { p_token: ses.token, p_codigo_link: c.codigo_link, p_razon: razon, p_causa: causa || null });
-        if (r1 !== 'ok'){ await modalAlert('Error', esc(msgErrorCortesia(r1))); return; }
-        if (d.tipo === 'lista'){
-          var r2 = await llamar('f_admin_editar_cortesia_datos', {
+        if (esPremiacion){
+          if (yaCanjeada){ await modalAlert('Ya canjeada', 'Esta premiación ya fue canjeada en puerta. No se puede editar.'); return; }
+          var pnom = caja.querySelector('#pNom').value.trim();
+          var pape = caja.querySelector('#pApe').value.trim();
+          var pced = caja.querySelector('#pCed').value.trim();
+          var pcon = caja.querySelector('#pCon').value.trim();
+          var pcup = parseInt(caja.querySelector('#pCup').value, 10);
+          if (!pnom || !pape || !pced){ await modalAlert('Faltan datos', 'Nombre, apellido y cédula son obligatorios.'); return; }
+          if (!pcon){ await modalAlert('Falta el concurso', 'Escriba el nombre del concurso.'); return; }
+          if (!pcup || pcup < 1){ await modalAlert('Falta la cantidad', 'Cupones debe ser 1 o más.'); return; }
+          var rP = await llamar('f_admin_editar_cortesia_premiacion', {
             p_token: ses.token, p_codigo_link: c.codigo_link,
-            p_nombre_organizacion: eOrg.value.trim()
+            p_nombre: pnom, p_apellido: pape, p_cedula: pced, p_concurso: pcon, p_cupones_total: pcup
           });
-          if (r2 !== 'ok'){ await modalAlert('Error', esc(msgErrorCortesia(r2))); return; }
+          if (rP !== 'ok'){ await modalAlert('Error', esc(msgErrorCortesia(rP))); return; }
         } else {
-          var r3 = await llamar('f_admin_editar_cortesia_datos', {
-            p_token: ses.token, p_codigo_link: c.codigo_link,
-            p_nombre: eNom.value.trim(), p_apellido: eApe.value.trim(), p_cedula: eCed.value.trim()
-          });
-          if (r3 !== 'ok'){ await modalAlert('Error', esc(msgErrorCortesia(r3))); return; }
+          var razon = selR.value;
+          var causa = eCausa.value.trim();
+          if (razon === 'otros' && !causa){ await modalAlert('Falta la causa', 'Debe indicar la causa.'); return; }
+          var r1 = await llamar('f_admin_editar_cortesia', { p_token: ses.token, p_codigo_link: c.codigo_link, p_razon: razon, p_causa: causa || null });
+          if (r1 !== 'ok'){ await modalAlert('Error', esc(msgErrorCortesia(r1))); return; }
+          if (d.tipo === 'lista'){
+            var r2 = await llamar('f_admin_editar_cortesia_datos', { p_token: ses.token, p_codigo_link: c.codigo_link, p_nombre_organizacion: eOrg.value.trim() });
+            if (r2 !== 'ok'){ await modalAlert('Error', esc(msgErrorCortesia(r2))); return; }
+          } else {
+            var r3 = await llamar('f_admin_editar_cortesia_datos', { p_token: ses.token, p_codigo_link: c.codigo_link, p_nombre: eNom.value.trim(), p_apellido: eApe.value.trim(), p_cedula: eCed.value.trim() });
+            if (r3 !== 'ok'){ await modalAlert('Error', esc(msgErrorCortesia(r3))); return; }
+          }
         }
         if (fondo.parentNode) fondo.parentNode.removeChild(fondo);
         modalEdicionAbierto = null;
         flashCodigo = c.codigo_link;
         await cargarCortesias();
-      } catch (e) {
-        await modalAlert('Error al guardar', esc('Fallo: ' + e.message));
-      }
+      } catch (e) { await modalAlert('Error al guardar', esc('Fallo: ' + e.message)); }
     };
     contB.appendChild(bGuardar);
   }
@@ -933,16 +928,13 @@ async function abrirModalEdicion(c){
 
 async function extenderDia(c, dia){
   var ok = await modalConfirm('Extender al Día ' + dia,
-    'Se creará el Día ' + dia + ' para esta cortesía. Después podrá copiar las personas del otro día (si aplica) o agregarlas una por una.<br><br>¿Continuar?',
+    'Se creará el Día ' + dia + ' para esta cortesía.<br><br>¿Continuar?',
     'Sí, extender', 'Cancelar');
   if (!ok) return;
   var r = await llamar('f_admin_cortesia_agregar_dia', { p_token: ses.token, p_codigo_link: c.codigo_link, p_dia: dia });
   if (r !== 'ok'){ await modalAlert('Error', esc(msgErrorCortesia(r))); return; }
-  flashCodigo = c.codigo_link;
-  await cargarCortesias();
-  abrirModalEdicion(c);
+  flashCodigo = c.codigo_link; await cargarCortesias(); abrirModalEdicion(c);
 }
-
 async function quitarDia(c, dia){
   var ok = await modalConfirm('Quitar Día ' + dia,
     'Se borrará la lista y el QR del <strong>Día ' + dia + '</strong>.<br><br>Solo funciona si nadie entró todavía por esa lista.',
@@ -950,21 +942,25 @@ async function quitarDia(c, dia){
   if (!ok) return;
   var r = await llamar('f_admin_cortesia_quitar_dia', { p_token: ses.token, p_codigo_link: c.codigo_link, p_dia: dia });
   if (r !== 'ok'){ await modalAlert('Error', esc(msgErrorCortesia(r))); return; }
-  flashCodigo = c.codigo_link;
-  await cargarCortesias();
-  abrirModalEdicion(c);
+  flashCodigo = c.codigo_link; await cargarCortesias(); abrirModalEdicion(c);
 }
-
 async function anularCortesia(c){
+  if (c.tipo === 'premiacion' && eventoCompletoCerrado()){
+    await modalAlert('Evento ya pasó', 'El evento ya terminó. No se pueden anular premiaciones.');
+    return;
+  }
+  if (c.tipo === 'premiacion' && c.canjeado_at){
+    await modalAlert('Ya canjeada', 'Esta premiación ya fue canjeada en puerta. No se puede anular.');
+    return;
+  }
   var ok = await modalConfirm('Anular cortesía',
-    '¿Anular esta cortesía?<br><br>Todos sus QR dejarán de funcionar de inmediato en la puerta.<br><br><strong>Esta acción no se puede deshacer.</strong>',
+    '¿Anular esta ' + (c.tipo === 'premiacion' ? 'premiación' : 'cortesía') + '?<br><br>Todos sus QR dejarán de funcionar de inmediato en la puerta.<br><br><strong>Esta acción no se puede deshacer.</strong>',
     'Sí, anular', 'Cancelar');
   if (!ok) return;
   try {
     var r = await llamar('f_admin_anular_cortesia', { p_token: ses.token, p_codigo_link: c.codigo_link });
     if (r !== 'ok'){ await modalAlert('Error', esc(msgErrorCortesia(r))); return; }
-    flashCodigo = c.codigo_link;
-    await cargarCortesias();
+    flashCodigo = c.codigo_link; await cargarCortesias();
   } catch (e) { await modalAlert('Error al anular', esc('Fallo: ' + e.message)); }
 }
 
@@ -984,11 +980,9 @@ if (!ses || ses.rol !== 'admin') {
       agregarFilaPersona('rowsDia2');
       var filas = $('rowsDia2').querySelectorAll('.fila-persona');
       var ultima = filas[filas.length - 1];
-      ultima.querySelector('.pNom').value = p.nombre;
-      ultima.querySelector('.pApe').value = p.apellido;
-      ultima.querySelector('.pCed').value = p.cedula;
+      ultima.querySelector('.pNom').value = p.nombre; ultima.querySelector('.pApe').value = p.apellido; ultima.querySelector('.pCed').value = p.cedula;
     });
-    aviso('msgCortesia', 'Lista del Día 1 copiada al Día 2. Edita lo que necesites.', true);
+    aviso('msgCortesia', 'Lista del Día 1 copiada al Día 2.', true);
   };
   $('btnCrearCortesia').onclick = crearCortesia;
   $('buscarInput').addEventListener('input', renderHistorico);
