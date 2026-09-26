@@ -27,6 +27,9 @@ h2{margin:0 0 12px;font-size:22px;}
 h3{margin:14px 0 6px;font-size:19px;color:var(--acento2);}
 label{display:block;margin:10px 0;font-size:17px;}
 select,input{width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1px solid var(--borde);background:#0d1526;color:var(--texto);font-size:17px;}
+.buscador{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;}
+.buscador input{flex:1;min-width:220px;margin-top:0;}
+.contador-busqueda{font-size:14px;color:var(--suave);white-space:nowrap;}
 .btn{display:inline-block;border:none;border-radius:12px;padding:12px 18px;font-size:17px;font-weight:600;color:#06281a;background:linear-gradient(135deg,var(--acento),#2bb673);cursor:pointer;text-decoration:none;}
 .btn-gris{background:#2a3648;color:var(--texto);}
 .btn-rojo{background:linear-gradient(135deg,#e05252,#c73e3e);color:#fff;}
@@ -173,6 +176,10 @@ select,input{width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1p
   <section class="tarjeta" id="historicoTarjeta">
     <h2>📜 Histórico de cortesías</h2>
     <p class="suave">Tabla de todas las cortesías creadas. La más reciente se administra desde el panel de arriba (⭐). Las anteriores se editan directamente aquí. Las cortesías con todos sus días cerrados quedan <strong>🧊 congeladas</strong> y no admiten cambios.</p>
+    <div class="buscador">
+      <input type="text" id="buscarInput" placeholder="🔍 Buscar por nombre, código, razón, causa...">
+      <span class="contador-busqueda" id="contadorBusqueda"></span>
+    </div>
     <div id="contenedorHistorico"><p class="suave">Consultando...</p></div>
   </section>
 
@@ -306,9 +313,26 @@ function msgErrorCortesia(r){
   };
   return map[r] || ('El sistema respondio: ' + r);
 }
+
+// Devuelve el titulo visible de la cortesia. Si es individual, prioriza el nombre real.
 function tituloCortesia(c){
   if (c.tipo === 'lista') return c.nombre_organizacion || 'Lista';
-  return 'Cortesía individual';
+  var nom = (c.persona_nombre || '').trim();
+  var ape = (c.persona_apellido || '').trim();
+  var completo = (nom + ' ' + ape).trim();
+  return completo || 'Cortesía individual';
+}
+
+// Texto sobre el que se aplica el buscador (todo en minúsculas)
+function textoBuscable(c){
+  var partes = [
+    tituloCortesia(c),
+    c.codigo_link,
+    razonLegible(c.razon, c.causa),
+    diasTexto(c.dia1, c.dia2),
+    c.tipo === 'lista' ? 'lista' : 'individual'
+  ];
+  return partes.join(' ').toLowerCase();
 }
 
 var ses = leerSesion();
@@ -521,8 +545,22 @@ function renderHistorico(){
   cont.innerHTML = '';
   if (!cortesiasCache.length){
     cont.innerHTML = '<p class="suave">Todavía no hay cortesías creadas.</p>';
+    actualizarContador(0,0);
     return;
   }
+
+  var filtro = ($('buscarInput').value || '').trim().toLowerCase();
+  var visibles = cortesiasCache.filter(function(c){
+    if (!filtro) return true;
+    return textoBuscable(c).indexOf(filtro) !== -1;
+  });
+
+  if (!visibles.length){
+    cont.innerHTML = '<p class="suave">No hay cortesías que coincidan con "' + esc(filtro) + '".</p>';
+    actualizarContador(0, cortesiasCache.length);
+    return;
+  }
+
   var tabla = document.createElement('table');
   tabla.className = 'tabla-cortesias';
   tabla.innerHTML =
@@ -535,7 +573,9 @@ function renderHistorico(){
       '<th>Acciones</th>' +
     '</tr></thead><tbody></tbody>';
   var tbody = tabla.querySelector('tbody');
-  cortesiasCache.forEach(function(c, idx){
+  visibles.forEach(function(c){
+    var idxEnCache = cortesiasCache.indexOf(c);
+    var esUltima = (idxEnCache === 0);
     var congelada = estaCongelada(c);
     var tr = document.createElement('tr');
     tr.setAttribute('data-codigo', c.codigo_link);
@@ -555,7 +595,7 @@ function renderHistorico(){
       '<td>' + estado + '</td>' +
       '<td class="acciones"></td>';
     var td = tr.querySelector('.acciones');
-    if (idx === 0) {
+    if (esUltima) {
       td.appendChild(botonMini('⭐ Volver a la edición', 'btn-verde', function(){
         var panel = $('panelUltima');
         panel.scrollIntoView({behavior:'smooth', block:'start'});
@@ -572,6 +612,7 @@ function renderHistorico(){
     tbody.appendChild(tr);
   });
   cont.appendChild(tabla);
+  actualizarContador(visibles.length, cortesiasCache.length);
   if (flashCodigo){
     var fila = tbody.querySelector('[data-codigo="' + flashCodigo + '"]');
     if (fila){
@@ -580,6 +621,16 @@ function renderHistorico(){
       fila.scrollIntoView({behavior:'smooth', block:'center'});
     }
     flashCodigo = null;
+  }
+}
+
+function actualizarContador(visibles, total){
+  var el = $('contadorBusqueda');
+  if (!el) return;
+  if (visibles === total){
+    el.textContent = total + ' cortesía(s)';
+  } else {
+    el.textContent = visibles + ' de ' + total;
   }
 }
 
@@ -940,6 +991,7 @@ if (!ses || ses.rol !== 'admin') {
     aviso('msgCortesia', 'Lista del Día 1 copiada al Día 2. Edita lo que necesites.', true);
   };
   $('btnCrearCortesia').onclick = crearCortesia;
+  $('buscarInput').addEventListener('input', renderHistorico);
   agregarFilaPersona('rowsDia1');
   actualizarVisibilidadCortesia();
   cargarCortesias();
