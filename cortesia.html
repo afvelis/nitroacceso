@@ -2,316 +2,963 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nitrotoon Control de acceso - Cortesía</title>
-<script src="config.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nitrotoon Control de acceso</title>
 <style>
 :root{
-  --fondo:#0b1220;--tarjeta:#121c2e;--borde:#24344d;--texto:#eef3f8;
-  --suave:#9fb0c3;--acento:#35d07f;--acento2:#1fa2ff;--aviso:#ffd33d;
-  --rojo:#e05252;--rojo2:#c73e3e;
+  --fondo:#0b1220; --tarjeta:#121c2e; --borde:#24344d; --texto:#eef3f8;
+  --suave:#9fb0c3; --acento:#35d07f; --acento2:#1fa2ff; --aviso:#ffd33d;
+  --rojo:#e05252;
 }
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--fondo);color:var(--texto);font-size:17px;line-height:1.5;min-height:100vh;padding-bottom:40px}
-.franja{height:6px;background:linear-gradient(90deg,var(--acento),var(--acento2))}
-.cabecera{display:flex;align-items:center;gap:14px;padding:18px 20px;background:var(--tarjeta);border-bottom:1px solid var(--borde)}
-.logo{font-size:28px;background:linear-gradient(135deg,var(--acento),var(--acento2));width:48px;height:48px;display:flex;align-items:center;justify-content:center;border-radius:10px}
-.titulo{font-size:20px;font-weight:700}
-.subtitulo{font-size:14px;color:var(--suave)}
-.contenedor{max-width:760px;margin:20px auto;padding:0 16px}
-.tarjeta{background:var(--tarjeta);border:1px solid var(--borde);border-radius:16px;padding:20px;margin-bottom:18px;box-shadow:0 4px 14px rgba(0,0,0,.25)}
-.tarjeta h2{font-size:19px;margin-bottom:12px;color:var(--acento)}
-.aviso{padding:12px 14px;border-radius:10px;background:rgba(255,211,61,.12);border:1px solid var(--aviso);color:var(--aviso);margin-bottom:14px;font-size:15px}
-.aviso-rojo{background:rgba(224,82,82,.12);border-color:var(--rojo);color:var(--rojo)}
-.aviso-verde{background:rgba(53,208,127,.12);border-color:var(--acento);color:var(--acento)}
-.aviso-grande{font-size:16px;line-height:1.55;padding:16px}
-.dato{margin-bottom:8px}
-.dato strong{color:var(--suave);font-size:14px;display:block}
-.dato span{font-size:17px}
-.pill{display:inline-block;padding:4px 10px;border-radius:20px;font-size:13px;font-weight:600}
-.pill-verde{background:rgba(53,208,127,.18);color:var(--acento)}
-.pill-azul{background:rgba(31,162,255,.18);color:var(--acento2)}
-.pill-morado{background:rgba(186,104,255,.18);color:#c68cff}
-.pill-rojo{background:rgba(224,82,82,.18);color:var(--rojo)}
-.qr-box{background:white;border-radius:14px;padding:14px;display:inline-block;margin:12px 0}
-.qr-box img{width:240px;height:240px;display:block}
-.qr-box .qr-texto{color:#0b1220;font-weight:700;text-align:center;margin-top:8px;font-family:ui-monospace,Menlo,Consolas,monospace}
-.mono{font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:1px}
-.btn{display:inline-block;padding:12px 18px;border:none;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;color:white;background:linear-gradient(135deg,var(--acento),#26a866);text-decoration:none;transition:transform .1s}
-.btn:active{transform:scale(.97)}
-.btn-azul{background:linear-gradient(135deg,var(--acento2),#147acc)}
-.btn-gris{background:#2a3648}
-.fila-botones{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-.nombres{margin-top:10px;padding-left:20px;color:var(--suave);font-size:15px}
-.link-box{background:#0d1626;border:1px solid var(--borde);border-radius:10px;padding:10px;font-size:14px;word-break:break-all;color:var(--suave);margin-bottom:10px}
-.culminado{text-align:center;padding:10px 0}
-.culminado .icono{font-size:56px;display:block;margin-bottom:6px}
-.culminado .gracias{font-size:22px;font-weight:800;color:var(--acento);margin:14px 0 10px;line-height:1.3}
-.culminado p{font-size:17px;color:var(--texto);margin-bottom:10px;line-height:1.55}
-.instagram-btn{display:inline-block;margin-top:18px;padding:14px 22px;border-radius:12px;background:linear-gradient(135deg,#fd5949,#d6249f,#285AEB);color:#fff;text-decoration:none;font-weight:700;font-size:17px;box-shadow:0 6px 18px rgba(214,36,159,.35);}
+*{box-sizing:border-box;}
+body{
+  margin:0; background:var(--fondo); color:var(--texto);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  font-size:17px; line-height:1.5;
+}
+.franja{height:6px;background:linear-gradient(90deg,var(--acento),var(--acento2));}
+.cabecera{display:flex;gap:14px;align-items:center;padding:20px 16px;max-width:1000px;margin:0 auto;}
+.logo{width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,var(--acento),var(--acento2));display:flex;align-items:center;justify-content:center;font-size:30px;flex:none;}
+.ceja{color:var(--suave);letter-spacing:2px;text-transform:uppercase;font-size:17px;}
+h1{margin:0;font-size:26px;}
+main{max-width:1000px;margin:0 auto;padding:0 16px 40px;display:flex;flex-direction:column;gap:20px;}
+.tarjeta{background:var(--tarjeta);border:1px solid var(--borde);border-radius:16px;padding:20px;box-shadow:0 8px 24px rgba(0,0,0,.35);}
+h2{margin:0 0 12px;font-size:22px;}
+h3{margin:14px 0 6px;font-size:19px;color:var(--acento2);}
+label{display:block;margin:10px 0;font-size:17px;}
+select,input{width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1px solid var(--borde);background:#0d1526;color:var(--texto);font-size:17px;}
+.btn{display:inline-block;border:none;border-radius:12px;padding:12px 18px;font-size:17px;font-weight:600;color:#06281a;background:linear-gradient(135deg,var(--acento),#2bb673);cursor:pointer;text-decoration:none;}
+.btn-gris{background:#2a3648;color:var(--texto);}
+.btn-rojo{background:linear-gradient(135deg,#e05252,#c73e3e);color:#fff;}
+.btn-verde{background:linear-gradient(135deg,var(--acento),#2bb673);color:#06281a;}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+.btn-mini{padding:6px 10px;font-size:14px;border-radius:8px;margin:2px 2px 2px 0;}
+.fila{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;}
+.suave{color:var(--suave);}
+.codigo{background:#0d1526;border:1px solid var(--borde);border-radius:10px;padding:12px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:20px;letter-spacing:2px;margin-top:8px;word-break:break-all;}
+.codigo-chico{font-size:14px !important;letter-spacing:0 !important;}
+.badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:14px;margin-right:6px;vertical-align:middle;}
+.badge-tipo{background:#123a5c;color:#9fd2ff;}
+.badge-ok{background:#12402c;color:#7ee2ae;}
+.badge-no{background:#4a1a1a;color:#ff9d9d;}
+.badge-morado{background:#3a2350;color:#d3a6ff;}
+.badge-congelada{background:#1f3a52;color:#9fd2ff;}
+.fila-persona{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px;}
+.fila-persona input{flex:1;min-width:110px;margin-top:0;}
+.nota-info{background:rgba(31,162,255,.10);border:1px solid var(--acento2);border-radius:10px;padding:12px 14px;margin-top:14px;font-size:15px;color:var(--texto);line-height:1.5;}
+
+.tabla-cortesias{width:100%;border-collapse:collapse;margin-top:10px;font-size:15px;}
+.tabla-cortesias th,.tabla-cortesias td{border:1px solid var(--borde);padding:8px 10px;text-align:left;vertical-align:top;}
+.tabla-cortesias th{background:#0e1728;color:var(--acento2);font-size:14px;white-space:nowrap;}
+.tabla-cortesias tbody tr:hover{background:rgba(31,162,255,.06);}
+.tabla-cortesias tr.fila-flash td{background:rgba(53,208,127,.28) !important;}
+.tabla-cortesias td.acciones{white-space:nowrap;}
+.tabla-cortesias td.reclamadas{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;line-height:1.5;}
+
+.tarjeta-ultima{border:2px solid var(--acento);position:relative;transition:background-color .4s ease;}
+.tarjeta-ultima::before{content:'⭐ ÚLTIMA';position:absolute;top:-12px;left:20px;background:var(--acento);color:#06281a;font-size:12px;font-weight:800;padding:3px 10px;border-radius:999px;letter-spacing:1px;}
+.tarjeta-ultima.fila-flash{background:rgba(53,208,127,.18);}
+.tarjeta-ultima.congelada{border-color:var(--acento2);}
+.tarjeta-ultima.congelada::before{background:var(--acento2);color:#06281a;content:'⭐ ÚLTIMA · 🧊 CONGELADA';}
+
+.modal-fondo{position:fixed;inset:0;background:rgba(4,8,16,.72);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;z-index:1000;padding:18px;animation:modalFade .15s ease;}
+@keyframes modalFade{from{opacity:0}to{opacity:1}}
+.modal-caja{background:var(--tarjeta);border:1px solid var(--borde);border-radius:16px;padding:22px;max-width:480px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.55);animation:modalPop .18s ease;}
+.modal-caja-grande{max-width:660px;max-height:92vh;overflow-y:auto;}
+@keyframes modalPop{from{transform:scale(.94);opacity:0}to{transform:scale(1);opacity:1}}
+.modal-titulo{margin:0 0 12px;font-size:20px;color:var(--acento);}
+.modal-mensaje{font-size:16px;line-height:1.55;color:var(--texto);margin-bottom:18px;}
+.modal-botones{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:16px;}
+.modal-botones .btn{min-width:110px;padding:11px 16px;}
+.modal-input{width:100%;margin-bottom:16px;padding:12px;border-radius:10px;border:1px solid var(--borde);background:#0d1526;color:var(--texto);font-size:17px;}
+.modal-seccion{margin-bottom:14px;padding-bottom:14px;border-bottom:1px dashed var(--borde);}
+.modal-seccion:last-child{border-bottom:none;padding-bottom:0;}
+.modal-seccion h4{margin:0 0 8px;font-size:16px;color:var(--acento2);font-weight:700;}
+.dia-bloque{background:#0e1728;border:1px solid var(--borde);border-radius:10px;padding:12px;margin-top:10px;}
+.dia-bloque.cerrado{border-color:var(--rojo);background:rgba(224,82,82,.08);}
+.dia-bloque h5{margin:0 0 8px;font-size:15px;color:var(--texto);}
+.persona-lista{margin:4px 0;padding:4px 8px;background:rgba(0,0,0,.25);border-radius:6px;font-size:14px;}
+.estado-mini{font-size:12px;color:var(--suave);}
+.aviso-dia-cerrado{color:var(--rojo);font-size:14px;margin-top:6px;}
 </style>
 </head>
 <body>
 <div class="franja"></div>
 <header class="cabecera">
-  <div class="logo">🚀</div>
+  <div class="logo">🎁</div>
   <div>
-    <div class="titulo">Nitrotoon Control de acceso</div>
-    <div class="subtitulo">Pase de cortesía</div>
+    <div class="ceja">Cortesias</div>
+    <h1>Nitrotoon Control de acceso</h1>
   </div>
 </header>
+<main>
 
-<main class="contenedor" id="contenido">
-  <div class="tarjeta"><p style="color:var(--suave)">Cargando cortesía...</p></div>
+  <section class="tarjeta" id="cortesias">
+    <h2>🎁 Crear cortesía</h2>
+    <p class="suave">Solo tu, como administrador, creas pases de cortesía. Al crearlo se genera un link con el o los QR listos para entregar.</p>
+
+    <label>Modalidad
+      <select id="kModo">
+        <option value="lista">Lista (una organizacion, un QR por dia)</option>
+        <option value="individual">Individual (un pase con QR propio)</option>
+      </select>
+    </label>
+
+    <div id="zonaOrg">
+      <label>Nombre de la organizacion
+        <input id="kOrg" placeholder="Ej.: Prensa de Aragua">
+      </label>
+    </div>
+
+    <div id="zonaInd" style="display:none">
+      <label>Nombre
+        <input id="kNom" placeholder="Ej.: Juan">
+      </label>
+      <label>Apellido
+        <input id="kApe" placeholder="Ej.: Gomez">
+      </label>
+      <label>Cedula
+        <input id="kCed" placeholder="Ej.: 12345678">
+      </label>
+    </div>
+
+    <label>Razon de la cortesia
+      <select id="kRazon">
+        <option value="prensa">Prensa</option>
+        <option value="vinculo_familiar">Vinculo familiar</option>
+        <option value="premio">Premio</option>
+        <option value="autoridad">Autoridad</option>
+        <option value="otros">Otros</option>
+      </select>
+    </label>
+    <div id="zonaCausa" style="display:none">
+      <label>Causa especifica
+        <input id="kCausa" placeholder="Ej.: Invitado especial del alcalde">
+      </label>
+      <p class="suave" style="color:var(--aviso)">Indique la causa de la cortesia: este texto quedara registrado en el sistema.</p>
+    </div>
+
+    <div class="nota-info">
+      📅 Las cortesías son <strong>por defecto para el Día 1</strong> (el Día 2 se cobra en taquilla).<br>
+      Si necesita extenderla al Día 2, hágalo desde la <strong>Última creada</strong> o el <strong>Histórico</strong> con el botón <strong>"Extender al Día 2"</strong>, para los casos que aplique.
+    </div>
+
+    <div id="zonaListas">
+      <h3>Personas del Dia 1</h3>
+      <div id="rowsDia1"></div>
+      <div class="fila">
+        <button class="btn btn-gris" id="btnAddRow1">+ Agregar persona</button>
+      </div>
+      <div id="bloqueDia2" style="display:none">
+        <h3>Personas del Dia 2 (excepción)</h3>
+        <div id="rowsDia2"></div>
+        <div class="fila">
+          <button class="btn btn-gris" id="btnAddRow2">+ Agregar persona</button>
+          <button class="btn btn-gris" id="btnCopiar1a2">📋 Copiar lista al Dia 2</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="fila">
+      <button class="btn" id="btnCrearCortesia">Crear cortesia</button>
+    </div>
+    <p id="msgCortesia" class="suave"></p>
+  </section>
+
+  <section class="tarjeta tarjeta-ultima" id="panelUltima" style="display:none">
+    <h2 style="margin-top:6px">⭐ Última cortesía creada</h2>
+    <div id="contenidoUltima"></div>
+  </section>
+
+  <section class="tarjeta" id="historicoTarjeta">
+    <h2>📜 Histórico de cortesías</h2>
+    <p class="suave">Tabla de todas las cortesías creadas. La más reciente se administra desde el panel de arriba (⭐). Las anteriores se editan directamente aquí. Las cortesías con todos sus días cerrados quedan <strong>🧊 congeladas</strong> y no admiten cambios.</p>
+    <div id="contenedorHistorico"><p class="suave">Consultando...</p></div>
+  </section>
+
+  <div class="fila">
+    <button class="btn btn-gris" id="btnVolver">← Volver al dashboard</button>
+  </div>
+
 </main>
-
+<script src="config.js"></script>
 <script>
-const INSTAGRAM_URL = 'https://www.instagram.com/nitrotoon';
-const params = new URLSearchParams(location.search);
-const codigo = (params.get('c') || '').trim();
-const contenido = document.getElementById('contenido');
-
-function razonLegible(r, causa){
-  const map = { prensa:'Prensa', vinculo_familiar:'Vínculo familiar', premio:'Premio', autoridad:'Autoridad', otros:'Otros' };
-  let t = map[r] || r;
-  if(r === 'otros' && causa) t += ': ' + causa;
-  return t;
+function $(id){ return document.getElementById(id); }
+function esc(t){
+  return String(t == null ? '' : t)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function aviso(id, texto, ok){
+  var el = $(id);
+  el.textContent = texto;
+  el.style.color = ok ? 'var(--acento)' : 'var(--aviso)';
+}
+function boton(texto, clase, fn){
+  var b = document.createElement('button');
+  b.className = 'btn ' + clase;
+  b.textContent = texto;
+  b.onclick = function(e){ fn(e.target); };
+  return b;
+}
+function botonMini(texto, clase, fn){
+  var b = document.createElement('button');
+  b.className = 'btn ' + clase + ' btn-mini';
+  b.textContent = texto;
+  b.onclick = function(e){ fn(e.target); };
+  return b;
 }
 
-function diasTexto(d1, d2){
-  if(d1 && d2) return 'Día 1 y Día 2';
-  if(d1) return 'Día 1';
-  if(d2) return 'Día 2';
-  return '-';
+/* ============ MODAL ESTETICO ============ */
+
+function abrirModal(opts){
+  return new Promise(function(resolve){
+    var fondo = document.createElement('div');
+    fondo.className = 'modal-fondo';
+    var caja = document.createElement('div');
+    caja.className = 'modal-caja' + (opts.grande ? ' modal-caja-grande' : '');
+    caja.innerHTML =
+      '<h3 class="modal-titulo">' + esc(opts.titulo || '') + '</h3>' +
+      '<div class="modal-mensaje">' + (opts.mensaje || '') + '</div>' +
+      '<div class="modal-botones"></div>';
+    var contB = caja.querySelector('.modal-botones');
+    (opts.botones || []).forEach(function(b){
+      var btn = document.createElement('button');
+      btn.className = 'btn ' + (b.clase || 'btn-gris');
+      btn.textContent = b.texto;
+      btn.onclick = function(){
+        if (fondo.parentNode) fondo.parentNode.removeChild(fondo);
+        resolve(b.valor);
+      };
+      contB.appendChild(btn);
+    });
+    fondo.appendChild(caja);
+    document.body.appendChild(fondo);
+  });
 }
 
-function urlWA(texto){ return 'https://wa.me/?text=' + encodeURIComponent(texto); }
-function urlMail(asunto, cuerpo){ return 'mailto:?subject=' + encodeURIComponent(asunto) + '&body=' + encodeURIComponent(cuerpo); }
+function modalAlert(titulo, mensaje){
+  return abrirModal({
+    titulo: titulo,
+    mensaje: mensaje,
+    botones: [{ texto: 'Aceptar', clase: 'btn-verde', valor: true }]
+  });
+}
 
-async function copiarTexto(texto, btn){
-  const original = btn.textContent;
-  try{
-    await navigator.clipboard.writeText(texto);
-    btn.textContent = '¡Copiado!';
-    setTimeout(() => { btn.textContent = original; }, 2000);
-  }catch(e){
-    const ta = document.createElement('textarea');
-    ta.value = texto;
+function modalConfirm(titulo, mensaje, textoOk, textoCancel){
+  return abrirModal({
+    titulo: titulo,
+    mensaje: mensaje,
+    botones: [
+      { texto: textoCancel || 'Cancelar', clase: 'btn-gris', valor: false },
+      { texto: textoOk || 'Aceptar', clase: 'btn-verde', valor: true }
+    ]
+  });
+}
+
+/* ============ FIN MODAL ============ */
+
+async function copiarTexto(txt, btn){
+  const original = btn ? btn.textContent : '';
+  try {
+    await navigator.clipboard.writeText(txt);
+    if(btn) {
+      btn.textContent = '¡Copiado!';
+      setTimeout(() => { btn.textContent = original; }, 1500);
+    }
+  } catch (e) {
+    var ta = document.createElement('textarea');
+    ta.value = txt;
     document.body.appendChild(ta);
     ta.select();
-    try{
-      document.execCommand('copy');
-      btn.textContent = '¡Copiado!';
-      setTimeout(() => { btn.textContent = original; }, 2000);
-    }catch(e2){
-      alert('No se pudo copiar automático. Copia manual: ' + texto);
-    }
+    try { 
+      document.execCommand('copy'); 
+      if(btn) { btn.textContent = '¡Copiado!'; setTimeout(() => { btn.textContent = original; }, 1500); }
+    } catch (e2) {}
     document.body.removeChild(ta);
   }
 }
-
-function tarjetaError(titulo, texto){
-  contenido.innerHTML = `
-    <div class="tarjeta">
-      <h2>${titulo}</h2>
-      <div class="aviso aviso-rojo">${texto}</div>
-    </div>`;
+function fechaBonita(iso){
+  try {
+    return new Date(iso).toLocaleDateString('es-VE', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  } catch (e) { return ''; }
+}
+function urlWA(texto){ return 'https://wa.me/?text=' + encodeURIComponent(texto); }
+function urlMail(asunto, cuerpo){ return 'mailto:?subject=' + encodeURIComponent(asunto) + '&body=' + encodeURIComponent(cuerpo); }
+function razonLegible(r, causa){
+  var map = { prensa:'Prensa', vinculo_familiar:'Vinculo familiar', premio:'Premio', autoridad:'Autoridad', otros:'Otros' };
+  var t = map[r] || r;
+  if (r === 'otros' && causa) t += ': ' + causa;
+  return t;
+}
+function diasTexto(d1, d2){
+  if (d1 && d2) return 'Día 1 y Día 2';
+  if (d1) return 'Día 1';
+  if (d2) return 'Día 2';
+  return '-';
+}
+function msgErrorCortesia(r){
+  var map = {
+    ERR_DATOS: 'Faltan datos obligatorios o hay campos vacios. Revisa el formulario.',
+    ERR_CEDULA_REPETIDA: 'Hay una cedula repetida dentro del mismo dia. Cada persona debe aparecer una sola vez por dia.',
+    ERR_NO_EXISTE: 'Esa cortesia ya no existe. Recarga la pagina.',
+    ERR_ANULADA: 'Esa cortesia esta anulada: ya no se puede modificar.',
+    ERR_MODO: 'Esa accion no aplica para esta modalidad de cortesia.',
+    ERR_YA_EXISTE: 'Ese dia ya esta agregado en esta cortesia.',
+    ERR_USADA: 'No se puede quitar o editar: esa persona ya entro por la puerta.',
+    ERR_NO_LISTA: 'Esa cortesia no tiene lista para ese dia.'
+  };
+  return map[r] || ('El sistema respondio: ' + r);
+}
+function tituloCortesia(c){
+  if (c.tipo === 'lista') return c.nombre_organizacion || 'Lista';
+  return 'Cortesía individual';
 }
 
-function pantallaEventoCulminado(){
-  contenido.innerHTML = `
-    <div class="tarjeta">
-      <div class="culminado">
-        <span class="icono">🎉</span>
-        <div class="gracias">¡El evento ha culminado!</div>
-        <p>Muchas gracias por su apoyo y convicción.</p>
-        <p>Los esperamos en la próxima edición de <strong>Nitrotoon</strong>.</p>
-        <a class="instagram-btn" href="${INSTAGRAM_URL}" target="_blank" rel="noopener">📸 Síguenos en Instagram @nitrotoon</a>
-      </div>
-    </div>`;
+var ses = leerSesion();
+var cortesiasCache = [];
+var estadoDias = { dia_activo: 1, dia1_cerrado: false, dia2_cerrado: false };
+var flashCodigo = null;
+
+/* ============ CONGELAMIENTO ============ */
+
+function diaCerrado(dia){
+  if (dia === 1) return !!estadoDias.dia1_cerrado;
+  if (dia === 2) return !!estadoDias.dia2_cerrado;
+  return false;
 }
 
-function tarjetaDiaCerrado(dia){
-  const nombreDia = (dia === 1) ? 'Día 1' : 'Día 2';
-  return `<div class="tarjeta">
-    <h2>📅 ${nombreDia}</h2>
-    <div class="aviso aviso-rojo aviso-grande">
-      <strong>Su invitación estaba autorizada para el ${nombreDia} del evento exclusivamente.</strong><br><br>
-      Muchas gracias, lo invitamos a adquirir sus entradas para el otro día del evento en taquilla.
-    </div>
-  </div>`;
+function estaCongelada(c){
+  // Congelada = todos sus días aprobados ya cerraron.
+  var dias = [];
+  if (c.dia1) dias.push(1);
+  if (c.dia2) dias.push(2);
+  if (!dias.length) return true;
+  for (var i = 0; i < dias.length; i++){
+    if (!diaCerrado(dias[i])) return false;
+  }
+  return true;
 }
 
-function renderizar(d){
-  const esLista = d.tipo === 'lista';
-  const tituloPrincipal = esLista ? d.nombre_organizacion : (d.individuales ? d.individuales.nombre + ' ' + d.individuales.apellido : '');
-  const linkEntrega = BASE + 'cortesia.html?c=' + codigo;
-  
-  let mensajeWA;
-  if(esLista){
-    mensajeWA = `Hola, aquí está el pase de cortesía de ${d.nombre_organizacion} para Nitrotoon (${razonLegible(d.razon, d.causa)}). Abre este link para ver los QR: ${linkEntrega}`;
-  }else{
-    mensajeWA = `Hola ${tituloPrincipal}, aquí está tu pase de cortesía para Nitrotoon (${razonLegible(d.razon, d.causa)}). Abre este link para ver tu QR: ${linkEntrega}`;
+function textoReclamadas(c){
+  var partes = [];
+  if (c.dia1){
+    partes.push('D1: ' + (c.reclamadas_dia1 || 0) + '/' + (c.personas_dia1 || 0));
   }
-  
-  const dia1Vigente = d.dia1 && !d.dia1_cerrado;
-  const dia2Vigente = d.dia2 && !d.dia2_cerrado;
-  const algunDiaVigente = dia1Vigente || dia2Vigente;
-  
-  let html = '';
-  
-  html += `<div class="tarjeta">
-    <h2>🎁 Pase de cortesía</h2>
-    <div class="dato"><strong>${esLista ? 'Organización' : 'Beneficiario'}</strong><span>${tituloPrincipal}</span></div>
-    <div class="dato"><strong>Razón</strong><span class="pill pill-morado">${razonLegible(d.razon, d.causa)}</span></div>
-    <div class="dato"><strong>Válido para</strong><span class="pill ${algunDiaVigente ? 'pill-azul' : 'pill-rojo'}">${diasTexto(d.dia1, d.dia2)}</span></div>
-    <div class="dato"><strong>Modalidad</strong><span class="pill pill-verde">${esLista ? 'Lista (' + (d.listas ? d.listas.length : 0) + ' QR por día)' : 'Pase individual'}</span></div>`;
-  
-  if(!algunDiaVigente){
-    html += `<div class="aviso aviso-rojo aviso-grande" style="margin-top:14px">
-      ⛔ <strong>Esta cortesía ya no tiene días vigentes.</strong><br>
-      Todos los días aprobados ya cerraron. Los QR ya no funcionan en la puerta.
-    </div>`;
+  if (c.dia2){
+    partes.push('D2: ' + (c.reclamadas_dia2 || 0) + '/' + (c.personas_dia2 || 0));
   }
-  html += `</div>`;
-  
-  if(esLista && d.listas){
-    d.listas.forEach(l => {
-      const diaCerrado = (l.dia === 1 && d.dia1_cerrado) || (l.dia === 2 && d.dia2_cerrado);
-      
-      if(diaCerrado){
-        html += tarjetaDiaCerrado(l.dia);
-        return;
-      }
-      
-      const totalPersonas = l.personas.length;
-      const autorizadas = l.personas.filter(p => p.estado === 'autorizado').length;
-      const completada = totalPersonas > 0 && totalPersonas === autorizadas;
-      
-      html += `<div class="tarjeta">`;
-      if(completada){
-        html += `<h2>📅 Día ${l.dia}</h2>`;
-        html += `<div class="aviso aviso-verde">✅ LISTA COMPLETADA<br>Las ${totalPersonas} personas de esta lista ya ingresaron al evento. Este QR ya no es válido.</div>`;
-        html += `<div><strong style="color:var(--suave);font-size:14px">Personas que ingresaron:</strong>
-          <ul class="nombres">${l.personas.map(p => `<li>✅ ${p.nombre} ${p.apellido}</li>`).join('')}</ul>
-        </div>`;
-      } else {
-        html += `<h2>📅 QR del Día ${l.dia}</h2>`;
-        html += `<p style="color:var(--suave);font-size:15px">Muestra este QR en la puerta el Día ${l.dia}. Todas las personas de la lista entran con este único QR.</p>`;
-        html += `<div class="qr-box" id="qr-dia-${l.dia}"></div>`;
-        html += `<div><strong style="color:var(--suave);font-size:14px">Personas en esta lista (${autorizadas}/${totalPersonas} han entrado):</strong>
-          <ul class="nombres">${l.personas.map(p => `<li>${p.estado === 'autorizado' ? '✅ ' : '⏳ '}${p.nombre} ${p.apellido}</li>`).join('')}</ul>
-        </div>`;
-      }
-      html += `</div>`;
-    });
-  } else if(d.individuales){
-    let diaCerradoIndividual = false;
-    let diaMostrar = null;
-    if(d.dia1 && !d.dia2){
-      diaCerradoIndividual = d.dia1_cerrado;
-      diaMostrar = 1;
-    } else if(d.dia2 && !d.dia1){
-      diaCerradoIndividual = d.dia2_cerrado;
-      diaMostrar = 2;
-    }
-    const ambosCerrados = d.dia1 && d.dia2 && d.dia1_cerrado && d.dia2_cerrado;
-    const unicoCerrado = diaMostrar !== null && diaCerradoIndividual;
-    
-    if(unicoCerrado){
-      html += tarjetaDiaCerrado(diaMostrar);
-    } else if(ambosCerrados){
-      // Este caso ya se maneja arriba (pantallaEventoCulminado), pero por si acaso
-      html += tarjetaDiaCerrado(1);
-    } else {
-      html += `<div class="tarjeta">
-        <h2>🎟️ Tu QR personal</h2>
-        <p style="color:var(--suave);font-size:15px">Muestra este QR en la puerta los días aprobados. Es personal e intransferible.</p>
-        <div class="qr-box" id="qr-ind"></div>
-      </div>`;
-    }
-  }
-  
-  html += `<div class="tarjeta">
-    <h2>📤 Compartir este pase</h2>
-    <div class="link-box">${linkEntrega}</div>
-    <div class="fila-botones">
-      <button class="btn" id="btnCopiarLink">📋 Copiar link</button>
-      <a class="btn btn-azul" id="btnWA" target="_blank" rel="noopener">📱 WhatsApp</a>
-      <a class="btn btn-gris" id="btnMail">✉️ Correo</a>
-    </div>
-    <div class="aviso aviso-verde" style="margin-top:14px">Si el QR no escanea en la puerta, el personal puede escribir el código que aparece debajo del QR.</div>
-  </div>`;
-  
-  contenido.innerHTML = html;
-  
-  if(esLista && d.listas){
-    d.listas.forEach(l => {
-      const diaCerrado = (l.dia === 1 && d.dia1_cerrado) || (l.dia === 2 && d.dia2_cerrado);
-      if(diaCerrado) return;
-      const totalPersonas = l.personas.length;
-      const autorizadas = l.personas.filter(p => p.estado === 'autorizado').length;
-      const completada = totalPersonas > 0 && totalPersonas === autorizadas;
-      if(!completada){
-        const el = document.getElementById('qr-dia-' + l.dia);
-        if(el) ponerQR(el, urlPuerta('cl', l.codigo_corto), l.codigo_corto);
-      }
-    });
-  } else if(d.individuales){
-    const ambosCerrados = d.dia1 && d.dia2 && d.dia1_cerrado && d.dia2_cerrado;
-    const unicoCerrado = (d.dia1 && !d.dia2 && d.dia1_cerrado) || (d.dia2 && !d.dia1 && d.dia2_cerrado);
-    if(!ambosCerrados && !unicoCerrado){
-      const el = document.getElementById('qr-ind');
-      if(el) ponerQR(el, urlPuerta('ci', d.individuales.codigo_qr), d.individuales.codigo_qr);
-    }
-  }
-  
-  document.getElementById('btnCopiarLink').addEventListener('click', (e) => copiarTexto(linkEntrega, e.target));
-  document.getElementById('btnWA').href = urlWA(mensajeWA);
-  document.getElementById('btnMail').href = urlMail('Pase de cortesía Nitrotoon', mensajeWA);
+  if (!partes.length) return '-';
+  return partes.join('<br>');
 }
 
-(function(){
-  if(!codigo){
-    tarjetaError('⚠️ Link incompleto', 'Este link no tiene código de cortesía. Verifica que copiaste el link completo o comunícate con el administrador.');
+/* ============ FORMULARIO DE CREACION ============ */
+
+function agregarFilaPersona(contId){
+  var cont = $(contId);
+  var fila = document.createElement('div');
+  fila.className = 'fila-persona';
+  fila.innerHTML =
+    '<input placeholder="Nombre" class="pNom">' +
+    '<input placeholder="Apellido" class="pApe">' +
+    '<input placeholder="Cedula" class="pCed">';
+  var q = boton('Quitar', 'btn-rojo', function(){ fila.remove(); });
+  fila.appendChild(q);
+  cont.appendChild(fila);
+}
+
+function leerFilas(contId){
+  var filas = $(contId).querySelectorAll('.fila-persona');
+  var out = [];
+  for (var i = 0; i < filas.length; i++) {
+    var nom = filas[i].querySelector('.pNom').value.trim();
+    var ape = filas[i].querySelector('.pApe').value.trim();
+    var ced = filas[i].querySelector('.pCed').value.trim();
+    if (!nom && !ape && !ced) continue;
+    if (!nom || !ape || !ced) return { error: 'Hay una fila de persona incompleta: nombre, apellido y cedula son obligatorios.' };
+    out.push({ nombre: nom, apellido: ape, cedula: ced });
+  }
+  return { personas: out };
+}
+
+function actualizarVisibilidadCortesia(){
+  var modo = $('kModo').value;
+  var razon = $('kRazon').value;
+  var razonEspecial = (razon === 'prensa' || razon === 'autoridad');
+  $('zonaOrg').style.display = (modo === 'lista') ? 'block' : 'none';
+  $('zonaListas').style.display = (modo === 'lista') ? 'block' : 'none';
+  $('zonaInd').style.display = (modo === 'individual') ? 'block' : 'none';
+  $('zonaCausa').style.display = (razon === 'otros') ? 'block' : 'none';
+  $('bloqueDia2').style.display = (modo === 'lista' && razonEspecial) ? 'block' : 'none';
+}
+
+async function crearCortesia(){
+  var modo = $('kModo').value;
+  var razon = $('kRazon').value;
+  var causa = $('kCausa').value.trim();
+  var d1 = true;
+  var d2 = false;
+
+  if (razon === 'otros' && !causa) {
+    await modalAlert('Falta la causa', 'Debe indicar la causa de la cortesía.');
     return;
   }
-  
-  llamar('f_cortesia_ver', { p_codigo_link: codigo })
-    .then(d => {
-      if(!d){
-        tarjetaError('⚠️ Link no válido', 'Este código de cortesía no existe. Comunícate con el administrador.');
-        return;
+
+  if (razon === 'prensa' || razon === 'autoridad') {
+    var etiqueta = (razon === 'prensa') ? 'Prensa' : 'Autoridad';
+    var soloDia1 = await modalConfirm(
+      'Cortesía de ' + etiqueta,
+      'Esta cortesía es de <strong>' + etiqueta + '</strong>.<br><br>¿La quiere <strong>solo para el Día 1</strong> (por defecto) o también para el <strong>Día 2</strong> (excepción)?',
+      'Solo Día 1',
+      'Día 1 y Día 2'
+    );
+    if (!soloDia1) d2 = true;
+  }
+
+  var codigo;
+  try {
+    if (modo === 'individual') {
+      var nom = $('kNom').value.trim();
+      var ape = $('kApe').value.trim();
+      var ced = $('kCed').value.trim();
+      if (!nom || !ape || !ced) { await modalAlert('Faltan datos', 'Nombre, apellido y cédula son obligatorios.'); return; }
+      codigo = await llamar('f_admin_crear_cortesia_individual', {
+        p_token: ses.token, p_nombre: nom, p_apellido: ape, p_cedula: ced,
+        p_razon: razon, p_causa: causa || null, p_dia1: d1, p_dia2: d2
+      });
+    } else {
+      var org = $('kOrg').value.trim();
+      if (!org) { await modalAlert('Falta la organización', 'Escriba el nombre de la organización.'); return; }
+      var r1 = leerFilas('rowsDia1');
+      if (r1.error) { await modalAlert('Datos incompletos', esc(r1.error)); return; }
+      if (r1.personas.length === 0) { await modalAlert('Lista vacía', 'Agregue al menos una persona a la lista del Día 1.'); return; }
+
+      var personas2 = [];
+      if (d2) {
+        var r2 = leerFilas('rowsDia2');
+        if (r2.error) { await modalAlert('Datos incompletos', esc(r2.error)); return; }
+        personas2 = (r2.personas.length > 0) ? r2.personas : r1.personas.slice();
       }
-      if(d.anulada){
-        tarjetaError('⛔ Cortesía anulada', 'Esta cortesía fue anulada por el administrador y ya no es válida. Comunícate con el administrador si crees que es un error.');
-        return;
+
+      codigo = await llamar('f_admin_crear_cortesia_lista', {
+        p_token: ses.token, p_nombre_organizacion: org, p_razon: razon, p_causa: causa || null,
+        p_dia1: d1, p_dia2: d2,
+        p_personas_dia1: r1.personas,
+        p_personas_dia2: d2 ? personas2 : []
+      });
+    }
+    if (!codigo) { await modalAlert('Sesión expirada', 'Entra de nuevo con tu PIN.'); return; }
+    if (String(codigo).indexOf('ERR_') === 0) { await modalAlert('Error', esc(msgErrorCortesia(codigo))); return; }
+
+    aviso('msgCortesia', 'Cortesía creada (' + diasTexto(d1, d2) + '). La verás abajo en "⭐ Última cortesía creada".', true);
+    $('rowsDia1').innerHTML = '';
+    $('rowsDia2').innerHTML = '';
+    $('kOrg').value = '';
+    $('kNom').value = ''; $('kApe').value = ''; $('kCed').value = '';
+    flashCodigo = codigo;
+    await cargarCortesias();
+  } catch (e) {
+    await modalAlert('Error al crear', esc('Fallo al crear: ' + e.message));
+  }
+}
+
+/* ============ RENDER ============ */
+
+function linkDe(c){ return BASE + 'cortesia.html?c=' + c.codigo_link; }
+
+function renderUltimaCreada(){
+  var cont = $('panelUltima');
+  if (!cortesiasCache.length){ cont.style.display = 'none'; return; }
+  cont.style.display = 'block';
+  var c = cortesiasCache[0];
+  var congelada = estaCongelada(c);
+  cont.classList.toggle('congelada', congelada);
+
+  var contU = $('contenidoUltima');
+  contU.innerHTML = '';
+
+  var badgeCongelada = congelada ? '<span class="badge badge-congelada">🧊 Congelada</span>' : '';
+  var badgeEstado = (c.estado === 'activa')
+    ? '<span class="badge badge-ok">Activa</span>'
+    : '<span class="badge badge-no">Anulada</span>';
+
+  var info = document.createElement('div');
+  info.innerHTML =
+    '<div><strong>' + esc(tituloCortesia(c)) + '</strong> ' +
+    '<span class="badge badge-tipo">' + (c.tipo === 'lista' ? 'Lista' : 'Individual') + '</span>' +
+    '<span class="badge badge-morado">' + esc(razonLegible(c.razon, c.causa)) + '</span>' +
+    badgeEstado + badgeCongelada + '</div>' +
+    '<p class="suave">' + esc(diasTexto(c.dia1, c.dia2)) + ' · ' + c.total_personas + ' persona(s) · Creada el ' + fechaBonita(c.creada_at) + '</p>';
+  contU.appendChild(info);
+
+  var cajaLink = document.createElement('div');
+  cajaLink.className = 'codigo codigo-chico';
+  cajaLink.textContent = linkDe(c);
+  contU.appendChild(cajaLink);
+
+  var fila = document.createElement('div');
+  fila.className = 'fila';
+  fila.appendChild(boton('📋 Copiar link', 'btn-gris', function(b){ copiarTexto(linkDe(c), b); }));
+  var wa = document.createElement('a');
+  wa.className = 'btn btn-gris';
+  wa.target = '_blank'; wa.rel = 'noopener';
+  wa.textContent = '📱 WhatsApp';
+  wa.href = urlWA('Hola, aquí está el pase de cortesía para Nitrotoon (' + razonLegible(c.razon, c.causa) + '). Abre este link para ver los QR: ' + linkDe(c));
+  fila.appendChild(wa);
+  var ml = document.createElement('a');
+  ml.className = 'btn btn-gris';
+  ml.textContent = '✉️ Correo';
+  ml.href = urlMail('Pase de cortesía Nitrotoon', 'Hola, aquí está el pase de cortesía para Nitrotoon (' + razonLegible(c.razon, c.causa) + '). Abre este link para ver los QR: ' + linkDe(c));
+  fila.appendChild(ml);
+  if (c.estado === 'activa' && !congelada) {
+    fila.appendChild(boton('✏️ Editar', 'btn-verde', function(){ abrirModalEdicion(c); }));
+    fila.appendChild(boton('🚫 Anular', 'btn-rojo', function(){ anularCortesia(c); }));
+  } else if (c.estado === 'activa' && congelada) {
+    fila.appendChild(boton('👁️ Ver detalle', 'btn-gris', function(){ abrirModalEdicion(c); }));
+  }
+  contU.appendChild(fila);
+
+  if (congelada) {
+    var nota = document.createElement('p');
+    nota.className = 'suave';
+    nota.style.marginTop = '10px';
+    nota.innerHTML = '🧊 Esta cortesía está congelada: todos sus días ya cerraron. No admite cambios.';
+    contU.appendChild(nota);
+  }
+}
+
+function renderHistorico(){
+  var cont = $('contenedorHistorico');
+  cont.innerHTML = '';
+  if (!cortesiasCache.length){
+    cont.innerHTML = '<p class="suave">Todavía no hay cortesías creadas.</p>';
+    return;
+  }
+  var tabla = document.createElement('table');
+  tabla.className = 'tabla-cortesias';
+  tabla.innerHTML =
+    '<thead><tr>' +
+      '<th>Beneficiario</th>' +
+      '<th>Razón</th>' +
+      '<th>Días</th>' +
+      '<th>Reclamadas / Obsequiadas</th>' +
+      '<th>Estado</th>' +
+      '<th>Acciones</th>' +
+    '</tr></thead><tbody></tbody>';
+  var tbody = tabla.querySelector('tbody');
+  cortesiasCache.forEach(function(c, idx){
+    var congelada = estaCongelada(c);
+    var tr = document.createElement('tr');
+    tr.setAttribute('data-codigo', c.codigo_link);
+    var estado;
+    if (c.estado === 'anulada'){
+      estado = '<span class="badge badge-no">Anulada</span>';
+    } else if (congelada){
+      estado = '<span class="badge badge-congelada">🧊 Congelada</span>';
+    } else {
+      estado = '<span class="badge badge-ok">Activa</span>';
+    }
+    tr.innerHTML =
+      '<td>' + esc(tituloCortesia(c)) + '<div class="estado-mini">' + esc(c.codigo_link) + '</div></td>' +
+      '<td>' + esc(razonLegible(c.razon, c.causa)) + '</td>' +
+      '<td>' + esc(diasTexto(c.dia1, c.dia2)) + '</td>' +
+      '<td class="reclamadas">' + textoReclamadas(c) + '</td>' +
+      '<td>' + estado + '</td>' +
+      '<td class="acciones"></td>';
+    var td = tr.querySelector('.acciones');
+    if (idx === 0) {
+      td.appendChild(botonMini('⭐ Volver a la edición', 'btn-verde', function(){
+        var panel = $('panelUltima');
+        panel.scrollIntoView({behavior:'smooth', block:'start'});
+        panel.classList.add('fila-flash');
+        setTimeout(function(){ panel.classList.remove('fila-flash'); }, 1600);
+      }));
+    } else {
+      td.appendChild(botonMini('📋 Link', 'btn-gris', function(b){ copiarTexto(linkDe(c), b); }));
+      if (c.estado === 'activa' && !congelada) {
+        td.appendChild(botonMini('✏️ Editar', 'btn-gris', function(){ abrirModalEdicion(c); }));
+        td.appendChild(botonMini('🚫 Anular', 'btn-rojo', function(){ anularCortesia(c); }));
       }
-      
-      // Prioridad #1: si ambos días ya cerraron, mostrar pantalla de "evento culminado"
-      // antes que cualquier otra verificación.
-      if(d.dia1_cerrado && d.dia2_cerrado){
-        pantallaEventoCulminado();
-        return;
+    }
+    tbody.appendChild(tr);
+  });
+  cont.appendChild(tabla);
+  if (flashCodigo){
+    var fila = tbody.querySelector('[data-codigo="' + flashCodigo + '"]');
+    if (fila){
+      fila.classList.add('fila-flash');
+      setTimeout(function(){ fila.classList.remove('fila-flash'); }, 1800);
+      fila.scrollIntoView({behavior:'smooth', block:'center'});
+    }
+    flashCodigo = null;
+  }
+}
+
+async function cargarCortesias(){
+  try {
+    var resultados = await Promise.all([
+      llamar('f_admin_listar_cortesias', { p_token: ses.token }),
+      llamar('f_admin_estado_dias', { p_token: ses.token })
+    ]);
+    var arr = resultados[0];
+    var ed = resultados[1];
+    if (ed){
+      estadoDias = {
+        dia_activo: ed.dia_activo || 1,
+        dia1_cerrado: !!ed.dia1_cerrado,
+        dia2_cerrado: !!ed.dia2_cerrado
+      };
+    }
+    if (!arr){
+      $('contenedorHistorico').innerHTML = '<p class="suave">Tu sesión expiró: entra de nuevo con tu PIN.</p>';
+      $('panelUltima').style.display = 'none';
+      return;
+    }
+    arr.sort(function(a,b){ return new Date(b.creada_at) - new Date(a.creada_at); });
+    cortesiasCache = arr;
+    renderUltimaCreada();
+    renderHistorico();
+  } catch (e) {
+    $('contenedorHistorico').innerHTML = '<p class="suave">No se pudo cargar la lista: ' + esc(e.message) + '</p>';
+  }
+}
+
+/* ============ MODAL DE EDICION ============ */
+
+var modalEdicionAbierto = null;
+
+async function abrirModalEdicion(c){
+  if (modalEdicionAbierto && modalEdicionAbierto.parentNode){
+    modalEdicionAbierto.parentNode.removeChild(modalEdicionAbierto);
+    modalEdicionAbierto = null;
+  }
+
+  var congelada = estaCongelada(c);
+
+  var d = null;
+  try {
+    d = await llamar('f_admin_ver_cortesia', { p_token: ses.token, p_codigo_link: c.codigo_link });
+  } catch(e){}
+  if (!d){ await modalAlert('Error', 'No se pudieron cargar los datos. Intenta de nuevo.'); return; }
+
+  var fondo = document.createElement('div');
+  fondo.className = 'modal-fondo';
+  var caja = document.createElement('div');
+  caja.className = 'modal-caja modal-caja-grande';
+  caja.innerHTML =
+    '<h3 class="modal-titulo">' + (congelada ? '👁️ Detalle (congelada)' : '✏️ Editar cortesía') + ' — ' + esc(tituloCortesia(c)) + '</h3>' +
+    '<div class="modal-seccion">' +
+      '<h4>Datos generales</h4>' +
+      '<label>Razón<select id="eRazon" ' + (congelada ? 'disabled' : '') + '></select></label>' +
+      '<div id="eCausaWrap" style="display:none"><label>Causa específica<input id="eCausa" type="text" ' + (congelada ? 'disabled' : '') + '></label></div>' +
+      '<div id="eOrgWrap"><label>Nombre de la organización<input id="eOrg" type="text" ' + (congelada ? 'disabled' : '') + '></label></div>' +
+      '<div id="eIndWrap" style="display:none">' +
+        '<label>Nombre<input id="eNom" type="text" ' + (congelada ? 'disabled' : '') + '></label>' +
+        '<label>Apellido<input id="eApe" type="text" ' + (congelada ? 'disabled' : '') + '></label>' +
+        '<label>Cédula<input id="eCed" type="text" ' + (congelada ? 'disabled' : '') + '></label>' +
+      '</div>' +
+    '</div>' +
+    '<div class="modal-seccion">' +
+      '<h4>Días aprobados</h4>' +
+      '<div id="eDiasActuales" class="suave">-</div>' +
+      '<div id="eDiasBotones" class="fila" style="margin-top:8px"></div>' +
+    '</div>' +
+    '<div class="modal-seccion" id="ePersonasSeccion">' +
+      '<h4>Personas por día</h4>' +
+      '<div id="eDiasBloques"></div>' +
+    '</div>' +
+    '<div class="modal-botones"></div>';
+
+  var razones = ['prensa','vinculo_familiar','premio','autoridad','otros'];
+  var selR = caja.querySelector('#eRazon');
+  razones.forEach(function(v){
+    var o = document.createElement('option');
+    o.value = v; o.textContent = razonLegible(v, '');
+    if (v === c.razon) o.selected = true;
+    selR.appendChild(o);
+  });
+
+  var eCausa = caja.querySelector('#eCausa');
+  eCausa.value = c.causa || '';
+  var eOrg = caja.querySelector('#eOrg');
+  var eNom = caja.querySelector('#eNom');
+  var eApe = caja.querySelector('#eApe');
+  var eCed = caja.querySelector('#eCed');
+
+  if (d.tipo === 'lista'){
+    eOrg.value = d.nombre_organizacion || '';
+    caja.querySelector('#eIndWrap').style.display = 'none';
+    caja.querySelector('#eOrgWrap').style.display = 'block';
+  } else {
+    var p = (d.individuales && d.individuales[0]) || {};
+    eNom.value = p.nombre || '';
+    eApe.value = p.apellido || '';
+    eCed.value = p.cedula || '';
+    caja.querySelector('#eOrgWrap').style.display = 'none';
+    caja.querySelector('#eIndWrap').style.display = 'block';
+  }
+
+  function refrescarCausa(){
+    caja.querySelector('#eCausaWrap').style.display = (selR.value === 'otros') ? 'block' : 'none';
+  }
+  selR.onchange = refrescarCausa;
+  refrescarCausa();
+
+  function renderDias(){
+    var d1 = !!d.dia1;
+    var d2 = !!d.dia2;
+    var d1Cerrado = diaCerrado(1);
+    var d2Cerrado = diaCerrado(2);
+    caja.querySelector('#eDiasActuales').innerHTML =
+      '<span class="badge ' + (d1 ? (d1Cerrado ? 'badge-congelada">Día 1 cerrado' : 'badge-ok">Día 1 activo') : 'badge-no">Sin Día 1') + '</span> ' +
+      '<span class="badge ' + (d2 ? (d2Cerrado ? 'badge-congelada">Día 2 cerrado' : 'badge-ok">Día 2 activo') : 'badge-no">Sin Día 2') + '</span>';
+    var botones = caja.querySelector('#eDiasBotones');
+    botones.innerHTML = '';
+    if (d.estado !== 'activa' || congelada) return;
+    if (!d1 && !d1Cerrado){
+      botones.appendChild(botonMini('+ Agregar Día 1', 'btn-gris', function(){ extenderDia(c, 1); }));
+    }
+    if (!d2 && !d2Cerrado){
+      botones.appendChild(botonMini('📅 Extender al Día 2', 'btn-verde', function(){ extenderDia(c, 2); }));
+    }
+    if (d1 && !d1Cerrado){
+      botones.appendChild(botonMini('🚫 Quitar Día 1', 'btn-rojo', function(){ quitarDia(c, 1); }));
+    }
+    if (d2 && !d2Cerrado){
+      botones.appendChild(botonMini('🚫 Quitar Día 2', 'btn-rojo', function(){ quitarDia(c, 2); }));
+    }
+  }
+
+  function renderPersonas(){
+    var cont = caja.querySelector('#eDiasBloques');
+    cont.innerHTML = '';
+    if (d.tipo !== 'lista'){
+      cont.innerHTML = '<p class="suave">Cortesía individual. Para editar los datos usa los campos de arriba.</p>';
+      return;
+    }
+    var listas = d.listas || [];
+    if (!listas.length){
+      cont.innerHTML = '<p class="suave">Aún no hay días con personas.</p>';
+      return;
+    }
+    listas.forEach(function(l){
+      var cerrado = diaCerrado(l.dia);
+      var bloq = document.createElement('div');
+      bloq.className = 'dia-bloque' + (cerrado ? ' cerrado' : '');
+      var personas = l.personas || [];
+      var headerBadge = cerrado ? ' <span class="badge badge-congelada">🔒 Cerrado</span>' : '';
+      var html = '<h5>Día ' + l.dia + ' — código ' + esc(l.codigo_corto) + ' (' + personas.length + ')' + headerBadge + '</h5>';
+      if (!personas.length){
+        html += '<p class="suave">Sin personas.</p>';
+      } else {
+        personas.forEach(function(p){
+          html += '<div class="persona-lista">' + esc(p.nombre) + ' ' + esc(p.apellido) +
+            ' — CI ' + esc(p.cedula) +
+            ' <span class="estado-mini">(' + esc(p.estado) + ')</span></div>';
+        });
       }
-      
-      if(d.tipo === 'individual' && d.individuales && d.individuales.consumido){
-        let msg = 'Este pase de cortesía ya fue utilizado y no puede volver a usarse.';
-        if(d.individuales.hora_consumo){
-          const fecha = new Date(d.individuales.hora_consumo).toLocaleDateString('es-VE');
-          const hora = new Date(d.individuales.hora_consumo).toLocaleTimeString('es-VE');
-          msg = `Este pase ya fue utilizado. Validado el <strong>${fecha}</strong> a las <strong>${hora}</strong>. No se puede autorizar de nuevo.`;
+      if (cerrado){
+        html += '<p class="aviso-dia-cerrado">🔒 Día ' + l.dia + ' cerrado. No admite cambios (así quedó al cierre).</p>';
+      } else if (d.estado === 'activa' && !congelada){
+        if (personas.length === 0){
+          var origen = null;
+          listas.forEach(function(lx){
+            if (lx.dia !== l.dia && !diaCerrado(lx.dia) && (lx.personas || []).length > 0) origen = lx;
+          });
+          if (origen){
+            html += '<div class="fila" style="margin-top:8px">' +
+              '<button class="btn btn-verde btn-mini" data-copiar-desde="' + origen.dia + '" data-copiar-a="' + l.dia + '">' +
+                '📋 Copiar personas del Día ' + origen.dia + ' (' + origen.personas.length + ')' +
+              '</button>' +
+            '</div>';
+          }
         }
-        tarjetaError('⛔ Entrada ya consumida', msg);
+        html +=
+          '<div class="fila-persona" data-dia="' + l.dia + '">' +
+            '<input placeholder="Nombre" class="aNom">' +
+            '<input placeholder="Apellido" class="aApe">' +
+            '<input placeholder="Cedula" class="aCed">' +
+            '<button class="btn btn-gris btn-mini" data-agregar-p="' + l.dia + '">+ Agregar</button>' +
+          '</div>';
+      }
+      bloq.innerHTML = html;
+      cont.appendChild(bloq);
+    });
+  }
+
+  renderDias();
+  renderPersonas();
+
+  caja.querySelectorAll('[data-agregar-p]').forEach(function(b){
+    b.onclick = async function(){
+      var dia = parseInt(b.getAttribute('data-agregar-p'), 10);
+      var fila = caja.querySelector('.fila-persona[data-dia="' + dia + '"]');
+      var nom = fila.querySelector('.aNom').value.trim();
+      var ape = fila.querySelector('.aApe').value.trim();
+      var ced = fila.querySelector('.aCed').value.trim();
+      if (!nom || !ape || !ced){ await modalAlert('Faltan datos', 'Nombre, apellido y cédula son obligatorios.'); return; }
+      var r = await llamar('f_admin_cortesia_agregar_persona', {
+        p_token: ses.token, p_codigo_link: c.codigo_link, p_dia: dia,
+        p_nombre: nom, p_apellido: ape, p_cedula: ced
+      });
+      if (r !== 'ok'){ await modalAlert('Error', esc(msgErrorCortesia(r))); return; }
+      flashCodigo = c.codigo_link;
+      await cargarCortesias();
+      abrirModalEdicion(c);
+    };
+  });
+
+  caja.querySelectorAll('[data-copiar-desde]').forEach(function(b){
+    b.onclick = async function(){
+      var desde = parseInt(b.getAttribute('data-copiar-desde'), 10);
+      var hacia = parseInt(b.getAttribute('data-copiar-a'), 10);
+      var origen = (d.listas || []).filter(function(l){ return l.dia === desde; })[0];
+      if (!origen || !origen.personas || !origen.personas.length){
+        await modalAlert('Sin personas', 'El Día ' + desde + ' no tiene personas para copiar.');
         return;
       }
-      
-      renderizar(d);
-    })
-    .catch(e => {
-      tarjetaError('⚠️ Error', 'No se pudo cargar la cortesía: ' + (e.message || e));
+      var ok = await modalConfirm(
+        'Copiar personas del Día ' + desde + ' al Día ' + hacia,
+        'Se van a copiar <strong>' + origen.personas.length + ' persona(s)</strong> del Día ' + desde + ' al Día ' + hacia + '.<br><br>Se copian todas (hayan entrado o no por la puerta ese día), para que en el Día ' + hacia + ' puedan reclamar su cupón.<br><br>Si alguna cédula ya existe en el Día ' + hacia + ', se omitirá.',
+        'Sí, copiar', 'Cancelar'
+      );
+      if (!ok) return;
+      var okCount = 0, errCount = 0, lastErr = '';
+      for (var i = 0; i < origen.personas.length; i++){
+        var p = origen.personas[i];
+        try {
+          var r = await llamar('f_admin_cortesia_agregar_persona', {
+            p_token: ses.token, p_codigo_link: c.codigo_link, p_dia: hacia,
+            p_nombre: p.nombre, p_apellido: p.apellido, p_cedula: p.cedula
+          });
+          if (r === 'ok') okCount++; else { errCount++; lastErr = r; }
+        } catch(e){ errCount++; lastErr = e.message; }
+      }
+      flashCodigo = c.codigo_link;
+      await cargarCortesias();
+      if (errCount > 0){
+        await modalAlert('Copia parcial', 'Se copiaron <strong>' + okCount + '</strong> persona(s).<br>' + errCount + ' no se pudieron copiar.<br><br>Último error: ' + esc(msgErrorCortesia(lastErr)));
+      }
+      abrirModalEdicion(c);
+    };
+  });
+
+  var contB = caja.querySelector('.modal-botones');
+  var bCerrar = document.createElement('button');
+  bCerrar.className = 'btn btn-gris';
+  bCerrar.textContent = congelada ? 'Cerrar' : 'Cancelar';
+  bCerrar.onclick = function(){
+    if (fondo.parentNode) fondo.parentNode.removeChild(fondo);
+    modalEdicionAbierto = null;
+  };
+  contB.appendChild(bCerrar);
+
+  if (!congelada){
+    var bGuardar = document.createElement('button');
+    bGuardar.className = 'btn btn-verde';
+    bGuardar.textContent = 'Guardar cambios';
+    bGuardar.onclick = async function(){
+      var razon = selR.value;
+      var causa = eCausa.value.trim();
+      if (razon === 'otros' && !causa){ await modalAlert('Falta la causa', 'Debe indicar la causa de la cortesía.'); return; }
+      try {
+        var r1 = await llamar('f_admin_editar_cortesia', { p_token: ses.token, p_codigo_link: c.codigo_link, p_razon: razon, p_causa: causa || null });
+        if (r1 !== 'ok'){ await modalAlert('Error', esc(msgErrorCortesia(r1))); return; }
+        if (d.tipo === 'lista'){
+          var r2 = await llamar('f_admin_editar_cortesia_datos', {
+            p_token: ses.token, p_codigo_link: c.codigo_link,
+            p_nombre_organizacion: eOrg.value.trim()
+          });
+          if (r2 !== 'ok'){ await modalAlert('Error', esc(msgErrorCortesia(r2))); return; }
+        } else {
+          var r3 = await llamar('f_admin_editar_cortesia_datos', {
+            p_token: ses.token, p_codigo_link: c.codigo_link,
+            p_nombre: eNom.value.trim(), p_apellido: eApe.value.trim(), p_cedula: eCed.value.trim()
+          });
+          if (r3 !== 'ok'){ await modalAlert('Error', esc(msgErrorCortesia(r3))); return; }
+        }
+        if (fondo.parentNode) fondo.parentNode.removeChild(fondo);
+        modalEdicionAbierto = null;
+        flashCodigo = c.codigo_link;
+        await cargarCortesias();
+      } catch (e) {
+        await modalAlert('Error al guardar', esc('Fallo: ' + e.message));
+      }
+    };
+    contB.appendChild(bGuardar);
+  }
+
+  fondo.appendChild(caja);
+  document.body.appendChild(fondo);
+  modalEdicionAbierto = fondo;
+}
+
+async function extenderDia(c, dia){
+  var ok = await modalConfirm('Extender al Día ' + dia,
+    'Se creará el Día ' + dia + ' para esta cortesía. Después podrá copiar las personas del otro día (si aplica) o agregarlas una por una.<br><br>¿Continuar?',
+    'Sí, extender', 'Cancelar');
+  if (!ok) return;
+  var r = await llamar('f_admin_cortesia_agregar_dia', { p_token: ses.token, p_codigo_link: c.codigo_link, p_dia: dia });
+  if (r !== 'ok'){ await modalAlert('Error', esc(msgErrorCortesia(r))); return; }
+  flashCodigo = c.codigo_link;
+  await cargarCortesias();
+  abrirModalEdicion(c);
+}
+
+async function quitarDia(c, dia){
+  var ok = await modalConfirm('Quitar Día ' + dia,
+    'Se borrará la lista y el QR del <strong>Día ' + dia + '</strong>.<br><br>Solo funciona si nadie entró todavía por esa lista.',
+    'Sí, quitar', 'Cancelar');
+  if (!ok) return;
+  var r = await llamar('f_admin_cortesia_quitar_dia', { p_token: ses.token, p_codigo_link: c.codigo_link, p_dia: dia });
+  if (r !== 'ok'){ await modalAlert('Error', esc(msgErrorCortesia(r))); return; }
+  flashCodigo = c.codigo_link;
+  await cargarCortesias();
+  abrirModalEdicion(c);
+}
+
+async function anularCortesia(c){
+  var ok = await modalConfirm('Anular cortesía',
+    '¿Anular esta cortesía?<br><br>Todos sus QR dejarán de funcionar de inmediato en la puerta.<br><br><strong>Esta acción no se puede deshacer.</strong>',
+    'Sí, anular', 'Cancelar');
+  if (!ok) return;
+  try {
+    var r = await llamar('f_admin_anular_cortesia', { p_token: ses.token, p_codigo_link: c.codigo_link });
+    if (r !== 'ok'){ await modalAlert('Error', esc(msgErrorCortesia(r))); return; }
+    flashCodigo = c.codigo_link;
+    await cargarCortesias();
+  } catch (e) { await modalAlert('Error al anular', esc('Fallo: ' + e.message)); }
+}
+
+/* ============ FIN CORTESIAS ============ */
+
+if (!ses || ses.rol !== 'admin') {
+  location.replace('index.html');
+} else {
+  $('btnVolver').onclick = function(){ location.replace('dashboard.html'); };
+  $('kModo').onchange = actualizarVisibilidadCortesia;
+  $('kRazon').onchange = actualizarVisibilidadCortesia;
+  $('btnAddRow1').onclick = function(){ agregarFilaPersona('rowsDia1'); };
+  $('btnAddRow2').onclick = function(){ agregarFilaPersona('rowsDia2'); };
+  $('btnCopiar1a2').onclick = function(){
+    var r1 = leerFilas('rowsDia1');
+    if (r1.error) { aviso('msgCortesia', r1.error, false); return; }
+    $('rowsDia2').innerHTML = '';
+    r1.personas.forEach(function(p){
+      agregarFilaPersona('rowsDia2');
+      var filas = $('rowsDia2').querySelectorAll('.fila-persona');
+      var ultima = filas[filas.length - 1];
+      ultima.querySelector('.pNom').value = p.nombre;
+      ultima.querySelector('.pApe').value = p.apellido;
+      ultima.querySelector('.pCed').value = p.cedula;
     });
-})();
+    aviso('msgCortesia', 'Lista del Día 1 copiada al Día 2. Edita lo que necesites.', true);
+  };
+  $('btnCrearCortesia').onclick = crearCortesia;
+  agregarFilaPersona('rowsDia1');
+  actualizarVisibilidadCortesia();
+  cargarCortesias();
+}
 </script>
 </body>
 </html>
