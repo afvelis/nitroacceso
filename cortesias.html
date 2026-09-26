@@ -47,6 +47,17 @@ li{margin:4px 0;}
 .fila-persona{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px;}
 .fila-persona input{flex:1;min-width:110px;margin-top:0;}
 .nota-info{background:rgba(31,162,255,.10);border:1px solid var(--acento2);border-radius:10px;padding:12px 14px;margin-top:14px;font-size:15px;color:var(--texto);line-height:1.5;}
+
+/* === MODAL ESTETICO === */
+.modal-fondo{position:fixed;inset:0;background:rgba(4,8,16,.72);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;z-index:1000;padding:18px;animation:modalFade .15s ease;}
+@keyframes modalFade{from{opacity:0}to{opacity:1}}
+.modal-caja{background:var(--tarjeta);border:1px solid var(--borde);border-radius:16px;padding:22px;max-width:480px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.55);animation:modalPop .18s ease;}
+@keyframes modalPop{from{transform:scale(.94);opacity:0}to{transform:scale(1);opacity:1}}
+.modal-titulo{margin:0 0 12px;font-size:20px;color:var(--acento);}
+.modal-mensaje{font-size:16px;line-height:1.55;color:var(--texto);margin-bottom:18px;}
+.modal-botones{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;}
+.modal-botones .btn{min-width:110px;padding:11px 16px;}
+.modal-input{width:100%;margin-bottom:16px;padding:12px;border-radius:10px;border:1px solid var(--borde);background:#0d1526;color:var(--texto);font-size:17px;}
 </style>
 </head>
 <body>
@@ -161,6 +172,93 @@ function boton(texto, clase, fn){
   b.onclick = function(e){ fn(e.target); };
   return b;
 }
+
+/* ============ MODAL ESTETICO ============ */
+
+function abrirModal(opts){
+  return new Promise(function(resolve){
+    var fondo = document.createElement('div');
+    fondo.className = 'modal-fondo';
+    var caja = document.createElement('div');
+    caja.className = 'modal-caja';
+    caja.innerHTML =
+      '<h3 class="modal-titulo">' + esc(opts.titulo || '') + '</h3>' +
+      '<div class="modal-mensaje">' + (opts.mensaje || '') + '</div>' +
+      '<div class="modal-botones"></div>';
+    var contB = caja.querySelector('.modal-botones');
+    (opts.botones || []).forEach(function(b){
+      var btn = document.createElement('button');
+      btn.className = 'btn ' + (b.clase || 'btn-gris');
+      btn.textContent = b.texto;
+      btn.onclick = function(){
+        if (fondo.parentNode) fondo.parentNode.removeChild(fondo);
+        resolve(b.valor);
+      };
+      contB.appendChild(btn);
+    });
+    fondo.appendChild(caja);
+    document.body.appendChild(fondo);
+  });
+}
+
+function modalAlert(titulo, mensaje){
+  return abrirModal({
+    titulo: titulo,
+    mensaje: mensaje,
+    botones: [{ texto: 'Aceptar', clase: 'btn-verde', valor: true }]
+  });
+}
+
+function modalConfirm(titulo, mensaje, textoOk, textoCancel){
+  return abrirModal({
+    titulo: titulo,
+    mensaje: mensaje,
+    botones: [
+      { texto: textoCancel || 'Cancelar', clase: 'btn-gris', valor: false },
+      { texto: textoOk || 'Aceptar', clase: 'btn-verde', valor: true }
+    ]
+  });
+}
+
+function modalPrompt(titulo, mensaje, valorInicial){
+  return new Promise(function(resolve){
+    var fondo = document.createElement('div');
+    fondo.className = 'modal-fondo';
+    var caja = document.createElement('div');
+    caja.className = 'modal-caja';
+    caja.innerHTML =
+      '<h3 class="modal-titulo">' + esc(titulo) + '</h3>' +
+      '<div class="modal-mensaje">' + (mensaje || '') + '</div>' +
+      '<input class="modal-input" type="text">' +
+      '<div class="modal-botones"></div>';
+    var input = caja.querySelector('.modal-input');
+    input.value = valorInicial || '';
+    var contB = caja.querySelector('.modal-botones');
+    var bCancel = document.createElement('button');
+    bCancel.className = 'btn btn-gris';
+    bCancel.textContent = 'Cancelar';
+    bCancel.onclick = function(){
+      if (fondo.parentNode) fondo.parentNode.removeChild(fondo);
+      resolve(null);
+    };
+    var bOk = document.createElement('button');
+    bOk.className = 'btn btn-verde';
+    bOk.textContent = 'Aceptar';
+    bOk.onclick = function(){
+      var v = input.value;
+      if (fondo.parentNode) fondo.parentNode.removeChild(fondo);
+      resolve(v);
+    };
+    contB.appendChild(bCancel);
+    contB.appendChild(bOk);
+    fondo.appendChild(caja);
+    document.body.appendChild(fondo);
+    setTimeout(function(){ input.focus(); }, 60);
+  });
+}
+
+/* ============ FIN MODAL ============ */
+
 async function copiarTexto(txt, btn){
   const original = btn ? btn.textContent : '';
   try {
@@ -263,12 +361,18 @@ async function crearCortesia(){
   var d1 = true;
   var d2 = false;
 
-  if (razon === 'otros' && !causa) { aviso('msgCortesia', 'Indique la causa de la cortesia.', false); return; }
+  if (razon === 'otros' && !causa) {
+    await modalAlert('Falta la causa', 'Debe indicar la causa de la cortesía: el texto quedará registrado en el sistema.');
+    return;
+  }
 
   if (razon === 'prensa' || razon === 'autoridad') {
     var etiqueta = (razon === 'prensa') ? 'Prensa' : 'Autoridad';
-    var soloDia1 = confirm(
-      'Esta cortesía es de ' + etiqueta + '.\n\n¿La quiere SOLO para el Día 1 (por defecto)?\n\nAceptar = Solo Día 1\nCancelar = Día 1 y Día 2 (excepción)'
+    var soloDia1 = await modalConfirm(
+      'Cortesía de ' + etiqueta,
+      'Esta cortesía es de <strong>' + etiqueta + '</strong>.<br><br>¿La quiere <strong>solo para el Día 1</strong> (por defecto) o también para el <strong>Día 2</strong> (excepción)?',
+      'Solo Día 1',
+      'Día 1 y Día 2'
     );
     if (!soloDia1) d2 = true;
   }
@@ -279,22 +383,31 @@ async function crearCortesia(){
       var nom = $('kNom').value.trim();
       var ape = $('kApe').value.trim();
       var ced = $('kCed').value.trim();
-      if (!nom || !ape || !ced) { aviso('msgCortesia', 'Nombre, apellido y cedula son obligatorios.', false); return; }
+      if (!nom || !ape || !ced) {
+        await modalAlert('Faltan datos', 'Nombre, apellido y cédula son obligatorios.');
+        return;
+      }
       codigo = await llamar('f_admin_crear_cortesia_individual', {
         p_token: ses.token, p_nombre: nom, p_apellido: ape, p_cedula: ced,
         p_razon: razon, p_causa: causa || null, p_dia1: d1, p_dia2: d2
       });
     } else {
       var org = $('kOrg').value.trim();
-      if (!org) { aviso('msgCortesia', 'Escribe el nombre de la organizacion.', false); return; }
+      if (!org) {
+        await modalAlert('Falta la organización', 'Escriba el nombre de la organización.');
+        return;
+      }
       var r1 = leerFilas('rowsDia1');
-      if (r1.error) { aviso('msgCortesia', r1.error, false); return; }
-      if (r1.personas.length === 0) { aviso('msgCortesia', 'Agrega al menos una persona a la lista del Dia 1.', false); return; }
+      if (r1.error) { await modalAlert('Datos incompletos', esc(r1.error)); return; }
+      if (r1.personas.length === 0) {
+        await modalAlert('Lista vacía', 'Agregue al menos una persona a la lista del Día 1.');
+        return;
+      }
 
       var personas2 = [];
       if (d2) {
         var r2 = leerFilas('rowsDia2');
-        if (r2.error) { aviso('msgCortesia', r2.error, false); return; }
+        if (r2.error) { await modalAlert('Datos incompletos', esc(r2.error)); return; }
         personas2 = (r2.personas.length > 0) ? r2.personas : r1.personas.slice();
       }
 
@@ -305,8 +418,8 @@ async function crearCortesia(){
         p_personas_dia2: d2 ? personas2 : []
       });
     }
-    if (!codigo) { aviso('msgCortesia', 'Tu sesion expiro: entra de nuevo con tu PIN.', false); return; }
-    if (String(codigo).indexOf('ERR_') === 0) { aviso('msgCortesia', msgErrorCortesia(codigo), false); return; }
+    if (!codigo) { await modalAlert('Sesión expirada', 'Entra de nuevo con tu PIN.'); return; }
+    if (String(codigo).indexOf('ERR_') === 0) { await modalAlert('Error', esc(msgErrorCortesia(codigo))); return; }
 
     var link = BASE + 'cortesia.html?c=' + codigo;
     var cont = $('resultadoCortesia');
@@ -343,7 +456,7 @@ async function crearCortesia(){
     $('kNom').value = ''; $('kApe').value = ''; $('kCed').value = '';
     await cargarCortesias();
   } catch (e) {
-    aviso('msgCortesia', 'Fallo al crear: ' + e.message, false);
+    await modalAlert('Error al crear', esc('Fallo al crear: ' + e.message));
   }
 }
 
@@ -435,18 +548,24 @@ async function verDetalleCortesia(div, c){
         var nom = filaP.querySelector('.aNom').value.trim();
         var ape = filaP.querySelector('.aApe').value.trim();
         var ced = filaP.querySelector('.aCed').value.trim();
-        if (!nom || !ape || !ced) { alert('Nombre, apellido y cedula son obligatorios.'); return; }
+        if (!nom || !ape || !ced) { await modalAlert('Faltan datos', 'Nombre, apellido y cédula son obligatorios.'); return; }
         var r = await llamar('f_admin_cortesia_agregar_persona', { p_token: ses.token, p_codigo_link: c.codigo_link, p_dia: dia, p_nombre: nom, p_apellido: ape, p_cedula: ced });
-        if (r !== 'ok') { alert(msgErrorCortesia(r)); return; }
+        if (r !== 'ok') { await modalAlert('Error', esc(msgErrorCortesia(r))); return; }
         await cargarCortesias();
       };
     });
     panel.querySelectorAll('button[data-quitar-dia]').forEach(function(b){
       b.onclick = async function(){
         var dia = parseInt(b.getAttribute('data-quitar-dia'), 10);
-        if (!confirm('Quitar el Dia ' + dia + ' de esta cortesia? Se borrara su lista y su QR de ese dia. Solo funciona si nadie entro todavia por esa lista.')) return;
+        var ok = await modalConfirm(
+          'Quitar Día ' + dia,
+          'Se borrará la lista y el QR del <strong>Día ' + dia + '</strong> de esta cortesía.<br><br>Solo funciona si nadie entró todavía por esa lista.',
+          'Sí, quitar',
+          'Cancelar'
+        );
+        if (!ok) return;
         var r = await llamar('f_admin_cortesia_quitar_dia', { p_token: ses.token, p_codigo_link: c.codigo_link, p_dia: dia });
-        if (r !== 'ok') { alert(msgErrorCortesia(r)); return; }
+        if (r !== 'ok') { await modalAlert('Error', esc(msgErrorCortesia(r))); return; }
         await cargarCortesias();
       };
     });
@@ -454,7 +573,7 @@ async function verDetalleCortesia(div, c){
       b.onclick = async function(){
         var dia = parseInt(b.getAttribute('data-agregar-dia'), 10);
         var r = await llamar('f_admin_cortesia_agregar_dia', { p_token: ses.token, p_codigo_link: c.codigo_link, p_dia: dia });
-        if (r !== 'ok') { alert(msgErrorCortesia(r)); return; }
+        if (r !== 'ok') { await modalAlert('Error', esc(msgErrorCortesia(r))); return; }
         await cargarCortesias();
       };
     });
@@ -559,32 +678,32 @@ async function editarCortesia(div, c){
   fila.appendChild(boton('Guardar cambios', 'btn-verde', async function(){
     var razon = s1.value;
     var causa = i2.value.trim();
-    if (razon === 'otros' && !causa) { alert('Indique la causa de la cortesia.'); return; }
+    if (razon === 'otros' && !causa) { await modalAlert('Falta la causa', 'Debe indicar la causa de la cortesía.'); return; }
     try {
       var r = await llamar('f_admin_editar_cortesia', { p_token: ses.token, p_codigo_link: c.codigo_link, p_razon: razon, p_causa: causa || null });
-      if (r !== 'ok') { alert(msgErrorCortesia(r)); return; }
+      if (r !== 'ok') { await modalAlert('Error', esc(msgErrorCortesia(r))); return; }
 
       if(d.tipo === 'lista'){
         var rOrg = await llamar('f_admin_editar_cortesia_datos', {
           p_token: ses.token, p_codigo_link: c.codigo_link,
           p_nombre_organizacion: iOrg.value.trim()
         });
-        if (rOrg !== 'ok') { alert(msgErrorCortesia(rOrg)); return; }
+        if (rOrg !== 'ok') { await modalAlert('Error', esc(msgErrorCortesia(rOrg))); return; }
       } else if(iNom && iApe && iCed){
         var rPer = await llamar('f_admin_editar_cortesia_datos', {
           p_token: ses.token, p_codigo_link: c.codigo_link,
           p_nombre: iNom.value.trim(), p_apellido: iApe.value.trim(), p_cedula: iCed.value.trim()
         });
-        if (rPer !== 'ok') { alert(msgErrorCortesia(rPer)); return; }
+        if (rPer !== 'ok') { await modalAlert('Error', esc(msgErrorCortesia(rPer))); return; }
 
         if (chk1 && chk2) {
           var r2 = await llamar('f_admin_editar_cortesia_dias', { p_token: ses.token, p_codigo_link: c.codigo_link, p_dia1: chk1.checked, p_dia2: chk2.checked });
-          if (r2 !== 'ok') { alert(msgErrorCortesia(r2)); return; }
+          if (r2 !== 'ok') { await modalAlert('Error', esc(msgErrorCortesia(r2))); return; }
         }
       }
 
       await cargarCortesias();
-    } catch (e) { alert('Fallo al guardar: ' + e.message); }
+    } catch (e) { await modalAlert('Error al guardar', esc('Fallo al guardar: ' + e.message)); }
   }));
   fila.appendChild(boton('Cancelar', 'btn-gris', function(){ panel.remove(); }));
   panel.appendChild(fila);
@@ -592,12 +711,18 @@ async function editarCortesia(div, c){
 }
 
 async function anularCortesia(c){
-  if (!confirm('Anular esta cortesia? Todos sus QR dejan de funcionar de inmediato en la puerta. Esta accion no se puede deshacer.')) return;
+  var ok = await modalConfirm(
+    'Anular cortesía',
+    '¿Anular esta cortesía?<br><br>Todos sus QR dejarán de funcionar de inmediato en la puerta.<br><br><strong>Esta acción no se puede deshacer.</strong>',
+    'Sí, anular',
+    'Cancelar'
+  );
+  if (!ok) return;
   try {
     var r = await llamar('f_admin_anular_cortesia', { p_token: ses.token, p_codigo_link: c.codigo_link });
-    if (r !== 'ok') { alert(msgErrorCortesia(r)); return; }
+    if (r !== 'ok') { await modalAlert('Error', esc(msgErrorCortesia(r))); return; }
     await cargarCortesias();
-  } catch (e) { alert('Fallo al anular: ' + e.message); }
+  } catch (e) { await modalAlert('Error al anular', esc('Fallo al anular: ' + e.message)); }
 }
 
 /* ============ FIN CORTESIAS ============ */
