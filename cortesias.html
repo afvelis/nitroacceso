@@ -145,20 +145,21 @@ select,input{width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1p
       </label>
     </div>
 
-    <label>Razon de la cortesia
-      <select id="kRazon">
-        <option value="prensa">Prensa</option>
-        <option value="vinculo_familiar">Vinculo familiar</option>
-        <option value="premio">Premio</option>
-        <option value="autoridad">Autoridad</option>
-        <option value="otros">Otros</option>
-      </select>
-    </label>
-    <div id="zonaCausa" style="display:none">
-      <label>Causa especifica
-        <input id="kCausa" placeholder="Ej.: Invitado especial del alcalde">
+    <div id="zonaRazon">
+      <label>Razon de la cortesia
+        <select id="kRazon">
+          <option value="prensa">Prensa</option>
+          <option value="vinculo_familiar">Vinculo familiar</option>
+          <option value="autoridad">Autoridad</option>
+          <option value="otros">Otros</option>
+        </select>
       </label>
-      <p class="suave" style="color:var(--aviso)">Indique la causa de la cortesia: este texto quedara registrado en el sistema.</p>
+      <div id="zonaCausa" style="display:none">
+        <label>Causa especifica
+          <input id="kCausa" placeholder="Ej.: Invitado especial del alcalde">
+        </label>
+        <p class="suave" style="color:var(--aviso)">Indique la causa de la cortesia: este texto quedara registrado en el sistema.</p>
+      </div>
     </div>
 
     <div class="nota-info" id="notaNormal">
@@ -399,10 +400,11 @@ function actualizarVisibilidadCortesia(){
   $('zonaListas').style.display = (modo === 'lista') ? 'block' : 'none';
   $('zonaInd').style.display = (modo === 'individual') ? 'block' : 'none';
   $('zonaPremiacion').style.display = esPremiacion ? 'block' : 'none';
+  // Bloque de razón+causa: oculto si es premiación
+  $('zonaRazon').style.display = esPremiacion ? 'none' : 'block';
   $('zonaCausa').style.display = (!esPremiacion && razon === 'otros') ? 'block' : 'none';
   $('bloqueDia2').style.display = (modo === 'lista' && razonEspecial) ? 'block' : 'none';
   $('notaNormal').style.display = esPremiacion ? 'none' : 'block';
-  // Si el evento completo cerró, deshabilitar la creación de premiación
   var bloqueo = eventoCompletoCerrado();
   $('avisoEventoCerrado').style.display = bloqueo ? 'block' : 'none';
   if (esPremiacion && bloqueo){
@@ -738,16 +740,21 @@ async function abrirModalEdicion(c){
       '</div>') +
     '<div class="modal-botones"></div>';
 
-  // Inicializar razón solo en cortesías no-premiación
   var selR = null, eCausa = null, eOrg = null, eNom = null, eApe = null, eCed = null;
   if (!esPremiacion){
-    var razones = ['prensa','vinculo_familiar','premio','autoridad','otros'];
+    var razones = ['prensa','vinculo_familiar','autoridad','otros'];
     selR = caja.querySelector('#eRazon');
     razones.forEach(function(v){
       var o = document.createElement('option'); o.value = v; o.textContent = razonLegible(v, '');
       if (v === c.razon) o.selected = true;
       selR.appendChild(o);
     });
+    // Si la cortesía tiene razon='premio' (histórico), agregamos una opción para no perder la información
+    if (c.razon === 'premio'){
+      var oP = document.createElement('option'); oP.value = 'premio'; oP.textContent = 'Premio (histórico)'; oP.selected = true;
+      selR.insertBefore(oP, selR.firstChild);
+      selR.value = 'premio';
+    }
     eCausa = caja.querySelector('#eCausa'); eCausa.value = c.causa || '';
     eOrg = caja.querySelector('#eOrg');
     eNom = caja.querySelector('#eNom'); eApe = caja.querySelector('#eApe'); eCed = caja.querySelector('#eCed');
@@ -786,7 +793,6 @@ async function abrirModalEdicion(c){
     botones.innerHTML = '';
     if (d.estado !== 'activa' || bloquearDias) return;
     if (esPremiacion){
-      // Para premiación, "quitar" o "extender" sigue disponible mientras no se haya canjeado
       if (!d1){ botones.appendChild(botonMini('+ Agregar Día 1', 'btn-gris', function(){ extenderDia(c, 1); })); }
       if (!d2){ botones.appendChild(botonMini('📅 Extender al Día 2', 'btn-verde', function(){ extenderDia(c, 2); })); }
       if (d1){ botones.appendChild(botonMini('🚫 Quitar Día 1', 'btn-rojo', function(){ quitarDia(c, 1); })); }
