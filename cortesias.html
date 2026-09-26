@@ -8,6 +8,7 @@
 :root{
   --fondo:#0b1220; --tarjeta:#121c2e; --borde:#24344d; --texto:#eef3f8;
   --suave:#9fb0c3; --acento:#35d07f; --acento2:#1fa2ff; --aviso:#ffd33d;
+  --rojo:#e05252;
 }
 *{box-sizing:border-box;}
 body{
@@ -26,7 +27,6 @@ h2{margin:0 0 12px;font-size:22px;}
 h3{margin:14px 0 6px;font-size:19px;color:var(--acento2);}
 label{display:block;margin:10px 0;font-size:17px;}
 select,input{width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1px solid var(--borde);background:#0d1526;color:var(--texto);font-size:17px;}
-input[type=checkbox]{width:auto;margin-right:8px;}
 .btn{display:inline-block;border:none;border-radius:12px;padding:12px 18px;font-size:17px;font-weight:600;color:#06281a;background:linear-gradient(135deg,var(--acento),#2bb673);cursor:pointer;text-decoration:none;}
 .btn-gris{background:#2a3648;color:var(--texto);}
 .btn-rojo{background:linear-gradient(135deg,#e05252,#c73e3e);color:#fff;}
@@ -42,8 +42,7 @@ input[type=checkbox]{width:auto;margin-right:8px;}
 .badge-ok{background:#12402c;color:#7ee2ae;}
 .badge-no{background:#4a1a1a;color:#ff9d9d;}
 .badge-morado{background:#3a2350;color:#d3a6ff;}
-ul{margin:6px 0;padding-left:22px;}
-li{margin:4px 0;}
+.badge-congelada{background:#1f3a52;color:#9fd2ff;}
 .fila-persona{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px;}
 .fila-persona input{flex:1;min-width:110px;margin-top:0;}
 .nota-info{background:rgba(31,162,255,.10);border:1px solid var(--acento2);border-radius:10px;padding:12px 14px;margin-top:14px;font-size:15px;color:var(--texto);line-height:1.5;}
@@ -54,10 +53,13 @@ li{margin:4px 0;}
 .tabla-cortesias tbody tr:hover{background:rgba(31,162,255,.06);}
 .tabla-cortesias tr.fila-flash td{background:rgba(53,208,127,.28) !important;}
 .tabla-cortesias td.acciones{white-space:nowrap;}
+.tabla-cortesias td.reclamadas{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;line-height:1.5;}
 
 .tarjeta-ultima{border:2px solid var(--acento);position:relative;transition:background-color .4s ease;}
 .tarjeta-ultima::before{content:'⭐ ÚLTIMA';position:absolute;top:-12px;left:20px;background:var(--acento);color:#06281a;font-size:12px;font-weight:800;padding:3px 10px;border-radius:999px;letter-spacing:1px;}
 .tarjeta-ultima.fila-flash{background:rgba(53,208,127,.18);}
+.tarjeta-ultima.congelada{border-color:var(--acento2);}
+.tarjeta-ultima.congelada::before{background:var(--acento2);color:#06281a;content:'⭐ ÚLTIMA · 🧊 CONGELADA';}
 
 .modal-fondo{position:fixed;inset:0;background:rgba(4,8,16,.72);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;z-index:1000;padding:18px;animation:modalFade .15s ease;}
 @keyframes modalFade{from{opacity:0}to{opacity:1}}
@@ -73,9 +75,11 @@ li{margin:4px 0;}
 .modal-seccion:last-child{border-bottom:none;padding-bottom:0;}
 .modal-seccion h4{margin:0 0 8px;font-size:16px;color:var(--acento2);font-weight:700;}
 .dia-bloque{background:#0e1728;border:1px solid var(--borde);border-radius:10px;padding:12px;margin-top:10px;}
+.dia-bloque.cerrado{border-color:var(--rojo);background:rgba(224,82,82,.08);}
 .dia-bloque h5{margin:0 0 8px;font-size:15px;color:var(--texto);}
 .persona-lista{margin:4px 0;padding:4px 8px;background:rgba(0,0,0,.25);border-radius:6px;font-size:14px;}
 .estado-mini{font-size:12px;color:var(--suave);}
+.aviso-dia-cerrado{color:var(--rojo);font-size:14px;margin-top:6px;}
 </style>
 </head>
 <body>
@@ -168,7 +172,7 @@ li{margin:4px 0;}
 
   <section class="tarjeta" id="historicoTarjeta">
     <h2>📜 Histórico de cortesías</h2>
-    <p class="suave">Tabla de todas las cortesías creadas. La más reciente se administra desde el panel de arriba (⭐). Las anteriores se editan directamente aquí.</p>
+    <p class="suave">Tabla de todas las cortesías creadas. La más reciente se administra desde el panel de arriba (⭐). Las anteriores se editan directamente aquí. Las cortesías con todos sus días cerrados quedan <strong>🧊 congeladas</strong> y no admiten cambios.</p>
     <div id="contenedorHistorico"><p class="suave">Consultando...</p></div>
   </section>
 
@@ -204,8 +208,6 @@ function botonMini(texto, clase, fn){
   b.onclick = function(e){ fn(e.target); };
   return b;
 }
-
-/* ============ MODAL ESTETICO ============ */
 
 function abrirModal(opts){
   return new Promise(function(resolve){
@@ -251,45 +253,6 @@ function modalConfirm(titulo, mensaje, textoOk, textoCancel){
     ]
   });
 }
-
-function modalPrompt(titulo, mensaje, valorInicial){
-  return new Promise(function(resolve){
-    var fondo = document.createElement('div');
-    fondo.className = 'modal-fondo';
-    var caja = document.createElement('div');
-    caja.className = 'modal-caja';
-    caja.innerHTML =
-      '<h3 class="modal-titulo">' + esc(titulo) + '</h3>' +
-      '<div class="modal-mensaje">' + (mensaje || '') + '</div>' +
-      '<input class="modal-input" type="text">' +
-      '<div class="modal-botones"></div>';
-    var input = caja.querySelector('.modal-input');
-    input.value = valorInicial || '';
-    var contB = caja.querySelector('.modal-botones');
-    var bCancel = document.createElement('button');
-    bCancel.className = 'btn btn-gris';
-    bCancel.textContent = 'Cancelar';
-    bCancel.onclick = function(){
-      if (fondo.parentNode) fondo.parentNode.removeChild(fondo);
-      resolve(null);
-    };
-    var bOk = document.createElement('button');
-    bOk.className = 'btn btn-verde';
-    bOk.textContent = 'Aceptar';
-    bOk.onclick = function(){
-      var v = input.value;
-      if (fondo.parentNode) fondo.parentNode.removeChild(fondo);
-      resolve(v);
-    };
-    contB.appendChild(bCancel);
-    contB.appendChild(bOk);
-    fondo.appendChild(caja);
-    document.body.appendChild(fondo);
-    setTimeout(function(){ input.focus(); }, 60);
-  });
-}
-
-/* ============ FIN MODAL ============ */
 
 async function copiarTexto(txt, btn){
   const original = btn ? btn.textContent : '';
@@ -350,9 +313,37 @@ function tituloCortesia(c){
 
 var ses = leerSesion();
 var cortesiasCache = [];
+var estadoDias = { dia_activo: 1, dia1_cerrado: false, dia2_cerrado: false };
 var flashCodigo = null;
 
-/* ============ FORMULARIO DE CREACION ============ */
+function diaCerrado(dia){
+  if (dia === 1) return !!estadoDias.dia1_cerrado;
+  if (dia === 2) return !!estadoDias.dia2_cerrado;
+  return false;
+}
+
+function estaCongelada(c){
+  var dias = [];
+  if (c.dia1) dias.push(1);
+  if (c.dia2) dias.push(2);
+  if (!dias.length) return true;
+  for (var i = 0; i < dias.length; i++){
+    if (!diaCerrado(dias[i])) return false;
+  }
+  return true;
+}
+
+function textoReclamadas(c){
+  var partes = [];
+  if (c.dia1){
+    partes.push('D1: ' + (c.reclamadas_dia1 || 0) + '/' + (c.personas_dia1 || 0));
+  }
+  if (c.dia2){
+    partes.push('D2: ' + (c.reclamadas_dia2 || 0) + '/' + (c.personas_dia2 || 0));
+  }
+  if (!partes.length) return '-';
+  return partes.join('<br>');
+}
 
 function agregarFilaPersona(contId){
   var cont = $(contId);
@@ -462,8 +453,6 @@ async function crearCortesia(){
   }
 }
 
-/* ============ RENDER ============ */
-
 function linkDe(c){ return BASE + 'cortesia.html?c=' + c.codigo_link; }
 
 function renderUltimaCreada(){
@@ -471,15 +460,23 @@ function renderUltimaCreada(){
   if (!cortesiasCache.length){ cont.style.display = 'none'; return; }
   cont.style.display = 'block';
   var c = cortesiasCache[0];
+  var congelada = estaCongelada(c);
+  cont.classList.toggle('congelada', congelada);
+
   var contU = $('contenidoUltima');
   contU.innerHTML = '';
+
+  var badgeCongelada = congelada ? '<span class="badge badge-congelada">🧊 Congelada</span>' : '';
+  var badgeEstado = (c.estado === 'activa')
+    ? '<span class="badge badge-ok">Activa</span>'
+    : '<span class="badge badge-no">Anulada</span>';
 
   var info = document.createElement('div');
   info.innerHTML =
     '<div><strong>' + esc(tituloCortesia(c)) + '</strong> ' +
     '<span class="badge badge-tipo">' + (c.tipo === 'lista' ? 'Lista' : 'Individual') + '</span>' +
     '<span class="badge badge-morado">' + esc(razonLegible(c.razon, c.causa)) + '</span>' +
-    '<span class="badge ' + (c.estado === 'activa' ? 'badge-ok">Activa' : 'badge-no">Anulada') + '</span></div>' +
+    badgeEstado + badgeCongelada + '</div>' +
     '<p class="suave">' + esc(diasTexto(c.dia1, c.dia2)) + ' · ' + c.total_personas + ' persona(s) · Creada el ' + fechaBonita(c.creada_at) + '</p>';
   contU.appendChild(info);
 
@@ -502,11 +499,21 @@ function renderUltimaCreada(){
   ml.textContent = '✉️ Correo';
   ml.href = urlMail('Pase de cortesía Nitrotoon', 'Hola, aquí está el pase de cortesía para Nitrotoon (' + razonLegible(c.razon, c.causa) + '). Abre este link para ver los QR: ' + linkDe(c));
   fila.appendChild(ml);
-  if (c.estado === 'activa') {
+  if (c.estado === 'activa' && !congelada) {
     fila.appendChild(boton('✏️ Editar', 'btn-verde', function(){ abrirModalEdicion(c); }));
     fila.appendChild(boton('🚫 Anular', 'btn-rojo', function(){ anularCortesia(c); }));
+  } else if (c.estado === 'activa' && congelada) {
+    fila.appendChild(boton('👁️ Ver detalle', 'btn-gris', function(){ abrirModalEdicion(c); }));
   }
   contU.appendChild(fila);
+
+  if (congelada) {
+    var nota = document.createElement('p');
+    nota.className = 'suave';
+    nota.style.marginTop = '10px';
+    nota.innerHTML = '🧊 Esta cortesía está congelada: todos sus días ya cerraron. No admite cambios.';
+    contU.appendChild(nota);
+  }
 }
 
 function renderHistorico(){
@@ -523,20 +530,28 @@ function renderHistorico(){
       '<th>Beneficiario</th>' +
       '<th>Razón</th>' +
       '<th>Días</th>' +
-      '<th>Personas</th>' +
+      '<th>Reclamadas / Obsequiadas</th>' +
       '<th>Estado</th>' +
       '<th>Acciones</th>' +
     '</tr></thead><tbody></tbody>';
   var tbody = tabla.querySelector('tbody');
   cortesiasCache.forEach(function(c, idx){
+    var congelada = estaCongelada(c);
     var tr = document.createElement('tr');
     tr.setAttribute('data-codigo', c.codigo_link);
-    var estado = (c.estado === 'activa') ? '<span class="badge badge-ok">Activa</span>' : '<span class="badge badge-no">Anulada</span>';
+    var estado;
+    if (c.estado === 'anulada'){
+      estado = '<span class="badge badge-no">Anulada</span>';
+    } else if (congelada){
+      estado = '<span class="badge badge-congelada">🧊 Congelada</span>';
+    } else {
+      estado = '<span class="badge badge-ok">Activa</span>';
+    }
     tr.innerHTML =
       '<td>' + esc(tituloCortesia(c)) + '<div class="estado-mini">' + esc(c.codigo_link) + '</div></td>' +
       '<td>' + esc(razonLegible(c.razon, c.causa)) + '</td>' +
       '<td>' + esc(diasTexto(c.dia1, c.dia2)) + '</td>' +
-      '<td>' + c.total_personas + '</td>' +
+      '<td class="reclamadas">' + textoReclamadas(c) + '</td>' +
       '<td>' + estado + '</td>' +
       '<td class="acciones"></td>';
     var td = tr.querySelector('.acciones');
@@ -549,7 +564,7 @@ function renderHistorico(){
       }));
     } else {
       td.appendChild(botonMini('📋 Link', 'btn-gris', function(b){ copiarTexto(linkDe(c), b); }));
-      if (c.estado === 'activa') {
+      if (c.estado === 'activa' && !congelada) {
         td.appendChild(botonMini('✏️ Editar', 'btn-gris', function(){ abrirModalEdicion(c); }));
         td.appendChild(botonMini('🚫 Anular', 'btn-rojo', function(){ anularCortesia(c); }));
       }
@@ -570,7 +585,19 @@ function renderHistorico(){
 
 async function cargarCortesias(){
   try {
-    var arr = await llamar('f_admin_listar_cortesias', { p_token: ses.token });
+    var resultados = await Promise.all([
+      llamar('f_admin_listar_cortesias', { p_token: ses.token }),
+      llamar('f_admin_estado_dias', { p_token: ses.token })
+    ]);
+    var arr = resultados[0];
+    var ed = resultados[1];
+    if (ed){
+      estadoDias = {
+        dia_activo: ed.dia_activo || 1,
+        dia1_cerrado: !!ed.dia1_cerrado,
+        dia2_cerrado: !!ed.dia2_cerrado
+      };
+    }
     if (!arr){
       $('contenedorHistorico').innerHTML = '<p class="suave">Tu sesión expiró: entra de nuevo con tu PIN.</p>';
       $('panelUltima').style.display = 'none';
@@ -585,8 +612,6 @@ async function cargarCortesias(){
   }
 }
 
-/* ============ MODAL DE EDICION ============ */
-
 var modalEdicionAbierto = null;
 
 async function abrirModalEdicion(c){
@@ -594,6 +619,8 @@ async function abrirModalEdicion(c){
     modalEdicionAbierto.parentNode.removeChild(modalEdicionAbierto);
     modalEdicionAbierto = null;
   }
+
+  var congelada = estaCongelada(c);
 
   var d = null;
   try {
@@ -606,16 +633,16 @@ async function abrirModalEdicion(c){
   var caja = document.createElement('div');
   caja.className = 'modal-caja modal-caja-grande';
   caja.innerHTML =
-    '<h3 class="modal-titulo">✏️ Editar cortesía — ' + esc(tituloCortesia(c)) + '</h3>' +
+    '<h3 class="modal-titulo">' + (congelada ? '👁️ Detalle (congelada)' : '✏️ Editar cortesía') + ' — ' + esc(tituloCortesia(c)) + '</h3>' +
     '<div class="modal-seccion">' +
       '<h4>Datos generales</h4>' +
-      '<label>Razón<select id="eRazon"></select></label>' +
-      '<div id="eCausaWrap" style="display:none"><label>Causa específica<input id="eCausa" type="text"></label></div>' +
-      '<div id="eOrgWrap"><label>Nombre de la organización<input id="eOrg" type="text"></label></div>' +
+      '<label>Razón<select id="eRazon" ' + (congelada ? 'disabled' : '') + '></select></label>' +
+      '<div id="eCausaWrap" style="display:none"><label>Causa específica<input id="eCausa" type="text" ' + (congelada ? 'disabled' : '') + '></label></div>' +
+      '<div id="eOrgWrap"><label>Nombre de la organización<input id="eOrg" type="text" ' + (congelada ? 'disabled' : '') + '></label></div>' +
       '<div id="eIndWrap" style="display:none">' +
-        '<label>Nombre<input id="eNom" type="text"></label>' +
-        '<label>Apellido<input id="eApe" type="text"></label>' +
-        '<label>Cédula<input id="eCed" type="text"></label>' +
+        '<label>Nombre<input id="eNom" type="text" ' + (congelada ? 'disabled' : '') + '></label>' +
+        '<label>Apellido<input id="eApe" type="text" ' + (congelada ? 'disabled' : '') + '></label>' +
+        '<label>Cédula<input id="eCed" type="text" ' + (congelada ? 'disabled' : '') + '></label>' +
       '</div>' +
     '</div>' +
     '<div class="modal-seccion">' +
@@ -667,22 +694,24 @@ async function abrirModalEdicion(c){
   function renderDias(){
     var d1 = !!d.dia1;
     var d2 = !!d.dia2;
+    var d1Cerrado = diaCerrado(1);
+    var d2Cerrado = diaCerrado(2);
     caja.querySelector('#eDiasActuales').innerHTML =
-      '<span class="badge ' + (d1 ? 'badge-ok">Día 1 activo' : 'badge-no">Sin Día 1') + '</span> ' +
-      '<span class="badge ' + (d2 ? 'badge-ok">Día 2 activo' : 'badge-no">Sin Día 2') + '</span>';
+      '<span class="badge ' + (d1 ? (d1Cerrado ? 'badge-congelada">Día 1 cerrado' : 'badge-ok">Día 1 activo') : 'badge-no">Sin Día 1') + '</span> ' +
+      '<span class="badge ' + (d2 ? (d2Cerrado ? 'badge-congelada">Día 2 cerrado' : 'badge-ok">Día 2 activo') : 'badge-no">Sin Día 2') + '</span>';
     var botones = caja.querySelector('#eDiasBotones');
     botones.innerHTML = '';
-    if (d.estado !== 'activa') return;
-    if (!d1){
+    if (d.estado !== 'activa' || congelada) return;
+    if (!d1 && !d1Cerrado){
       botones.appendChild(botonMini('+ Agregar Día 1', 'btn-gris', function(){ extenderDia(c, 1); }));
     }
-    if (!d2){
+    if (!d2 && !d2Cerrado){
       botones.appendChild(botonMini('📅 Extender al Día 2', 'btn-verde', function(){ extenderDia(c, 2); }));
     }
-    if (d1){
+    if (d1 && !d1Cerrado){
       botones.appendChild(botonMini('🚫 Quitar Día 1', 'btn-rojo', function(){ quitarDia(c, 1); }));
     }
-    if (d2){
+    if (d2 && !d2Cerrado){
       botones.appendChild(botonMini('🚫 Quitar Día 2', 'btn-rojo', function(){ quitarDia(c, 2); }));
     }
   }
@@ -700,10 +729,12 @@ async function abrirModalEdicion(c){
       return;
     }
     listas.forEach(function(l){
+      var cerrado = diaCerrado(l.dia);
       var bloq = document.createElement('div');
-      bloq.className = 'dia-bloque';
+      bloq.className = 'dia-bloque' + (cerrado ? ' cerrado' : '');
       var personas = l.personas || [];
-      var html = '<h5>Día ' + l.dia + ' — código ' + esc(l.codigo_corto) + ' (' + personas.length + ')</h5>';
+      var headerBadge = cerrado ? ' <span class="badge badge-congelada">🔒 Cerrado</span>' : '';
+      var html = '<h5>Día ' + l.dia + ' — código ' + esc(l.codigo_corto) + ' (' + personas.length + ')' + headerBadge + '</h5>';
       if (!personas.length){
         html += '<p class="suave">Sin personas.</p>';
       } else {
@@ -713,12 +744,13 @@ async function abrirModalEdicion(c){
             ' <span class="estado-mini">(' + esc(p.estado) + ')</span></div>';
         });
       }
-      if (d.estado === 'activa'){
-        // Botón copiar: solo si ESTE día está vacío y OTRO día tiene personas
+      if (cerrado){
+        html += '<p class="aviso-dia-cerrado">🔒 Día ' + l.dia + ' cerrado. No admite cambios (así quedó al cierre).</p>';
+      } else if (d.estado === 'activa' && !congelada){
         if (personas.length === 0){
           var origen = null;
           listas.forEach(function(lx){
-            if (lx.dia !== l.dia && (lx.personas || []).length > 0) origen = lx;
+            if (lx.dia !== l.dia && !diaCerrado(lx.dia) && (lx.personas || []).length > 0) origen = lx;
           });
           if (origen){
             html += '<div class="fila" style="margin-top:8px">' +
@@ -799,46 +831,49 @@ async function abrirModalEdicion(c){
   });
 
   var contB = caja.querySelector('.modal-botones');
-  var bCancel = document.createElement('button');
-  bCancel.className = 'btn btn-gris';
-  bCancel.textContent = 'Cerrar';
-  bCancel.onclick = function(){
+  var bCerrar = document.createElement('button');
+  bCerrar.className = 'btn btn-gris';
+  bCerrar.textContent = congelada ? 'Cerrar' : 'Cancelar';
+  bCerrar.onclick = function(){
     if (fondo.parentNode) fondo.parentNode.removeChild(fondo);
     modalEdicionAbierto = null;
   };
-  var bGuardar = document.createElement('button');
-  bGuardar.className = 'btn btn-verde';
-  bGuardar.textContent = 'Guardar cambios';
-  bGuardar.onclick = async function(){
-    var razon = selR.value;
-    var causa = eCausa.value.trim();
-    if (razon === 'otros' && !causa){ await modalAlert('Falta la causa', 'Debe indicar la causa de la cortesía.'); return; }
-    try {
-      var r1 = await llamar('f_admin_editar_cortesia', { p_token: ses.token, p_codigo_link: c.codigo_link, p_razon: razon, p_causa: causa || null });
-      if (r1 !== 'ok'){ await modalAlert('Error', esc(msgErrorCortesia(r1))); return; }
-      if (d.tipo === 'lista'){
-        var r2 = await llamar('f_admin_editar_cortesia_datos', {
-          p_token: ses.token, p_codigo_link: c.codigo_link,
-          p_nombre_organizacion: eOrg.value.trim()
-        });
-        if (r2 !== 'ok'){ await modalAlert('Error', esc(msgErrorCortesia(r2))); return; }
-      } else {
-        var r3 = await llamar('f_admin_editar_cortesia_datos', {
-          p_token: ses.token, p_codigo_link: c.codigo_link,
-          p_nombre: eNom.value.trim(), p_apellido: eApe.value.trim(), p_cedula: eCed.value.trim()
-        });
-        if (r3 !== 'ok'){ await modalAlert('Error', esc(msgErrorCortesia(r3))); return; }
+  contB.appendChild(bCerrar);
+
+  if (!congelada){
+    var bGuardar = document.createElement('button');
+    bGuardar.className = 'btn btn-verde';
+    bGuardar.textContent = 'Guardar cambios';
+    bGuardar.onclick = async function(){
+      var razon = selR.value;
+      var causa = eCausa.value.trim();
+      if (razon === 'otros' && !causa){ await modalAlert('Falta la causa', 'Debe indicar la causa de la cortesía.'); return; }
+      try {
+        var r1 = await llamar('f_admin_editar_cortesia', { p_token: ses.token, p_codigo_link: c.codigo_link, p_razon: razon, p_causa: causa || null });
+        if (r1 !== 'ok'){ await modalAlert('Error', esc(msgErrorCortesia(r1))); return; }
+        if (d.tipo === 'lista'){
+          var r2 = await llamar('f_admin_editar_cortesia_datos', {
+            p_token: ses.token, p_codigo_link: c.codigo_link,
+            p_nombre_organizacion: eOrg.value.trim()
+          });
+          if (r2 !== 'ok'){ await modalAlert('Error', esc(msgErrorCortesia(r2))); return; }
+        } else {
+          var r3 = await llamar('f_admin_editar_cortesia_datos', {
+            p_token: ses.token, p_codigo_link: c.codigo_link,
+            p_nombre: eNom.value.trim(), p_apellido: eApe.value.trim(), p_cedula: eCed.value.trim()
+          });
+          if (r3 !== 'ok'){ await modalAlert('Error', esc(msgErrorCortesia(r3))); return; }
+        }
+        if (fondo.parentNode) fondo.parentNode.removeChild(fondo);
+        modalEdicionAbierto = null;
+        flashCodigo = c.codigo_link;
+        await cargarCortesias();
+      } catch (e) {
+        await modalAlert('Error al guardar', esc('Fallo: ' + e.message));
       }
-      if (fondo.parentNode) fondo.parentNode.removeChild(fondo);
-      modalEdicionAbierto = null;
-      flashCodigo = c.codigo_link;
-      await cargarCortesias();
-    } catch (e) {
-      await modalAlert('Error al guardar', esc('Fallo: ' + e.message));
-    }
-  };
-  contB.appendChild(bCancel);
-  contB.appendChild(bGuardar);
+    };
+    contB.appendChild(bGuardar);
+  }
 
   fondo.appendChild(caja);
   document.body.appendChild(fondo);
@@ -881,8 +916,6 @@ async function anularCortesia(c){
     await cargarCortesias();
   } catch (e) { await modalAlert('Error al anular', esc('Fallo: ' + e.message)); }
 }
-
-/* ============ FIN CORTESIAS ============ */
 
 if (!ses || ses.rol !== 'admin') {
   location.replace('index.html');
