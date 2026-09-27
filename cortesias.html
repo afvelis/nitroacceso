@@ -56,9 +56,17 @@ select,input{width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1p
   .grid-premiacion{grid-template-columns:1fr;}
 }
 
-.tabla-cortesias{width:100%;border-collapse:collapse;margin-top:10px;font-size:15px;}
-.tabla-cortesias th,.tabla-cortesias td{border:1px solid var(--borde);padding:8px 10px;text-align:left;vertical-align:top;}
+.tabla-cortesias{width:100%;border-collapse:collapse;margin-top:10px;font-size:15px;table-layout:fixed;}
+.tabla-cortesias th,.tabla-cortesias td{border:1px solid var(--borde);padding:8px 10px;text-align:left;vertical-align:top;word-wrap:break-word;overflow-wrap:anywhere;}
 .tabla-cortesias th{background:#0e1728;color:var(--acento2);font-size:14px;white-space:nowrap;}
+.tabla-cortesias th:nth-child(1),.tabla-cortesias td:nth-child(1){width:18%;}
+.tabla-cortesias th:nth-child(2),.tabla-cortesias td:nth-child(2){width:8%;}
+.tabla-cortesias th:nth-child(3),.tabla-cortesias td:nth-child(3){width:15%;}
+.tabla-cortesias th:nth-child(4),.tabla-cortesias td:nth-child(4){width:11%;}
+.tabla-cortesias th:nth-child(5),.tabla-cortesias td:nth-child(5){width:10%;white-space:nowrap;}
+.tabla-cortesias th:nth-child(6),.tabla-cortesias td:nth-child(6){width:10%;}
+.tabla-cortesias th:nth-child(7),.tabla-cortesias td:nth-child(7){width:10%;}
+.tabla-cortesias th:nth-child(8),.tabla-cortesias td:nth-child(8){width:18%;white-space:nowrap;}
 .tabla-cortesias tbody tr:hover{background:rgba(31,162,255,.06);}
 .tabla-cortesias tr.fila-flash td{background:rgba(53,208,127,.28) !important;}
 .tabla-cortesias td.acciones{white-space:nowrap;}
