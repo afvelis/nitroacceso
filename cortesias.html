@@ -48,6 +48,14 @@ select,input{width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1p
 .nota-info{background:rgba(31,162,255,.10);border:1px solid var(--acento2);border-radius:10px;padding:12px 14px;margin-top:14px;font-size:15px;color:var(--texto);line-height:1.5;}
 .aviso-rojo-box{background:rgba(224,82,82,.12);border:1px solid var(--rojo);color:var(--rojo);border-radius:10px;padding:12px 14px;margin-top:14px;font-size:15px;line-height:1.5;}
 
+/* Grid para el formulario de premiación (2 columnas en escritorio) */
+.grid-premiacion{display:grid;grid-template-columns:1fr 1fr;gap:8px 18px;margin-top:8px;}
+.grid-premiacion label{margin:4px 0;}
+.grid-premiacion .ancho-total{grid-column:1 / -1;}
+@media (max-width:640px){
+  .grid-premiacion{grid-template-columns:1fr;}
+}
+
 .tabla-cortesias{width:100%;border-collapse:collapse;margin-top:10px;font-size:15px;}
 .tabla-cortesias th,.tabla-cortesias td{border:1px solid var(--borde);padding:8px 10px;text-align:left;vertical-align:top;}
 .tabla-cortesias th{background:#0e1728;color:var(--acento2);font-size:14px;white-space:nowrap;}
@@ -128,21 +136,26 @@ select,input{width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1p
     </div>
 
     <div id="zonaPremiacion" style="display:none">
-      <label>Nombre del ganador
-        <input id="kPNom" placeholder="Ej.: Maria">
-      </label>
-      <label>Apellido del ganador
-        <input id="kPApe" placeholder="Ej.: Perez">
-      </label>
-      <label>Cédula del ganador
-        <input id="kPCed" placeholder="Ej.: 12345678">
-      </label>
-      <label>Nombre del concurso
-        <input id="kPCon" placeholder="Ej.: Concurso de Cosplay Nitrotoon 2026">
-      </label>
-      <label>Cantidad de cupones ganados (número de entradas)
-        <input id="kPCup" type="number" min="1" step="1" placeholder="Ej.: 3">
-      </label>
+      <div class="grid-premiacion">
+        <label>Nombre del ganador
+          <input id="kPNom" placeholder="Ej.: Maria">
+        </label>
+        <label>Apellido del ganador
+          <input id="kPApe" placeholder="Ej.: Perez">
+        </label>
+        <label>Cédula del ganador
+          <input id="kPCed" placeholder="Ej.: 12345678">
+        </label>
+        <label>Cantidad de cupones ganados
+          <input id="kPCup" type="number" min="1" step="1" placeholder="Ej.: 3">
+        </label>
+        <label class="ancho-total">Nombre del concurso
+          <input id="kPCon" placeholder="Ej.: Concurso de Cosplay Nitrotoon 2026">
+        </label>
+        <label class="ancho-total">Aliado / Organización que realiza el concurso
+          <input id="kPAli" placeholder="Ej.: Dunas Producciones">
+        </label>
+      </div>
     </div>
 
     <div id="zonaRazon">
@@ -198,7 +211,7 @@ select,input{width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1p
     <h2>📜 Histórico de cortesías</h2>
     <p class="suave">Tabla de todas las cortesías creadas. La más reciente se administra desde el panel de arriba (⭐). Las anteriores se editan directamente aquí. Las cortesías con todos sus días cerrados quedan <strong>🧊 congeladas</strong> y no admiten cambios.</p>
     <div class="buscador">
-      <input type="text" id="buscarInput" placeholder="🔍 Buscar por nombre, código, razón, concurso...">
+      <input type="text" id="buscarInput" placeholder="🔍 Buscar por nombre, código, razón, concurso, aliado...">
       <span class="contador-busqueda" id="contadorBusqueda"></span>
     </div>
     <div id="contenedorHistorico"><p class="suave">Consultando...</p></div>
@@ -329,6 +342,7 @@ function tituloCortesia(c){
 function textoBuscable(c){
   var partes = [ tituloCortesia(c), c.codigo_link, razonLegible(c.razon, c.causa), diasTexto(c.dia1, c.dia2), c.tipo === 'lista' ? 'lista' : (c.tipo === 'premiacion' ? 'premiacion' : 'individual') ];
   if (c.concurso) partes.push(c.concurso);
+  if (c.aliado) partes.push(c.aliado);
   return partes.join(' ').toLowerCase();
 }
 
@@ -400,7 +414,6 @@ function actualizarVisibilidadCortesia(){
   $('zonaListas').style.display = (modo === 'lista') ? 'block' : 'none';
   $('zonaInd').style.display = (modo === 'individual') ? 'block' : 'none';
   $('zonaPremiacion').style.display = esPremiacion ? 'block' : 'none';
-  // Bloque de razón+causa: oculto si es premiación
   $('zonaRazon').style.display = esPremiacion ? 'none' : 'block';
   $('zonaCausa').style.display = (!esPremiacion && razon === 'otros') ? 'block' : 'none';
   $('bloqueDia2').style.display = (modo === 'lista' && razonEspecial) ? 'block' : 'none';
@@ -430,9 +443,11 @@ async function crearCortesia(){
     var pape = $('kPApe').value.trim();
     var pced = $('kPCed').value.trim();
     var pcon = $('kPCon').value.trim();
+    var pali = $('kPAli').value.trim();
     var pcup = parseInt($('kPCup').value, 10);
     if (!pnom || !pape || !pced) { await modalAlert('Faltan datos', 'Nombre, apellido y cédula del ganador son obligatorios.'); return; }
     if (!pcon) { await modalAlert('Falta el concurso', 'Escriba el nombre del concurso en el que ganó.'); return; }
+    if (!pali) { await modalAlert('Falta el aliado', 'Escriba el nombre del aliado u organización que realiza el concurso.'); return; }
     if (!pcup || pcup < 1) { await modalAlert('Falta la cantidad', 'Indique cuántos cupones (entradas) ganó. Debe ser 1 o más.'); return; }
 
     var soloDia1 = await modalConfirm(
@@ -447,12 +462,12 @@ async function crearCortesia(){
     try {
       codigoP = await llamar('f_admin_crear_cortesia_premiacion', {
         p_token: ses.token, p_nombre: pnom, p_apellido: pape, p_cedula: pced,
-        p_concurso: pcon, p_cupones_total: pcup, p_dia1: d1, p_dia2: d2
+        p_concurso: pcon, p_cupones_total: pcup, p_aliado: pali, p_dia1: d1, p_dia2: d2
       });
       if (!codigoP) { await modalAlert('Sesión expirada', 'Entra de nuevo con tu PIN.'); return; }
       if (String(codigoP).indexOf('ERR_') === 0) { await modalAlert('Error', esc(msgErrorCortesia(codigoP))); return; }
       aviso('msgCortesia', 'Premiación creada (' + diasTexto(d1, d2) + '). La verás en "⭐ Última cortesía creada".', true);
-      $('kPNom').value = ''; $('kPApe').value = ''; $('kPCed').value = ''; $('kPCon').value = ''; $('kPCup').value = '';
+      $('kPNom').value = ''; $('kPApe').value = ''; $('kPCed').value = ''; $('kPCon').value = ''; $('kPAli').value = ''; $('kPCup').value = '';
       flashCodigo = codigoP;
       await cargarCortesias();
     } catch (e) {
@@ -533,13 +548,13 @@ function renderUltimaCreada(){
 
   var extra = '';
   if (c.tipo === 'premiacion'){
-    extra = '<p class="suave">🏆 Concurso: ' + esc(c.concurso || '-') + ' · 🎟️ ' + (c.cupones_total || 0) + ' cupones · Canjeados: ' + (c.cupones_consumidos || 0) + (c.canjeado_at ? ' el ' + fechaBonita(c.canjeado_at) + ' (Día ' + (c.canjeado_dia||'-') + ')' : '') + '</p>';
+    extra = '<p class="suave">🏆 Concurso: ' + esc(c.concurso || '-') + (c.aliado ? ' · 🤝 Aliado: ' + esc(c.aliado) : '') + ' · 🎟️ ' + (c.cupones_total || 0) + ' cupones · Canjeados: ' + (c.cupones_consumidos || 0) + (c.canjeado_at ? ' el ' + fechaBonita(c.canjeado_at) + ' (Día ' + (c.canjeado_dia||'-') + ')' : '') + '</p>';
   }
 
   var info = document.createElement('div');
   info.innerHTML =
     '<div><strong>' + esc(tituloCortesia(c)) + '</strong> ' + badgeTipo + ' ' +
-    '<span class="badge badge-morado">' + esc(razonLegible(c.razon, c.causa)) + '</span> ' +
+    '<span class="badge badge-morado">' + esc(c.tipo === 'premiacion' ? 'Premiación' : razonLegible(c.razon, c.causa)) + '</span> ' +
     badgeEstado + ' ' + badgeCongelada + '</div>' +
     '<p class="suave">' + esc(diasTexto(c.dia1, c.dia2)) + ' · ' + c.total_personas + ' persona(s) · Creada el ' + fechaBonita(c.creada_at) + '</p>' + extra;
   contU.appendChild(info);
@@ -601,6 +616,7 @@ function renderHistorico(){
       '<th>Beneficiario</th>' +
       '<th>Tipo</th>' +
       '<th>Razón / Concurso</th>' +
+      '<th>Aliado</th>' +
       '<th>Días</th>' +
       '<th>Reclamadas / Obsequiadas</th>' +
       '<th>Estado</th>' +
@@ -619,12 +635,14 @@ function renderHistorico(){
     else { estado = '<span class="badge badge-ok">Activa</span>'; }
     var tipoTxt = (c.tipo === 'lista') ? 'Lista' : (c.tipo === 'premiacion' ? 'Premiación' : 'Individual');
     var razonOConcurso;
-    if (c.tipo === 'premiacion'){ razonOConcurso = '🏆 ' + esc(c.concurso || '-') + '<div class="estado-mini">' + esc(razonLegible(c.razon, c.causa)) + '</div>'; }
+    if (c.tipo === 'premiacion'){ razonOConcurso = '🏆 ' + esc(c.concurso || '-'); }
     else { razonOConcurso = esc(razonLegible(c.razon, c.causa)); }
+    var aliadoTxt = c.aliado ? esc(c.aliado) : '-';
     tr.innerHTML =
       '<td>' + esc(tituloCortesia(c)) + '<div class="estado-mini">' + esc(c.codigo_link) + '</div></td>' +
       '<td>' + tipoTxt + '</td>' +
       '<td>' + razonOConcurso + '</td>' +
+      '<td>' + aliadoTxt + '</td>' +
       '<td>' + esc(diasTexto(c.dia1, c.dia2)) + '</td>' +
       '<td class="reclamadas">' + textoReclamadas(c) + '</td>' +
       '<td>' + estado + '</td>' +
@@ -715,18 +733,22 @@ async function abrirModalEdicion(c){
     '<h3 class="modal-titulo">' + (soloLectura ? '👁️ Detalle' : '✏️ Editar') + (esPremiacion ? ' premiación' : ' cortesía') + ' — ' + esc(tituloCortesia(c)) + '</h3>' +
     '<div class="modal-seccion">' +
       '<h4>' + (esPremiacion ? 'Datos del ganador y concurso' : 'Datos generales') + '</h4>' +
-      (esPremiacion ? '' : '<label>Razón<select id="eRazon" ' + (soloLectura ? 'disabled' : '') + '></select></label>') +
-      (esPremiacion ? '' : '<div id="eCausaWrap" style="display:none"><label>Causa específica<input id="eCausa" type="text" ' + (soloLectura ? 'disabled' : '') + '></label></div>') +
-      (esPremiacion ? '' : '<div id="eOrgWrap"><label>Nombre de la organización<input id="eOrg" type="text" ' + (soloLectura ? 'disabled' : '') + '></label></div>') +
-      (esPremiacion ? '' : '<div id="eIndWrap" style="display:none"><label>Nombre<input id="eNom" type="text" ' + (soloLectura ? 'disabled' : '') + '></label><label>Apellido<input id="eApe" type="text" ' + (soloLectura ? 'disabled' : '') + '></label><label>Cédula<input id="eCed" type="text" ' + (soloLectura ? 'disabled' : '') + '></label></div>') +
       (esPremiacion ? (
-        '<label>Nombre<input id="pNom" type="text" ' + (soloLectura ? 'disabled' : '') + '></label>' +
-        '<label>Apellido<input id="pApe" type="text" ' + (soloLectura ? 'disabled' : '') + '></label>' +
-        '<label>Cédula<input id="pCed" type="text" ' + (soloLectura ? 'disabled' : '') + '></label>' +
-        '<label>Concurso<input id="pCon" type="text" ' + (soloLectura ? 'disabled' : '') + '></label>' +
-        '<label>Cupones<input id="pCup" type="number" min="1" step="1" ' + (soloLectura ? 'disabled' : '') + '></label>' +
+        '<div class="grid-premiacion">' +
+          '<label>Nombre<input id="pNom" type="text" ' + (soloLectura ? 'disabled' : '') + '></label>' +
+          '<label>Apellido<input id="pApe" type="text" ' + (soloLectura ? 'disabled' : '') + '></label>' +
+          '<label>Cédula<input id="pCed" type="text" ' + (soloLectura ? 'disabled' : '') + '></label>' +
+          '<label>Cupones<input id="pCup" type="number" min="1" step="1" ' + (soloLectura ? 'disabled' : '') + '></label>' +
+          '<label class="ancho-total">Concurso<input id="pCon" type="text" ' + (soloLectura ? 'disabled' : '') + '></label>' +
+          '<label class="ancho-total">Aliado / Organización<input id="pAli" type="text" ' + (soloLectura ? 'disabled' : '') + '></label>' +
+        '</div>' +
         '<p class="suave" style="margin-top:10px">Canjeado: ' + (c.cupones_consumidos || 0) + '/' + (c.cupones_total || 0) + ' cupones' + (c.canjeado_at ? ' el ' + fechaBonita(c.canjeado_at) + ' (Día ' + (c.canjeado_dia||'-') + ')' : '') + '</p>'
-      ) : '') +
+      ) : (
+        '<label>Razón<select id="eRazon" ' + (soloLectura ? 'disabled' : '') + '></select></label>' +
+        '<div id="eCausaWrap" style="display:none"><label>Causa específica<input id="eCausa" type="text" ' + (soloLectura ? 'disabled' : '') + '></label></div>' +
+        '<div id="eOrgWrap"><label>Nombre de la organización<input id="eOrg" type="text" ' + (soloLectura ? 'disabled' : '') + '></label></div>' +
+        '<div id="eIndWrap" style="display:none"><label>Nombre<input id="eNom" type="text" ' + (soloLectura ? 'disabled' : '') + '></label><label>Apellido<input id="eApe" type="text" ' + (soloLectura ? 'disabled' : '') + '></label><label>Cédula<input id="eCed" type="text" ' + (soloLectura ? 'disabled' : '') + '></label></div>'
+      )) +
     '</div>' +
     '<div class="modal-seccion">' +
       '<h4>Días aprobados</h4>' +
@@ -749,7 +771,6 @@ async function abrirModalEdicion(c){
       if (v === c.razon) o.selected = true;
       selR.appendChild(o);
     });
-    // Si la cortesía tiene razon='premio' (histórico), agregamos una opción para no perder la información
     if (c.razon === 'premio'){
       var oP = document.createElement('option'); oP.value = 'premio'; oP.textContent = 'Premio (histórico)'; oP.selected = true;
       selR.insertBefore(oP, selR.firstChild);
@@ -777,6 +798,7 @@ async function abrirModalEdicion(c){
     caja.querySelector('#pApe').value = pg.apellido || '';
     caja.querySelector('#pCed').value = pg.cedula || '';
     caja.querySelector('#pCon').value = d.concurso || '';
+    caja.querySelector('#pAli').value = d.aliado || '';
     caja.querySelector('#pCup').value = d.cupones_total || 1;
   }
 
@@ -895,13 +917,15 @@ async function abrirModalEdicion(c){
           var pape = caja.querySelector('#pApe').value.trim();
           var pced = caja.querySelector('#pCed').value.trim();
           var pcon = caja.querySelector('#pCon').value.trim();
+          var pali = caja.querySelector('#pAli').value.trim();
           var pcup = parseInt(caja.querySelector('#pCup').value, 10);
           if (!pnom || !pape || !pced){ await modalAlert('Faltan datos', 'Nombre, apellido y cédula son obligatorios.'); return; }
           if (!pcon){ await modalAlert('Falta el concurso', 'Escriba el nombre del concurso.'); return; }
+          if (!pali){ await modalAlert('Falta el aliado', 'Escriba el nombre del aliado u organización.'); return; }
           if (!pcup || pcup < 1){ await modalAlert('Falta la cantidad', 'Cupones debe ser 1 o más.'); return; }
           var rP = await llamar('f_admin_editar_cortesia_premiacion', {
             p_token: ses.token, p_codigo_link: c.codigo_link,
-            p_nombre: pnom, p_apellido: pape, p_cedula: pced, p_concurso: pcon, p_cupones_total: pcup
+            p_nombre: pnom, p_apellido: pape, p_cedula: pced, p_concurso: pcon, p_cupones_total: pcup, p_aliado: pali
           });
           if (rP !== 'ok'){ await modalAlert('Error', esc(msgErrorCortesia(rP))); return; }
         } else {
