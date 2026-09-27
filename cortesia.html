@@ -33,10 +33,10 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;backgr
 .pill-azul{background:rgba(31,162,255,.18);color:var(--acento2)}
 .pill-morado{background:rgba(186,104,255,.18);color:#c68cff}
 .pill-rojo{background:rgba(224,82,82,.18);color:var(--rojo)}
+.pill-premio{background:rgba(255,211,61,.18);color:var(--aviso)}
 .qr-box{background:white;border-radius:14px;padding:14px;display:inline-block;margin:12px 0}
 .qr-box img{width:240px;height:240px;display:block}
 .qr-box .qr-texto{color:#0b1220;font-weight:700;text-align:center;margin-top:8px;font-family:ui-monospace,Menlo,Consolas,monospace}
-.mono{font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:1px}
 .btn{display:inline-block;padding:12px 18px;border:none;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;color:white;background:linear-gradient(135deg,var(--acento),#26a866);text-decoration:none;transition:transform .1s}
 .btn:active{transform:scale(.97)}
 .btn-azul{background:linear-gradient(135deg,var(--acento2),#147acc)}
@@ -49,6 +49,14 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;backgr
 .culminado .gracias{font-size:22px;font-weight:800;color:var(--acento);margin:14px 0 10px;line-height:1.3}
 .culminado p{font-size:17px;color:var(--texto);margin-bottom:10px;line-height:1.55}
 .instagram-btn{display:inline-block;margin-top:18px;padding:14px 22px;border-radius:12px;background:linear-gradient(135deg,#fd5949,#d6249f,#285AEB);color:#fff;text-decoration:none;font-weight:700;font-size:17px;box-shadow:0 6px 18px rgba(214,36,159,.35);}
+
+.premiacion{text-align:center;padding:10px 0}
+.premiacion .icono-premio{font-size:64px;display:block;margin-bottom:4px}
+.premiacion .gracias-premio{font-size:24px;font-weight:800;color:var(--aviso);margin:14px 0 8px;line-height:1.3}
+.premiacion .concurso{font-size:18px;color:var(--texto);margin-bottom:10px;font-weight:600}
+.premiacion .detalle-cupones{background:rgba(255,211,61,.10);border:1px solid var(--aviso);border-radius:12px;padding:14px;margin:16px 0;color:var(--texto);font-size:16px;line-height:1.55;text-align:left}
+.premiacion .nota{font-size:14px;color:var(--suave);margin-top:14px;line-height:1.55;text-align:left}
+.canjeada-icono{font-size:56px;display:block;margin-bottom:8px}
 </style>
 </head>
 <body>
@@ -77,14 +85,12 @@ function razonLegible(r, causa){
   if(r === 'otros' && causa) t += ': ' + causa;
   return t;
 }
-
 function diasTexto(d1, d2){
   if(d1 && d2) return 'Día 1 y Día 2';
   if(d1) return 'Día 1';
   if(d2) return 'Día 2';
   return '-';
 }
-
 function urlWA(texto){ return 'https://wa.me/?text=' + encodeURIComponent(texto); }
 function urlMail(asunto, cuerpo){ return 'mailto:?subject=' + encodeURIComponent(asunto) + '&body=' + encodeURIComponent(cuerpo); }
 
@@ -142,31 +148,124 @@ function tarjetaDiaCerrado(dia){
   </div>`;
 }
 
+function formatearFecha(iso){
+  try{
+    const fecha = new Date(iso).toLocaleDateString('es-VE');
+    const hora = new Date(iso).toLocaleTimeString('es-VE', { hour:'2-digit', minute:'2-digit' });
+    return { fecha, hora };
+  }catch(e){ return { fecha:'', hora:'' }; }
+}
+
+function pantallaPremiacion(d){
+  const persona = d.individuales || {};
+  const nombreCompleto = ((persona.nombre || '') + ' ' + (persona.apellido || '')).trim();
+  const cupones = d.cupones_total || 0;
+  const acompanantes = Math.max(0, cupones - 1);
+  const linkEntrega = BASE + 'cortesia.html?c=' + codigo;
+
+  let textoAcomp = '';
+  if (acompanantes === 0){
+    textoAcomp = 'Tu premio es una entrada individual gratuita.';
+  } else if (acompanantes === 1){
+    textoAcomp = 'Tu premio es 1 entrada gratis para ti y 1 acompañante. El ganador y su acompañante deben presentarse en la puerta juntos.';
+  } else {
+    textoAcomp = 'Tu premio son ' + cupones + ' entradas gratuitas para ti y ' + acompanantes + ' acompañantes. El ganador y sus acompañantes deben presentarse en la puerta juntos.';
+  }
+
+  let mensajeWA = 'Hola ' + nombreCompleto + ', ¡felicidades! Ganaste en ' + (d.concurso || 'el concurso') + '. Aquí está tu pase de premiación para Nitrotoon: ' + linkEntrega;
+
+  let html = '';
+  html += '<div class="tarjeta">';
+  html += '<div class="premiacion">';
+  html += '<span class="icono-premio">🏆</span>';
+  html += '<div class="gracias-premio">¡Felicidades, ' + nombreCompleto + '!</div>';
+  html += '<div class="concurso">Ganaste en: <strong>' + (d.concurso || '-') + '</strong></div>';
+  html += '</div>';
+
+  if (d.canjeado_at){
+    const f = formatearFecha(d.canjeado_at);
+    html += '<div class="aviso aviso-rojo aviso-grande" style="margin-top:14px">';
+    html += '<span class="canjeada-icono">✅</span>';
+    html += '<strong>Tu premio ya fue canjeado.</strong><br>';
+    html += 'Validado el <strong>' + f.fecha + '</strong> a las <strong>' + f.hora + '</strong>.<br><br>';
+    html += 'Para pases adicionales puedes comprarlos directamente por taquilla.';
+    html += '</div>';
+    html += '<p class="nota">📌 <strong>Recuerda:</strong> tus acompañantes debían llegar contigo al momento de presentar tu premio para que su entrada fuera válida.</p>';
+  } else {
+    html += '<div class="detalle-cupones">' + textoAcomp + '</div>';
+    html += '<div class="qr-box" id="qr-premio"></div>';
+    html += '<p class="nota">📌 Muestra este QR en la puerta. Recuerda que tus acompañantes deben llegar contigo al momento de presentar tu premio para que su entrada sea válida.</p>';
+  }
+
+  html += '</div>';
+
+  html += '<div class="tarjeta">';
+  html += '<h2>📤 Compartir este pase</h2>';
+  html += '<div class="link-box">' + linkEntrega + '</div>';
+  html += '<div class="fila-botones">';
+  html += '<button class="btn" id="btnCopiarLink">📋 Copiar link</button>';
+  html += '<a class="btn btn-azul" id="btnWA" target="_blank" rel="noopener">📱 WhatsApp</a>';
+  html += '<a class="btn btn-gris" id="btnMail">✉️ Correo</a>';
+  html += '</div>';
+  html += '</div>';
+
+  contenido.innerHTML = html;
+
+  // QR solo si no está canjeado
+  if (!d.canjeado_at && persona.codigo_qr){
+    const el = document.getElementById('qr-premio');
+    if (el) ponerQR(el, urlPuerta('ci', persona.codigo_qr), persona.codigo_qr);
+  }
+
+  document.getElementById('btnCopiarLink').addEventListener('click', (e) => copiarTexto(linkEntrega, e.target));
+  document.getElementById('btnWA').href = urlWA(mensajeWA);
+  document.getElementById('btnMail').href = urlMail('Pase de premiación Nitrotoon', mensajeWA);
+}
+
 function renderizar(d){
+  if (d.tipo === 'premiacion'){
+    // Si el día autorizado de la premiación ya cerró, mostrar aviso (siempre y cuando no sea ya "evento culminado")
+    const dia1Cerrado = !!d.dia1_cerrado;
+    const dia2Cerrado = !!d.dia2_cerrado;
+    const aplicaDia1 = !!d.dia1;
+    const aplicaDia2 = !!d.dia2;
+    const dia1Vigente = aplicaDia1 && !dia1Cerrado;
+    const dia2Vigente = aplicaDia2 && !dia2Cerrado;
+    const algunoVigente = dia1Vigente || dia2Vigente;
+
+    if (!algunoVigente){
+      // Todos los días autorizados cerraron
+      const diaMostrar = aplicaDia1 ? 1 : 2;
+      contenido.innerHTML = tarjetaDiaCerrado(diaMostrar);
+      return;
+    }
+    pantallaPremiacion(d);
+    return;
+  }
+
   const esLista = d.tipo === 'lista';
   const tituloPrincipal = esLista ? d.nombre_organizacion : (d.individuales ? d.individuales.nombre + ' ' + d.individuales.apellido : '');
   const linkEntrega = BASE + 'cortesia.html?c=' + codigo;
-  
+
   let mensajeWA;
   if(esLista){
     mensajeWA = `Hola, aquí está el pase de cortesía de ${d.nombre_organizacion} para Nitrotoon (${razonLegible(d.razon, d.causa)}). Abre este link para ver los QR: ${linkEntrega}`;
   }else{
     mensajeWA = `Hola ${tituloPrincipal}, aquí está tu pase de cortesía para Nitrotoon (${razonLegible(d.razon, d.causa)}). Abre este link para ver tu QR: ${linkEntrega}`;
   }
-  
+
   const dia1Vigente = d.dia1 && !d.dia1_cerrado;
   const dia2Vigente = d.dia2 && !d.dia2_cerrado;
   const algunDiaVigente = dia1Vigente || dia2Vigente;
-  
+
   let html = '';
-  
   html += `<div class="tarjeta">
     <h2>🎁 Pase de cortesía</h2>
     <div class="dato"><strong>${esLista ? 'Organización' : 'Beneficiario'}</strong><span>${tituloPrincipal}</span></div>
     <div class="dato"><strong>Razón</strong><span class="pill pill-morado">${razonLegible(d.razon, d.causa)}</span></div>
     <div class="dato"><strong>Válido para</strong><span class="pill ${algunDiaVigente ? 'pill-azul' : 'pill-rojo'}">${diasTexto(d.dia1, d.dia2)}</span></div>
     <div class="dato"><strong>Modalidad</strong><span class="pill pill-verde">${esLista ? 'Lista (' + (d.listas ? d.listas.length : 0) + ' QR por día)' : 'Pase individual'}</span></div>`;
-  
+
   if(!algunDiaVigente){
     html += `<div class="aviso aviso-rojo aviso-grande" style="margin-top:14px">
       ⛔ <strong>Esta cortesía ya no tiene días vigentes.</strong><br>
@@ -174,20 +273,14 @@ function renderizar(d){
     </div>`;
   }
   html += `</div>`;
-  
+
   if(esLista && d.listas){
     d.listas.forEach(l => {
       const diaCerrado = (l.dia === 1 && d.dia1_cerrado) || (l.dia === 2 && d.dia2_cerrado);
-      
-      if(diaCerrado){
-        html += tarjetaDiaCerrado(l.dia);
-        return;
-      }
-      
+      if(diaCerrado){ html += tarjetaDiaCerrado(l.dia); return; }
       const totalPersonas = l.personas.length;
       const autorizadas = l.personas.filter(p => p.estado === 'autorizado').length;
       const completada = totalPersonas > 0 && totalPersonas === autorizadas;
-      
       html += `<div class="tarjeta">`;
       if(completada){
         html += `<h2>📅 Día ${l.dia}</h2>`;
@@ -208,21 +301,13 @@ function renderizar(d){
   } else if(d.individuales){
     let diaCerradoIndividual = false;
     let diaMostrar = null;
-    if(d.dia1 && !d.dia2){
-      diaCerradoIndividual = d.dia1_cerrado;
-      diaMostrar = 1;
-    } else if(d.dia2 && !d.dia1){
-      diaCerradoIndividual = d.dia2_cerrado;
-      diaMostrar = 2;
-    }
+    if(d.dia1 && !d.dia2){ diaCerradoIndividual = d.dia1_cerrado; diaMostrar = 1; }
+    else if(d.dia2 && !d.dia1){ diaCerradoIndividual = d.dia2_cerrado; diaMostrar = 2; }
     const ambosCerrados = d.dia1 && d.dia2 && d.dia1_cerrado && d.dia2_cerrado;
     const unicoCerrado = diaMostrar !== null && diaCerradoIndividual;
-    
-    if(unicoCerrado){
-      html += tarjetaDiaCerrado(diaMostrar);
-    } else if(ambosCerrados){
-      html += tarjetaDiaCerrado(1);
-    } else {
+    if(unicoCerrado){ html += tarjetaDiaCerrado(diaMostrar); }
+    else if(ambosCerrados){ html += tarjetaDiaCerrado(1); }
+    else {
       html += `<div class="tarjeta">
         <h2>🎟️ Tu QR personal</h2>
         <p style="color:var(--suave);font-size:15px">Muestra este QR en la puerta los días aprobados. Es personal e intransferible.</p>
@@ -230,7 +315,7 @@ function renderizar(d){
       </div>`;
     }
   }
-  
+
   html += `<div class="tarjeta">
     <h2>📤 Compartir este pase</h2>
     <div class="link-box">${linkEntrega}</div>
@@ -241,9 +326,9 @@ function renderizar(d){
     </div>
     <div class="aviso aviso-verde" style="margin-top:14px">Si el QR no escanea en la puerta, el personal puede escribir el código que aparece debajo del QR.</div>
   </div>`;
-  
+
   contenido.innerHTML = html;
-  
+
   if(esLista && d.listas){
     d.listas.forEach(l => {
       const diaCerrado = (l.dia === 1 && d.dia1_cerrado) || (l.dia === 2 && d.dia2_cerrado);
@@ -264,7 +349,7 @@ function renderizar(d){
       if(el) ponerQR(el, urlPuerta('ci', d.individuales.codigo_qr), d.individuales.codigo_qr);
     }
   }
-  
+
   document.getElementById('btnCopiarLink').addEventListener('click', (e) => copiarTexto(linkEntrega, e.target));
   document.getElementById('btnWA').href = urlWA(mensajeWA);
   document.getElementById('btnMail').href = urlMail('Pase de cortesía Nitrotoon', mensajeWA);
@@ -275,39 +360,32 @@ function renderizar(d){
     tarjetaError('⚠️ Link incompleto', 'Este link no tiene código de cortesía. Verifica que copiaste el link completo o comunícate con el administrador.');
     return;
   }
-  
+
   llamar('f_cortesia_ver', { p_codigo_link: codigo })
     .then(d => {
-      if(!d){
-        tarjetaError('⚠️ Link no válido', 'Este código de cortesía no existe. Comunícate con el administrador.');
-        return;
-      }
+      if(!d){ tarjetaError('⚠️ Link no válido', 'Este código de cortesía no existe. Comunícate con el administrador.'); return; }
       if(d.anulada){
         tarjetaError('⛔ Cortesía anulada', 'Esta cortesía fue anulada por el administrador y ya no es válida. Comunícate con el administrador si crees que es un error.');
         return;
       }
-      
-      if(d.dia1_cerrado && d.dia2_cerrado){
-        pantallaEventoCulminado();
-        return;
-      }
-      
+
+      // Prioridad 1: si ambos días cerraron → evento culminado
+      if(d.dia1_cerrado && d.dia2_cerrado){ pantallaEventoCulminado(); return; }
+
+      // Verificación general de consumido (individual normal)
       if(d.tipo === 'individual' && d.individuales && d.individuales.consumido){
         let msg = 'Este pase de cortesía ya fue utilizado y no puede volver a usarse.';
         if(d.individuales.hora_consumo){
-          const fecha = new Date(d.individuales.hora_consumo).toLocaleDateString('es-VE');
-          const hora = new Date(d.individuales.hora_consumo).toLocaleTimeString('es-VE');
-          msg = `Este pase ya fue utilizado. Validado el <strong>${fecha}</strong> a las <strong>${hora}</strong>. No se puede autorizar de nuevo.`;
+          const f = formatearFecha(d.individuales.hora_consumo);
+          msg = `Este pase ya fue utilizado. Validado el <strong>${f.fecha}</strong> a las <strong>${f.hora}</strong>. No se puede autorizar de nuevo.`;
         }
         tarjetaError('⛔ Entrada ya consumida', msg);
         return;
       }
-      
+
       renderizar(d);
     })
-    .catch(e => {
-      tarjetaError('⚠️ Error', 'No se pudo cargar la cortesía: ' + (e.message || e));
-    });
+    .catch(e => { tarjetaError('⚠️ Error', 'No se pudo cargar la cortesía: ' + (e.message || e)); });
 })();
 </script>
 </body>
