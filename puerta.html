@@ -113,7 +113,7 @@ label{display:block;margin-bottom:6px;color:var(--suave);font-size:15px}
       <button class="btn btn-grande btn-azul" id="btnEscanear">📷 ESCANEAR QR</button>
       
       <div style="display:flex;gap:8px;margin-bottom:16px">
-        <input type="text" id="inputManual" placeholder="Código (L-, V-, CL-, CI-) o nombre del talento">
+        <input type="text" id="inputManual" placeholder="Código (L-, V-, CL-, CI-, PR-) o nombre del talento">
         <button class="btn" id="btnBuscarManual">Buscar</button>
       </div>
 
@@ -432,7 +432,7 @@ function extraerCodigo(valor){
     if(params.has('ci')) return params.get('ci');
   }catch(e){}
   const limpio = valor.trim().toUpperCase();
-  if(limpio.startsWith('CL-') || limpio.startsWith('CI-') || limpio.startsWith('L-') || limpio.startsWith('V-')) return limpio;
+  if(limpio.startsWith('CL-') || limpio.startsWith('CI-') || limpio.startsWith('L-') || limpio.startsWith('V-') || limpio.startsWith('PR-')) return limpio;
   return valor;
 }
 
@@ -446,9 +446,12 @@ function procesarQRLeido(valor){
   }else if(limpio.startsWith('CL-')){
     inputManual.value = codigo;
     buscarCortesiaLista(codigo);
-  }else if(limpio.startsWith('CI-')){
+   }else if(limpio.startsWith('CI-')){
     inputManual.value = codigo;
     buscarCortesiaIndividual(codigo);
+  }else if(limpio.startsWith('PR-')){
+    inputManual.value = codigo;
+    buscarPremiacion(codigo);
   }else if(limpio.startsWith('L-')){
     inputManual.value = codigo;
     buscarListaPorCodigo(codigo);
@@ -468,8 +471,10 @@ btnBuscarManual.addEventListener('click', () => {
     buscarVendedor(limpio);
   }else if(limpio.startsWith('CL-')){
     buscarCortesiaLista(limpio);
-  }else if(limpio.startsWith('CI-')){
+    }else if(limpio.startsWith('CI-')){
     buscarCortesiaIndividual(limpio);
+  }else if(limpio.startsWith('PR-')){
+    buscarPremiacion(limpio);
   }else if(limpio.startsWith('L-')){
     buscarListaPorCodigo(limpio);
   }else{
@@ -710,6 +715,86 @@ async function buscarCortesiaIndividual(codigo){
     }
   }catch(e){
     mostrarError('Error al buscar cortesía: ' + (e.message || e));
+  }
+}
+async function buscarPremiacion(codigoQR){
+  mostrarCargando('Buscando premiación...');
+  try{
+    const d = await llamar('f_puerta_premiacion_por_qr', {
+      p_token: tokenSesion,
+      p_codigo_qr: codigoQR
+    });
+    if(!d){
+      mostrarError('No se encontró ninguna premiación con ese código.');
+      return;
+    }
+    if(d.anulada){
+      mostrarPanel(`<div class="resultado bloqueado"><div class="aviso aviso-rojo">⛔ PREMIACIÓN ANULADA<br>Este premio fue anulado por el administrador. No autorices el ingreso.</div></div>`);
+      return;
+    }
+    const aprobado = diaSeleccionado === 1 ? d.dia1 : d.dia2;
+    const cupones = d.cupones_total || 0;
+    const consumidos = d.cupones_consumidos || 0;
+
+    let html = `<div class="resultado ${d.canjeado_at ? 'bloqueado' : ''}">`;
+    html += `<div class="dato"><strong>Tipo</strong><span class="pill pill-amarillo">Premiación</span></div>`;
+    html += `<div class="dato"><strong>Ganador</strong><span>${d.nombre} ${d.apellido}</span></div>`;
+    html += `<div class="dato"><strong>Cédula</strong><span>${d.cedula}</span></div>`;
+    html += `<div class="dato"><strong>Concurso</strong><span>${d.concurso || '-'}</span></div>`;
+    html += `<div class="dato"><strong>Cupones totales</strong><span>${cupones}</span></div>`;
+    html += `<div class="dato"><strong>Días aprobados</strong><span>${diasTexto(d.dia1, d.dia2)}</span></div>`;
+
+    if(d.canjeado_at){
+      const fecha = new Date(d.canjeado_at).toLocaleDateString('es-VE');
+      const hora = new Date(d.canjeado_at).toLocaleTimeString('es-VE');
+      html += `<div class="aviso aviso-rojo">⛔ PREMIO YA CANJEADO<br>Este premio fue canjeado el <strong>${fecha}</strong> a las <strong>${hora}</strong>. Consumió ${consumidos} de ${cupones} cupones. No se puede autorizar de nuevo.</div>`;
+    } else if(!aprobado){
+      html += `<div class="aviso aviso-rojo">⚠️ Esta premiación NO está aprobada para el Día ${diaSeleccionado}. No autorices el ingreso.</div>`;
+    } else {
+      html += `<div class="aviso">🎟️ <strong>Selecciona cuántos cupones consume este premio.</strong><br>Al confirmar, el QR queda consumido del todo y no se puede usar de nuevo, aunque no se usen todos los cupones.</div>`;
+      html += `<label>Cupones que consumen ahora (1 a ${cupones})</label>`;
+      html += `<input type="number" id="inputCupones" min="1" max="${cupones}" value="${cupones}" style="max-width:140px;margin-bottom:14px">`;
+      html += `<button class="btn btn-grande" id="btnCanjearPremio">✅ AUTORIZAR Y CONSUMIR PREMIO</button>`;
+    }
+    html += `</div>`;
+    mostrarPanel(html);
+
+    const btnCanjear = document.getElementById('btnCanjearPremio');
+    if(btnCanjear){
+      btnCanjear.addEventListener('click', async () => {
+        const inp = document.getElementById('inputCupones');
+        const n = parseInt(inp.value, 10);
+        if(!n || n < 1 || n > cupones){
+          alert('Número de cupones inválido. Debe ser entre 1 y ' + cupones + '.');
+          return;
+        }
+        if(!confirm('Se consumirán ' + n + ' de ' + cupones + ' cupón(es) de este premio.\n\nEl QR completo quedará anulado y no se podrá usar de nuevo aunque sobren cupones.\n\n¿Confirmar?')){
+          return;
+        }
+        btnCanjear.disabled = true;
+        btnCanjear.textContent = 'Canjeando...';
+        try{
+          const r = await llamar('f_puerta_canjear_premiacion', {
+            p_token: tokenSesion,
+            p_codigo_qr: codigoQR,
+            p_cupones_usados: n
+          });
+          if(r === 'ok'){
+            buscarPremiacion(codigoQR);
+          }else{
+            alert('No se pudo canjear: ' + (r || 'desconocido'));
+            btnCanjear.disabled = false;
+            btnCanjear.textContent = '✅ AUTORIZAR Y CONSUMIR PREMIO';
+          }
+        }catch(e){
+          alert('Error: ' + (e.message || e));
+          btnCanjear.disabled = false;
+          btnCanjear.textContent = '✅ AUTORIZAR Y CONSUMIR PREMIO';
+        }
+      });
+    }
+  }catch(e){
+    mostrarError('Error al buscar premiación: ' + (e.message || e));
   }
 }
 
