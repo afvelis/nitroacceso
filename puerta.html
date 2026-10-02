@@ -311,7 +311,7 @@ btnDia1.addEventListener('click', () => seleccionarDia(1));
 btnDia2.addEventListener('click', () => seleccionarDia(2));
 
 btnCerrarDia1.addEventListener('click', async () => {
-  if(!confirm('¿Cerrar el Día 1 y activar el Día 2?\n\nAl confirmar:\n• Se cerrarán TODAS las listas abiertas del Día 1.\n• Las personas pendientes de esas listas ya no podrán entrar.\n• El control pasará al Día 2.\n\nEsta acción no se puede deshacer.')){
+  if(!await modalConfirm('¿Cerrar el Día 1 y activar el Día 2?\n\nAl confirmar:\n• Se cerrarán TODAS las listas abiertas del Día 1.\n• Las personas pendientes de esas listas ya no podrán entrar.\n• El control pasará al Día 2.\n\nEsta acción no se puede deshacer.', 'Cerrar Día 1')){
     return;
   }
   btnCerrarDia1.disabled = true;
@@ -384,8 +384,8 @@ btnSalirEventoAbierto.addEventListener('click', () => {
   location.reload();
 });
 
-btnSalir.addEventListener('click', () => {
-  if(confirm('¿Cerrar sesión de puerta?')){
+btnSalir.addEventListener('click', async () => {
+  if(await modalConfirm('¿Cerrar sesión de puerta?', 'Cerrar sesión')){
     detenerScanner();
     borrarSesion();
     location.reload();
@@ -845,7 +845,7 @@ async function buscarPremiacion(codigoQR){
           alert('Número de cupones inválido. Debe ser entre 1 y ' + cupones + '.');
           return;
         }
-        if(!confirm('Se consumirán ' + n + ' de ' + cupones + ' cupón(es) de este premio.\n\nEl QR completo quedará anulado y no se podrá usar de nuevo aunque sobren cupones.\n\n¿Confirmar?')){
+        if(!await modalConfirm('Se consumirán ' + n + ' de ' + cupones + ' cupón(es) de este premio.\n\nEl QR completo quedará anulado y no se podrá usar de nuevo aunque sobren cupones.\n\n¿Confirmar?', 'Canjear premio')){
           return;
         }
         btnCanjear.disabled = true;
@@ -1093,7 +1093,7 @@ async function mostrarListaCompleta(lista){
     const btnCerrar = document.getElementById('btnCerrarLista');
     if(btnCerrar){
       btnCerrar.addEventListener('click', async () => {
-        if(!confirm('¿Cerrar esta lista?\n\nLas personas pendientes ya no podrán entrar hasta que reabras la lista.')){
+    if(!await modalConfirm('¿Cerrar esta lista?\n\nLas personas pendientes ya no podrán entrar hasta que reabras la lista.', 'Cerrar lista')){
           return;
         }
         btnCerrar.disabled = true;
@@ -1122,7 +1122,7 @@ async function mostrarListaCompleta(lista){
     const btnReabrir = document.getElementById('btnReabrirLista');
     if(btnReabrir){
       btnReabrir.addEventListener('click', async () => {
-        if(!confirm('¿Reabrir esta lista?\n\nPodrás autorizar a las personas pendientes.')){
+    if(!await modalConfirm('¿Reabrir esta lista?\n\nPodrás autorizar a las personas pendientes.', 'Reabrir lista')){
           return;
         }
         btnReabrir.disabled = true;
