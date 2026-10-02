@@ -63,6 +63,13 @@ label{display:block;margin-bottom:6px;color:var(--suave);font-size:15px}
 .acciones-lista button{flex:1;min-width:140px}
 .mono{font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:1px}
 .barra-siguiente{margin-top:18px;padding-top:14px;border-top:2px dashed var(--borde)}
+/* Modal estético propio (regla v2.1: prohibido alert/confirm/prompt nativos) */
+.modal-fondo{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px}
+.modal-caja{background:var(--tarjeta);border:1px solid var(--borde);border-radius:16px;padding:22px;max-width:480px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,.5)}
+.modal-titulo{font-size:18px;font-weight:700;color:var(--acento);margin-bottom:12px}
+.modal-mensaje{color:var(--texto);white-space:pre-wrap;line-height:1.55;margin-bottom:18px}
+.modal-acciones{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.modal-acciones .btn{padding:10px 18px;font-size:16px}
 </style>
 </head>
 <body>
@@ -137,6 +144,76 @@ label{display:block;margin-bottom:6px;color:var(--suave);font-size:15px}
 </main>
 
 <script>
+// ===== Modal estético propio (regla v2.1: prohibido alert/confirm/prompt nativos) =====
+function modalAlert(mensaje, titulo){
+  titulo = titulo || 'Aviso';
+  return new Promise(resolve => {
+    const fondo = document.createElement('div');
+    fondo.className = 'modal-fondo';
+    fondo.innerHTML =
+      '<div class="modal-caja">' +
+        '<div class="modal-titulo">' + titulo + '</div>' +
+        '<div class="modal-mensaje">' + mensaje + '</div>' +
+        '<div class="modal-acciones"><button class="btn" id="modalOkBtn">Aceptar</button></div>' +
+      '</div>';
+    document.body.appendChild(fondo);
+    const cerrar = () => { fondo.remove(); resolve(true); };
+    fondo.querySelector('#modalOkBtn').addEventListener('click', cerrar);
+    fondo.addEventListener('click', e => { if(e.target === fondo) cerrar(); });
+  });
+}
+function modalConfirm(mensaje, titulo){
+  titulo = titulo || 'Confirmar';
+  return new Promise(resolve => {
+    const fondo = document.createElement('div');
+    fondo.className = 'modal-fondo';
+    fondo.innerHTML =
+      '<div class="modal-caja">' +
+        '<div class="modal-titulo">' + titulo + '</div>' +
+        '<div class="modal-mensaje">' + mensaje + '</div>' +
+        '<div class="modal-acciones">' +
+          '<button class="btn btn-gris" id="modalCancelarBtn">Cancelar</button>' +
+          '<button class="btn" id="modalAceptarBtn">Aceptar</button>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(fondo);
+    const cerrar = v => { fondo.remove(); resolve(v); };
+    fondo.querySelector('#modalCancelarBtn').addEventListener('click', () => cerrar(false));
+    fondo.querySelector('#modalAceptarBtn').addEventListener('click', () => cerrar(true));
+    fondo.addEventListener('click', e => { if(e.target === fondo) cerrar(false); });
+  });
+}
+function modalPrompt(mensaje, valorInicial, titulo){
+  titulo = titulo || 'Ingresar';
+  return new Promise(resolve => {
+    const fondo = document.createElement('div');
+    fondo.className = 'modal-fondo';
+    fondo.innerHTML =
+      '<div class="modal-caja">' +
+        '<div class="modal-titulo">' + titulo + '</div>' +
+        '<div class="modal-mensaje">' + mensaje + '</div>' +
+        '<input type="text" id="modalPromptInput" style="margin-bottom:14px">' +
+        '<div class="modal-acciones">' +
+          '<button class="btn btn-gris" id="modalCancelarBtn">Cancelar</button>' +
+          '<button class="btn" id="modalAceptarBtn">Aceptar</button>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(fondo);
+    const inp = fondo.querySelector('#modalPromptInput');
+    inp.value = valorInicial || '';
+    setTimeout(() => inp.focus(), 50);
+    const cerrar = v => { fondo.remove(); resolve(v); };
+    fondo.querySelector('#modalCancelarBtn').addEventListener('click', () => cerrar(null));
+    fondo.querySelector('#modalAceptarBtn').addEventListener('click', () => cerrar(inp.value));
+    inp.addEventListener('keydown', e => {
+      if(e.key === 'Enter') cerrar(inp.value);
+      if(e.key === 'Escape') cerrar(null);
+    });
+  });
+}
+// Sobrescritura: alert() nativo → modal propio (no bloquea, no requiere tocar las ~25 llamadas existentes)
+window.alert = function(msg){ modalAlert(String(msg)); };
+// ===== fin modal estético =====
 const elPin = document.getElementById('pin');
 const btnEntrar = document.getElementById('btnEntrar');
 const tarjetaLogin = document.getElementById('tarjetaLogin');
