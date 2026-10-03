@@ -126,6 +126,11 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;backgr
       <div class="tabla-wrap" id="tablaCortesias"></div>
     </section>
 
+    <section class="tarjeta" id="premiaciones">
+      <h2>🏆 Premiaciones</h2>
+      <div id="zonaPremiaciones"></div>
+    </section>
+
     <section class="tarjeta" id="coordinadores">
       <h2>👥 Coordinadores</h2>
       <div class="tabla-wrap" id="tablaCoordinadores"></div>
@@ -392,15 +397,98 @@ function renderizar(d){
   }
   document.getElementById('zonaRubros').innerHTML = rh;
 
+    // ============ PREMIACIONES ============
+  const premiaciones = cortesias.filter(c => c.tipo === 'premiacion');
+  if(premiaciones.length === 0){
+    document.getElementById('zonaPremiaciones').innerHTML = '<p class="suave">Sin premiaciones registradas todavía.</p>';
+  } else {
+    const cuponesObsequiados = premiaciones.reduce((s,x) => s + (x.cupones_total || 0), 0);
+    const cuponesConsumidos = premiaciones.reduce((s,x) => s + (x.cupones_consumidos || 0), 0);
+    const canjeadas = premiaciones.filter(x => x.canjeado_at).length;
+    const pendientesCanje = premiaciones.filter(x => x.estado === 'activa' && !x.canjeado_at).length;
+
+    const porConcurso = {};
+    premiaciones.forEach(p => {
+      const k = (p.concurso || '(sin concurso)').trim();
+      if(!porConcurso[k]) porConcurso[k] = { concurso: k, total: 0, obsequiados: 0, consumidos: 0, canjeadas: 0 };
+      porConcurso[k].total++;
+      porConcurso[k].obsequiados += (p.cupones_total || 0);
+      porConcurso[k].consumidos += (p.cupones_consumidos || 0);
+      if(p.canjeado_at) porConcurso[k].canjeadas++;
+    });
+
+    const porAliado = {};
+    premiaciones.forEach(p => {
+      const k = (p.aliado || '(sin aliado)').trim();
+      if(!porAliado[k]) porAliado[k] = { aliado: k, total: 0, obsequiados: 0, consumidos: 0, canjeadas: 0 };
+      porAliado[k].total++;
+      porAliado[k].obsequiados += (p.cupones_total || 0);
+      porAliado[k].consumidos += (p.cupones_consumidos || 0);
+      if(p.canjeado_at) porAliado[k].canjeadas++;
+    });
+
+    let hp = `
+      <div class="resumen-categoria">
+        <div class="mini-stat"><div class="num">${premiaciones.length}</div><div class="lbl">Premiaciones</div></div>
+        <div class="mini-stat"><div class="num">${cuponesObsequiados}</div><div class="lbl">Cupones obsequiados</div></div>
+        <div class="mini-stat"><div class="num">${cuponesConsumidos}</div><div class="lbl">Cupones consumidos</div></div>
+        <div class="mini-stat"><div class="num">${cuponesObsequiados - cuponesConsumidos}</div><div class="lbl">Cupones sin usar</div></div>
+        <div class="mini-stat"><div class="num">${canjeadas}</div><div class="lbl">Canjeadas</div></div>
+        <div class="mini-stat"><div class="num">${pendientesCanje}</div><div class="lbl">Pendientes de canje</div></div>
+      </div>
+    `;
+
+    hp += '<h3>🎭 Cupones por concurso</h3>';
+    const concursos = Object.values(porConcurso).sort((a,b) => b.obsequiados - a.obsequiados);
+    hp += '<div class="tabla-wrap"><table class="tabla"><tr><th>Concurso</th><th>Premios</th><th>Obsequiados</th><th>Consumidos</th><th>Canjeados</th><th>% uso</th></tr>';
+    concursos.forEach(c => {
+      const uso = c.obsequiados > 0 ? Math.round((c.consumidos/c.obsequiados)*100) : 0;
+      hp += `<tr><td>${esc(c.concurso)}</td><td>${c.total}</td><td>${c.obsequiados}</td><td>${c.consumidos}</td><td>${c.canjeadas}</td><td>${uso}%</td></tr>`;
+    });
+    hp += '</table></div>';
+
+    hp += '<h3>🤝 Cupones por aliado</h3>';
+    const aliados = Object.values(porAliado).sort((a,b) => b.obsequiados - a.obsequiados);
+    hp += '<div class="tabla-wrap"><table class="tabla"><tr><th>Aliado</th><th>Premios</th><th>Obsequiados</th><th>Consumidos</th><th>Canjeados</th><th>% uso</th></tr>';
+    aliados.forEach(a => {
+      const uso = a.obsequiados > 0 ? Math.round((a.consumidos/a.obsequiados)*100) : 0;
+      hp += `<tr><td>${esc(a.aliado)}</td><td>${a.total}</td><td>${a.obsequiados}</td><td>${a.consumidos}</td><td>${a.canjeadas}</td><td>${uso}%</td></tr>`;
+    });
+    hp += '</table></div>';
+
+    document.getElementById('zonaPremiaciones').innerHTML = hp;
+  }
+
   // ============ CORTESÍAS ============
   if(!cortesias || cortesias.length === 0){
     document.getElementById('tablaCortesias').innerHTML = '<p class="suave">Sin cortesías creadas todavía.</p>';
   } else {
-    let h = `<table class="tabla"><tr><th>Beneficiario</th><th>Tipo</th><th>Razón</th><th>Días</th><th>Estado</th><th>Personas</th><th>✅ D1</th><th>✅ D2</th></tr>`;
+        let h = `<table class="tabla"><tr><th>Beneficiario</th><th>Tipo</th><th>Razón / Concurso</th><th>Aliado</th><th>Días</th><th>Estado</th><th>Cupones</th><th>✅ D1</th><th>✅ D2</th></tr>`;
     cortesias.forEach(c => {
-      const nombre = c.tipo === 'lista' ? (c.nombre_organizacion || 'Lista') : 'Pase individual';
+      let nombre, tipo, razonCol, aliadoCol, cuponesCol;
+      if(c.tipo === 'premiacion'){
+        nombre = 'Ganador de premiación';
+        tipo = '<span class="pill pill-amarillo">Premiación</span>';
+        razonCol = esc(c.concurso || '-');
+        aliadoCol = esc(c.aliado || '-');
+        const consumidos = c.cupones_consumidos || 0;
+        const total = c.cupones_total || 0;
+        cuponesCol = c.canjeado_at ? `<span class="pill pill-verde">${consumidos}/${total}</span>` : `<span class="pill pill-azul">0/${total}</span>`;
+      } else if(c.tipo === 'lista'){
+        nombre = c.nombre_organizacion || 'Lista';
+        tipo = 'Lista';
+        razonCol = esc(razonLegible(c.razon, c.causa));
+        aliadoCol = '-';
+        cuponesCol = '-';
+      } else {
+        nombre = 'Pase individual';
+        tipo = 'Individual';
+        razonCol = esc(razonLegible(c.razon, c.causa));
+        aliadoCol = '-';
+        cuponesCol = '-';
+      }
       const estado = c.estado === 'activa' ? '<span class="pill pill-verde">Activa</span>' : '<span class="pill pill-rojo">Anulada</span>';
-      h += `<tr><td>${esc(nombre)}</td><td>${c.tipo === 'lista' ? 'Lista' : 'Individual'}</td><td>${esc(razonLegible(c.razon, c.causa))}</td><td>${diasTexto(c.dia1, c.dia2)}</td><td>${estado}</td><td>${c.total_personas}</td><td>${c.aut_dia1}</td><td>${c.aut_dia2}</td></tr>`;
+      h += `<tr><td>${esc(nombre)}</td><td>${tipo}</td><td>${razonCol}</td><td>${aliadoCol}</td><td>${diasTexto(c.dia1, c.dia2)}</td><td>${estado}</td><td>${cuponesCol}</td><td>${c.aut_dia1}</td><td>${c.aut_dia2}</td></tr>`;
     });
     h += `</table>`;
     document.getElementById('tablaCortesias').innerHTML = h;
