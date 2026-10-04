@@ -421,7 +421,7 @@ function abrirModalConcurso(existente){
         '<textarea id="inDescConc" rows="2" maxlength="300" placeholder="Ej.: Concurso de disfraces temáticos.">' + esc(c.descripcion || '') + '</textarea>' +
       '</label>' +
       '<label>Fecha de ejecución del concurso *' +
-        '<input id="inFechaConc" type="date" min="' + hoyISO + '" value="' + esc(c.fecha_concurso || '') + '">' +
+      '<input id="inFechaConc" type="date" value="' + esc(c.fecha_concurso || '') + '">' +
         '<div style="color:var(--suave);font-size:12px;margin-top:6px;font-weight:normal;line-height:1.45">Indica cuándo se realizará el concurso y se elegirá al ganador. Podrás editarla mientras el evento siga vigente. Si el calendario no funciona, escribe la fecha en formato AAAA-MM-DD (debe ser hoy o posterior).</div>' +
       '</label>' +
       '<label>Entradas reservadas para este concurso *' +
