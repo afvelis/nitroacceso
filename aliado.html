@@ -64,7 +64,6 @@ label{display:block;margin-bottom:12px;color:var(--suave);font-size:14px;font-we
 .mini-stats-dia .fila-stats .dia-lbl{color:var(--suave);font-weight:600}
 .mini-stats-dia .fila-stats .dia-num{font-weight:700;color:var(--acento)}
 .mini-stats-dia .triste{color:var(--aviso);font-size:13px;margin-top:6px;text-align:center}
-.ganador-caja{background:#0d1626;border:1px solid var(--borde);border-radius:10px;padding:12px;margin-top:10px}
 .bloque-datos{margin-bottom:10px}
 .bloque-titulo{font-size:12px;color:var(--acento2);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:6px}
 .dato-gan{display:flex;justify-content:space-between;gap:10px;padding:4px 0;border-bottom:1px dashed var(--borde);font-size:14px}
@@ -83,16 +82,11 @@ label{display:block;margin-bottom:12px;color:var(--suave);font-size:14px;font-we
 .cuponera{background:#0d1626;border:1px solid var(--borde);border-radius:10px;padding:14px;text-align:center;margin-bottom:14px}
 .cuponera .grande{font-size:30px;font-weight:800;color:var(--acento);display:block}
 .cuponera .lbl{font-size:13px;color:var(--suave)}
-.link-box{background:#0d1626;border:1px solid var(--borde);border-radius:10px;padding:12px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;word-break:break-all;color:var(--texto);margin-top:8px}
-.texto-carta{background:#0d1626;border:1px solid var(--borde);border-radius:10px;padding:14px;margin-top:10px;font-size:13px;line-height:1.55;color:var(--texto);white-space:pre-wrap;max-height:180px;overflow-y:auto}
-.nota-abajo{background:rgba(255,211,61,.08);border:1px solid var(--aviso);border-radius:10px;padding:10px 12px;margin-top:12px;font-size:13px;color:var(--aviso);text-align:center}
 .cola-seccion-titulo{font-size:13px;color:var(--acento2);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin:14px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--borde)}
 .cola-item{border:1px solid var(--borde);border-radius:12px;padding:12px;margin-bottom:10px;background:#0e1728}
 .cola-item.enviado{opacity:.75}
-.cola-item .cola-cab{font-size:15px;font-weight:700;margin-bottom:6px}
-.cola-item .cola-gan{font-size:13px;color:var(--suave);margin-bottom:6px}
-.cola-item .cola-instr{font-size:12px;color:var(--suave);margin:8px 0 6px;font-style:italic}
-.cola-item .cola-acciones{display:flex;justify-content:center;margin-top:10px}
+.cola-item .cola-cab{font-size:15px;font-weight:700;margin-bottom:8px;text-align:center;color:var(--acento2)}
+.cola-item .cola-acciones{display:flex;justify-content:center;margin-top:12px}
 .felicidades{text-align:center;padding:20px;font-size:18px;color:var(--acento);font-weight:700}
 .felicidades .emoji{font-size:44px;display:block;margin-bottom:10px}
 </style>
@@ -595,7 +589,6 @@ async function abrirModalGanador(concurso){
       }
       cerrar();
       await recargar();
-      // Abrir la cola de envíos
       abrirModalColaEnvios();
     }catch(e){
       await modalAlert('Error: ' + (e.message || e), 'Error');
@@ -634,7 +627,6 @@ function abrirModalDetallesGanador(concurso){
         '<div class="dato-gan"><strong>Fecha del concurso</strong><span>' + fechaTxt + '</span></div>' +
         '<div class="dato-gan"><strong>Entradas ganadas</strong><span>' + g.cupones_total + '</span></div>' +
         '<div class="dato-gan"><strong>Estado</strong><span>' + estadoG + '</span></div>' +
-        '<div class="dato-gan"><strong>Código QR</strong><span class="mono">' + esc(g.codigo_qr) + '</span></div>' +
       '</div>' +
       '<div class="modal-acciones">' +
         '<button class="btn btn-gris" id="mCerrar">Cerrar</button>' +
@@ -658,6 +650,12 @@ function abrirModalColaEnvios(){
   const cerrar = () => fondo.remove();
   fondo.addEventListener('click', e => { if(e.target === fondo) cerrar(); });
 
+  function textoEnvio(c){
+    const g = c.ganador;
+    const linkGan = BASE + 'cortesia.html?c=' + g.codigo_link;
+    return '🎉 ¡Felicidades ' + g.nombre + ' ' + g.apellido + '! Ganaste en "' + c.nombre + '". Aquí está tu pase: ' + linkGan;
+  }
+
   function render(){
     const caja = fondo.querySelector('#colaCaja');
     const todos = (DATOS.concursos || []).filter(c => c.estado === 'cerrado' && c.ganador);
@@ -665,7 +663,7 @@ function abrirModalColaEnvios(){
     const enviados = todos.filter(c => !!c.ganador.enviado_at);
 
     let html = '<div class="modal-titulo">📨 Enviar premios a los ganadores</div>';
-    html += '<div class="modal-sub">Copia el texto de cada premio y envíalo al ganador por WhatsApp o correo. Al copiarlo, se marcará como enviado.</div>';
+    html += '<div class="modal-sub">' + todos.length + ' concurso(s) con ganador · ' + pendientes.length + ' pendiente(s) · ' + enviados.length + ' enviado(s)</div>';
 
     if(todos.length === 0){
       html += '<div class="aviso aviso-azul">Aún no tienes premios asignados a un ganador.</div>';
@@ -681,27 +679,18 @@ function abrirModalColaEnvios(){
       html += '<div class="cola-seccion-titulo">⏳ Pendientes de envío (' + pendientes.length + ')</div>';
       pendientes.forEach(c => {
         const g = c.ganador;
-        const linkGan = BASE + 'cortesia.html?c=' + g.codigo_link;
         const fechaTxt = c.fecha_concurso ? fmtFecha(c.fecha_concurso) : '';
         const diasTxt = diasTexto(g.dia1, g.dia2) + (fechaTxt ? ' (' + fechaTxt + ')' : '');
-        const textoCarta =
-          '🎉 ¡Felicidades ' + g.nombre + ' ' + g.apellido + '!\n\n' +
-          '¡Gracias por participar en el concurso "' + c.nombre + '", organizado por ' + DATOS.aliado.nombre_organizacion + '!\n\n' +
-          'Te has ganado ' + g.cupones_total + ' entrada(s) para Nitrotoon, válidas para ' + diasTxt + '.\n\n' +
-          'Presenta este enlace en la puerta del evento:\n' + linkGan + '\n\n' +
-          '⚠️ IMPORTANTE:\n' +
-          '• Este QR solo se puede usar UNA vez.\n' +
-          '• Si ganaste más de una entrada, debes presentarte con todas tus personas juntas en la puerta.\n' +
-          '• Si alguien de tu grupo no está presente en ese momento, su entrada se pierde y no se podrá reclamar después.';
-
         html +=
-          '<div class="cola-item" data-concurso="' + c.id + '">' +
+          '<div class="cola-item">' +
             '<div class="cola-cab">🏆 ' + esc(c.nombre) + '</div>' +
-            '<div class="cola-gan">Ganador: ' + esc(g.nombre) + ' ' + esc(g.apellido) + '</div>' +
-            '<div class="cola-instr">Copia el texto y envíalo al ganador:</div>' +
-            '<div class="texto-carta" id="txt-' + c.id + '">' + esc(textoCarta) + '</div>' +
+            '<div class="dato-gan"><strong>Ganador</strong><span>' + esc(g.nombre) + ' ' + esc(g.apellido) + '</span></div>' +
+            '<div class="dato-gan"><strong>Cédula</strong><span>' + esc(g.cedula) + '</span></div>' +
+            '<div class="dato-gan"><strong>Teléfono</strong><span>' + (g.telefono ? esc(g.telefono) : '—') + '</span></div>' +
+            '<div class="dato-gan"><strong>Correo</strong><span>' + (g.correo ? esc(g.correo) : '—') + '</span></div>' +
+            '<div class="dato-gan"><strong>Premio</strong><span>' + diasTxt + ' · ' + g.cupones_total + ' entrada(s)</span></div>' +
             '<div class="cola-acciones">' +
-              '<button class="btn btn-azul btn-mini" data-copiar="' + c.id + '">📋 Copiar y marcar como enviado</button>' +
+              '<button class="btn btn-azul btn-mini" data-copiar="' + c.id + '">📋 Copiar link</button>' +
             '</div>' +
           '</div>';
       });
@@ -715,10 +704,10 @@ function abrirModalColaEnvios(){
         html +=
           '<div class="cola-item enviado">' +
             '<div class="cola-cab">🏆 ' + esc(c.nombre) + '</div>' +
-            '<div class="cola-gan">Ganador: ' + esc(g.nombre) + ' ' + esc(g.apellido) + '</div>' +
-            '<div class="cola-instr">Enviado el ' + esc(fechaEnv) + '</div>' +
+            '<div class="dato-gan"><strong>Ganador</strong><span>' + esc(g.nombre) + ' ' + esc(g.apellido) + '</span></div>' +
+            '<div class="dato-gan"><strong>Enviado</strong><span>' + esc(fechaEnv) + '</span></div>' +
             '<div class="cola-acciones">' +
-              '<button class="btn btn-gris btn-mini" data-copiar="' + c.id + '">📋 Copiar de nuevo</button>' +
+              '<button class="btn btn-gris btn-mini" data-copiar="' + c.id + '">📋 Copiar link de nuevo</button>' +
             '</div>' +
           '</div>';
       });
@@ -734,39 +723,26 @@ function abrirModalColaEnvios(){
         const c = DATOS.concursos.find(x => x.id === cid);
         if(!c || !c.ganador) return;
         const g = c.ganador;
-        const linkGan = BASE + 'cortesia.html?c=' + g.codigo_link;
-        const fechaTxt = c.fecha_concurso ? fmtFecha(c.fecha_concurso) : '';
-        const diasTxt = diasTexto(g.dia1, g.dia2) + (fechaTxt ? ' (' + fechaTxt + ')' : '');
-        const textoCarta =
-          '🎉 ¡Felicidades ' + g.nombre + ' ' + g.apellido + '!\n\n' +
-          '¡Gracias por participar en el concurso "' + c.nombre + '", organizado por ' + DATOS.aliado.nombre_organizacion + '!\n\n' +
-          'Te has ganado ' + g.cupones_total + ' entrada(s) para Nitrotoon, válidas para ' + diasTxt + '.\n\n' +
-          'Presenta este enlace en la puerta del evento:\n' + linkGan + '\n\n' +
-          '⚠️ IMPORTANTE:\n' +
-          '• Este QR solo se puede usar UNA vez.\n' +
-          '• Si ganaste más de una entrada, debes presentarte con todas tus personas juntas en la puerta.\n' +
-          '• Si alguien de tu grupo no está presente en ese momento, su entrada se pierde y no se podrá reclamar después.';
+        const texto = textoEnvio(c);
 
         const orig = b.textContent;
         try{
-          await navigator.clipboard.writeText(textoCarta);
+          await navigator.clipboard.writeText(texto);
         }catch(e){
           const ta = document.createElement('textarea');
-          ta.value = textoCarta; document.body.appendChild(ta); ta.select();
+          ta.value = texto; document.body.appendChild(ta); ta.select();
           try{ document.execCommand('copy'); }catch(e2){}
           document.body.removeChild(ta);
         }
         b.textContent = '📋 ¡Copiado!';
         setTimeout(() => { b.textContent = orig; }, 800);
 
-        // Marcar como enviado solo si aún no lo estaba
         if(!g.enviado_at){
           try{
             await llamar('f_aliado_marcar_enviado', {
               p_codigo_link: CODIGO,
               p_concurso_id: c.id
             });
-            // Recargar DATOS y repintar
             const d = await llamar('f_aliado_ver', { p_codigo_link: CODIGO });
             if(d){ DATOS = d; pintarTodo(); render(); }
           }catch(e){ /* silencioso */ }
