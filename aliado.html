@@ -827,7 +827,26 @@ async function cargar(){
   }
 }
 
-document.getElementById('btnNuevoConcurso').addEventListener('click', () => abrirModalConcurso(null));
+document.getElementById('btnNuevoConcurso').addEventListener('click', async () => {
+  if(DATOS.asignacion.cupones_disponibles <= 0){
+    const abiertos = (DATOS.concursos || []).filter(c => c.estado === 'abierto');
+    if(abiertos.length > 0){
+      await modalAlert(
+        'No tienes entradas de cortesía disponibles en este momento.\n\n' +
+        'Tienes ' + abiertos.length + ' concurso(s) abierto(s) sin ganador asignado. Puedes editar o eliminar alguno de esos concursos para liberar entradas e iniciar uno nuevo, o asignarle un ganador a uno de ellos.',
+        'Sin entradas disponibles'
+      );
+    }else{
+      await modalAlert(
+        'No tienes más entradas de cortesía disponibles. Todas las entradas asignadas ya están reservadas en concursos.\n\n' +
+        'Si necesitas más entradas de cortesía, comunícate con el organizador del evento.',
+        'Sin entradas disponibles'
+      );
+    }
+    return;
+  }
+  abrirModalConcurso(null);
+});
 
 cargar();
 </script>
