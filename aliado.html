@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nitrotoon Control de acceso - Aliado</title>
+<script src="config.js"></script>
+<style>
+:root{
+  --fondo:#0b1220;--tarjeta:#121c2e;--borde:#24344d;--texto:#eef3f8;
+  --suave:#9fb0c3;--acento:#35d07f;--acento2:#1fa2ff;--aviso:#ffd33d;
+  --rojo:#e05252;--rojo2:#c73e3e;--morado:#b06aff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--fondo);color:var(--texto);font-size:17px;line-height:1.5;min-height:100vh;padding-bottom:40px}
+.franja{height:6px;background:linear-gradient(90deg,var(--acento),var(--acento2))}
+.cabecera{display:flex;align-items:center;gap:14px;padding:18px 20px;background:var(--tarjeta);border-bottom:1px solid var(--borde)}
+.logo{font-size:28px;background:linear-gradient(135deg,var(--morado),var(--acento2));width:48px;height:48px;display:flex;align-items:center;justify-content:center;border-radius:10px}
+.titulo{font-size:20px;font-weight:700}
+.subtitulo{font-size:14px;color:var(--suave)}
+.contenedor{max-width:900px;margin:20px auto;padding:0 16px}
+.tarjeta{background:var(--tarjeta);border:1px solid var(--borde);border-radius:16px;padding:20px;margin-bottom:18px;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.tarjeta h2{font-size:19px;margin-bottom:12px;color:var(--acento)}
+.tarjeta h3{font-size:16px;margin:14px 0 8px;color:var(--acento2)}
+.aviso{padding:12px 14px;border-radius:10px;background:rgba(255,211,61,.12);border:1px solid var(--aviso);color:var(--aviso);margin-bottom:14px;font-size:15px}
+.aviso-rojo{background:rgba(224,82,82,.12);border-color:var(--rojo);color:var(--rojo)}
+.aviso-verde{background:rgba(53,208,127,.12);border-color:var(--acento);color:var(--acento)}
+.aviso-azul{background:rgba(31,162,255,.12);border-color:var(--acento2);color:var(--acento2)}
+.btn{display:inline-block;padding:12px 20px;border:none;border-radius:10px;font-size:17px;font-weight:600;cursor:pointer;color:white;background:linear-gradient(135deg,var(--acento),#26a866);transition:transform .1s}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-gris{background:#2a3648}
+.btn-rojo{background:linear-gradient(135deg,var(--rojo),var(--rojo2))}
+.btn-azul{background:linear-gradient(135deg,var(--acento2),#147acc)}
+.btn-morado{background:linear-gradient(135deg,var(--morado),#7a3ff2)}
+.btn-grande{width:100%;padding:16px;font-size:19px;margin-bottom:12px}
+.btn-mini{padding:8px 12px;font-size:14px}
+input,select{width:100%;padding:12px 14px;border:1px solid var(--borde);border-radius:10px;background:#0d1626;color:var(--texto);font-size:17px;font-family:inherit;margin-top:6px}
+input:focus,select:focus{outline:2px solid var(--acento2);border-color:var(--acento2)}
+label{display:block;margin-bottom:12px;color:var(--suave);font-size:15px}
+.dato{margin-bottom:8px}
+.dato strong{color:var(--suave);font-size:14px;display:block}
+.dato span{font-size:17px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid2 label{margin-bottom:0}
+.pill{display:inline-block;padding:4px 10px;border-radius:20px;font-size:13px;font-weight:600}
+.pill-verde{background:rgba(53,208,127,.18);color:var(--acento)}
+.pill-rojo{background:rgba(224,82,82,.18);color:var(--rojo)}
+.pill-azul{background:rgba(31,162,255,.18);color:var(--acento2)}
+.pill-amarillo{background:rgba(255,211,61,.18);color:var(--aviso)}
+.pill-morado{background:rgba(176,106,255,.18);color:var(--morado)}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:1px}
+.codigo{background:#0d1626;border:1px solid var(--borde);border-radius:10px;padding:12px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:18px;letter-spacing:2px;word-break:break-all}
+.item{border:1px solid var(--borde);border-radius:12px;padding:14px;margin-top:12px;background:#0e1728}
+.item .qr{max-width:220px;display:block;margin:10px auto}
+.item .fila{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.item .fila .btn{flex:1;min-width:130px}
+.modal-fondo{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px;overflow-y:auto}
+.modal-caja{background:var(--tarjeta);border:1px solid var(--borde);border-radius:16px;padding:22px;max-width:520px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,.5);max-height:92vh;overflow-y:auto}
+.modal-titulo{font-size:19px;font-weight:700;color:var(--acento);margin-bottom:12px}
+.modal-mensaje{color:var(--texto);white-space:pre-wrap;line-height:1.55;margin-bottom:18px}
+.modal-acciones{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:14px}
+.modal-acciones .btn{padding:10px 18px;font-size:16px}
+.tabla-wrap{overflow-x:auto;margin-top:10px}
+.tabla{width:100%;border-collapse:collapse;font-size:14px}
+.tabla th,.tabla td{border:1px solid var(--borde);padding:6px 8px;text-align:left}
+.tabla th{background:#0d1626;color:var(--suave)}
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header class="cabecera">
+  <div class="logo">🤝</div>
+  <div>
+    <div class="titulo">Nitrotoon Control de acceso</div>
+    <div class="subtitulo">Módulo del aliado</div>
+  </div>
+</header>
+
+<main class="contenedor">
+  <div id="panelCarga" class="tarjeta"><p style="color:var(--suave)">Cargando información del aliado...</p></div>
+
+  <div id="panelError" class="tarjeta" style="display:none">
+    <h2>❌ Link no válido</h2>
+    <div class="aviso aviso-rojo">Este link no corresponde a ninguna asignación activa. Verifica el enlace o comunícate con la mesa técnica del evento.</div>
+  </div>
+
+  <div id="panelAnulado" class="tarjeta" style="display:none">
+    <h2>⛔ Asignación anulada</h2>
+    <div class="aviso aviso-rojo" id="razonAnulada"></div>
+    <p class="suave" style="font-size:14px;margin-top:10px">Si crees que es un error, comunícate con la mesa técnica del evento.</p>
+  </div>
+
+  <div id="panelPrincipal" style="display:none">
+    <div class="tarjeta">
+      <h2>🤝 Bienvenido</h2>
+      <div class="dato"><strong>Organización</strong><span id="orgNombre">-</span></div>
+      <div class="dato"><strong>Responsable</strong><span id="responsable">-</span></div>
+      <div class="dato"><strong>Asignación</strong><span class="mono" id="codigoLink">-</span></div>
+    </div>
+
+    <div class="tarjeta">
+      <h2>🎟️ Cupones disponibles</h2>
+      <div id="zonaPool"></div>
+    </div>
+
+    <div class="tarjeta">
+      <h2>➕ Crear premio para un ganador</h2>
+      <div class="aviso aviso-azul">
+        <strong>Importante:</strong> una vez creado un premio, <strong>NO se puede modificar</strong>. Revisa bien la cédula y el nombre del ganador antes de guardar.
+      </div>
+      <label>Nombre del concurso (obligatorio)
+        <input id="inConcurso" placeholder="Ej.: Cosplay Nitro 2026" maxlength="80">
+      </label>
+      <div class="grid2">
+        <label>Nombre del ganador
+          <input id="inNombre" placeholder="Ej.: María" maxlength="60">
+        </label>
+        <label>Apellido del ganador
+          <input id="inApellido" placeholder="Ej.: Pérez" maxlength="60">
+        </label>
+      </div>
+      <label>Cédula del ganador
+        <input id="inCedula" placeholder="Ej.: 12345678" inputmode="numeric" maxlength="20">
+      </label>
+      <label>Cupones que consume este premio
+        <input id="inCupones" type="number" min="1" value="1" style="max-width:160px">
+      </label>
+      <div id="zonaDias"></div>
+      <div style="margin-top:14px">
+        <button class="btn btn-morado btn-grande" id="btnCrear">🎁 CREAR PREMIO</button>
+      </div>
+    </div>
+
+    <div class="tarjeta">
+      <h2>📜 Premios creados</h2>
+      <div id="zonaPremios"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+const params = new URLSearchParams(location.search);
+const CODIGO = params.get('a') || '';
+let DATOS = null;
+
+// ===== Modal estético propio =====
+function modalAlert(mensaje, titulo){
+  titulo = titulo || 'Aviso';
+  return new Promise(resolve => {
+    const fondo = document.createElement('div');
+    fondo.className = 'modal-fondo';
+    fondo.innerHTML =
+      '<div class="modal-caja">' +
+        '<div class="modal-titulo">' + titulo + '</div>' +
+        '<div class="modal-mensaje">' + mensaje + '</div>' +
+        '<div class="modal-acciones"><button class="btn" id="mOk">Aceptar</button></div>' +
+      '</div>';
+    document.body.appendChild(fondo);
+    const cerrar = () => { fondo.remove(); resolve(true); };
+    fondo.querySelector('#mOk').addEventListener('click', cerrar);
+    fondo.addEventListener('click', e => { if(e.target === fondo) cerrar(); });
+  });
+}
+
+function modalConfirm(mensaje, titulo, opciones){
+  opciones = opciones || {};
+  const requiereCheck = !!opciones.requiereCheck;
+  const checkTexto = opciones.checkTexto || 'Confirmo que revisé los datos y entiendo que no se puede modificar después.';
+  const btnTexto = opciones.btnTexto || 'Aceptar';
+  return new Promise(resolve => {
+    const fondo = document.createElement('div');
+    fondo.className = 'modal-fondo';
+    let extra = '';
+    if(requiereCheck){
+      extra = '<label style="display:flex;align-items:flex-start;gap:8px;color:var(--texto);font-size:15px;margin-bottom:10px">' +
+                '<input type="checkbox" id="mCheck" style="width:auto;margin:6px 0 0 0">' +
+                '<span>' + checkTexto + '</span>' +
+              '</label>';
+    }
+    fondo.innerHTML =
+      '<div class="modal-caja">' +
+        '<div class="modal-titulo">' + titulo + '</div>' +
+        '<div class="modal-mensaje">' + mensaje + '</div>' +
+        extra +
+        '<div class="modal-acciones">' +
+          '<button class="btn btn-gris" id="mCancelar">Cancelar</button>' +
+          '<button class="btn btn-rojo" id="mAceptar" ' + (requiereCheck ? 'disabled' : '') + '>' + btnTexto + '</button>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(fondo);
+    const cerrar = v => { fondo.remove(); resolve(v); };
+    if(requiereCheck){
+      fondo.querySelector('#mCheck').addEventListener('change', e => {
+        fondo.querySelector('#mAceptar').disabled = !e.target.checked;
+      });
+    }
+    fondo.querySelector('#mCancelar').addEventListener('click', () => cerrar(false));
+    fondo.querySelector('#mAceptar').addEventListener('click', () => cerrar(true));
+    fondo.addEventListener('click', e => { if(e.target === fondo) cerrar(false); });
+  });
+}
+
+function esc(t){
+  return String(t == null ? '' : t)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function diasTexto(d1, d2){
+  if(d1 && d2) return 'Día 1 y Día 2';
+  if(d1) return 'Día 1';
+  if(d2) return 'Día 2';
+  return '-';
+}
+
+function pintarPool(){
+  const a = DATOS.asignacion;
+  const zona = document.getElementById('zonaPool');
+  if(a.pool_tipo === 'unico'){
+    zona.innerHTML =
+      '<div class="dato"><strong>Cupones asignados (pool único)</strong><span>' + a.cupones_unico + '</span></div>' +
+      '<div class="dato"><strong>Disponibles</strong><span>' + a.disponible_unico + '</span></div>' +
+      '<div class="aviso aviso-verde">El pool es único: puedes asignar cupones a los días que decidas por cada premio.</div>';
+  }else{
+    zona.innerHTML =
+      '<div class="dato"><strong>Cupones asignados Día 1</strong><span>' + a.cupones_dia1 + ' · disponibles: ' + a.disponible_dia1 + '</span></div>' +
+      '<div class="dato"><strong>Cupones asignados Día 2</strong><span>' + a.cupones_dia2 + ' · disponibles: ' + a.disponible_dia2 + '</span></div>' +
+      '<div class="aviso aviso-verde">Esta asignación tiene cupones por día. Solo puedes usar cada premio en los días que tengan cupones disponibles.</div>';
+  }
+  pintarDias();
+}
+
+function pintarDias(){
+  const a = DATOS.asignacion;
+  const zona = document.getElementById('zonaDias');
+  if(a.pool_tipo === 'unico'){
+    zona.innerHTML =
+      '<label style="display:flex;gap:8px;align-items:center;color:var(--texto);margin-top:10px">' +
+        '<input type="checkbox" id="ckD1" style="width:auto;margin:0"> Día 1' +
+      '</label>' +
+      '<label style="display:flex;gap:8px;align-items:center;color:var(--texto);margin-top:4px">' +
+        '<input type="checkbox" id="ckD2" style="width:auto;margin:0"> Día 2' +
+      '</label>';
+  }else{
+    const disD1 = a.disponible_dia1 > 0;
+    const disD2 = a.disponible_dia2 > 0;
+    zona.innerHTML =
+      '<label style="display:flex;gap:8px;align-items:center;color:var(--texto);margin-top:10px' + (!disD1 ? ';opacity:.5' : '') + '">' +
+        '<input type="checkbox" id="ckD1" ' + (disD1 ? '' : 'disabled') + ' style="width:auto;margin:0"> Día 1' + (!disD1 ? ' (sin cupones)' : '') +
+      '</label>' +
+      '<label style="display:flex;gap:8px;align-items:center;color:var(--texto);margin-top:4px' + (!disD2 ? ';opacity:.5' : '') + '">' +
+        '<input type="checkbox" id="ckD2" ' + (disD2 ? '' : 'disabled') + ' style="width:auto;margin:0"> Día 2' + (!disD2 ? ' (sin cupones)' : '') +
+      '</label>';
+  }
+}
+
+function pintarPremios(){
+  const zona = document.getElementById('zonaPremios');
+  const premios = DATOS.premios || [];
+  if(premios.length === 0){
+    zona.innerHTML = '<p class="suave">Todavía no has creado ningún premio.</p>';
+    return;
+  }
+  let html = '';
+  premios.forEach(p => {
+    const estadoPill = p.estado === 'activa'
+      ? (p.canjeado_at ? '<span class="pill pill-amarillo">Canjeado</span>' : '<span class="pill pill-verde">Activo</span>')
+      : '<span class="pill pill-rojo">Anulado</span>';
+    const linkGanador = BASE + 'cortesia.html?c=' + p.codigo_link;
+    const urlQR = urlPuerta('ci', p.codigo_qr);
+    html += '<div class="item">' +
+      '<div class="dato"><strong>Ganador</strong><span>' + esc(p.nombre) + ' ' + esc(p.apellido) + '</span></div>' +
+      '<div class="dato"><strong>Cédula</strong><span>' + esc(p.cedula) + '</span></div>' +
+      '<div class="dato"><strong>Concurso</strong><span>' + esc(p.concurso) + '</span></div>' +
+      '<div class="dato"><strong>Días</strong><span>' + diasTexto(p.dia1, p.dia2) + ' · ' + p.cupones_total + ' cupón(es)</span></div>' +
+      '<div class="dato"><strong>Estado</strong> ' + estadoPill + '</div>' +
+      '<div class="dato"><strong>Código del QR</strong><span class="mono">' + esc(p.codigo_qr) + '</span></div>' +
+      '<div id="qr-' + esc(p.codigo_qr) + '" class="qr"></div>' +
+      '<div class="fila">' +
+        '<button class="btn btn-gris btn-mini" data-copy="' + esc(linkGanador) + '">📋 Copiar link del ganador</button>' +
+        '<a class="btn btn-gris btn-mini" href="' + esc(linkWA('Hola ' + p.nombre + ', aquí tienes tu premio de ' + p.concurso + ' en Nitrotoon: ' + linkGanador)) + '" target="_blank" rel="noopener">📱 WhatsApp</a>' +
+        '<a class="btn btn-gris btn-mini" href="' + esc(linkCorreo('Tu premio Nitrotoon - ' + p.concurso, 'Hola ' + p.nombre + ',\n\nAquí tienes tu premio de ' + p.concurso + ':\n\n' + linkGanador)) + '">✉️ Correo</a>' +
+      '</div>' +
+    '</div>';
+  });
+  zona.innerHTML = html;
+
+  // Pintar QRs y cablear copiar
+  premios.forEach(p => {
+    const cont = document.getElementById('qr-' + p.codigo_qr);
+    if(cont && typeof ponerQR === 'function'){
+      try{ ponerQR(cont, urlPuerta('ci', p.codigo_qr), p.codigo_qr); }catch(e){}
+    }
+  });
+  zona.querySelectorAll('button[data-copy]').forEach(b => {
+    b.addEventListener('click', async () => {
+      const txt = b.getAttribute('data-copy');
+      const orig = b.textContent;
+      try{
+        await navigator.clipboard.writeText(txt);
+        b.textContent = '¡Copiado!';
+        setTimeout(() => { b.textContent = orig; }, 1500);
+      }catch(e){
+        const ta = document.createElement('textarea');
+        ta.value = txt; document.body.appendChild(ta); ta.select();
+        try{ document.execCommand('copy'); b.textContent = '¡Copiado!'; setTimeout(() => { b.textContent = orig; }, 1500); }catch(e2){}
+        document.body.removeChild(ta);
+      }
+    });
+  });
+}
+
+async function cargar(){
+  if(!CODIGO){
+    document.getElementById('panelCarga').style.display = 'none';
+    document.getElementById('panelError').style.display = 'block';
+    return;
+  }
+  try{
+    const d = await llamar('f_aliado_ver', { p_codigo_link: CODIGO });
+    if(!d){
+      document.getElementById('panelCarga').style.display = 'none';
+      document.getElementById('panelError').style.display = 'block';
+      return;
+    }
+    DATOS = d;
+    document.getElementById('panelCarga').style.display = 'none';
+
+    if(!d.aliado.activo || d.asignacion.estado !== 'activa'){
+      document.getElementById('razonAnulada').textContent =
+        'Motivo: ' + (d.asignacion.razon_anulacion || 'No especificado') +
+        '\nAliado: ' + d.aliado.nombre_organizacion;
+      document.getElementById('panelAnulado').style.display = 'block';
+      return;
+    }
+
+    document.getElementById('orgNombre').textContent = d.aliado.nombre_organizacion;
+    document.getElementById('responsable').textContent = d.aliado.responsable;
+    document.getElementById('codigoLink').textContent = d.asignacion.codigo_link;
+    pintarPool();
+    pintarPremios();
+    document.getElementById('panelPrincipal').style.display = 'block';
+  }catch(e){
+    document.getElementById('panelCarga').innerHTML = '<p style="color:var(--rojo)">Error al cargar: ' + esc(e.message || e) + '</p>';
+  }
+}
+
+document.getElementById('btnCrear').addEventListener('click', async () => {
+  const concurso = document.getElementById('inConcurso').value.trim();
+  const nombre = document.getElementById('inNombre').value.trim();
+  const apellido = document.getElementById('inApellido').value.trim();
+  const cedula = document.getElementById('inCedula').value.trim();
+  const cupones = parseInt(document.getElementById('inCupones').value, 10);
+  const ckD1 = document.getElementById('ckD1');
+  const ckD2 = document.getElementById('ckD2');
+  const d1 = ckD1 ? ckD1.checked : false;
+  const d2 = ckD2 ? ckD2.checked : false;
+
+  if(!concurso){ await modalAlert('Escribe el nombre del concurso.', 'Falta el concurso'); return; }
+  if(!nombre){ await modalAlert('Escribe el nombre del ganador.', 'Falta el nombre'); return; }
+  if(!apellido){ await modalAlert('Escribe el apellido del ganador.', 'Falta el apellido'); return; }
+  if(!cedula){ await modalAlert('Escribe la cédula del ganador.', 'Falta la cédula'); return; }
+  if(!cupones || cupones < 1){ await modalAlert('Indica cuántos cupones consume el premio (mínimo 1).', 'Cupones inválidos'); return; }
+  if(!d1 && !d2){ await modalAlert('Marca al menos un día (Día 1, Día 2 o ambos).', 'Falta el día'); return; }
+
+  // Advertencia 1
+  const ok1 = await modalConfirm(
+    'Vas a crear el premio:\n\n' +
+    '• Concurso: ' + concurso + '\n' +
+    '• Ganador: ' + nombre + ' ' + apellido + '\n' +
+    '• Cédula: ' + cedula + '\n' +
+    '• Días: ' + diasTexto(d1, d2) + '\n' +
+    '• Cupones: ' + cupones + '\n\n' +
+    '¿Deseas continuar?',
+    '⚠️ Revisa los datos',
+    { btnTexto: 'Continuar' }
+  );
+  if(!ok1) return;
+
+  // Advertencia 2 (con checkbox obligatorio)
+  const ok2 = await modalConfirm(
+    'ÚLTIMA ADVERTENCIA\n\nUna vez creado el premio, NO se puede modificar ni por ti ni por el administrador sin anularlo. Revisa que la cédula y el nombre estén correctos.\n\nSi te equivocaste, tendrás que pedirle al administrador que anule este premio y te asigne una nueva campaña.',
+    '⚠️ Confirmación final',
+    { requiereCheck: true, checkTexto: 'Confirmo que revisé la cédula y el nombre del ganador y son correctos.', btnTexto: 'Crear premio' }
+  );
+  if(!ok2) return;
+
+  const btn = document.getElementById('btnCrear');
+  btn.disabled = true;
+  btn.textContent = 'Creando...';
+  try{
+    const r = await llamar('f_aliado_crear_premio', {
+      p_codigo_link: CODIGO,
+      p_nombre: nombre,
+      p_apellido: apellido,
+      p_cedula: cedula,
+      p_concurso: concurso,
+      p_cupones_total: cupones,
+      p_dia1: d1,
+      p_dia2: d2
+    });
+    if(!r || r.error){
+      const msg = r && r.error ? r.error : 'desconocido';
+      const disp = r && r.disponible !== undefined ? ' Disponibles: ' + r.disponible + '.' : '';
+      await modalAlert('No se pudo crear el premio: ' + msg + disp, 'Error');
+    }else{
+      await modalAlert('✅ Premio creado correctamente.\n\nCódigo del QR: ' + r.codigo_qr + '\nLink del ganador: ' + BASE + 'cortesia.html?c=' + r.codigo_link, 'Premio creado');
+      document.getElementById('inConcurso').value = '';
+      document.getElementById('inNombre').value = '';
+      document.getElementById('inApellido').value = '';
+      document.getElementById('inCedula').value = '';
+      document.getElementById('inCupones').value = '1';
+      if(document.getElementById('ckD1')) document.getElementById('ckD1').checked = false;
+      if(document.getElementById('ckD2')) document.getElementById('ckD2').checked = false;
+      // Recargar
+      const d = await llamar('f_aliado_ver', { p_codigo_link: CODIGO });
+      if(d){ DATOS = d; pintarPool(); pintarPremios(); }
+    }
+  }catch(e){
+    await modalAlert('Error al crear premio: ' + (e.message || e), 'Error');
+  }
+  btn.disabled = false;
+  btn.textContent = '🎁 CREAR PREMIO';
+});
+
+cargar();
+</script>
+</body>
+</html>
