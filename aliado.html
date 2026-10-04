@@ -39,7 +39,7 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;backgr
 .btn-azul{background:linear-gradient(135deg,var(--acento2),#147acc)}
 .btn-morado{background:linear-gradient(135deg,var(--morado),#7a3ff2)}
 .btn-grande{width:100%;padding:18px;font-size:19px;margin-bottom:12px}
-.btn-mini{padding:7px 12px;font-size:13px;border-radius:8px}
+.btn-mini{padding:8px 14px;font-size:14px;border-radius:8px}
 input,select,textarea{width:100%;padding:12px 14px;border:1px solid var(--borde);border-radius:10px;background:#0d1626;color:var(--texto);font-size:16px;font-family:inherit;margin-top:6px}
 input:focus,textarea:focus{outline:2px solid var(--acento2);border-color:var(--acento2)}
 label{display:block;margin-bottom:12px;color:var(--suave);font-size:14px;font-weight:600}
@@ -51,17 +51,20 @@ label{display:block;margin-bottom:12px;color:var(--suave);font-size:14px;font-we
 .pill-amarillo{background:rgba(255,211,61,.18);color:var(--aviso)}
 .pill-morado{background:rgba(176,106,255,.18);color:var(--morado)}
 .mono{font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:1px}
+.seccion-acciones{display:flex;justify-content:flex-start;margin-bottom:14px}
 .concurso-item{border:1px solid var(--borde);border-radius:12px;padding:14px;margin-bottom:12px;background:#0e1728}
 .concurso-item .cab{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:10px}
 .concurso-item .nom{font-size:17px;font-weight:700}
 .concurso-item .meta{font-size:13px;color:var(--suave);margin-top:2px}
 .concurso-item .acciones{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .concurso-item .acciones .btn{flex:1;min-width:120px}
-.ganador-caja{background:#0d1626;border:1px solid var(--borde);border-radius:10px;padding:12px;margin-top:10px;font-size:14px}
-.ganador-caja .dato-gan{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dashed var(--borde)}
-.ganador-caja .dato-gan:last-child{border-bottom:none}
-.ganador-caja .dato-gan strong{font-size:12px;color:var(--suave);text-transform:uppercase;letter-spacing:1px}
-.qr-mini{max-width:180px;display:block;margin:10px auto 0}
+.ganador-caja{background:#0d1626;border:1px solid var(--borde);border-radius:10px;padding:12px;margin-top:10px}
+.bloque-datos{margin-bottom:10px}
+.bloque-titulo{font-size:12px;color:var(--acento2);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:6px}
+.dato-gan{display:flex;justify-content:space-between;gap:10px;padding:4px 0;border-bottom:1px dashed var(--borde);font-size:14px}
+.dato-gan:last-child{border-bottom:none}
+.dato-gan strong{font-size:12px;color:var(--suave);text-transform:uppercase;letter-spacing:1px;flex-shrink:0}
+.dato-gan span{text-align:right;word-break:break-word}
 .modal-fondo{position:fixed;inset:0;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px;overflow-y:auto}
 .modal-caja{background:var(--tarjeta);border:1px solid var(--borde);border-radius:16px;padding:22px;max-width:560px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,.5);max-height:92vh;overflow-y:auto}
 .modal-titulo{font-size:20px;font-weight:700;color:var(--acento);margin-bottom:12px}
@@ -74,8 +77,9 @@ label{display:block;margin-bottom:12px;color:var(--suave);font-size:14px;font-we
 .cuponera{background:#0d1626;border:1px solid var(--borde);border-radius:10px;padding:14px;text-align:center;margin-bottom:14px}
 .cuponera .grande{font-size:30px;font-weight:800;color:var(--acento);display:block}
 .cuponera .lbl{font-size:13px;color:var(--suave)}
-.link-box{background:#0d1626;border:1px solid var(--borde);border-radius:10px;padding:12px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;word-break:break-all;color:var(--suave);margin-top:8px}
+.link-box{background:#0d1626;border:1px solid var(--borde);border-radius:10px;padding:12px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;word-break:break-all;color:var(--texto);margin-top:8px}
 .texto-carta{background:#0d1626;border:1px solid var(--borde);border-radius:10px;padding:14px;margin-top:10px;font-size:14px;line-height:1.6;color:var(--texto);white-space:pre-wrap;max-height:240px;overflow-y:auto}
+.nota-abajo{background:rgba(255,211,61,.08);border:1px solid var(--aviso);border-radius:10px;padding:10px 12px;margin-top:12px;font-size:13px;color:var(--aviso)}
 </style>
 </head>
 <body>
@@ -119,13 +123,16 @@ label{display:block;margin-bottom:12px;color:var(--suave);font-size:14px;font-we
         <div class="dato"><strong>Disponibles</strong><span class="num" id="cuponesDisponibles">-</span></div>
       </div>
       <p style="color:var(--suave);font-size:13px;margin-top:10px">
-        Las entradas se reservan al crear cada concurso. Las entradas reservadas a un concurso sin ganador asignado siguen contando como reservadas, pero puedes eliminarlo y recuperarlas.
+        Las entradas se reservan al crear cada concurso. Si eliminas un concurso sin ganador, las entradas vuelven a estar disponibles.
       </p>
     </div>
 
     <div class="tarjeta">
       <h2>🏆 Tus concursos</h2>
-      <button class="btn btn-morado btn-grande" id="btnNuevoConcurso">➕ Crear un nuevo concurso</button>
+      <div class="seccion-acciones">
+        <button class="btn btn-morado" id="btnNuevoConcurso">➕ Crear nuevo concurso</button>
+      </div>
+      <div style="font-size:13px;color:var(--suave);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px">📜 Historial de concursos</div>
       <div id="zonaConcursos"></div>
     </div>
   </div>
@@ -162,7 +169,6 @@ function modalConfirm(mensaje, titulo, opciones){
   const requiereCheck = !!opciones.requiereCheck;
   const checkTexto = opciones.checkTexto || 'Confirmo que revisé la información.';
   const btnTexto = opciones.btnTexto || 'Aceptar';
-  const btnClase = opciones.btnClase || '';
   const colorBoton = opciones.colorBoton || 'btn-rojo';
   return new Promise(resolve => {
     const fondo = document.createElement('div');
@@ -249,10 +255,9 @@ function pintarTodo(){
 function pintarConcursos(){
   const zona = document.getElementById('zonaConcursos');
   const concursos = DATOS.concursos || [];
-  const disp = DATOS.asignacion.cupones_disponibles;
 
   if(concursos.length === 0){
-    zona.innerHTML = '<p style="color:var(--suave);margin-top:14px">Todavía no has creado ningún concurso.</p>';
+    zona.innerHTML = '<p style="color:var(--suave)">Todavía no has creado ningún concurso.</p>';
     return;
   }
 
@@ -270,19 +275,20 @@ function pintarConcursos(){
       const estadoG = g.estado === 'activa'
         ? (g.canjeado_at ? '<span class="pill pill-amarillo">Canjeado</span>' : '<span class="pill pill-verde">Activo</span>')
         : '<span class="pill pill-rojo">Anulado</span>';
-      const linkGan = BASE + 'cortesia.html?c=' + g.codigo_link;
       ganadorHtml =
         '<div class="ganador-caja">' +
-          '<div class="dato-gan"><strong>Ganador</strong><span>' + esc(g.nombre) + ' ' + esc(g.apellido) + '</span></div>' +
-          '<div class="dato-gan"><strong>Cédula</strong><span>' + esc(g.cedula) + '</span></div>' +
-          '<div class="dato-gan"><strong>Días</strong><span>' + diasTexto(g.dia1, g.dia2) + ' · ' + g.cupones_total + ' entrada(s)</span></div>' +
-          '<div class="dato-gan"><strong>Estado</strong><span>' + estadoG + '</span></div>' +
-          '<div class="dato-gan"><strong>Código QR</strong><span class="mono">' + esc(g.codigo_qr) + '</span></div>' +
-          '<div id="qr-' + esc(g.codigo_qr) + '" class="qr-mini"></div>' +
-          '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">' +
-            '<button class="btn btn-gris btn-mini" data-copy="' + esc(linkGan) + '">📋 Copiar link del ganador</button>' +
-            '<a class="btn btn-gris btn-mini" target="_blank" rel="noopener" href="' + esc('https://wa.me/?text=' + encodeURIComponent('Hola ' + g.nombre + ', ¡felicidades! Ganaste en ' + c.nombre + '. Aquí tienes tu pase: ' + linkGan)) + '">📱 WhatsApp</a>' +
-            '<a class="btn btn-gris btn-mini" href="' + esc('mailto:?subject=' + encodeURIComponent('¡Ganaste en ' + c.nombre + '!') + '&body=' + encodeURIComponent('Hola ' + g.nombre + ',\n\n¡Felicidades! Ganaste en ' + c.nombre + '.\n\nAquí tienes tu pase:\n' + linkGan)) + '">✉️ Correo</a>' +
+          '<div class="bloque-datos">' +
+            '<div class="bloque-titulo">👤 Datos del ganador</div>' +
+            '<div class="dato-gan"><strong>Nombre</strong><span>' + esc(g.nombre) + ' ' + esc(g.apellido) + '</span></div>' +
+            '<div class="dato-gan"><strong>Cédula</strong><span>' + esc(g.cedula) + '</span></div>' +
+            '<div class="dato-gan"><strong>Correo</strong><span>' + (g.correo ? esc(g.correo) : '—') + '</span></div>' +
+            '<div class="dato-gan"><strong>Teléfono</strong><span>' + (g.telefono ? esc(g.telefono) : '—') + '</span></div>' +
+          '</div>' +
+          '<div class="bloque-datos">' +
+            '<div class="bloque-titulo">🎟️ Premio</div>' +
+            '<div class="dato-gan"><strong>Días autorizados</strong><span>' + diasTexto(g.dia1, g.dia2) + (c.fecha_concurso ? ' · ' + fmtFecha(c.fecha_concurso) : '') + '</span></div>' +
+            '<div class="dato-gan"><strong>Entradas asignadas</strong><span>' + g.cupones_total + '</span></div>' +
+            '<div class="dato-gan"><strong>Estado</strong><span>' + estadoG + '</span></div>' +
           '</div>' +
         '</div>';
     }
@@ -294,6 +300,11 @@ function pintarConcursos(){
           '<button class="btn btn-morado btn-mini" data-accion="asignar" data-id="' + c.id + '">🏆 Asignar ganador</button>' +
           '<button class="btn btn-gris btn-mini" data-accion="editar" data-id="' + c.id + '">✏️ Editar</button>' +
           '<button class="btn btn-rojo btn-mini" data-accion="eliminar" data-id="' + c.id + '">🗑️ Eliminar</button>' +
+        '</div>';
+    }else if(c.ganador){
+      botones =
+        '<div class="acciones">' +
+          '<button class="btn btn-azul btn-mini" data-accion="enviar" data-id="' + c.id + '">📨 Enviar premio al ganador</button>' +
         '</div>';
     }
 
@@ -313,33 +324,6 @@ function pintarConcursos(){
   });
   zona.innerHTML = html;
 
-  // Pintar QRs
-  concursos.forEach(c => {
-    if(c.ganador && c.ganador.codigo_qr){
-      const cont = document.getElementById('qr-' + c.ganador.codigo_qr);
-      if(cont && typeof ponerQR === 'function'){
-        try{ ponerQR(cont, urlPuerta('ci', c.ganador.codigo_qr), c.ganador.codigo_qr); }catch(e){}
-      }
-    }
-  });
-
-  // Cablear botones
-  zona.querySelectorAll('button[data-copy]').forEach(b => {
-    b.addEventListener('click', async () => {
-      const txt = b.getAttribute('data-copy');
-      const orig = b.textContent;
-      try{
-        await navigator.clipboard.writeText(txt);
-        b.textContent = '¡Copiado!';
-        setTimeout(() => { b.textContent = orig; }, 1500);
-      }catch(e){
-        const ta = document.createElement('textarea');
-        ta.value = txt; document.body.appendChild(ta); ta.select();
-        try{ document.execCommand('copy'); b.textContent = '¡Copiado!'; setTimeout(() => { b.textContent = orig; }, 1500); }catch(e2){}
-        document.body.removeChild(ta);
-      }
-    });
-  });
   zona.querySelectorAll('button[data-accion]').forEach(b => {
     b.addEventListener('click', () => {
       const acc = b.getAttribute('data-accion');
@@ -349,6 +333,7 @@ function pintarConcursos(){
       if(acc === 'asignar') abrirModalGanador(c);
       else if(acc === 'editar') abrirModalConcurso(c);
       else if(acc === 'eliminar') confirmarEliminar(c);
+      else if(acc === 'enviar') abrirModalEnviarPremio(c);
     });
   });
 }
@@ -488,7 +473,6 @@ async function abrirModalGanador(concurso){
     '</div>';
   document.body.appendChild(fondo);
 
-  // Por defecto marca Día 1
   fondo.querySelector('#gD1').checked = true;
 
   const cerrar = () => fondo.remove();
@@ -553,25 +537,8 @@ async function abrirModalGanador(concurso){
       }
       cerrar();
       await recargar();
-      // Modal final con el link listo para enviar
-      const linkGan = BASE + 'cortesia.html?c=' + r.codigo_link;
-      const textoWA =
-        '🎉 ¡Felicidades ' + nombre + '!\n\n' +
-        'Ganaste en el concurso "' + concurso.nombre + '", organizado por ' + DATOS.aliado.nombre_organizacion + ' en Nitrotoon.\n\n' +
-        'Te has ganado ' + cupones + ' entrada(s) para ' + diasTexto(d1, d2) + '.\n\n' +
-        'Presenta este enlace en la puerta: ' + linkGan + '\n\n' +
-        'IMPORTANTE: este QR solo se puede usar UNA vez. Si ganaste más de una entrada, debes presentarte con todas tus personas juntas en la puerta; si alguien no está en ese momento, su entrada se pierde y no se puede reclamar después.';
-      await mostrarModalExito({
-        nombre: nombre,
-        apellido: apellido,
-        concurso: concurso.nombre,
-        organizacion: DATOS.aliado.nombre_organizacion,
-        cupones: cupones,
-        d1: d1, d2: d2,
-        codigoQR: r.codigo_qr,
-        linkGanador: linkGan,
-        textoWA: textoWA
-      });
+      const cNuevo = DATOS.concursos.find(x => x.id === concurso.id);
+      if(cNuevo) abrirModalEnviarPremio(cNuevo);
     }catch(e){
       await modalAlert('Error: ' + (e.message || e), 'Error');
       btn.disabled = false; btn.textContent = 'Asignar ganador';
@@ -580,57 +547,69 @@ async function abrirModalGanador(concurso){
 }
 
 // ============================================================
-// MODAL DE ÉXITO — link listo para enviar al ganador
+// MODAL ENVIAR PREMIO AL GANADOR
 // ============================================================
-function mostrarModalExito(d){
-  return new Promise(resolve => {
-    const fondo = document.createElement('div');
-    fondo.className = 'modal-fondo';
-    const urlQR = urlPuerta('ci', d.codigoQR);
-    const waLink = 'https://wa.me/?text=' + encodeURIComponent(d.textoWA);
-    const mailLink = 'mailto:?subject=' + encodeURIComponent('¡Ganaste en ' + d.concurso + '!') + '&body=' + encodeURIComponent(d.textoWA);
+function abrirModalEnviarPremio(concurso){
+  const g = concurso.ganador;
+  if(!g) return;
+  const linkGan = BASE + 'cortesia.html?c=' + g.codigo_link;
+  const fechaTxt = concurso.fecha_concurso ? fmtFecha(concurso.fecha_concurso) : '';
+  const diasTxt = diasTexto(g.dia1, g.dia2) + (fechaTxt ? ' (' + fechaTxt + ')' : '');
 
-    fondo.innerHTML =
-      '<div class="modal-caja">' +
-        '<div class="modal-titulo">🎉 ¡Ganador asignado!</div>' +
-        '<div class="modal-sub">El concurso <strong>' + esc(d.concurso) + '</strong> quedó cerrado. Aquí tienes el link del ganador para que se lo envíes.</div>' +
-        '<div class="texto-carta">' +
-          'Estimado/a ' + esc(d.nombre) + ' ' + esc(d.apellido) + ':\n\n' +
-          '¡Gracias por participar en el concurso "' + esc(d.concurso) + '", celebrado por ' + esc(d.organizacion) + '!\n\n' +
-          'Te has ganado ' + d.cupones + ' entrada(s) para el evento Nitrotoon, válidas para ' + diasTexto(d.d1, d.d2) + '.\n\n' +
-          'Presenta el QR en la puerta el día correspondiente.\n\n' +
-          'ATENCIÓN: solo puedes usar este QR UNA vez. Si tu premio incluye más de una entrada, debes presentarte con todas tus personas juntas en la puerta. Si alguien no está en ese momento, su entrada se pierde y no se puede reclamar después.\n\n' +
-          '¡Te esperamos!' +
-        '</div>' +
-        '<div id="qrExito" class="qr-mini" style="max-width:200px"></div>' +
-        '<div class="link-box">' + esc(d.linkGanador) + '</div>' +
-        '<div class="modal-acciones" style="justify-content:center;flex-wrap:wrap">' +
-          '<button class="btn btn-gris" id="mCopiar">📋 Copiar link</button>' +
-          '<a class="btn" href="' + esc(waLink) + '" target="_blank" rel="noopener">📱 WhatsApp</a>' +
-          '<a class="btn" href="' + esc(mailLink) + '">✉️ Correo</a>' +
-          '<button class="btn btn-azul" id="mCerrar">Listo</button>' +
-        '</div>' +
-      '</div>';
-    document.body.appendChild(fondo);
+  const textoCarta =
+    '🎉 ¡Felicidades ' + g.nombre + ' ' + g.apellido + '!\n\n' +
+    '¡Gracias por participar en el concurso "' + concurso.nombre + '", organizado por ' + DATOS.aliado.nombre_organizacion + '!\n\n' +
+    'Te has ganado ' + g.cupones_total + ' entrada(s) para Nitrotoon, válidas para ' + diasTxt + '.\n\n' +
+    'Presenta este enlace en la puerta del evento:\n' + linkGan + '\n\n' +
+    '⚠️ IMPORTANTE:\n' +
+    '• Este QR solo se puede usar UNA vez.\n' +
+    '• Si ganaste más de una entrada, debes presentarte con todas tus personas juntas en la puerta.\n' +
+    '• Si alguien de tu grupo no está presente en ese momento, su entrada se pierde y no se podrá reclamar después.';
 
-    const qrCont = fondo.querySelector('#qrExito');
-    if(typeof ponerQR === 'function'){ try{ ponerQR(qrCont, urlQR, d.codigoQR); }catch(e){} }
+  const textoWA = encodeURIComponent(textoCarta);
+  const textoMailSubject = encodeURIComponent('¡Ganaste en ' + concurso.nombre + '!');
+  const textoMailBody = encodeURIComponent(textoCarta);
 
-    fondo.querySelector('#mCopiar').addEventListener('click', async () => {
-      const b = fondo.querySelector('#mCopiar');
-      const orig = b.textContent;
-      try{
-        await navigator.clipboard.writeText(d.linkGanador);
-        b.textContent = '¡Copiado!';
-        setTimeout(() => { b.textContent = orig; }, 1500);
-      }catch(e){
-        const ta = document.createElement('textarea');
-        ta.value = d.linkGanador; document.body.appendChild(ta); ta.select();
-        try{ document.execCommand('copy'); b.textContent = '¡Copiado!'; setTimeout(() => { b.textContent = orig; }, 1500); }catch(e2){}
-        document.body.removeChild(ta);
-      }
-    });
-    fondo.querySelector('#mCerrar').addEventListener('click', () => { fondo.remove(); resolve(true); });
+  const waLink = 'https://wa.me/?text=' + textoWA;
+  const mailLink = 'mailto:?subject=' + textoMailSubject + '&body=' + textoMailBody;
+
+  const fondo = document.createElement('div');
+  fondo.className = 'modal-fondo';
+  fondo.innerHTML =
+    '<div class="modal-caja">' +
+      '<div class="modal-titulo">📨 Enviar premio al ganador</div>' +
+      '<div class="modal-sub">Concurso: <strong>' + esc(concurso.nombre) + '</strong> · Ganador: <strong>' + esc(g.nombre) + ' ' + esc(g.apellido) + '</strong></div>' +
+      '<div style="font-size:14px;color:var(--suave);margin-bottom:6px">Este es el mensaje que recibirá:</div>' +
+      '<div class="texto-carta">' + esc(textoCarta) + '</div>' +
+      '<div class="modal-acciones" style="justify-content:center;flex-wrap:wrap">' +
+        '<button class="btn btn-gris" id="mCopiar">📋 Copiar link</button>' +
+        '<a class="btn" href="' + waLink + '" target="_blank" rel="noopener">📱 WhatsApp</a>' +
+        '<a class="btn btn-azul" href="' + mailLink + '">✉️ Correo</a>' +
+        '<button class="btn btn-gris" id="mCerrar">Cerrar</button>' +
+      '</div>' +
+      '<div class="nota-abajo">' +
+        'Si los botones de WhatsApp o Correo no abren automáticamente (por ejemplo, si no tienes WhatsApp Web o tu correo configurado en este dispositivo), pulsa <strong>Copiar link</strong> y envíaselo manualmente desde tu aplicación de WhatsApp o desde tu correo.' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(fondo);
+
+  const cerrar = () => fondo.remove();
+  fondo.querySelector('#mCerrar').addEventListener('click', cerrar);
+  fondo.addEventListener('click', e => { if(e.target === fondo) cerrar(); });
+
+  fondo.querySelector('#mCopiar').addEventListener('click', async () => {
+    const b = fondo.querySelector('#mCopiar');
+    const orig = b.textContent;
+    try{
+      await navigator.clipboard.writeText(textoCarta);
+      b.textContent = '¡Copiado!';
+      setTimeout(() => { b.textContent = orig; }, 1500);
+    }catch(e){
+      const ta = document.createElement('textarea');
+      ta.value = textoCarta; document.body.appendChild(ta); ta.select();
+      try{ document.execCommand('copy'); b.textContent = '¡Copiado!'; setTimeout(() => { b.textContent = orig; }, 1500); }catch(e2){}
+      document.body.removeChild(ta);
+    }
   });
 }
 
