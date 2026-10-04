@@ -267,7 +267,8 @@ function pintarConcursos(){
     const pillEstado = abierto
       ? '<span class="pill pill-verde">Abierto · sin ganador</span>'
       : '<span class="pill pill-morado">Cerrado · ganador asignado</span>';
-    const fechaTxt = c.fecha_concurso ? ' · Fecha: ' + fmtFecha(c.fecha_concurso) : '';
+       const fechaCreaTxt = c.creada_at ? fmtFecha(c.creada_at.substring(0, 10)) : '-';
+    const fechaEjecTxt = c.fecha_concurso ? fmtFecha(c.fecha_concurso) : 'sin fecha definida';
     const descTxt = c.descripcion ? '<div style="color:var(--suave);font-size:13px;margin-top:4px">' + esc(c.descripcion) + '</div>' : '';
     let ganadorHtml = '';
     if(c.ganador){
@@ -313,7 +314,8 @@ function pintarConcursos(){
         '<div class="cab">' +
           '<div>' +
             '<div class="nom">' + esc(c.nombre) + '</div>' +
-            '<div class="meta">' + c.cupones_reservados + ' entrada(s) reservada(s)' + fechaTxt + '</div>' +
+            '<div class="meta">' + c.cupones_reservados + ' entrada(s) reservada(s)</div>' +
+            '<div class="meta">📅 Creado: ' + fechaCreaTxt + ' · 🎯 Ejecución: ' + fechaEjecTxt + '</div>' +
             descTxt +
           '</div>' +
           '<div>' + pillEstado + '</div>' +
@@ -456,8 +458,8 @@ async function abrirModalGanador(concurso){
         '<label>Apellido *<input id="gApellido" maxlength="60" placeholder="Ej.: Pérez"></label>' +
       '</div>' +
       '<label>Cédula *<input id="gCedula" maxlength="20" inputmode="numeric" placeholder="Ej.: 12345678"></label>' +
-      '<label>Correo electrónico<input id="gCorreo" type="email" maxlength="120" placeholder="Ej.: maria@correo.com"></label>' +
-      '<label>Teléfono / WhatsApp<input id="gTelefono" maxlength="30" placeholder="Ej.: +58 414 1234567"></label>' +
+      '<label>Correo electrónico *<input id="gCorreo" type="email" maxlength="120" placeholder="Ej.: maria@correo.com"></label>' +
+      '<label>Teléfono / WhatsApp *<input id="gTelefono" maxlength="30" placeholder="Ej.: +58 414 1234567"></label>' +
       '<label>Entradas que consume este premio (máx. ' + concurso.cupones_reservados + ')*' +
         '<input id="gCupones" type="number" min="1" max="' + concurso.cupones_reservados + '" value="' + concurso.cupones_reservados + '" style="max-width:160px">' +
       '</label>' +
@@ -492,6 +494,8 @@ async function abrirModalGanador(concurso){
     if(!nombre){ await modalAlert('Falta el nombre del ganador.', 'Datos incompletos'); return; }
     if(!apellido){ await modalAlert('Falta el apellido del ganador.', 'Datos incompletos'); return; }
     if(!cedula){ await modalAlert('Falta la cédula del ganador.', 'Datos incompletos'); return; }
+    if(!correo){ await modalAlert('Falta el correo del ganador. Es obligatorio para poder contactarlo.', 'Datos incompletos'); return; }
+    if(!telefono){ await modalAlert('Falta el teléfono del ganador. Es obligatorio para poder contactarlo.', 'Datos incompletos'); return; }
     if(!cupones || cupones < 1 || cupones > concurso.cupones_reservados){
       await modalAlert('Las entradas deben ser entre 1 y ' + concurso.cupones_reservados + '.', 'Entradas inválidas'); return;
     }
