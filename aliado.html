@@ -51,7 +51,9 @@ label{display:block;margin-bottom:12px;color:var(--suave);font-size:14px;font-we
 .pill-amarillo{background:rgba(255,211,61,.18);color:var(--aviso)}
 .pill-morado{background:rgba(176,106,255,.18);color:var(--morado)}
 .mono{font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:1px}
-.seccion-acciones{display:flex;justify-content:flex-start;margin-bottom:14px}
+.seccion-acciones{display:flex;justify-content:flex-end;margin-bottom:14px}
+.tarjeta h2{text-align:center}
+.titulo-historial{font-size:13px;color:var(--suave);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin:4px 0 14px;text-align:center;border-bottom:1px solid var(--borde);padding-bottom:8px}
 .concurso-item{border:1px solid var(--borde);border-radius:12px;padding:14px;margin-bottom:12px;background:#0e1728}
 .concurso-item .cab{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:10px}
 .concurso-item .nom{font-size:17px;font-weight:700}
@@ -138,7 +140,7 @@ label{display:block;margin-bottom:12px;color:var(--suave);font-size:14px;font-we
       <div class="seccion-acciones">
         <button class="btn btn-morado" id="btnNuevoConcurso">➕ Crear nuevo concurso</button>
       </div>
-      <div style="font-size:13px;color:var(--suave);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px">📜 Historial de concursos</div>
+      <div class="titulo-historial">📜 Historial de concursos</div>
       <div id="zonaConcursos"></div>
     </div>
   </div>
@@ -304,30 +306,7 @@ function pintarConcursos(){
        const fechaCreaTxt = c.creada_at ? fmtFecha(c.creada_at.substring(0, 10)) : '-';
     const fechaEjecTxt = c.fecha_concurso ? fmtFecha(c.fecha_concurso) : 'sin fecha definida';
     const descTxt = c.descripcion ? '<div style="color:var(--suave);font-size:13px;margin-top:4px">' + esc(c.descripcion) + '</div>' : '';
-    let ganadorHtml = '';
-    if(c.ganador){
-      const g = c.ganador;
-      const estadoG = g.estado === 'activa'
-        ? (g.canjeado_at ? '<span class="pill pill-amarillo">Canjeado</span>' : '<span class="pill pill-verde">Activo</span>')
-        : '<span class="pill pill-rojo">Anulado</span>';
-      ganadorHtml =
-        '<div class="ganador-caja">' +
-          '<div class="bloque-datos">' +
-            '<div class="bloque-titulo">👤 Datos del ganador</div>' +
-            '<div class="dato-gan"><strong>Nombre</strong><span>' + esc(g.nombre) + ' ' + esc(g.apellido) + '</span></div>' +
-            '<div class="dato-gan"><strong>Cédula</strong><span>' + esc(g.cedula) + '</span></div>' +
-            '<div class="dato-gan"><strong>Correo</strong><span>' + (g.correo ? esc(g.correo) : '—') + '</span></div>' +
-            '<div class="dato-gan"><strong>Teléfono</strong><span>' + (g.telefono ? esc(g.telefono) : '—') + '</span></div>' +
-          '</div>' +
-          '<div class="bloque-datos">' +
-            '<div class="bloque-titulo">🎟️ Premio</div>' +
-            '<div class="dato-gan"><strong>Días autorizados</strong><span>' + diasTexto(g.dia1, g.dia2) + (c.fecha_concurso ? ' · ' + fmtFecha(c.fecha_concurso) : '') + '</span></div>' +
-            '<div class="dato-gan"><strong>Entradas asignadas</strong><span>' + g.cupones_total + '</span></div>' +
-            '<div class="dato-gan"><strong>Estado</strong><span>' + estadoG + '</span></div>' +
-          '</div>' +
-        '</div>';
-    }
-
+    let ganadorHtml = '';   
     let botones = '';
     if(abierto){
       botones =
@@ -336,9 +315,10 @@ function pintarConcursos(){
           '<button class="btn btn-gris btn-mini" data-accion="editar" data-id="' + c.id + '">✏️ Editar</button>' +
           '<button class="btn btn-rojo btn-mini" data-accion="eliminar" data-id="' + c.id + '">🗑️ Eliminar</button>' +
         '</div>';
-    }else if(c.ganador){
+     }else if(c.ganador){
       botones =
         '<div class="acciones">' +
+          '<button class="btn btn-gris btn-mini" data-accion="detalles" data-id="' + c.id + '">🔍 Ver detalles del ganador</button>' +
           '<button class="btn btn-azul btn-mini" data-accion="enviar" data-id="' + c.id + '">📨 Enviar premio al ganador</button>' +
         '</div>';
     }
@@ -348,7 +328,7 @@ function pintarConcursos(){
         '<div class="cab">' +
           '<div>' +
             '<div class="nom">' + esc(c.nombre) + '</div>' +
-            '<div class="meta">' + c.cupones_reservados + ' entrada(s) reservada(s)</div>' +
+            '<div class="meta">' + c.cupones_reservados + (abierto ? ' entrada(s) reservada(s)' : ' entrada(s) asignada(s)') + '</div>' +
             '<div class="meta">📅 Creado: ' + fechaCreaTxt + ' · 🎯 Ejecución: ' + fechaEjecTxt + '</div>' +
             descTxt +
           '</div>' +
@@ -370,6 +350,7 @@ function pintarConcursos(){
       else if(acc === 'editar') abrirModalConcurso(c);
       else if(acc === 'eliminar') confirmarEliminar(c);
       else if(acc === 'enviar') abrirModalEnviarPremio(c);
+      else if(acc === 'detalles') abrirModalDetallesGanador(c);
     });
   });
 }
@@ -582,6 +563,48 @@ async function abrirModalGanador(concurso){
       btn.disabled = false; btn.textContent = 'Asignar ganador';
     }
   });
+}
+
+// ============================================================
+// MODAL VER DETALLES DEL GANADOR
+// ============================================================
+function abrirModalDetallesGanador(concurso){
+  const g = concurso.ganador;
+  if(!g) return;
+  const estadoG = g.estado === 'activa'
+    ? (g.canjeado_at ? '<span class="pill pill-amarillo">Canjeado</span>' : '<span class="pill pill-verde">Activo</span>')
+    : '<span class="pill pill-rojo">Anulado</span>';
+  const fechaTxt = concurso.fecha_concurso ? fmtFecha(concurso.fecha_concurso) : 'Sin fecha definida';
+
+  const fondo = document.createElement('div');
+  fondo.className = 'modal-fondo';
+  fondo.innerHTML =
+    '<div class="modal-caja">' +
+      '<div class="modal-titulo">🔍 Detalles del ganador</div>' +
+      '<div class="modal-sub">Concurso: <strong>' + esc(concurso.nombre) + '</strong></div>' +
+      '<div class="bloque-datos">' +
+        '<div class="bloque-titulo">👤 Datos del ganador</div>' +
+        '<div class="dato-gan"><strong>Nombre</strong><span>' + esc(g.nombre) + ' ' + esc(g.apellido) + '</span></div>' +
+        '<div class="dato-gan"><strong>Cédula</strong><span>' + esc(g.cedula) + '</span></div>' +
+        '<div class="dato-gan"><strong>Correo</strong><span>' + (g.correo ? esc(g.correo) : '—') + '</span></div>' +
+        '<div class="dato-gan"><strong>Teléfono</strong><span>' + (g.telefono ? esc(g.telefono) : '—') + '</span></div>' +
+      '</div>' +
+      '<div class="bloque-datos">' +
+        '<div class="bloque-titulo">🎟️ Premio</div>' +
+        '<div class="dato-gan"><strong>Días autorizados</strong><span>' + diasTexto(g.dia1, g.dia2) + '</span></div>' +
+        '<div class="dato-gan"><strong>Fecha del concurso</strong><span>' + fechaTxt + '</span></div>' +
+        '<div class="dato-gan"><strong>Entradas ganadas</strong><span>' + g.cupones_total + '</span></div>' +
+        '<div class="dato-gan"><strong>Estado</strong><span>' + estadoG + '</span></div>' +
+        '<div class="dato-gan"><strong>Código QR</strong><span class="mono">' + esc(g.codigo_qr) + '</span></div>' +
+      '</div>' +
+      '<div class="modal-acciones" style="justify-content:center">' +
+        '<button class="btn btn-gris" id="mCerrar">Cerrar</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(fondo);
+  const cerrar = () => fondo.remove();
+  fondo.querySelector('#mCerrar').addEventListener('click', cerrar);
+  fondo.addEventListener('click', e => { if(e.target === fondo) cerrar(); });
 }
 
 // ============================================================
