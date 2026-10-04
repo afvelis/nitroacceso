@@ -89,6 +89,17 @@ label{display:block;margin-bottom:12px;color:var(--suave);font-size:14px;font-we
 .cola-item .cola-acciones{display:flex;justify-content:center;margin-top:12px}
 .felicidades{text-align:center;padding:20px;font-size:18px;color:var(--acento);font-weight:700}
 .felicidades .emoji{font-size:44px;display:block;margin-bottom:10px}
+.alerta-sub{border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:14px;line-height:1.55}
+.alerta-sub-titulo{font-weight:700;margin-bottom:6px;display:block}
+.alerta-sub .acciones{display:flex;justify-content:flex-end;margin-top:10px}
+.alerta-sub-azul{background:rgba(31,162,255,.10);border:1px solid var(--acento2);color:var(--texto)}
+.alerta-sub-azul .alerta-sub-titulo{color:var(--acento2)}
+.alerta-sub-amarilla{background:rgba(255,211,61,.10);border:1px solid var(--aviso);color:var(--texto)}
+.alerta-sub-amarilla .alerta-sub-titulo{color:var(--aviso)}
+.alerta-sub-roja{background:rgba(224,82,82,.10);border:1px solid var(--rojo);color:var(--texto)}
+.alerta-sub-roja .alerta-sub-titulo{color:var(--rojo)}
+.alerta-sub ul{margin:6px 0 0 0;padding-left:20px}
+.alerta-sub li{margin:3px 0}
 </style>
 </head>
 <body>
@@ -116,9 +127,9 @@ label{display:block;margin-bottom:12px;color:var(--suave);font-size:14px;font-we
   </div>
 
   <div id="panelPrincipal" style="display:none">
-    <div id="alertaPendientes" class="tarjeta" style="display:none;border-color:var(--aviso)">
-      <h2 style="color:var(--aviso)">⚠️ Concurso(s) pendiente(s) de ganador</h2>
-      <div id="alertaPendientesLista" class="aviso" style="margin-bottom:0"></div>
+    <div id="panelAvisos" class="tarjeta" style="display:none;border-color:var(--aviso)">
+      <h2 style="color:var(--aviso)">⚠️ Avisos</h2>
+      <div id="zonaAvisos"></div>
     </div>
 
     <div class="tarjeta">
@@ -243,6 +254,16 @@ function fmtFecha(f){
   }catch(e){ return f; }
 }
 
+function hoyISO(){
+  return new Date().toISOString().substring(0,10);
+}
+
+function sumarDias(fechaISO, dias){
+  const d = new Date(fechaISO + 'T00:00:00');
+  d.setDate(d.getDate() + dias);
+  return d.toISOString().substring(0,10);
+}
+
 async function recargar(){
   const d = await llamar('f_aliado_ver', { p_codigo_link: CODIGO });
   if(!d) return;
@@ -266,31 +287,85 @@ function pintarTodo(){
   dispEl.textContent = a.cupones_disponibles;
   dispEl.classList.toggle('chico', a.cupones_disponibles <= 0);
 
-  pintarAlertaPendientes();
+  pintarAvisos();
   pintarConcursos();
   pintarEstadisticasDia();
 }
 
-function pintarAlertaPendientes(){
-  const cont = document.getElementById('alertaPendientes');
-  const lista = document.getElementById('alertaPendientesLista');
-  const abiertos = (DATOS.concursos || []).filter(c => c.estado === 'abierto');
-  if(abiertos.length === 0){
+function pintarAvisos(){
+  const cont = document.getElementById('panelAvisos');
+  const zona = document.getElementById('zonaAvisos');
+  const concursos = DATOS.concursos || [];
+  const hoy = hoyISO();
+  const en3dias = sumarDias(hoy, 3);
+
+  // 1) Premios sin enviar
+  const sinEnviar = concursos.filter(c => c.estado === 'cerrado' && c.ganador && !c.ganador.enviado_at);
+
+  // 2) Concursos abiertos con fecha entre hoy y hoy+3
+  const proximos = concursos.filter(c => {
+    if(c.estado !== 'abierto') return false;
+    if(!c.fecha_concurso) return false;
+    return c.fecha_concurso >= hoy && c.fecha_concurso <= en3dias;
+  });
+
+  // 3) Concursos abiertos con fecha pasada
+  const vencidos = concursos.filter(c => {
+    if(c.estado !== 'abierto') return false;
+    if(!c.fecha_concurso) return false;
+    return c.fecha_concurso < hoy;
+  });
+
+  if(sinEnviar.length === 0 && proximos.length === 0 && vencidos.length === 0){
     cont.style.display = 'none';
+    zona.innerHTML = '';
     return;
   }
-  const hoy = new Date().toISOString().substring(0,10);
-  let html = 'Tienes ' + abiertos.length + ' concurso(s) sin ganador asignado:<br>';
-  abiertos.forEach(c => {
-    const vencido = c.fecha_concurso && c.fecha_concurso < hoy;
-    html += '• <strong>' + esc(c.nombre) + '</strong>';
-    html += ' — fecha de ejecución: ' + (c.fecha_concurso ? fmtFecha(c.fecha_concurso) : '—');
-    if(vencido) html += ' <span class="pill pill-rojo">FECHA VENCIDA</span>';
-    html += '<br>';
-  });
-  html += '<br>Recuerda que las entradas reservadas a un concurso sin ganador podrían perder validez si no se asignan antes del cierre del evento.';
-  lista.innerHTML = html;
+
+  let html = '';
+
+  if(sinEnviar.length > 0){
+    const nombres = sinEnviar.map(c => c.ganador.nombre + ' ' + c.ganador.apellido).join(', ');
+    html +=
+      '<div class="alerta-sub alerta-sub-azul">' +
+        '<span class="alerta-sub-titulo">📨 Premios pendientes de enviar (' + sinEnviar.length + ')</span>' +
+        'Aún no has enviado el link del premio a: ' + esc(nombres) + '. Recuerda que el ganador necesita el link para poder entrar al evento.' +
+        '<div class="acciones">' +
+          '<button class="btn btn-azul btn-mini" id="btnAbrirEnvios">📨 Abrir cola de envíos</button>' +
+        '</div>' +
+      '</div>';
+  }
+
+  if(proximos.length > 0){
+    let lista = '';
+    proximos.forEach(c => {
+      lista += '<li><strong>' + esc(c.nombre) + '</strong> — se ejecuta el ' + fmtFecha(c.fecha_concurso) + ' y aún no tiene ganador.</li>';
+    });
+    html +=
+      '<div class="alerta-sub alerta-sub-amarilla">' +
+        '<span class="alerta-sub-titulo">🟡 Concurso(s) próximo(s) a ejecutarse (' + proximos.length + ')</span>' +
+        'Estos concursos se ejecutan en los próximos 3 días y todavía no tienen ganador asignado:' +
+        '<ul>' + lista + '</ul>' +
+      '</div>';
+  }
+
+  if(vencidos.length > 0){
+    let lista = '';
+    vencidos.forEach(c => {
+      lista += '<li><strong>' + esc(c.nombre) + '</strong> — ya pasó su fecha (' + fmtFecha(c.fecha_concurso) + ') y no tiene ganador asignado. Asígnale uno o edítalo/elimínalo.</li>';
+    });
+    html +=
+      '<div class="alerta-sub alerta-sub-roja">' +
+        '<span class="alerta-sub-titulo">🔴 Concurso(s) vencido(s) sin ganador (' + vencidos.length + ')</span>' +
+        '<ul>' + lista + '</ul>' +
+      '</div>';
+  }
+
+  zona.innerHTML = html;
   cont.style.display = 'block';
+
+  const bEnvio = document.getElementById('btnAbrirEnvios');
+  if(bEnvio) bEnvio.addEventListener('click', () => abrirModalColaEnvios());
 }
 
 function pintarConcursos(){
@@ -402,7 +477,6 @@ function abrirModalConcurso(existente){
   const editando = !!existente;
   const c = existente || { nombre: '', descripcion: '', fecha_concurso: '', cupones_reservados: 1 };
   const disp = DATOS.asignacion.cupones_disponibles + (editando ? c.cupones_reservados : 0);
-  const hoyISO = new Date().toISOString().substring(0,10);
 
   const fondo = document.createElement('div');
   fondo.className = 'modal-fondo';
@@ -421,7 +495,7 @@ function abrirModalConcurso(existente){
         '<textarea id="inDescConc" rows="2" maxlength="300" placeholder="Ej.: Concurso de disfraces temáticos.">' + esc(c.descripcion || '') + '</textarea>' +
       '</label>' +
       '<label>Fecha de ejecución del concurso *' +
-      '<input id="inFechaConc" type="date" value="' + esc(c.fecha_concurso || '') + '">' +
+        '<input id="inFechaConc" type="date" value="' + esc(c.fecha_concurso || '') + '">' +
         '<div style="color:var(--suave);font-size:12px;margin-top:6px;font-weight:normal;line-height:1.45">Indica cuándo se realizará el concurso y se elegirá al ganador. Podrás editarla mientras el evento siga vigente. Si el calendario no funciona, escribe la fecha en formato AAAA-MM-DD (debe ser hoy o posterior).</div>' +
       '</label>' +
       '<label>Entradas reservadas para este concurso *' +
@@ -446,7 +520,7 @@ function abrirModalConcurso(existente){
 
     if(!nombre){ await modalAlert('Escribe el nombre del concurso.', 'Falta el nombre'); return; }
     if(!fecha){ await modalAlert('Indica la fecha de ejecución del concurso.', 'Falta la fecha'); return; }
-    const hoy = new Date().toISOString().substring(0,10);
+    const hoy = hoyISO();
     if(fecha < hoy){ await modalAlert('La fecha de ejecución debe ser hoy o posterior.', 'Fecha inválida'); return; }
     if(!cupones || cupones < 1){ await modalAlert('Indica cuántas entradas reservar (mínimo 1).', 'Entradas inválidas'); return; }
     if(cupones > disp){ await modalAlert('No puedes reservar ' + cupones + ' entradas: solo tienes ' + disp + ' disponibles.', 'Sin entradas'); return; }
