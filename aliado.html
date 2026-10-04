@@ -284,12 +284,8 @@ function pintarAlertaPendientes(){
   abiertos.forEach(c => {
     const vencido = c.fecha_concurso && c.fecha_concurso < hoy;
     html += '• <strong>' + esc(c.nombre) + '</strong>';
-    if(c.fecha_concurso){
-      html += ' — fecha de ejecución: ' + fmtFecha(c.fecha_concurso);
-      if(vencido) html += ' <span class="pill pill-rojo">FECHA VENCIDA</span>';
-    }else{
-      html += ' — sin fecha de ejecución definida';
-    }
+    html += ' — fecha de ejecución: ' + (c.fecha_concurso ? fmtFecha(c.fecha_concurso) : '—');
+    if(vencido) html += ' <span class="pill pill-rojo">FECHA VENCIDA</span>';
     html += '<br>';
   });
   html += '<br>Recuerda que las entradas reservadas a un concurso sin ganador podrían perder validez si no se asignan antes del cierre del evento.';
@@ -313,7 +309,7 @@ function pintarConcursos(){
       ? '<span class="pill pill-verde">Abierto · sin ganador</span>'
       : '<span class="pill pill-morado">Cerrado · ganador asignado</span>';
     const fechaCreaTxt = c.creada_at ? fmtFecha(c.creada_at.substring(0, 10)) : '-';
-    const fechaEjecTxt = c.fecha_concurso ? fmtFecha(c.fecha_concurso) : 'sin fecha definida';
+    const fechaEjecTxt = c.fecha_concurso ? fmtFecha(c.fecha_concurso) : '—';
     const descTxt = c.descripcion ? '<div style="color:var(--suave);font-size:13px;margin-top:4px">' + esc(c.descripcion) + '</div>' : '';
 
     let botones = '';
@@ -406,6 +402,7 @@ function abrirModalConcurso(existente){
   const editando = !!existente;
   const c = existente || { nombre: '', descripcion: '', fecha_concurso: '', cupones_reservados: 1 };
   const disp = DATOS.asignacion.cupones_disponibles + (editando ? c.cupones_reservados : 0);
+  const hoyISO = new Date().toISOString().substring(0,10);
 
   const fondo = document.createElement('div');
   fondo.className = 'modal-fondo';
@@ -423,8 +420,9 @@ function abrirModalConcurso(existente){
       '<label>Descripción (opcional)' +
         '<textarea id="inDescConc" rows="2" maxlength="300" placeholder="Ej.: Concurso de disfraces temáticos.">' + esc(c.descripcion || '') + '</textarea>' +
       '</label>' +
-      '<label>Fecha de ejecución del concurso (opcional)' +
-        '<input id="inFechaConc" type="date" value="' + esc(c.fecha_concurso || '') + '">' +
+      '<label>Fecha de ejecución del concurso *' +
+        '<input id="inFechaConc" type="date" min="' + hoyISO + '" value="' + esc(c.fecha_concurso || '') + '">' +
+        '<div style="color:var(--suave);font-size:12px;margin-top:6px;font-weight:normal;line-height:1.45">Indica cuándo se realizará el concurso y se elegirá al ganador. Podrás editarla mientras el evento siga vigente. Si el calendario no funciona, escribe la fecha en formato AAAA-MM-DD (debe ser hoy o posterior).</div>' +
       '</label>' +
       '<label>Entradas reservadas para este concurso *' +
         '<input id="inCupConc" type="number" min="1" value="' + c.cupones_reservados + '" style="max-width:160px">' +
@@ -447,6 +445,9 @@ function abrirModalConcurso(existente){
     const cupones = parseInt(fondo.querySelector('#inCupConc').value, 10);
 
     if(!nombre){ await modalAlert('Escribe el nombre del concurso.', 'Falta el nombre'); return; }
+    if(!fecha){ await modalAlert('Indica la fecha de ejecución del concurso.', 'Falta la fecha'); return; }
+    const hoy = new Date().toISOString().substring(0,10);
+    if(fecha < hoy){ await modalAlert('La fecha de ejecución debe ser hoy o posterior.', 'Fecha inválida'); return; }
     if(!cupones || cupones < 1){ await modalAlert('Indica cuántas entradas reservar (mínimo 1).', 'Entradas inválidas'); return; }
     if(cupones > disp){ await modalAlert('No puedes reservar ' + cupones + ' entradas: solo tienes ' + disp + ' disponibles.', 'Sin entradas'); return; }
 
@@ -468,8 +469,15 @@ function abrirModalConcurso(existente){
         });
       }
       if(!r || r.error){
+        const msgs = {
+          'ERR_FECHA_REQUERIDA': 'La fecha de ejecución es obligatoria.',
+          'ERR_FECHA_PASADA': 'La fecha de ejecución debe ser hoy o posterior.',
+          'ERR_NOMBRE': 'El nombre del concurso es obligatorio.',
+          'ERR_CUPONES': 'Indica cuántas entradas reservar (mínimo 1).'
+        };
+        const errTxt = msgs[r && r.error] || ('No se pudo guardar: ' + (r ? r.error : 'desconocido'));
         const disp2 = r && r.disponible !== undefined ? ' Disponibles: ' + r.disponible + '.' : '';
-        await modalAlert('No se pudo guardar: ' + (r ? r.error : 'desconocido') + disp2, 'Error');
+        await modalAlert(errTxt + disp2, 'Error');
         btn.disabled = false; btn.textContent = editando ? 'Guardar cambios' : 'Crear concurso';
         return;
       }
@@ -606,7 +614,7 @@ function abrirModalDetallesGanador(concurso){
   const estadoG = g.estado === 'activa'
     ? (g.canjeado_at ? '<span class="pill pill-amarillo">Canjeado</span>' : '<span class="pill pill-verde">Activo</span>')
     : '<span class="pill pill-rojo">Anulado</span>';
-  const fechaTxt = concurso.fecha_concurso ? fmtFecha(concurso.fecha_concurso) : 'Sin fecha definida';
+  const fechaTxt = concurso.fecha_concurso ? fmtFecha(concurso.fecha_concurso) : '—';
 
   const fondo = document.createElement('div');
   fondo.className = 'modal-fondo';
