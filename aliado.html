@@ -56,8 +56,8 @@ label{display:block;margin-bottom:12px;color:var(--suave);font-size:14px;font-we
 .concurso-item .cab{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:10px}
 .concurso-item .nom{font-size:17px;font-weight:700}
 .concurso-item .meta{font-size:13px;color:var(--suave);margin-top:2px}
-.concurso-item .acciones{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-.concurso-item .acciones .btn{flex:1;min-width:120px}
+.concurso-item .acciones{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;justify-content:center}
+.concurso-item .acciones .btn{min-width:auto}
 .ganador-caja{background:#0d1626;border:1px solid var(--borde);border-radius:10px;padding:12px;margin-top:10px}
 .bloque-datos{margin-bottom:10px}
 .bloque-titulo{font-size:12px;color:var(--acento2);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:6px}
@@ -106,7 +106,12 @@ label{display:block;margin-bottom:12px;color:var(--suave);font-size:14px;font-we
     <p style="color:var(--suave);font-size:14px;margin-top:10px">Si crees que es un error, comunícate con la mesa técnica del evento.</p>
   </div>
 
-  <div id="panelPrincipal" style="display:none">
+   <div id="panelPrincipal" style="display:none">
+    <div id="alertaPendientes" class="tarjeta" style="display:none;border-color:var(--aviso)">
+      <h2 style="color:var(--aviso)">⚠️ Concurso(s) pendiente(s) de ganador</h2>
+      <div id="alertaPendientesLista" class="aviso" style="margin-bottom:0"></div>
+    </div>
+
     <div class="tarjeta">
       <h2>🤝 Bienvenido</h2>
       <div class="fila-datos">
@@ -120,6 +125,7 @@ label{display:block;margin-bottom:12px;color:var(--suave);font-size:14px;font-we
       <h2>🎟️ Tus entradas de cortesía</h2>
       <div class="fila-datos">
         <div class="dato"><strong>Asignadas</strong><span class="num" id="cuponesAsignados">-</span></div>
+        <div class="dato"><strong>Reservadas</strong><span class="num chico" id="cuponesReservados">-</span></div>
         <div class="dato"><strong>Disponibles</strong><span class="num" id="cuponesDisponibles">-</span></div>
       </div>
       <p style="color:var(--suave);font-size:13px;margin-top:10px">
@@ -245,14 +251,43 @@ function pintarTodo(){
   document.getElementById('responsable').textContent = al.responsable;
   document.getElementById('codigoLink').textContent = a.codigo_link;
   document.getElementById('cuponesAsignados').textContent = a.cupones_unico;
+  document.getElementById('cuponesReservados').textContent = a.cupones_reservados;
   const dispEl = document.getElementById('cuponesDisponibles');
   dispEl.textContent = a.cupones_disponibles;
   dispEl.classList.toggle('chico', a.cupones_disponibles <= 0);
 
+  pintarAlertaPendientes();
   pintarConcursos();
 }
 
+function pintarAlertaPendientes(){
+  const cont = document.getElementById('alertaPendientes');
+  const lista = document.getElementById('alertaPendientesLista');
+  const abiertos = (DATOS.concursos || []).filter(c => c.estado === 'abierto');
+  if(abiertos.length === 0){
+    cont.style.display = 'none';
+    return;
+  }
+  const hoy = new Date().toISOString().substring(0,10);
+  let html = 'Tienes ' + abiertos.length + ' concurso(s) sin ganador asignado:<br>';
+  abiertos.forEach(c => {
+    const vencido = c.fecha_concurso && c.fecha_concurso < hoy;
+    html += '• <strong>' + esc(c.nombre) + '</strong>';
+    if(c.fecha_concurso){
+      html += ' — fecha de ejecución: ' + fmtFecha(c.fecha_concurso);
+      if(vencido) html += ' <span class="pill pill-rojo">FECHA VENCIDA</span>';
+    }else{
+      html += ' — sin fecha de ejecución definida';
+    }
+    html += '<br>';
+  });
+  html += '<br>Recuerda que las entradas reservadas a un concurso sin ganador podrían perder validez si no se asignan antes del cierre del evento.';
+  lista.innerHTML = html;
+  cont.style.display = 'block';
+}
+
 function pintarConcursos(){
+  const zona = document.getElementById('zonaConcursos');
   const zona = document.getElementById('zonaConcursos');
   const concursos = DATOS.concursos || [];
 
