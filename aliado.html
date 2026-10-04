@@ -20,14 +20,14 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;backgr
 .subtitulo{font-size:14px;color:var(--suave)}
 .contenedor{max-width:960px;margin:20px auto;padding:0 16px}
 .tarjeta{background:var(--tarjeta);border:1px solid var(--borde);border-radius:16px;padding:20px;margin-bottom:18px;box-shadow:0 4px 14px rgba(0,0,0,.25)}
-.tarjeta h2{font-size:19px;margin-bottom:14px;color:var(--acento)}
+.tarjeta h2{font-size:19px;margin-bottom:14px;color:var(--acento);text-align:center}
 .fila-datos{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
 .dato{background:#0e1728;border:1px solid var(--borde);border-radius:10px;padding:10px 12px}
 .dato strong{color:var(--suave);font-size:12px;display:block;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px}
 .dato span{font-size:17px;font-weight:600;word-break:break-all}
 .dato .num{font-size:26px;color:var(--acento);font-weight:800;display:block}
 .dato .num.chico{font-size:22px;color:var(--aviso)}
-.aviso{padding:12px 14px;border-radius:10px;background:rgba(255,211,61,.12);border:1px solid var(--aviso);color:var(--aviso);margin-bottom:14px;font-size:15px}
+.aviso{padding:12px 14px;border-radius:10px;background:rgba(255,211,61,.12);border:1px solid var(--aviso);color:var(--aviso);margin-bottom:14px;font-size:15px;line-height:1.6}
 .aviso-rojo{background:rgba(224,82,82,.12);border-color:var(--rojo);color:var(--rojo)}
 .aviso-verde{background:rgba(53,208,127,.12);border-color:var(--acento);color:var(--acento)}
 .aviso-azul{background:rgba(31,162,255,.12);border-color:var(--acento2);color:var(--acento2)}
@@ -52,7 +52,6 @@ label{display:block;margin-bottom:12px;color:var(--suave);font-size:14px;font-we
 .pill-morado{background:rgba(176,106,255,.18);color:var(--morado)}
 .mono{font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:1px}
 .seccion-acciones{display:flex;justify-content:flex-end;margin-bottom:14px}
-.tarjeta h2{text-align:center}
 .titulo-historial{font-size:13px;color:var(--suave);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin:4px 0 14px;text-align:center;border-bottom:1px solid var(--borde);padding-bottom:8px}
 .concurso-item{border:1px solid var(--borde);border-radius:12px;padding:14px;margin-bottom:12px;background:#0e1728}
 .concurso-item .cab{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:10px}
@@ -60,6 +59,11 @@ label{display:block;margin-bottom:12px;color:var(--suave);font-size:14px;font-we
 .concurso-item .meta{font-size:13px;color:var(--suave);margin-top:2px}
 .concurso-item .acciones{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;justify-content:center}
 .concurso-item .acciones .btn{min-width:auto}
+.mini-stats-dia{margin-top:10px;padding:12px 14px;border-radius:10px;background:#0e1728;border:1px solid var(--borde);font-size:14px}
+.mini-stats-dia .fila-stats{display:flex;justify-content:space-between;align-items:center;padding:4px 0}
+.mini-stats-dia .fila-stats .dia-lbl{color:var(--suave);font-weight:600}
+.mini-stats-dia .fila-stats .dia-num{font-weight:700;color:var(--acento)}
+.mini-stats-dia .triste{color:var(--aviso);font-size:13px;margin-top:6px;text-align:center}
 .ganador-caja{background:#0d1626;border:1px solid var(--borde);border-radius:10px;padding:12px;margin-top:10px}
 .bloque-datos{margin-bottom:10px}
 .bloque-titulo{font-size:12px;color:var(--acento2);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:6px}
@@ -68,11 +72,11 @@ label{display:block;margin-bottom:12px;color:var(--suave);font-size:14px;font-we
 .dato-gan strong{font-size:12px;color:var(--suave);text-transform:uppercase;letter-spacing:1px;flex-shrink:0}
 .dato-gan span{text-align:right;word-break:break-word}
 .modal-fondo{position:fixed;inset:0;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px;overflow-y:auto}
-.modal-caja{background:var(--tarjeta);border:1px solid var(--borde);border-radius:16px;padding:22px;max-width:560px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,.5);max-height:92vh;overflow-y:auto}
-.modal-titulo{font-size:20px;font-weight:700;color:var(--acento);margin-bottom:12px}
-.modal-sub{font-size:14px;color:var(--suave);margin-bottom:16px}
+.modal-caja{background:var(--tarjeta);border:1px solid var(--borde);border-radius:16px;padding:22px;max-width:600px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,.5);max-height:92vh;overflow-y:auto}
+.modal-titulo{font-size:20px;font-weight:700;color:var(--acento);margin-bottom:12px;text-align:center}
+.modal-sub{font-size:14px;color:var(--suave);margin-bottom:16px;text-align:center}
 .modal-mensaje{color:var(--texto);white-space:pre-wrap;line-height:1.55;margin-bottom:16px;font-size:15px}
-.modal-acciones{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:14px}
+.modal-acciones{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px}
 .modal-acciones .btn{padding:11px 18px;font-size:16px}
 .check-linea{display:flex;align-items:flex-start;gap:10px;background:#0d1626;border:1px solid var(--borde);border-radius:10px;padding:12px;margin-top:10px;font-size:14px;color:var(--texto)}
 .check-linea input{width:auto;margin:2px 0 0 0;flex-shrink:0}
@@ -80,8 +84,17 @@ label{display:block;margin-bottom:12px;color:var(--suave);font-size:14px;font-we
 .cuponera .grande{font-size:30px;font-weight:800;color:var(--acento);display:block}
 .cuponera .lbl{font-size:13px;color:var(--suave)}
 .link-box{background:#0d1626;border:1px solid var(--borde);border-radius:10px;padding:12px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;word-break:break-all;color:var(--texto);margin-top:8px}
-.texto-carta{background:#0d1626;border:1px solid var(--borde);border-radius:10px;padding:14px;margin-top:10px;font-size:14px;line-height:1.6;color:var(--texto);white-space:pre-wrap;max-height:240px;overflow-y:auto}
-.nota-abajo{background:rgba(255,211,61,.08);border:1px solid var(--aviso);border-radius:10px;padding:10px 12px;margin-top:12px;font-size:13px;color:var(--aviso)}
+.texto-carta{background:#0d1626;border:1px solid var(--borde);border-radius:10px;padding:14px;margin-top:10px;font-size:13px;line-height:1.55;color:var(--texto);white-space:pre-wrap;max-height:180px;overflow-y:auto}
+.nota-abajo{background:rgba(255,211,61,.08);border:1px solid var(--aviso);border-radius:10px;padding:10px 12px;margin-top:12px;font-size:13px;color:var(--aviso);text-align:center}
+.cola-seccion-titulo{font-size:13px;color:var(--acento2);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin:14px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--borde)}
+.cola-item{border:1px solid var(--borde);border-radius:12px;padding:12px;margin-bottom:10px;background:#0e1728}
+.cola-item.enviado{opacity:.75}
+.cola-item .cola-cab{font-size:15px;font-weight:700;margin-bottom:6px}
+.cola-item .cola-gan{font-size:13px;color:var(--suave);margin-bottom:6px}
+.cola-item .cola-instr{font-size:12px;color:var(--suave);margin:8px 0 6px;font-style:italic}
+.cola-item .cola-acciones{display:flex;justify-content:center;margin-top:10px}
+.felicidades{text-align:center;padding:20px;font-size:18px;color:var(--acento);font-weight:700}
+.felicidades .emoji{font-size:44px;display:block;margin-bottom:10px}
 </style>
 </head>
 <body>
@@ -108,7 +121,7 @@ label{display:block;margin-bottom:12px;color:var(--suave);font-size:14px;font-we
     <p style="color:var(--suave);font-size:14px;margin-top:10px">Si crees que es un error, comunícate con la mesa técnica del evento.</p>
   </div>
 
-   <div id="panelPrincipal" style="display:none">
+  <div id="panelPrincipal" style="display:none">
     <div id="alertaPendientes" class="tarjeta" style="display:none;border-color:var(--aviso)">
       <h2 style="color:var(--aviso)">⚠️ Concurso(s) pendiente(s) de ganador</h2>
       <div id="alertaPendientesLista" class="aviso" style="margin-bottom:0"></div>
@@ -142,6 +155,7 @@ label{display:block;margin-bottom:12px;color:var(--suave);font-size:14px;font-we
       </div>
       <div class="titulo-historial">📜 Historial de concursos</div>
       <div id="zonaConcursos"></div>
+      <div id="zonaEstadisticasDia"></div>
     </div>
   </div>
 </main>
@@ -260,6 +274,7 @@ function pintarTodo(){
 
   pintarAlertaPendientes();
   pintarConcursos();
+  pintarEstadisticasDia();
 }
 
 function pintarAlertaPendientes(){
@@ -293,7 +308,7 @@ function pintarConcursos(){
   const concursos = DATOS.concursos || [];
 
   if(concursos.length === 0){
-    zona.innerHTML = '<p style="color:var(--suave)">Todavía no has creado ningún concurso.</p>';
+    zona.innerHTML = '<p style="color:var(--suave);text-align:center;padding:10px">No hay concursos que mostrar en este momento.</p>';
     return;
   }
 
@@ -303,10 +318,10 @@ function pintarConcursos(){
     const pillEstado = abierto
       ? '<span class="pill pill-verde">Abierto · sin ganador</span>'
       : '<span class="pill pill-morado">Cerrado · ganador asignado</span>';
-       const fechaCreaTxt = c.creada_at ? fmtFecha(c.creada_at.substring(0, 10)) : '-';
+    const fechaCreaTxt = c.creada_at ? fmtFecha(c.creada_at.substring(0, 10)) : '-';
     const fechaEjecTxt = c.fecha_concurso ? fmtFecha(c.fecha_concurso) : 'sin fecha definida';
     const descTxt = c.descripcion ? '<div style="color:var(--suave);font-size:13px;margin-top:4px">' + esc(c.descripcion) + '</div>' : '';
-    let ganadorHtml = '';   
+
     let botones = '';
     if(abierto){
       botones =
@@ -315,11 +330,14 @@ function pintarConcursos(){
           '<button class="btn btn-gris btn-mini" data-accion="editar" data-id="' + c.id + '">✏️ Editar</button>' +
           '<button class="btn btn-rojo btn-mini" data-accion="eliminar" data-id="' + c.id + '">🗑️ Eliminar</button>' +
         '</div>';
-     }else if(c.ganador){
+    }else if(c.ganador){
+      const yaEnviado = !!c.ganador.enviado_at;
       botones =
         '<div class="acciones">' +
           '<button class="btn btn-gris btn-mini" data-accion="detalles" data-id="' + c.id + '">🔍 Ver detalles del ganador</button>' +
-          '<button class="btn btn-azul btn-mini" data-accion="enviar" data-id="' + c.id + '">📨 Enviar premio al ganador</button>' +
+          '<button class="btn ' + (yaEnviado ? 'btn-gris' : 'btn-azul') + ' btn-mini" data-accion="enviar" data-id="' + c.id + '">' +
+            (yaEnviado ? '🔁 Reenviar premio' : '📨 Enviar premio al ganador') +
+          '</button>' +
         '</div>';
     }
 
@@ -334,7 +352,6 @@ function pintarConcursos(){
           '</div>' +
           '<div>' + pillEstado + '</div>' +
         '</div>' +
-        ganadorHtml +
         botones +
       '</div>';
   });
@@ -349,10 +366,43 @@ function pintarConcursos(){
       if(acc === 'asignar') abrirModalGanador(c);
       else if(acc === 'editar') abrirModalConcurso(c);
       else if(acc === 'eliminar') confirmarEliminar(c);
-      else if(acc === 'enviar') abrirModalEnviarPremio(c);
+      else if(acc === 'enviar') abrirModalColaEnvios();
       else if(acc === 'detalles') abrirModalDetallesGanador(c);
     });
   });
+}
+
+function pintarEstadisticasDia(){
+  const zona = document.getElementById('zonaEstadisticasDia');
+  const dc = DATOS.dias_cerrados || {};
+  const e = DATOS.estadisticas_por_dia || {};
+  const bloques = [];
+
+  if(dc.dia1 && e.dia1 && e.dia1.total > 0){
+    bloques.push({ dia:'Día 1', total: e.dia1.total, asistieron: e.dia1.asistieron });
+  }
+  if(dc.dia2 && e.dia2 && e.dia2.total > 0){
+    bloques.push({ dia:'Día 2', total: e.dia2.total, asistieron: e.dia2.asistieron });
+  }
+
+  if(bloques.length === 0){
+    zona.innerHTML = '';
+    return;
+  }
+
+  let html = '<div class="mini-stats-dia">';
+  bloques.forEach(b => {
+    html +=
+      '<div class="fila-stats">' +
+        '<span class="dia-lbl">📊 ' + b.dia + '</span>' +
+        '<span class="dia-num">' + b.asistieron + ' de ' + b.total + ' premio(s) asistieron</span>' +
+      '</div>';
+    if(b.asistieron === 0){
+      html += '<div class="triste">😢 Tus ganadores no se presentaron al evento el ' + b.dia + '.</div>';
+    }
+  });
+  html += '</div>';
+  zona.innerHTML = html;
 }
 
 // ============================================================
@@ -379,7 +429,7 @@ function abrirModalConcurso(existente){
       '<label>Descripción (opcional)' +
         '<textarea id="inDescConc" rows="2" maxlength="300" placeholder="Ej.: Concurso de disfraces temáticos.">' + esc(c.descripcion || '') + '</textarea>' +
       '</label>' +
-      '<label>Fecha del concurso (opcional)' +
+      '<label>Fecha de ejecución del concurso (opcional)' +
         '<input id="inFechaConc" type="date" value="' + esc(c.fecha_concurso || '') + '">' +
       '</label>' +
       '<label>Entradas reservadas para este concurso *' +
@@ -412,19 +462,14 @@ function abrirModalConcurso(existente){
       let r;
       if(editando){
         r = await llamar('f_aliado_editar_concurso', {
-          p_codigo_link: CODIGO,
-          p_concurso_id: c.id,
-          p_nombre: nombre,
-          p_descripcion: descripcion || null,
-          p_fecha_concurso: fecha,
+          p_codigo_link: CODIGO, p_concurso_id: c.id, p_nombre: nombre,
+          p_descripcion: descripcion || null, p_fecha_concurso: fecha,
           p_cupones_reservados: cupones
         });
       }else{
         r = await llamar('f_aliado_crear_concurso', {
-          p_codigo_link: CODIGO,
-          p_nombre: nombre,
-          p_descripcion: descripcion || null,
-          p_fecha_concurso: fecha,
+          p_codigo_link: CODIGO, p_nombre: nombre,
+          p_descripcion: descripcion || null, p_fecha_concurso: fecha,
           p_cupones_reservados: cupones
         });
       }
@@ -538,16 +583,10 @@ async function abrirModalGanador(concurso){
     btn.disabled = true; btn.textContent = 'Asignando...';
     try{
       const r = await llamar('f_aliado_asignar_ganador', {
-        p_codigo_link: CODIGO,
-        p_concurso_id: concurso.id,
-        p_nombre: nombre,
-        p_apellido: apellido,
-        p_cedula: cedula,
-        p_correo: correo || null,
-        p_telefono: telefono || null,
-        p_cupones_total: cupones,
-        p_dia1: d1,
-        p_dia2: d2
+        p_codigo_link: CODIGO, p_concurso_id: concurso.id,
+        p_nombre: nombre, p_apellido: apellido, p_cedula: cedula,
+        p_correo: correo || null, p_telefono: telefono || null,
+        p_cupones_total: cupones, p_dia1: d1, p_dia2: d2
       });
       if(!r || r.error){
         await modalAlert('No se pudo asignar: ' + (r ? r.error : 'desconocido'), 'Error');
@@ -556,8 +595,8 @@ async function abrirModalGanador(concurso){
       }
       cerrar();
       await recargar();
-      const cNuevo = DATOS.concursos.find(x => x.id === concurso.id);
-      if(cNuevo) abrirModalEnviarPremio(cNuevo);
+      // Abrir la cola de envíos
+      abrirModalColaEnvios();
     }catch(e){
       await modalAlert('Error: ' + (e.message || e), 'Error');
       btn.disabled = false; btn.textContent = 'Asignar ganador';
@@ -597,7 +636,7 @@ function abrirModalDetallesGanador(concurso){
         '<div class="dato-gan"><strong>Estado</strong><span>' + estadoG + '</span></div>' +
         '<div class="dato-gan"><strong>Código QR</strong><span class="mono">' + esc(g.codigo_qr) + '</span></div>' +
       '</div>' +
-      '<div class="modal-acciones" style="justify-content:center">' +
+      '<div class="modal-acciones">' +
         '<button class="btn btn-gris" id="mCerrar">Cerrar</button>' +
       '</div>' +
     '</div>';
@@ -608,70 +647,135 @@ function abrirModalDetallesGanador(concurso){
 }
 
 // ============================================================
-// MODAL ENVIAR PREMIO AL GANADOR
+// MODAL COLA DE ENVÍOS
 // ============================================================
-function abrirModalEnviarPremio(concurso){
-  const g = concurso.ganador;
-  if(!g) return;
-  const linkGan = BASE + 'cortesia.html?c=' + g.codigo_link;
-  const fechaTxt = concurso.fecha_concurso ? fmtFecha(concurso.fecha_concurso) : '';
-  const diasTxt = diasTexto(g.dia1, g.dia2) + (fechaTxt ? ' (' + fechaTxt + ')' : '');
-
-  const textoCarta =
-    '🎉 ¡Felicidades ' + g.nombre + ' ' + g.apellido + '!\n\n' +
-    '¡Gracias por participar en el concurso "' + concurso.nombre + '", organizado por ' + DATOS.aliado.nombre_organizacion + '!\n\n' +
-    'Te has ganado ' + g.cupones_total + ' entrada(s) para Nitrotoon, válidas para ' + diasTxt + '.\n\n' +
-    'Presenta este enlace en la puerta del evento:\n' + linkGan + '\n\n' +
-    '⚠️ IMPORTANTE:\n' +
-    '• Este QR solo se puede usar UNA vez.\n' +
-    '• Si ganaste más de una entrada, debes presentarte con todas tus personas juntas en la puerta.\n' +
-    '• Si alguien de tu grupo no está presente en ese momento, su entrada se pierde y no se podrá reclamar después.';
-
-  const textoWA = encodeURIComponent(textoCarta);
-  const textoMailSubject = encodeURIComponent('¡Ganaste en ' + concurso.nombre + '!');
-  const textoMailBody = encodeURIComponent(textoCarta);
-
-  const waLink = 'https://wa.me/?text=' + textoWA;
-  const mailLink = 'mailto:?subject=' + textoMailSubject + '&body=' + textoMailBody;
-
+function abrirModalColaEnvios(){
   const fondo = document.createElement('div');
   fondo.className = 'modal-fondo';
-  fondo.innerHTML =
-    '<div class="modal-caja">' +
-      '<div class="modal-titulo">📨 Enviar premio al ganador</div>' +
-      '<div class="modal-sub">Concurso: <strong>' + esc(concurso.nombre) + '</strong> · Ganador: <strong>' + esc(g.nombre) + ' ' + esc(g.apellido) + '</strong></div>' +
-      '<div style="font-size:14px;color:var(--suave);margin-bottom:6px">Este es el mensaje que recibirá:</div>' +
-      '<div class="texto-carta">' + esc(textoCarta) + '</div>' +
-      '<div class="modal-acciones" style="justify-content:center;flex-wrap:wrap">' +
-        '<button class="btn btn-gris" id="mCopiar">📋 Copiar link</button>' +
-        '<a class="btn" href="' + waLink + '" target="_blank" rel="noopener">📱 WhatsApp</a>' +
-        '<a class="btn btn-azul" href="' + mailLink + '">✉️ Correo</a>' +
-        '<button class="btn btn-gris" id="mCerrar">Cerrar</button>' +
-      '</div>' +
-      '<div class="nota-abajo">' +
-        'Si los botones de WhatsApp o Correo no abren automáticamente (por ejemplo, si no tienes WhatsApp Web o tu correo configurado en este dispositivo), pulsa <strong>Copiar link</strong> y envíaselo manualmente desde tu aplicación de WhatsApp o desde tu correo.' +
-      '</div>' +
-    '</div>';
+  fondo.innerHTML = '<div class="modal-caja" id="colaCaja"></div>';
   document.body.appendChild(fondo);
 
   const cerrar = () => fondo.remove();
-  fondo.querySelector('#mCerrar').addEventListener('click', cerrar);
   fondo.addEventListener('click', e => { if(e.target === fondo) cerrar(); });
 
-  fondo.querySelector('#mCopiar').addEventListener('click', async () => {
-    const b = fondo.querySelector('#mCopiar');
-    const orig = b.textContent;
-    try{
-      await navigator.clipboard.writeText(textoCarta);
-      b.textContent = '¡Copiado!';
-      setTimeout(() => { b.textContent = orig; }, 1500);
-    }catch(e){
-      const ta = document.createElement('textarea');
-      ta.value = textoCarta; document.body.appendChild(ta); ta.select();
-      try{ document.execCommand('copy'); b.textContent = '¡Copiado!'; setTimeout(() => { b.textContent = orig; }, 1500); }catch(e2){}
-      document.body.removeChild(ta);
+  function render(){
+    const caja = fondo.querySelector('#colaCaja');
+    const todos = (DATOS.concursos || []).filter(c => c.estado === 'cerrado' && c.ganador);
+    const pendientes = todos.filter(c => !c.ganador.enviado_at);
+    const enviados = todos.filter(c => !!c.ganador.enviado_at);
+
+    let html = '<div class="modal-titulo">📨 Enviar premios a los ganadores</div>';
+    html += '<div class="modal-sub">Copia el texto de cada premio y envíalo al ganador por WhatsApp o correo. Al copiarlo, se marcará como enviado.</div>';
+
+    if(todos.length === 0){
+      html += '<div class="aviso aviso-azul">Aún no tienes premios asignados a un ganador.</div>';
+      html += '<div class="modal-acciones"><button class="btn btn-gris" id="mCerrar">Cerrar</button></div>';
+      caja.innerHTML = html;
+      caja.querySelector('#mCerrar').addEventListener('click', cerrar);
+      return;
     }
-  });
+
+    if(pendientes.length === 0){
+      html += '<div class="felicidades"><span class="emoji">🎉</span>¡Felicidades!<br>Todos tus premios ya fueron enviados a sus ganadores.</div>';
+    }else{
+      html += '<div class="cola-seccion-titulo">⏳ Pendientes de envío (' + pendientes.length + ')</div>';
+      pendientes.forEach(c => {
+        const g = c.ganador;
+        const linkGan = BASE + 'cortesia.html?c=' + g.codigo_link;
+        const fechaTxt = c.fecha_concurso ? fmtFecha(c.fecha_concurso) : '';
+        const diasTxt = diasTexto(g.dia1, g.dia2) + (fechaTxt ? ' (' + fechaTxt + ')' : '');
+        const textoCarta =
+          '🎉 ¡Felicidades ' + g.nombre + ' ' + g.apellido + '!\n\n' +
+          '¡Gracias por participar en el concurso "' + c.nombre + '", organizado por ' + DATOS.aliado.nombre_organizacion + '!\n\n' +
+          'Te has ganado ' + g.cupones_total + ' entrada(s) para Nitrotoon, válidas para ' + diasTxt + '.\n\n' +
+          'Presenta este enlace en la puerta del evento:\n' + linkGan + '\n\n' +
+          '⚠️ IMPORTANTE:\n' +
+          '• Este QR solo se puede usar UNA vez.\n' +
+          '• Si ganaste más de una entrada, debes presentarte con todas tus personas juntas en la puerta.\n' +
+          '• Si alguien de tu grupo no está presente en ese momento, su entrada se pierde y no se podrá reclamar después.';
+
+        html +=
+          '<div class="cola-item" data-concurso="' + c.id + '">' +
+            '<div class="cola-cab">🏆 ' + esc(c.nombre) + '</div>' +
+            '<div class="cola-gan">Ganador: ' + esc(g.nombre) + ' ' + esc(g.apellido) + '</div>' +
+            '<div class="cola-instr">Copia el texto y envíalo al ganador:</div>' +
+            '<div class="texto-carta" id="txt-' + c.id + '">' + esc(textoCarta) + '</div>' +
+            '<div class="cola-acciones">' +
+              '<button class="btn btn-azul btn-mini" data-copiar="' + c.id + '">📋 Copiar y marcar como enviado</button>' +
+            '</div>' +
+          '</div>';
+      });
+    }
+
+    if(enviados.length > 0){
+      html += '<div class="cola-seccion-titulo">✅ Ya enviados (' + enviados.length + ')</div>';
+      enviados.forEach(c => {
+        const g = c.ganador;
+        const fechaEnv = g.enviado_at ? new Date(g.enviado_at).toLocaleString('es-VE') : '';
+        html +=
+          '<div class="cola-item enviado">' +
+            '<div class="cola-cab">🏆 ' + esc(c.nombre) + '</div>' +
+            '<div class="cola-gan">Ganador: ' + esc(g.nombre) + ' ' + esc(g.apellido) + '</div>' +
+            '<div class="cola-instr">Enviado el ' + esc(fechaEnv) + '</div>' +
+            '<div class="cola-acciones">' +
+              '<button class="btn btn-gris btn-mini" data-copiar="' + c.id + '">📋 Copiar de nuevo</button>' +
+            '</div>' +
+          '</div>';
+      });
+    }
+
+    html += '<div class="modal-acciones"><button class="btn btn-gris" id="mCerrar">Cerrar</button></div>';
+    caja.innerHTML = html;
+
+    caja.querySelector('#mCerrar').addEventListener('click', cerrar);
+    caja.querySelectorAll('button[data-copiar]').forEach(b => {
+      b.addEventListener('click', async () => {
+        const cid = b.getAttribute('data-copiar');
+        const c = DATOS.concursos.find(x => x.id === cid);
+        if(!c || !c.ganador) return;
+        const g = c.ganador;
+        const linkGan = BASE + 'cortesia.html?c=' + g.codigo_link;
+        const fechaTxt = c.fecha_concurso ? fmtFecha(c.fecha_concurso) : '';
+        const diasTxt = diasTexto(g.dia1, g.dia2) + (fechaTxt ? ' (' + fechaTxt + ')' : '');
+        const textoCarta =
+          '🎉 ¡Felicidades ' + g.nombre + ' ' + g.apellido + '!\n\n' +
+          '¡Gracias por participar en el concurso "' + c.nombre + '", organizado por ' + DATOS.aliado.nombre_organizacion + '!\n\n' +
+          'Te has ganado ' + g.cupones_total + ' entrada(s) para Nitrotoon, válidas para ' + diasTxt + '.\n\n' +
+          'Presenta este enlace en la puerta del evento:\n' + linkGan + '\n\n' +
+          '⚠️ IMPORTANTE:\n' +
+          '• Este QR solo se puede usar UNA vez.\n' +
+          '• Si ganaste más de una entrada, debes presentarte con todas tus personas juntas en la puerta.\n' +
+          '• Si alguien de tu grupo no está presente en ese momento, su entrada se pierde y no se podrá reclamar después.';
+
+        const orig = b.textContent;
+        try{
+          await navigator.clipboard.writeText(textoCarta);
+        }catch(e){
+          const ta = document.createElement('textarea');
+          ta.value = textoCarta; document.body.appendChild(ta); ta.select();
+          try{ document.execCommand('copy'); }catch(e2){}
+          document.body.removeChild(ta);
+        }
+        b.textContent = '📋 ¡Copiado!';
+        setTimeout(() => { b.textContent = orig; }, 800);
+
+        // Marcar como enviado solo si aún no lo estaba
+        if(!g.enviado_at){
+          try{
+            await llamar('f_aliado_marcar_enviado', {
+              p_codigo_link: CODIGO,
+              p_concurso_id: c.id
+            });
+            // Recargar DATOS y repintar
+            const d = await llamar('f_aliado_ver', { p_codigo_link: CODIGO });
+            if(d){ DATOS = d; pintarTodo(); render(); }
+          }catch(e){ /* silencioso */ }
+        }
+      });
+    });
+  }
+
+  render();
 }
 
 // ============================================================
@@ -689,8 +793,7 @@ async function confirmarEliminar(concurso){
 
   try{
     const r = await llamar('f_aliado_eliminar_concurso', {
-      p_codigo_link: CODIGO,
-      p_concurso_id: concurso.id
+      p_codigo_link: CODIGO, p_concurso_id: concurso.id
     });
     if(!r || r.error){
       await modalAlert('No se pudo eliminar: ' + (r ? r.error : 'desconocido'), 'Error');
