@@ -13,58 +13,69 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--fondo);color:var(--texto);font-size:17px;line-height:1.5;min-height:100vh;padding-bottom:40px}
-.franja{height:6px;background:linear-gradient(90deg,var(--acento),var(--acento2))}
+.franja{height:6px;background:linear-gradient(90deg,var(--morado),var(--acento2))}
 .cabecera{display:flex;align-items:center;gap:14px;padding:18px 20px;background:var(--tarjeta);border-bottom:1px solid var(--borde)}
 .logo{font-size:28px;background:linear-gradient(135deg,var(--morado),var(--acento2));width:48px;height:48px;display:flex;align-items:center;justify-content:center;border-radius:10px}
 .titulo{font-size:20px;font-weight:700}
 .subtitulo{font-size:14px;color:var(--suave)}
-.contenedor{max-width:900px;margin:20px auto;padding:0 16px}
+.contenedor{max-width:960px;margin:20px auto;padding:0 16px}
 .tarjeta{background:var(--tarjeta);border:1px solid var(--borde);border-radius:16px;padding:20px;margin-bottom:18px;box-shadow:0 4px 14px rgba(0,0,0,.25)}
-.tarjeta h2{font-size:19px;margin-bottom:12px;color:var(--acento)}
-.tarjeta h3{font-size:16px;margin:14px 0 8px;color:var(--acento2)}
+.tarjeta h2{font-size:19px;margin-bottom:14px;color:var(--acento)}
+.fila-datos{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.dato{background:#0e1728;border:1px solid var(--borde);border-radius:10px;padding:10px 12px}
+.dato strong{color:var(--suave);font-size:12px;display:block;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px}
+.dato span{font-size:17px;font-weight:600;word-break:break-all}
+.dato .num{font-size:26px;color:var(--acento);font-weight:800;display:block}
+.dato .num.chico{font-size:22px;color:var(--aviso)}
 .aviso{padding:12px 14px;border-radius:10px;background:rgba(255,211,61,.12);border:1px solid var(--aviso);color:var(--aviso);margin-bottom:14px;font-size:15px}
 .aviso-rojo{background:rgba(224,82,82,.12);border-color:var(--rojo);color:var(--rojo)}
 .aviso-verde{background:rgba(53,208,127,.12);border-color:var(--acento);color:var(--acento)}
 .aviso-azul{background:rgba(31,162,255,.12);border-color:var(--acento2);color:var(--acento2)}
-.btn{display:inline-block;padding:12px 20px;border:none;border-radius:10px;font-size:17px;font-weight:600;cursor:pointer;color:white;background:linear-gradient(135deg,var(--acento),#26a866);transition:transform .1s}
+.btn{display:inline-block;padding:12px 20px;border:none;border-radius:10px;font-size:17px;font-weight:600;cursor:pointer;color:white;background:linear-gradient(135deg,var(--acento),#26a866);transition:transform .1s;text-decoration:none;text-align:center}
 .btn:active{transform:scale(.97)}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 .btn-gris{background:#2a3648}
 .btn-rojo{background:linear-gradient(135deg,var(--rojo),var(--rojo2))}
 .btn-azul{background:linear-gradient(135deg,var(--acento2),#147acc)}
 .btn-morado{background:linear-gradient(135deg,var(--morado),#7a3ff2)}
-.btn-grande{width:100%;padding:16px;font-size:19px;margin-bottom:12px}
-.btn-mini{padding:8px 12px;font-size:14px}
-input,select{width:100%;padding:12px 14px;border:1px solid var(--borde);border-radius:10px;background:#0d1626;color:var(--texto);font-size:17px;font-family:inherit;margin-top:6px}
-input:focus,select:focus{outline:2px solid var(--acento2);border-color:var(--acento2)}
-label{display:block;margin-bottom:12px;color:var(--suave);font-size:15px}
-.dato{margin-bottom:8px}
-.dato strong{color:var(--suave);font-size:14px;display:block}
-.dato span{font-size:17px}
+.btn-grande{width:100%;padding:18px;font-size:19px;margin-bottom:12px}
+.btn-mini{padding:7px 12px;font-size:13px;border-radius:8px}
+input,select,textarea{width:100%;padding:12px 14px;border:1px solid var(--borde);border-radius:10px;background:#0d1626;color:var(--texto);font-size:16px;font-family:inherit;margin-top:6px}
+input:focus,textarea:focus{outline:2px solid var(--acento2);border-color:var(--acento2)}
+label{display:block;margin-bottom:12px;color:var(--suave);font-size:14px;font-weight:600}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.grid2 label{margin-bottom:0}
-.pill{display:inline-block;padding:4px 10px;border-radius:20px;font-size:13px;font-weight:600}
+.pill{display:inline-block;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700}
 .pill-verde{background:rgba(53,208,127,.18);color:var(--acento)}
 .pill-rojo{background:rgba(224,82,82,.18);color:var(--rojo)}
 .pill-azul{background:rgba(31,162,255,.18);color:var(--acento2)}
 .pill-amarillo{background:rgba(255,211,61,.18);color:var(--aviso)}
 .pill-morado{background:rgba(176,106,255,.18);color:var(--morado)}
 .mono{font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:1px}
-.codigo{background:#0d1626;border:1px solid var(--borde);border-radius:10px;padding:12px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:18px;letter-spacing:2px;word-break:break-all}
-.item{border:1px solid var(--borde);border-radius:12px;padding:14px;margin-top:12px;background:#0e1728}
-.item .qr{max-width:220px;display:block;margin:10px auto}
-.item .fila{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-.item .fila .btn{flex:1;min-width:130px}
-.modal-fondo{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px;overflow-y:auto}
-.modal-caja{background:var(--tarjeta);border:1px solid var(--borde);border-radius:16px;padding:22px;max-width:520px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,.5);max-height:92vh;overflow-y:auto}
-.modal-titulo{font-size:19px;font-weight:700;color:var(--acento);margin-bottom:12px}
-.modal-mensaje{color:var(--texto);white-space:pre-wrap;line-height:1.55;margin-bottom:18px}
+.concurso-item{border:1px solid var(--borde);border-radius:12px;padding:14px;margin-bottom:12px;background:#0e1728}
+.concurso-item .cab{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:10px}
+.concurso-item .nom{font-size:17px;font-weight:700}
+.concurso-item .meta{font-size:13px;color:var(--suave);margin-top:2px}
+.concurso-item .acciones{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.concurso-item .acciones .btn{flex:1;min-width:120px}
+.ganador-caja{background:#0d1626;border:1px solid var(--borde);border-radius:10px;padding:12px;margin-top:10px;font-size:14px}
+.ganador-caja .dato-gan{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dashed var(--borde)}
+.ganador-caja .dato-gan:last-child{border-bottom:none}
+.ganador-caja .dato-gan strong{font-size:12px;color:var(--suave);text-transform:uppercase;letter-spacing:1px}
+.qr-mini{max-width:180px;display:block;margin:10px auto 0}
+.modal-fondo{position:fixed;inset:0;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px;overflow-y:auto}
+.modal-caja{background:var(--tarjeta);border:1px solid var(--borde);border-radius:16px;padding:22px;max-width:560px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,.5);max-height:92vh;overflow-y:auto}
+.modal-titulo{font-size:20px;font-weight:700;color:var(--acento);margin-bottom:12px}
+.modal-sub{font-size:14px;color:var(--suave);margin-bottom:16px}
+.modal-mensaje{color:var(--texto);white-space:pre-wrap;line-height:1.55;margin-bottom:16px;font-size:15px}
 .modal-acciones{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:14px}
-.modal-acciones .btn{padding:10px 18px;font-size:16px}
-.tabla-wrap{overflow-x:auto;margin-top:10px}
-.tabla{width:100%;border-collapse:collapse;font-size:14px}
-.tabla th,.tabla td{border:1px solid var(--borde);padding:6px 8px;text-align:left}
-.tabla th{background:#0d1626;color:var(--suave)}
+.modal-acciones .btn{padding:11px 18px;font-size:16px}
+.check-linea{display:flex;align-items:flex-start;gap:10px;background:#0d1626;border:1px solid var(--borde);border-radius:10px;padding:12px;margin-top:10px;font-size:14px;color:var(--texto)}
+.check-linea input{width:auto;margin:2px 0 0 0;flex-shrink:0}
+.cuponera{background:#0d1626;border:1px solid var(--borde);border-radius:10px;padding:14px;text-align:center;margin-bottom:14px}
+.cuponera .grande{font-size:30px;font-weight:800;color:var(--acento);display:block}
+.cuponera .lbl{font-size:13px;color:var(--suave)}
+.link-box{background:#0d1626;border:1px solid var(--borde);border-radius:10px;padding:12px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;word-break:break-all;color:var(--suave);margin-top:8px}
+.texto-carta{background:#0d1626;border:1px solid var(--borde);border-radius:10px;padding:14px;margin-top:10px;font-size:14px;line-height:1.6;color:var(--texto);white-space:pre-wrap;max-height:240px;overflow-y:auto}
 </style>
 </head>
 <body>
@@ -88,53 +99,34 @@ label{display:block;margin-bottom:12px;color:var(--suave);font-size:15px}
   <div id="panelAnulado" class="tarjeta" style="display:none">
     <h2>⛔ Asignación anulada</h2>
     <div class="aviso aviso-rojo" id="razonAnulada"></div>
-    <p class="suave" style="font-size:14px;margin-top:10px">Si crees que es un error, comunícate con la mesa técnica del evento.</p>
+    <p style="color:var(--suave);font-size:14px;margin-top:10px">Si crees que es un error, comunícate con la mesa técnica del evento.</p>
   </div>
 
   <div id="panelPrincipal" style="display:none">
     <div class="tarjeta">
       <h2>🤝 Bienvenido</h2>
-      <div class="dato"><strong>Organización</strong><span id="orgNombre">-</span></div>
-      <div class="dato"><strong>Responsable</strong><span id="responsable">-</span></div>
-      <div class="dato"><strong>Asignación</strong><span class="mono" id="codigoLink">-</span></div>
-    </div>
-
-    <div class="tarjeta">
-      <h2>🎟️ Cupones disponibles</h2>
-      <div id="zonaPool"></div>
-    </div>
-
-    <div class="tarjeta">
-      <h2>➕ Crear premio para un ganador</h2>
-      <div class="aviso aviso-azul">
-        <strong>Importante:</strong> una vez creado un premio, <strong>NO se puede modificar</strong>. Revisa bien la cédula y el nombre del ganador antes de guardar.
-      </div>
-      <label>Nombre del concurso (obligatorio)
-        <input id="inConcurso" placeholder="Ej.: Cosplay Nitro 2026" maxlength="80">
-      </label>
-      <div class="grid2">
-        <label>Nombre del ganador
-          <input id="inNombre" placeholder="Ej.: María" maxlength="60">
-        </label>
-        <label>Apellido del ganador
-          <input id="inApellido" placeholder="Ej.: Pérez" maxlength="60">
-        </label>
-      </div>
-      <label>Cédula del ganador
-        <input id="inCedula" placeholder="Ej.: 12345678" inputmode="numeric" maxlength="20">
-      </label>
-      <label>Cupones que consume este premio
-        <input id="inCupones" type="number" min="1" value="1" style="max-width:160px">
-      </label>
-      <div id="zonaDias"></div>
-      <div style="margin-top:14px">
-        <button class="btn btn-morado btn-grande" id="btnCrear">🎁 CREAR PREMIO</button>
+      <div class="fila-datos">
+        <div class="dato"><strong>Organización</strong><span id="orgNombre">-</span></div>
+        <div class="dato"><strong>Responsable</strong><span id="responsable">-</span></div>
+        <div class="dato"><strong>Asignación</strong><span class="mono" id="codigoLink">-</span></div>
       </div>
     </div>
 
     <div class="tarjeta">
-      <h2>📜 Premios creados</h2>
-      <div id="zonaPremios"></div>
+      <h2>🎟️ Tus entradas de cortesía</h2>
+      <div class="fila-datos">
+        <div class="dato"><strong>Asignadas</strong><span class="num" id="cuponesAsignados">-</span></div>
+        <div class="dato"><strong>Disponibles</strong><span class="num" id="cuponesDisponibles">-</span></div>
+      </div>
+      <p style="color:var(--suave);font-size:13px;margin-top:10px">
+        Las entradas se reservan al crear cada concurso. Las entradas reservadas a un concurso sin ganador asignado siguen contando como reservadas, pero puedes eliminarlo y recuperarlas.
+      </p>
+    </div>
+
+    <div class="tarjeta">
+      <h2>🏆 Tus concursos</h2>
+      <button class="btn btn-morado btn-grande" id="btnNuevoConcurso">➕ Crear un nuevo concurso</button>
+      <div id="zonaConcursos"></div>
     </div>
   </div>
 </main>
@@ -144,7 +136,9 @@ const params = new URLSearchParams(location.search);
 const CODIGO = params.get('a') || '';
 let DATOS = null;
 
-// ===== Modal estético propio =====
+// ============================================================
+// MODALES
+// ============================================================
 function modalAlert(mensaje, titulo){
   titulo = titulo || 'Aviso';
   return new Promise(resolve => {
@@ -166,15 +160,17 @@ function modalAlert(mensaje, titulo){
 function modalConfirm(mensaje, titulo, opciones){
   opciones = opciones || {};
   const requiereCheck = !!opciones.requiereCheck;
-  const checkTexto = opciones.checkTexto || 'Confirmo que revisé los datos y entiendo que no se puede modificar después.';
+  const checkTexto = opciones.checkTexto || 'Confirmo que revisé la información.';
   const btnTexto = opciones.btnTexto || 'Aceptar';
+  const btnClase = opciones.btnClase || '';
+  const colorBoton = opciones.colorBoton || 'btn-rojo';
   return new Promise(resolve => {
     const fondo = document.createElement('div');
     fondo.className = 'modal-fondo';
     let extra = '';
     if(requiereCheck){
-      extra = '<label style="display:flex;align-items:flex-start;gap:8px;color:var(--texto);font-size:15px;margin-bottom:10px">' +
-                '<input type="checkbox" id="mCheck" style="width:auto;margin:6px 0 0 0">' +
+      extra = '<label class="check-linea">' +
+                '<input type="checkbox" id="mCheck">' +
                 '<span>' + checkTexto + '</span>' +
               '</label>';
     }
@@ -185,7 +181,7 @@ function modalConfirm(mensaje, titulo, opciones){
         extra +
         '<div class="modal-acciones">' +
           '<button class="btn btn-gris" id="mCancelar">Cancelar</button>' +
-          '<button class="btn btn-rojo" id="mAceptar" ' + (requiereCheck ? 'disabled' : '') + '>' + btnTexto + '</button>' +
+          '<button class="btn ' + colorBoton + '" id="mAceptar" ' + (requiereCheck ? 'disabled' : '') + '>' + btnTexto + '</button>' +
         '</div>' +
       '</div>';
     document.body.appendChild(fondo);
@@ -201,6 +197,9 @@ function modalConfirm(mensaje, titulo, opciones){
   });
 }
 
+// ============================================================
+// HELPERS
+// ============================================================
 function esc(t){
   return String(t == null ? '' : t)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;')
@@ -214,85 +213,117 @@ function diasTexto(d1, d2){
   return '-';
 }
 
-function pintarPool(){
-  const a = DATOS.asignacion;
-  const zona = document.getElementById('zonaPool');
-  if(a.pool_tipo === 'unico'){
-    zona.innerHTML =
-      '<div class="dato"><strong>Cupones asignados (pool único)</strong><span>' + a.cupones_unico + '</span></div>' +
-      '<div class="dato"><strong>Disponibles</strong><span>' + a.disponible_unico + '</span></div>' +
-      '<div class="aviso aviso-verde">El pool es único: puedes asignar cupones a los días que decidas por cada premio.</div>';
-  }else{
-    zona.innerHTML =
-      '<div class="dato"><strong>Cupones asignados Día 1</strong><span>' + a.cupones_dia1 + ' · disponibles: ' + a.disponible_dia1 + '</span></div>' +
-      '<div class="dato"><strong>Cupones asignados Día 2</strong><span>' + a.cupones_dia2 + ' · disponibles: ' + a.disponible_dia2 + '</span></div>' +
-      '<div class="aviso aviso-verde">Esta asignación tiene cupones por día. Solo puedes usar cada premio en los días que tengan cupones disponibles.</div>';
-  }
-  pintarDias();
+function fmtFecha(f){
+  if(!f) return '-';
+  try{
+    const d = new Date(f + 'T00:00:00');
+    return d.toLocaleDateString('es-VE', { day:'2-digit', month:'long', year:'numeric' });
+  }catch(e){ return f; }
 }
 
-function pintarDias(){
-  const a = DATOS.asignacion;
-  const zona = document.getElementById('zonaDias');
-  if(a.pool_tipo === 'unico'){
-    zona.innerHTML =
-      '<label style="display:flex;gap:8px;align-items:center;color:var(--texto);margin-top:10px">' +
-        '<input type="checkbox" id="ckD1" style="width:auto;margin:0"> Día 1' +
-      '</label>' +
-      '<label style="display:flex;gap:8px;align-items:center;color:var(--texto);margin-top:4px">' +
-        '<input type="checkbox" id="ckD2" style="width:auto;margin:0"> Día 2' +
-      '</label>';
-  }else{
-    const disD1 = a.disponible_dia1 > 0;
-    const disD2 = a.disponible_dia2 > 0;
-    zona.innerHTML =
-      '<label style="display:flex;gap:8px;align-items:center;color:var(--texto);margin-top:10px' + (!disD1 ? ';opacity:.5' : '') + '">' +
-        '<input type="checkbox" id="ckD1" ' + (disD1 ? '' : 'disabled') + ' style="width:auto;margin:0"> Día 1' + (!disD1 ? ' (sin cupones)' : '') +
-      '</label>' +
-      '<label style="display:flex;gap:8px;align-items:center;color:var(--texto);margin-top:4px' + (!disD2 ? ';opacity:.5' : '') + '">' +
-        '<input type="checkbox" id="ckD2" ' + (disD2 ? '' : 'disabled') + ' style="width:auto;margin:0"> Día 2' + (!disD2 ? ' (sin cupones)' : '') +
-      '</label>';
-  }
+async function recargar(){
+  const d = await llamar('f_aliado_ver', { p_codigo_link: CODIGO });
+  if(!d) return;
+  DATOS = d;
+  pintarTodo();
 }
 
-function pintarPremios(){
-  const zona = document.getElementById('zonaPremios');
-  const premios = DATOS.premios || [];
-  if(premios.length === 0){
-    zona.innerHTML = '<p class="suave">Todavía no has creado ningún premio.</p>';
+// ============================================================
+// PINTADO
+// ============================================================
+function pintarTodo(){
+  const a = DATOS.asignacion;
+  const al = DATOS.aliado;
+
+  document.getElementById('orgNombre').textContent = al.nombre_organizacion;
+  document.getElementById('responsable').textContent = al.responsable;
+  document.getElementById('codigoLink').textContent = a.codigo_link;
+  document.getElementById('cuponesAsignados').textContent = a.cupones_unico;
+  const dispEl = document.getElementById('cuponesDisponibles');
+  dispEl.textContent = a.cupones_disponibles;
+  dispEl.classList.toggle('chico', a.cupones_disponibles <= 0);
+
+  pintarConcursos();
+}
+
+function pintarConcursos(){
+  const zona = document.getElementById('zonaConcursos');
+  const concursos = DATOS.concursos || [];
+  const disp = DATOS.asignacion.cupones_disponibles;
+
+  if(concursos.length === 0){
+    zona.innerHTML = '<p style="color:var(--suave);margin-top:14px">Todavía no has creado ningún concurso.</p>';
     return;
   }
+
   let html = '';
-  premios.forEach(p => {
-    const estadoPill = p.estado === 'activa'
-      ? (p.canjeado_at ? '<span class="pill pill-amarillo">Canjeado</span>' : '<span class="pill pill-verde">Activo</span>')
-      : '<span class="pill pill-rojo">Anulado</span>';
-    const linkGanador = BASE + 'cortesia.html?c=' + p.codigo_link;
-    const urlQR = urlPuerta('ci', p.codigo_qr);
-    html += '<div class="item">' +
-      '<div class="dato"><strong>Ganador</strong><span>' + esc(p.nombre) + ' ' + esc(p.apellido) + '</span></div>' +
-      '<div class="dato"><strong>Cédula</strong><span>' + esc(p.cedula) + '</span></div>' +
-      '<div class="dato"><strong>Concurso</strong><span>' + esc(p.concurso) + '</span></div>' +
-      '<div class="dato"><strong>Días</strong><span>' + diasTexto(p.dia1, p.dia2) + ' · ' + p.cupones_total + ' cupón(es)</span></div>' +
-      '<div class="dato"><strong>Estado</strong> ' + estadoPill + '</div>' +
-      '<div class="dato"><strong>Código del QR</strong><span class="mono">' + esc(p.codigo_qr) + '</span></div>' +
-      '<div id="qr-' + esc(p.codigo_qr) + '" class="qr"></div>' +
-      '<div class="fila">' +
-        '<button class="btn btn-gris btn-mini" data-copy="' + esc(linkGanador) + '">📋 Copiar link del ganador</button>' +
-        '<a class="btn btn-gris btn-mini" href="' + esc(linkWA('Hola ' + p.nombre + ', aquí tienes tu premio de ' + p.concurso + ' en Nitrotoon: ' + linkGanador)) + '" target="_blank" rel="noopener">📱 WhatsApp</a>' +
-        '<a class="btn btn-gris btn-mini" href="' + esc(linkCorreo('Tu premio Nitrotoon - ' + p.concurso, 'Hola ' + p.nombre + ',\n\nAquí tienes tu premio de ' + p.concurso + ':\n\n' + linkGanador)) + '">✉️ Correo</a>' +
-      '</div>' +
-    '</div>';
+  concursos.forEach(c => {
+    const abierto = c.estado === 'abierto';
+    const pillEstado = abierto
+      ? '<span class="pill pill-verde">Abierto · sin ganador</span>'
+      : '<span class="pill pill-morado">Cerrado · ganador asignado</span>';
+    const fechaTxt = c.fecha_concurso ? ' · Fecha: ' + fmtFecha(c.fecha_concurso) : '';
+    const descTxt = c.descripcion ? '<div style="color:var(--suave);font-size:13px;margin-top:4px">' + esc(c.descripcion) + '</div>' : '';
+    let ganadorHtml = '';
+    if(c.ganador){
+      const g = c.ganador;
+      const estadoG = g.estado === 'activa'
+        ? (g.canjeado_at ? '<span class="pill pill-amarillo">Canjeado</span>' : '<span class="pill pill-verde">Activo</span>')
+        : '<span class="pill pill-rojo">Anulado</span>';
+      const linkGan = BASE + 'cortesia.html?c=' + g.codigo_link;
+      ganadorHtml =
+        '<div class="ganador-caja">' +
+          '<div class="dato-gan"><strong>Ganador</strong><span>' + esc(g.nombre) + ' ' + esc(g.apellido) + '</span></div>' +
+          '<div class="dato-gan"><strong>Cédula</strong><span>' + esc(g.cedula) + '</span></div>' +
+          '<div class="dato-gan"><strong>Días</strong><span>' + diasTexto(g.dia1, g.dia2) + ' · ' + g.cupones_total + ' entrada(s)</span></div>' +
+          '<div class="dato-gan"><strong>Estado</strong><span>' + estadoG + '</span></div>' +
+          '<div class="dato-gan"><strong>Código QR</strong><span class="mono">' + esc(g.codigo_qr) + '</span></div>' +
+          '<div id="qr-' + esc(g.codigo_qr) + '" class="qr-mini"></div>' +
+          '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">' +
+            '<button class="btn btn-gris btn-mini" data-copy="' + esc(linkGan) + '">📋 Copiar link del ganador</button>' +
+            '<a class="btn btn-gris btn-mini" target="_blank" rel="noopener" href="' + esc('https://wa.me/?text=' + encodeURIComponent('Hola ' + g.nombre + ', ¡felicidades! Ganaste en ' + c.nombre + '. Aquí tienes tu pase: ' + linkGan)) + '">📱 WhatsApp</a>' +
+            '<a class="btn btn-gris btn-mini" href="' + esc('mailto:?subject=' + encodeURIComponent('¡Ganaste en ' + c.nombre + '!') + '&body=' + encodeURIComponent('Hola ' + g.nombre + ',\n\n¡Felicidades! Ganaste en ' + c.nombre + '.\n\nAquí tienes tu pase:\n' + linkGan)) + '">✉️ Correo</a>' +
+          '</div>' +
+        '</div>';
+    }
+
+    let botones = '';
+    if(abierto){
+      botones =
+        '<div class="acciones">' +
+          '<button class="btn btn-morado btn-mini" data-accion="asignar" data-id="' + c.id + '">🏆 Asignar ganador</button>' +
+          '<button class="btn btn-gris btn-mini" data-accion="editar" data-id="' + c.id + '">✏️ Editar</button>' +
+          '<button class="btn btn-rojo btn-mini" data-accion="eliminar" data-id="' + c.id + '">🗑️ Eliminar</button>' +
+        '</div>';
+    }
+
+    html +=
+      '<div class="concurso-item">' +
+        '<div class="cab">' +
+          '<div>' +
+            '<div class="nom">' + esc(c.nombre) + '</div>' +
+            '<div class="meta">' + c.cupones_reservados + ' entrada(s) reservada(s)' + fechaTxt + '</div>' +
+            descTxt +
+          '</div>' +
+          '<div>' + pillEstado + '</div>' +
+        '</div>' +
+        ganadorHtml +
+        botones +
+      '</div>';
   });
   zona.innerHTML = html;
 
-  // Pintar QRs y cablear copiar
-  premios.forEach(p => {
-    const cont = document.getElementById('qr-' + p.codigo_qr);
-    if(cont && typeof ponerQR === 'function'){
-      try{ ponerQR(cont, urlPuerta('ci', p.codigo_qr), p.codigo_qr); }catch(e){}
+  // Pintar QRs
+  concursos.forEach(c => {
+    if(c.ganador && c.ganador.codigo_qr){
+      const cont = document.getElementById('qr-' + c.ganador.codigo_qr);
+      if(cont && typeof ponerQR === 'function'){
+        try{ ponerQR(cont, urlPuerta('ci', c.ganador.codigo_qr), c.ganador.codigo_qr); }catch(e){}
+      }
     }
   });
+
+  // Cablear botones
   zona.querySelectorAll('button[data-copy]').forEach(b => {
     b.addEventListener('click', async () => {
       const txt = b.getAttribute('data-copy');
@@ -309,8 +340,335 @@ function pintarPremios(){
       }
     });
   });
+  zona.querySelectorAll('button[data-accion]').forEach(b => {
+    b.addEventListener('click', () => {
+      const acc = b.getAttribute('data-accion');
+      const id = b.getAttribute('data-id');
+      const c = DATOS.concursos.find(x => x.id === id);
+      if(!c) return;
+      if(acc === 'asignar') abrirModalGanador(c);
+      else if(acc === 'editar') abrirModalConcurso(c);
+      else if(acc === 'eliminar') confirmarEliminar(c);
+    });
+  });
 }
 
+// ============================================================
+// MODAL CREAR / EDITAR CONCURSO
+// ============================================================
+function abrirModalConcurso(existente){
+  const editando = !!existente;
+  const c = existente || { nombre: '', descripcion: '', fecha_concurso: '', cupones_reservados: 1 };
+  const disp = DATOS.asignacion.cupones_disponibles + (editando ? c.cupones_reservados : 0);
+
+  const fondo = document.createElement('div');
+  fondo.className = 'modal-fondo';
+  fondo.innerHTML =
+    '<div class="modal-caja">' +
+      '<div class="modal-titulo">' + (editando ? '✏️ Editar concurso' : '🏆 Crear nuevo concurso') + '</div>' +
+      '<div class="modal-sub">' + (editando ? 'Puedes cambiar cualquier dato porque aún no tiene ganador asignado.' : 'Ponle un nombre a tu concurso y elige cuántas entradas reservarás para él.') + '</div>' +
+      '<div class="cuponera">' +
+        '<span class="grande">' + disp + '</span>' +
+        '<span class="lbl">' + (editando ? 'entradas disponibles para este concurso' : 'entradas disponibles para reservar') + '</span>' +
+      '</div>' +
+      '<label>Nombre del concurso *' +
+        '<input id="inNomConc" maxlength="80" value="' + esc(c.nombre) + '" placeholder="Ej.: Cosplay Nitro 2026">' +
+      '</label>' +
+      '<label>Descripción (opcional)' +
+        '<textarea id="inDescConc" rows="2" maxlength="300" placeholder="Ej.: Concurso de disfraces temáticos.">' + esc(c.descripcion || '') + '</textarea>' +
+      '</label>' +
+      '<label>Fecha del concurso (opcional)' +
+        '<input id="inFechaConc" type="date" value="' + esc(c.fecha_concurso || '') + '">' +
+      '</label>' +
+      '<label>Entradas reservadas para este concurso *' +
+        '<input id="inCupConc" type="number" min="1" value="' + c.cupones_reservados + '" style="max-width:160px">' +
+      '</label>' +
+      '<div class="modal-acciones">' +
+        '<button class="btn btn-gris" id="mCancelar">Cancelar</button>' +
+        '<button class="btn btn-morado" id="mGuardar">' + (editando ? 'Guardar cambios' : 'Crear concurso') + '</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(fondo);
+
+  const cerrar = () => fondo.remove();
+  fondo.querySelector('#mCancelar').addEventListener('click', cerrar);
+  fondo.addEventListener('click', e => { if(e.target === fondo) cerrar(); });
+
+  fondo.querySelector('#mGuardar').addEventListener('click', async () => {
+    const nombre = fondo.querySelector('#inNomConc').value.trim();
+    const descripcion = fondo.querySelector('#inDescConc').value.trim();
+    const fecha = fondo.querySelector('#inFechaConc').value || null;
+    const cupones = parseInt(fondo.querySelector('#inCupConc').value, 10);
+
+    if(!nombre){ await modalAlert('Escribe el nombre del concurso.', 'Falta el nombre'); return; }
+    if(!cupones || cupones < 1){ await modalAlert('Indica cuántas entradas reservar (mínimo 1).', 'Entradas inválidas'); return; }
+    if(cupones > disp){ await modalAlert('No puedes reservar ' + cupones + ' entradas: solo tienes ' + disp + ' disponibles.', 'Sin entradas'); return; }
+
+    const btn = fondo.querySelector('#mGuardar');
+    btn.disabled = true; btn.textContent = 'Guardando...';
+    try{
+      let r;
+      if(editando){
+        r = await llamar('f_aliado_editar_concurso', {
+          p_codigo_link: CODIGO,
+          p_concurso_id: c.id,
+          p_nombre: nombre,
+          p_descripcion: descripcion || null,
+          p_fecha_concurso: fecha,
+          p_cupones_reservados: cupones
+        });
+      }else{
+        r = await llamar('f_aliado_crear_concurso', {
+          p_codigo_link: CODIGO,
+          p_nombre: nombre,
+          p_descripcion: descripcion || null,
+          p_fecha_concurso: fecha,
+          p_cupones_reservados: cupones
+        });
+      }
+      if(!r || r.error){
+        const disp2 = r && r.disponible !== undefined ? ' Disponibles: ' + r.disponible + '.' : '';
+        await modalAlert('No se pudo guardar: ' + (r ? r.error : 'desconocido') + disp2, 'Error');
+        btn.disabled = false; btn.textContent = editando ? 'Guardar cambios' : 'Crear concurso';
+        return;
+      }
+      cerrar();
+      await recargar();
+      await modalAlert(
+        editando ? '✅ Concurso actualizado.' : '✅ Concurso creado.\n\nPuedes crear otro o asignar un ganador cuando estés listo.',
+        editando ? 'Cambios guardados' : 'Concurso creado'
+      );
+    }catch(e){
+      await modalAlert('Error: ' + (e.message || e), 'Error');
+      btn.disabled = false; btn.textContent = editando ? 'Guardar cambios' : 'Crear concurso';
+    }
+  });
+}
+
+// ============================================================
+// MODAL ASIGNAR GANADOR
+// ============================================================
+async function abrirModalGanador(concurso){
+  const okAviso = await modalConfirm(
+    'Vas a asignar el ganador del concurso:\n\n' +
+    '• ' + concurso.nombre + '\n' +
+    '• ' + concurso.cupones_reservados + ' entrada(s) reservada(s)\n\n' +
+    'Una vez asignado, ni tú ni el administrador podrán modificar los datos del ganador ni el concurso. Si necesitas corregir, tendrás que pedirle al administrador que anule este concurso y crear otro.\n\n' +
+    '¿Deseas continuar?',
+    '🏆 Asignar ganador',
+    { btnTexto: 'Continuar', colorBoton: 'btn-morado' }
+  );
+  if(!okAviso) return;
+
+  const fondo = document.createElement('div');
+  fondo.className = 'modal-fondo';
+  fondo.innerHTML =
+    '<div class="modal-caja">' +
+      '<div class="modal-titulo">🏆 Datos del ganador</div>' +
+      '<div class="modal-sub">Concurso: <strong>' + esc(concurso.nombre) + '</strong> · Reservadas: ' + concurso.cupones_reservados + ' entrada(s).</div>' +
+      '<div class="grid2">' +
+        '<label>Nombre *<input id="gNombre" maxlength="60" placeholder="Ej.: María"></label>' +
+        '<label>Apellido *<input id="gApellido" maxlength="60" placeholder="Ej.: Pérez"></label>' +
+      '</div>' +
+      '<label>Cédula *<input id="gCedula" maxlength="20" inputmode="numeric" placeholder="Ej.: 12345678"></label>' +
+      '<label>Correo electrónico<input id="gCorreo" type="email" maxlength="120" placeholder="Ej.: maria@correo.com"></label>' +
+      '<label>Teléfono / WhatsApp<input id="gTelefono" maxlength="30" placeholder="Ej.: +58 414 1234567"></label>' +
+      '<label>Entradas que consume este premio (máx. ' + concurso.cupones_reservados + ')*' +
+        '<input id="gCupones" type="number" min="1" max="' + concurso.cupones_reservados + '" value="' + concurso.cupones_reservados + '" style="max-width:160px">' +
+      '</label>' +
+      '<div style="margin-bottom:12px">' +
+        '<div style="color:var(--suave);font-size:14px;margin-bottom:6px">Días autorizados *</div>' +
+        '<label style="display:flex;gap:8px;align-items:center;color:var(--texto)"><input type="checkbox" id="gD1" style="width:auto"> Día 1</label>' +
+        '<label style="display:flex;gap:8px;align-items:center;color:var(--texto)"><input type="checkbox" id="gD2" style="width:auto"> Día 2</label>' +
+      '</div>' +
+      '<div class="modal-acciones">' +
+        '<button class="btn btn-gris" id="mCancelar">Cancelar</button>' +
+        '<button class="btn btn-morado" id="mAsignar">Asignar ganador</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(fondo);
+
+  // Por defecto marca Día 1
+  fondo.querySelector('#gD1').checked = true;
+
+  const cerrar = () => fondo.remove();
+  fondo.querySelector('#mCancelar').addEventListener('click', cerrar);
+  fondo.addEventListener('click', e => { if(e.target === fondo) cerrar(); });
+
+  fondo.querySelector('#mAsignar').addEventListener('click', async () => {
+    const nombre = fondo.querySelector('#gNombre').value.trim();
+    const apellido = fondo.querySelector('#gApellido').value.trim();
+    const cedula = fondo.querySelector('#gCedula').value.trim();
+    const correo = fondo.querySelector('#gCorreo').value.trim();
+    const telefono = fondo.querySelector('#gTelefono').value.trim();
+    const cupones = parseInt(fondo.querySelector('#gCupones').value, 10);
+    const d1 = fondo.querySelector('#gD1').checked;
+    const d2 = fondo.querySelector('#gD2').checked;
+
+    if(!nombre){ await modalAlert('Falta el nombre del ganador.', 'Datos incompletos'); return; }
+    if(!apellido){ await modalAlert('Falta el apellido del ganador.', 'Datos incompletos'); return; }
+    if(!cedula){ await modalAlert('Falta la cédula del ganador.', 'Datos incompletos'); return; }
+    if(!cupones || cupones < 1 || cupones > concurso.cupones_reservados){
+      await modalAlert('Las entradas deben ser entre 1 y ' + concurso.cupones_reservados + '.', 'Entradas inválidas'); return;
+    }
+    if(!d1 && !d2){ await modalAlert('Marca al menos un día (Día 1 o Día 2).', 'Días incompletos'); return; }
+
+    const ok = await modalConfirm(
+      'ÚLTIMA ADVERTENCIA\n\n' +
+      '• Concurso: ' + concurso.nombre + '\n' +
+      '• Ganador: ' + nombre + ' ' + apellido + '\n' +
+      '• Cédula: ' + cedula + '\n' +
+      '• Días: ' + diasTexto(d1, d2) + '\n' +
+      '• Entradas: ' + cupones + '\n\n' +
+      'Una vez guardado no se puede modificar.',
+      '⚠️ Confirmación final',
+      {
+        requiereCheck: true,
+        checkTexto: 'Confirmo que revisé la cédula, el nombre y el teléfono/correo del ganador. Una vez guardado, no podrá modificarse.',
+        btnTexto: 'Asignar ganador',
+        colorBoton: 'btn-morado'
+      }
+    );
+    if(!ok) return;
+
+    const btn = fondo.querySelector('#mAsignar');
+    btn.disabled = true; btn.textContent = 'Asignando...';
+    try{
+      const r = await llamar('f_aliado_asignar_ganador', {
+        p_codigo_link: CODIGO,
+        p_concurso_id: concurso.id,
+        p_nombre: nombre,
+        p_apellido: apellido,
+        p_cedula: cedula,
+        p_correo: correo || null,
+        p_telefono: telefono || null,
+        p_cupones_total: cupones,
+        p_dia1: d1,
+        p_dia2: d2
+      });
+      if(!r || r.error){
+        await modalAlert('No se pudo asignar: ' + (r ? r.error : 'desconocido'), 'Error');
+        btn.disabled = false; btn.textContent = 'Asignar ganador';
+        return;
+      }
+      cerrar();
+      await recargar();
+      // Modal final con el link listo para enviar
+      const linkGan = BASE + 'cortesia.html?c=' + r.codigo_link;
+      const textoWA =
+        '🎉 ¡Felicidades ' + nombre + '!\n\n' +
+        'Ganaste en el concurso "' + concurso.nombre + '", organizado por ' + DATOS.aliado.nombre_organizacion + ' en Nitrotoon.\n\n' +
+        'Te has ganado ' + cupones + ' entrada(s) para ' + diasTexto(d1, d2) + '.\n\n' +
+        'Presenta este enlace en la puerta: ' + linkGan + '\n\n' +
+        'IMPORTANTE: este QR solo se puede usar UNA vez. Si ganaste más de una entrada, debes presentarte con todas tus personas juntas en la puerta; si alguien no está en ese momento, su entrada se pierde y no se puede reclamar después.';
+      await mostrarModalExito({
+        nombre: nombre,
+        apellido: apellido,
+        concurso: concurso.nombre,
+        organizacion: DATOS.aliado.nombre_organizacion,
+        cupones: cupones,
+        d1: d1, d2: d2,
+        codigoQR: r.codigo_qr,
+        linkGanador: linkGan,
+        textoWA: textoWA
+      });
+    }catch(e){
+      await modalAlert('Error: ' + (e.message || e), 'Error');
+      btn.disabled = false; btn.textContent = 'Asignar ganador';
+    }
+  });
+}
+
+// ============================================================
+// MODAL DE ÉXITO — link listo para enviar al ganador
+// ============================================================
+function mostrarModalExito(d){
+  return new Promise(resolve => {
+    const fondo = document.createElement('div');
+    fondo.className = 'modal-fondo';
+    const urlQR = urlPuerta('ci', d.codigoQR);
+    const waLink = 'https://wa.me/?text=' + encodeURIComponent(d.textoWA);
+    const mailLink = 'mailto:?subject=' + encodeURIComponent('¡Ganaste en ' + d.concurso + '!') + '&body=' + encodeURIComponent(d.textoWA);
+
+    fondo.innerHTML =
+      '<div class="modal-caja">' +
+        '<div class="modal-titulo">🎉 ¡Ganador asignado!</div>' +
+        '<div class="modal-sub">El concurso <strong>' + esc(d.concurso) + '</strong> quedó cerrado. Aquí tienes el link del ganador para que se lo envíes.</div>' +
+        '<div class="texto-carta">' +
+          'Estimado/a ' + esc(d.nombre) + ' ' + esc(d.apellido) + ':\n\n' +
+          '¡Gracias por participar en el concurso "' + esc(d.concurso) + '", celebrado por ' + esc(d.organizacion) + '!\n\n' +
+          'Te has ganado ' + d.cupones + ' entrada(s) para el evento Nitrotoon, válidas para ' + diasTexto(d.d1, d.d2) + '.\n\n' +
+          'Presenta el QR en la puerta el día correspondiente.\n\n' +
+          'ATENCIÓN: solo puedes usar este QR UNA vez. Si tu premio incluye más de una entrada, debes presentarte con todas tus personas juntas en la puerta. Si alguien no está en ese momento, su entrada se pierde y no se puede reclamar después.\n\n' +
+          '¡Te esperamos!' +
+        '</div>' +
+        '<div id="qrExito" class="qr-mini" style="max-width:200px"></div>' +
+        '<div class="link-box">' + esc(d.linkGanador) + '</div>' +
+        '<div class="modal-acciones" style="justify-content:center;flex-wrap:wrap">' +
+          '<button class="btn btn-gris" id="mCopiar">📋 Copiar link</button>' +
+          '<a class="btn" href="' + esc(waLink) + '" target="_blank" rel="noopener">📱 WhatsApp</a>' +
+          '<a class="btn" href="' + esc(mailLink) + '">✉️ Correo</a>' +
+          '<button class="btn btn-azul" id="mCerrar">Listo</button>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(fondo);
+
+    const qrCont = fondo.querySelector('#qrExito');
+    if(typeof ponerQR === 'function'){ try{ ponerQR(qrCont, urlQR, d.codigoQR); }catch(e){} }
+
+    fondo.querySelector('#mCopiar').addEventListener('click', async () => {
+      const b = fondo.querySelector('#mCopiar');
+      const orig = b.textContent;
+      try{
+        await navigator.clipboard.writeText(d.linkGanador);
+        b.textContent = '¡Copiado!';
+        setTimeout(() => { b.textContent = orig; }, 1500);
+      }catch(e){
+        const ta = document.createElement('textarea');
+        ta.value = d.linkGanador; document.body.appendChild(ta); ta.select();
+        try{ document.execCommand('copy'); b.textContent = '¡Copiado!'; setTimeout(() => { b.textContent = orig; }, 1500); }catch(e2){}
+        document.body.removeChild(ta);
+      }
+    });
+    fondo.querySelector('#mCerrar').addEventListener('click', () => { fondo.remove(); resolve(true); });
+  });
+}
+
+// ============================================================
+// CONFIRMAR ELIMINAR CONCURSO
+// ============================================================
+async function confirmarEliminar(concurso){
+  const ok = await modalConfirm(
+    '¿Eliminar el concurso "' + concurso.nombre + '"?\n\n' +
+    'Este concurso no tiene ganador asignado. Al eliminarlo, las ' + concurso.cupones_reservados + ' entrada(s) reservadas volverán a estar disponibles en tu pool.\n\n' +
+    'Esta acción no se puede deshacer.',
+    '🗑️ Eliminar concurso',
+    { btnTexto: 'Sí, eliminar', colorBoton: 'btn-rojo' }
+  );
+  if(!ok) return;
+
+  try{
+    const r = await llamar('f_aliado_eliminar_concurso', {
+      p_codigo_link: CODIGO,
+      p_concurso_id: concurso.id
+    });
+    if(!r || r.error){
+      await modalAlert('No se pudo eliminar: ' + (r ? r.error : 'desconocido'), 'Error');
+      return;
+    }
+    await recargar();
+    await modalAlert(
+      '✅ Eliminaste el concurso "' + concurso.nombre + '".\n\nAhora cuentas con ' + r.cupones_disponibles + ' entrada(s) de cortesía disponibles.',
+      'Concurso eliminado'
+    );
+  }catch(e){
+    await modalAlert('Error: ' + (e.message || e), 'Error');
+  }
+}
+
+// ============================================================
+// CARGA INICIAL
+// ============================================================
 async function cargar(){
   if(!CODIGO){
     document.getElementById('panelCarga').style.display = 'none';
@@ -335,94 +693,14 @@ async function cargar(){
       return;
     }
 
-    document.getElementById('orgNombre').textContent = d.aliado.nombre_organizacion;
-    document.getElementById('responsable').textContent = d.aliado.responsable;
-    document.getElementById('codigoLink').textContent = d.asignacion.codigo_link;
-    pintarPool();
-    pintarPremios();
+    pintarTodo();
     document.getElementById('panelPrincipal').style.display = 'block';
   }catch(e){
     document.getElementById('panelCarga').innerHTML = '<p style="color:var(--rojo)">Error al cargar: ' + esc(e.message || e) + '</p>';
   }
 }
 
-document.getElementById('btnCrear').addEventListener('click', async () => {
-  const concurso = document.getElementById('inConcurso').value.trim();
-  const nombre = document.getElementById('inNombre').value.trim();
-  const apellido = document.getElementById('inApellido').value.trim();
-  const cedula = document.getElementById('inCedula').value.trim();
-  const cupones = parseInt(document.getElementById('inCupones').value, 10);
-  const ckD1 = document.getElementById('ckD1');
-  const ckD2 = document.getElementById('ckD2');
-  const d1 = ckD1 ? ckD1.checked : false;
-  const d2 = ckD2 ? ckD2.checked : false;
-
-  if(!concurso){ await modalAlert('Escribe el nombre del concurso.', 'Falta el concurso'); return; }
-  if(!nombre){ await modalAlert('Escribe el nombre del ganador.', 'Falta el nombre'); return; }
-  if(!apellido){ await modalAlert('Escribe el apellido del ganador.', 'Falta el apellido'); return; }
-  if(!cedula){ await modalAlert('Escribe la cédula del ganador.', 'Falta la cédula'); return; }
-  if(!cupones || cupones < 1){ await modalAlert('Indica cuántos cupones consume el premio (mínimo 1).', 'Cupones inválidos'); return; }
-  if(!d1 && !d2){ await modalAlert('Marca al menos un día (Día 1, Día 2 o ambos).', 'Falta el día'); return; }
-
-  // Advertencia 1
-  const ok1 = await modalConfirm(
-    'Vas a crear el premio:\n\n' +
-    '• Concurso: ' + concurso + '\n' +
-    '• Ganador: ' + nombre + ' ' + apellido + '\n' +
-    '• Cédula: ' + cedula + '\n' +
-    '• Días: ' + diasTexto(d1, d2) + '\n' +
-    '• Cupones: ' + cupones + '\n\n' +
-    '¿Deseas continuar?',
-    '⚠️ Revisa los datos',
-    { btnTexto: 'Continuar' }
-  );
-  if(!ok1) return;
-
-  // Advertencia 2 (con checkbox obligatorio)
-  const ok2 = await modalConfirm(
-    'ÚLTIMA ADVERTENCIA\n\nUna vez creado el premio, NO se puede modificar ni por ti ni por el administrador sin anularlo. Revisa que la cédula y el nombre estén correctos.\n\nSi te equivocaste, tendrás que pedirle al administrador que anule este premio y te asigne una nueva campaña.',
-    '⚠️ Confirmación final',
-    { requiereCheck: true, checkTexto: 'Confirmo que revisé la cédula y el nombre del ganador y son correctos.', btnTexto: 'Crear premio' }
-  );
-  if(!ok2) return;
-
-  const btn = document.getElementById('btnCrear');
-  btn.disabled = true;
-  btn.textContent = 'Creando...';
-  try{
-    const r = await llamar('f_aliado_crear_premio', {
-      p_codigo_link: CODIGO,
-      p_nombre: nombre,
-      p_apellido: apellido,
-      p_cedula: cedula,
-      p_concurso: concurso,
-      p_cupones_total: cupones,
-      p_dia1: d1,
-      p_dia2: d2
-    });
-    if(!r || r.error){
-      const msg = r && r.error ? r.error : 'desconocido';
-      const disp = r && r.disponible !== undefined ? ' Disponibles: ' + r.disponible + '.' : '';
-      await modalAlert('No se pudo crear el premio: ' + msg + disp, 'Error');
-    }else{
-      await modalAlert('✅ Premio creado correctamente.\n\nCódigo del QR: ' + r.codigo_qr + '\nLink del ganador: ' + BASE + 'cortesia.html?c=' + r.codigo_link, 'Premio creado');
-      document.getElementById('inConcurso').value = '';
-      document.getElementById('inNombre').value = '';
-      document.getElementById('inApellido').value = '';
-      document.getElementById('inCedula').value = '';
-      document.getElementById('inCupones').value = '1';
-      if(document.getElementById('ckD1')) document.getElementById('ckD1').checked = false;
-      if(document.getElementById('ckD2')) document.getElementById('ckD2').checked = false;
-      // Recargar
-      const d = await llamar('f_aliado_ver', { p_codigo_link: CODIGO });
-      if(d){ DATOS = d; pintarPool(); pintarPremios(); }
-    }
-  }catch(e){
-    await modalAlert('Error al crear premio: ' + (e.message || e), 'Error');
-  }
-  btn.disabled = false;
-  btn.textContent = '🎁 CREAR PREMIO';
-});
+document.getElementById('btnNuevoConcurso').addEventListener('click', () => abrirModalConcurso(null));
 
 cargar();
 </script>
