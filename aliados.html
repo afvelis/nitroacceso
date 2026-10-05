@@ -43,6 +43,7 @@ select,input{width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1p
 .badge-pool-dia{background:#3a2350;color:#d3a6ff;}
 .nota-info{background:rgba(31,162,255,.10);border:1px solid var(--acento2);border-radius:10px;padding:12px 14px;margin-top:14px;font-size:15px;color:var(--texto);line-height:1.5;}
 .aviso-rojo-box{background:rgba(224,82,82,.12);border:1px solid var(--rojo);color:var(--rojo);border-radius:10px;padding:12px 14px;margin-top:14px;font-size:15px;line-height:1.5;}
+.nota-form{font-size:14px;color:var(--suave);margin-top:8px;}
 
 .aliado{border:1px solid var(--borde);border-radius:14px;padding:16px;margin-top:14px;background:#0e1728;}
 .aliado.anulado{border-color:var(--rojo);background:rgba(224,82,82,.06);}
@@ -85,7 +86,10 @@ select,input{width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1p
 
   <section class="tarjeta">
     <h2 class="centrado">🤝 Gestión de aliados</h2>
-    <p class="suave centrado">Consulta de aliados y sus asignaciones. Solo lectura por ahora.</p>
+    <p class="suave centrado">Crea aliados, consulta sus asignaciones y gestiona sus cupones.</p>
+    <div class="fila" style="justify-content:flex-end;margin-top:6px">
+      <button class="btn btn-verde" id="btnNuevoAliado">➕ Nuevo aliado</button>
+    </div>
     <div id="contenedorAliados" style="margin-top:14px"><p class="suave">Consultando...</p></div>
   </section>
 
@@ -167,13 +171,18 @@ function fechaBonita(iso){
 }
 function msgErrorAliado(r){
   var map = {
+    ERR_SESION: 'Tu sesión expiró. Entra de nuevo con tu PIN.',
+    ERR_NOMBRE_ORG: 'El nombre de la organización es obligatorio.',
+    ERR_RESPONSABLE: 'El responsable es obligatorio.',
+    ERR_POOL_TIPO: 'El tipo de pool no es válido.',
+    ERR_CUPONES: 'La cantidad de cupones no es válida (debe ser 1 o más).',
+    ERR_CODIGO: 'No se pudo generar el código del link. Intenta de nuevo.',
     ERR_DATOS: 'Faltan datos obligatorios.',
     ERR_NO_EXISTE: 'Ese registro ya no existe. Recarga la página.',
     ERR_ANULADA: 'Esa asignación está anulada.',
     ERR_ALIADO_ANULADO: 'Ese aliado está anulado.',
     ERR_LINK: 'El link del aliado no es válido.',
     ERR_NOMBRE: 'El nombre es obligatorio.',
-    ERR_CUPONES: 'La cantidad de cupones no es válida.',
     ERR_SIN_CUPONES: 'No hay cupones disponibles.',
     ERR_FECHA_REQUERIDA: 'La fecha es obligatoria.',
     ERR_FECHA_PASADA: 'La fecha no puede ser anterior a hoy.'
@@ -291,11 +300,163 @@ async function cargarAliados(){
   }
 }
 
+// ─────────────────────────────────────────────────────────────
+// MODAL: Nuevo aliado
+// ─────────────────────────────────────────────────────────────
+function abrirModalNuevoAliado(){
+  return new Promise(function(resolve){
+    var fondo = document.createElement('div');
+    fondo.className = 'modal-fondo';
+    var caja = document.createElement('div');
+    caja.className = 'modal-caja modal-caja-grande';
+    caja.innerHTML =
+      '<h3 class="modal-titulo">➕ Nuevo aliado</h3>' +
+      '<div class="modal-seccion">' +
+        '<h4>Datos del aliado</h4>' +
+        '<label>Nombre de la organización *<input id="nOrg" type="text" placeholder="Ej.: Dunas Producciones"></label>' +
+        '<label>Responsable *<input id="nResp" type="text" placeholder="Ej.: María Pérez"></label>' +
+        '<label>Correo *<input id="nCorreo" type="email" placeholder="Ej.: contacto@dunas.com"></label>' +
+        '<label>Teléfono *<input id="nTel" type="text" placeholder="Ej.: 04141234567"></label>' +
+      '</div>' +
+      '<div class="modal-seccion">' +
+        '<h4>Pool de cupones</h4>' +
+        '<label>Tipo de pool *' +
+          '<select id="nPool">' +
+            '<option value="unico">Único (todos los cupones en un solo pool)</option>' +
+            '<option value="por_dia">Por día (Día 1 y Día 2)</option>' +
+          '</select>' +
+        '</label>' +
+        '<label>Cupones totales *<input id="nCupones" type="number" min="1" step="1" placeholder="Ej.: 10"></label>' +
+        '<p class="nota-form">💡 Por ahora solo está habilitado el pool <b>Único</b>. El pool por día se habilitará en una próxima etapa.</p>' +
+      '</div>' +
+      '<div id="nMsg" class="suave" style="min-height:22px"></div>' +
+      '<div class="modal-botones"></div>';
+
+    var selPool = caja.querySelector('#nPool');
+    selPool.onchange = async function(){
+      if (selPool.value === 'por_dia'){
+        await modalAlert('Disponible próximamente',
+          'El pool <b>por día</b> se habilitará en una próxima etapa.<br><br>Por ahora se trabaja solo con pool <b>Único</b>.');
+        selPool.value = 'unico';
+      }
+    };
+
+    var contB = caja.querySelector('.modal-botones');
+
+    var bCancel = document.createElement('button');
+    bCancel.className = 'btn btn-gris';
+    bCancel.textContent = 'Cancelar';
+    bCancel.onclick = function(){
+      if (fondo.parentNode) fondo.parentNode.removeChild(fondo);
+      resolve(null);
+    };
+    contB.appendChild(bCancel);
+
+    var bCrear = document.createElement('button');
+    bCrear.className = 'btn btn-verde';
+    bCrear.textContent = 'Crear aliado';
+    bCrear.onclick = async function(){
+      var org = caja.querySelector('#nOrg').value.trim();
+      var resp = caja.querySelector('#nResp').value.trim();
+      var correo = caja.querySelector('#nCorreo').value.trim();
+      var tel = caja.querySelector('#nTel').value.trim();
+      var cup = parseInt(caja.querySelector('#nCupones').value, 10);
+      var msg = caja.querySelector('#nMsg');
+
+      function err(m){ msg.textContent = m; msg.style.color = 'var(--aviso)'; }
+
+      if (!org){ err('Falta el nombre de la organización.'); return; }
+      if (!resp){ err('Falta el responsable.'); return; }
+      if (!correo){ err('Falta el correo.'); return; }
+      if (!tel){ err('Falta el teléfono.'); return; }
+      if (!cup || cup < 1){ err('Los cupones deben ser 1 o más.'); return; }
+
+      bCrear.disabled = true;
+      bCrear.textContent = 'Creando...';
+      msg.textContent = '';
+
+      try {
+        var r = await llamar('f_admin_crear_aliado', {
+          p_token: ses.token,
+          p_nombre_organizacion: org,
+          p_responsable: resp,
+          p_correo: correo,
+          p_telefono: tel,
+          p_pool_tipo: 'unico',
+          p_cupones_unico: cup,
+          p_cupones_dia1: null,
+          p_cupones_dia2: null
+        });
+
+        if (!r || r.error){
+          var code = (r && r.error) ? r.error : 'ERR_DATOS';
+          msg.textContent = msgErrorAliado(code);
+          msg.style.color = 'var(--rojo)';
+          bCrear.disabled = false;
+          bCrear.textContent = 'Crear aliado';
+          return;
+        }
+
+        if (fondo.parentNode) fondo.parentNode.removeChild(fondo);
+        resolve(r);
+      } catch (e){
+        msg.textContent = 'Fallo: ' + e.message;
+        msg.style.color = 'var(--rojo)';
+        bCrear.disabled = false;
+        bCrear.textContent = 'Crear aliado';
+      }
+    };
+    contB.appendChild(bCrear);
+
+    fondo.appendChild(caja);
+    document.body.appendChild(fondo);
+  });
+}
+
+async function nuevoAliado(){
+  var r = await abrirModalNuevoAliado();
+  if (!r || !r.ok) return;
+
+  var codigo = r.codigo_link || '';
+  var link = BASE + 'aliado.html?a=' + codigo;
+
+  var quiereCopiar = await abrirModal({
+    titulo: '✅ Aliado creado',
+    grande: true,
+    mensaje:
+      'El aliado fue creado correctamente.<br><br>' +
+      '<b>Código:</b> ' + esc(codigo) + '<br>' +
+      '<b>Link del aliado:</b>' +
+      '<div class="codigo codigo-chico" style="margin-top:8px">' + esc(link) + '</div>' +
+      '<p class="nota-form">Este link es la llave del aliado. Envíalo a su correo o WhatsApp.</p>',
+    botones: [
+      {texto:'Cerrar', clase:'btn-gris', valor:false},
+      {texto:'📋 Copiar link', clase:'btn-verde', valor:true}
+    ]
+  });
+
+  if (quiereCopiar){
+    try {
+      await navigator.clipboard.writeText(link);
+      await modalAlert('Copiado', 'El link fue copiado al portapapeles.');
+    } catch (e) {
+      var ta = document.createElement('textarea'); ta.value = link;
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); await modalAlert('Copiado', 'El link fue copiado al portapapeles.'); }
+      catch (e2){ await modalAlert('No se pudo copiar', 'Copia el link manualmente:<br><br>' + esc(link)); }
+      document.body.removeChild(ta);
+    }
+  }
+
+  await cargarAliados();
+}
+
 if (!ses || ses.rol !== 'admin') {
   location.replace('index.html');
 } else {
   $('btnVolverArriba').onclick = function(){ location.replace('dashboard.html'); };
   $('btnVolverAbajo').onclick = function(){ location.replace('dashboard.html'); };
+  $('btnNuevoAliado').onclick = nuevoAliado;
   cargarAliados();
 }
 </script>
