@@ -154,6 +154,65 @@ function modalConfirm(titulo, mensaje, textoOk, textoCancel){
   ]});
 }
 
+function modalCompartirLink(opts){
+  return new Promise(function(resolve){
+    var fondo = document.createElement('div');
+    fondo.className = 'modal-fondo';
+    var caja = document.createElement('div');
+    caja.className = 'modal-caja modal-caja-grande';
+    caja.innerHTML =
+      '<h3 class="modal-titulo">' + esc(opts.titulo) + '</h3>' +
+      '<div class="modal-seccion">' +
+        (opts.subtitulo ? '<p>' + opts.subtitulo + '</p>' : '') +
+        (opts.codigo ? '<p><b>Código:</b> ' + esc(opts.codigo) + '</p>' : '') +
+        '<p><b>Link:</b></p>' +
+        '<div class="codigo codigo-chico">' + esc(opts.link) + '</div>' +
+        (opts.ayuda ? '<p class="nota-form">' + opts.ayuda + '</p>' : '') +
+      '</div>' +
+      '<div class="fila" id="filaShare" style="justify-content:flex-start;margin-top:0"></div>' +
+      '<div class="modal-botones"></div>';
+
+    var fila = caja.querySelector('#filaShare');
+
+    var bCopiar = document.createElement('button');
+    bCopiar.className = 'btn btn-verde';
+    bCopiar.textContent = '📋 Copiar link';
+    bCopiar.onclick = function(){ copiarTexto(opts.link, bCopiar); };
+    fila.appendChild(bCopiar);
+
+    if (opts.textoWA){
+      var aWA = document.createElement('a');
+      aWA.className = 'btn btn-gris';
+      aWA.target = '_blank';
+      aWA.rel = 'noopener';
+      aWA.textContent = '📱 WhatsApp';
+      aWA.href = 'https://wa.me/?text=' + encodeURIComponent(opts.textoWA);
+      fila.appendChild(aWA);
+    }
+
+    if (opts.asuntoMail){
+      var aMail = document.createElement('a');
+      aMail.className = 'btn btn-gris';
+      aMail.textContent = '✉️ Correo';
+      aMail.href = 'mailto:?subject=' + encodeURIComponent(opts.asuntoMail) + '&body=' + encodeURIComponent(opts.cuerpoMail || '');
+      fila.appendChild(aMail);
+    }
+
+    var contB = caja.querySelector('.modal-botones');
+    var bCerrar = document.createElement('button');
+    bCerrar.className = 'btn btn-gris';
+    bCerrar.textContent = 'Cerrar';
+    bCerrar.onclick = function(){
+      if (fondo.parentNode) fondo.parentNode.removeChild(fondo);
+      resolve();
+    };
+    contB.appendChild(bCerrar);
+
+    fondo.appendChild(caja);
+    document.body.appendChild(fondo);
+  });
+}
+
 async function copiarTexto(txt, btn){
   const original = btn ? btn.textContent : '';
   try {
@@ -398,7 +457,7 @@ function abrirModalNuevoAliado(){
         }
 
         if (fondo.parentNode) fondo.parentNode.removeChild(fondo);
-        resolve(r);
+        resolve(Object.assign({}, r, {datos: {nombre_organizacion: org, responsable: resp, correo: correo, telefono: tel}}));
       } catch (e){
         msg.textContent = 'Fallo: ' + e.message;
         msg.style.color = 'var(--rojo)';
@@ -419,34 +478,19 @@ async function nuevoAliado(){
 
   var codigo = r.codigo_link || '';
   var link = BASE + 'aliado.html?a=' + codigo;
+  var org = r.datos.nombre_organizacion;
+  var resp = r.datos.responsable;
 
-  var quiereCopiar = await abrirModal({
+  await modalCompartirLink({
     titulo: '✅ Aliado creado',
-    grande: true,
-    mensaje:
-      'El aliado fue creado correctamente.<br><br>' +
-      '<b>Código:</b> ' + esc(codigo) + '<br>' +
-      '<b>Link del aliado:</b>' +
-      '<div class="codigo codigo-chico" style="margin-top:8px">' + esc(link) + '</div>' +
-      '<p class="nota-form">Este link es la llave del aliado. Envíalo a su correo o WhatsApp.</p>',
-    botones: [
-      {texto:'Cerrar', clase:'btn-gris', valor:false},
-      {texto:'📋 Copiar link', clase:'btn-verde', valor:true}
-    ]
+    subtitulo: '<b>' + esc(org) + '</b> · ' + esc(resp),
+    codigo: codigo,
+    link: link,
+    ayuda: 'Este link es la llave del aliado. Compártelo con él.',
+    textoWA: 'Hola ' + resp + ', aquí está el link de gestión de premios para ' + org + ': ' + link,
+    asuntoMail: 'Link de gestión de aliados - ' + org,
+    cuerpoMail: 'Hola ' + resp + ',\n\nAquí está el link de gestión de premios para ' + org + ':\n' + link + '\n\nCon este link puedes crear concursos y asignar ganadores.'
   });
-
-  if (quiereCopiar){
-    try {
-      await navigator.clipboard.writeText(link);
-      await modalAlert('Copiado', 'El link fue copiado al portapapeles.');
-    } catch (e) {
-      var ta = document.createElement('textarea'); ta.value = link;
-      document.body.appendChild(ta); ta.select();
-      try { document.execCommand('copy'); await modalAlert('Copiado', 'El link fue copiado al portapapeles.'); }
-      catch (e2){ await modalAlert('No se pudo copiar', 'Copia el link manualmente:<br><br>' + esc(link)); }
-      document.body.removeChild(ta);
-    }
-  }
 
   await cargarAliados();
 }
