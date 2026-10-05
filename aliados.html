@@ -23,6 +23,7 @@ h2{margin:0 0 12px;font-size:22px;}
 h3{margin:14px 0 6px;font-size:19px;color:var(--acento2);}
 label{display:block;margin:10px 0;font-size:17px;}
 select,input{width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1px solid var(--borde);background:#0d1526;color:var(--texto);font-size:17px;}
+input[type=checkbox]{width:auto;margin:0 8px 0 0;transform:scale(1.3);cursor:pointer;}
 .centrado{text-align:center;}
 .btn{display:inline-block;border:none;border-radius:12px;padding:12px 18px;font-size:17px;font-weight:600;color:#06281a;background:linear-gradient(135deg,var(--acento),#2bb673);cursor:pointer;text-decoration:none;}
 .btn-gris{background:#2a3648;color:var(--texto);}
@@ -41,9 +42,16 @@ select,input{width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1p
 .badge-morado{background:#3a2350;color:#d3a6ff;}
 .badge-premio{background:#5c3a12;color:#ffd39f;}
 .badge-pool-dia{background:#3a2350;color:#d3a6ff;}
+.badge-nota{background:#3a2350;color:#d3a6ff;font-size:13px;}
 .nota-info{background:rgba(31,162,255,.10);border:1px solid var(--acento2);border-radius:10px;padding:12px 14px;margin-top:14px;font-size:15px;color:var(--texto);line-height:1.5;}
 .aviso-rojo-box{background:rgba(224,82,82,.12);border:1px solid var(--rojo);color:var(--rojo);border-radius:10px;padding:12px 14px;margin-top:14px;font-size:15px;line-height:1.5;}
 .nota-form{font-size:14px;color:var(--suave);margin-top:8px;}
+.dup-item{background:#0e1728;border:1px solid var(--borde);border-radius:10px;padding:10px 12px;margin-top:8px;}
+.dup-tipo{display:inline-block;background:rgba(255,211,61,.15);color:var(--aviso);border-radius:6px;padding:2px 8px;font-size:12px;font-weight:700;margin-right:8px;text-transform:uppercase;}
+.dup-org{font-weight:700;}
+.dup-sub{color:var(--suave);font-size:14px;margin-top:2px;}
+.check-label{display:flex;align-items:flex-start;gap:10px;background:rgba(31,162,255,.08);border:1px solid var(--acento2);border-radius:10px;padding:12px;margin-top:14px;font-size:15px;cursor:pointer;}
+.check-label input{margin-top:4px;}
 
 .aliado{border:1px solid var(--borde);border-radius:14px;padding:16px;margin-top:14px;background:#0e1728;}
 .aliado.anulado{border-color:var(--rojo);background:rgba(224,82,82,.06);}
@@ -213,6 +221,72 @@ function modalCompartirLink(opts){
   });
 }
 
+function modalDuplicados(duplicados){
+  return new Promise(function(resolve){
+    var fondo = document.createElement('div');
+    fondo.className = 'modal-fondo';
+    var caja = document.createElement('div');
+    caja.className = 'modal-caja modal-caja-grande';
+
+    var listaHtml = duplicados.map(function(d){
+      var tipoTxt = d.tipo === 'cedula' ? 'Cédula'
+                  : d.tipo === 'correo' ? 'Correo'
+                  : d.tipo === 'telefono' ? 'Teléfono' : d.tipo;
+      var estadoTxt = d.activo ? '' : ' <span class="badge badge-no">Anulado</span>';
+      return '<div class="dup-item">' +
+        '<span class="dup-tipo">' + esc(tipoTxt) + '</span>' +
+        '<span class="dup-org">' + esc(d.nombre_organizacion || '(sin nombre)') + '</span>' + estadoTxt +
+        '<div class="dup-sub">Responsable: ' + esc(d.responsable || '-') + '</div>' +
+      '</div>';
+    }).join('');
+
+    caja.innerHTML =
+      '<h3 class="modal-titulo" style="color:var(--aviso)">⚠️ Coincidencias detectadas</h3>' +
+      '<div class="modal-mensaje">' +
+        'Los siguientes datos ya están registrados en otro(s) aliado(s):' +
+        '<div style="margin-top:10px">' + listaHtml + '</div>' +
+        '<p class="nota-form">Si es la misma organización (sucursales, representante distinto, etc.), puedes continuar. La decisión quedará registrada.</p>' +
+      '</div>' +
+      '<label class="check-label">' +
+        '<input type="checkbox" id="dupCheck">' +
+        '<span>Confirmo que es la <b>misma organización</b> (sucursales o representante adicional) y quiero continuar.</span>' +
+      '</label>' +
+      '<label style="margin-top:14px">Motivo / sucursal (opcional)' +
+        '<input type="text" id="dupNota" placeholder="Ej.: Sucursal Maracay">' +
+      '</label>' +
+      '<div class="modal-botones"></div>';
+
+    var check = caja.querySelector('#dupCheck');
+    var nota = caja.querySelector('#dupNota');
+    var contB = caja.querySelector('.modal-botones');
+
+    var bCancel = document.createElement('button');
+    bCancel.className = 'btn btn-gris';
+    bCancel.textContent = 'Cancelar';
+    bCancel.onclick = function(){
+      if (fondo.parentNode) fondo.parentNode.removeChild(fondo);
+      resolve(null);
+    };
+    contB.appendChild(bCancel);
+
+    var bOk = document.createElement('button');
+    bOk.className = 'btn btn-verde';
+    bOk.textContent = 'Continuar y crear';
+    bOk.disabled = true;
+    bOk.onclick = function(){
+      if (!check.checked) return;
+      if (fondo.parentNode) fondo.parentNode.removeChild(fondo);
+      resolve({nota_duplicado: nota.value.trim()});
+    };
+    contB.appendChild(bOk);
+
+    check.onchange = function(){ bOk.disabled = !check.checked; };
+
+    fondo.appendChild(caja);
+    document.body.appendChild(fondo);
+  });
+}
+
 async function copiarTexto(txt, btn){
   const original = btn ? btn.textContent : '';
   try {
@@ -233,9 +307,11 @@ function msgErrorAliado(r){
     ERR_SESION: 'Tu sesión expiró. Entra de nuevo con tu PIN.',
     ERR_NOMBRE_ORG: 'El nombre de la organización es obligatorio.',
     ERR_RESPONSABLE: 'El responsable es obligatorio.',
+    ERR_CEDULA: 'La cédula del responsable es obligatoria.',
     ERR_POOL_TIPO: 'El tipo de pool no es válido.',
     ERR_CUPONES: 'La cantidad de cupones no es válida (debe ser 1 o más).',
     ERR_CODIGO: 'No se pudo generar el código del link. Intenta de nuevo.',
+    ERR_DUPLICADO_SIN_CONFIRMAR: 'Hay datos duplicados. Debes confirmar que es la misma organización antes de continuar.',
     ERR_DATOS: 'Faltan datos obligatorios.',
     ERR_NO_EXISTE: 'Ese registro ya no existe. Recarga la página.',
     ERR_ANULADA: 'Esa asignación está anulada.',
@@ -274,12 +350,16 @@ function renderAliado(a){
   var estadoBadge = a.activo
     ? '<span class="badge badge-ok">🟢 Activo</span>'
     : '<span class="badge badge-no">🔴 Anulado</span>';
-  head.innerHTML = '<strong>' + esc(a.nombre_organizacion || '(sin nombre)') + '</strong> ' + estadoBadge;
+  var notaBadge = a.nota_duplicado
+    ? ' <span class="badge badge-nota">🏢 ' + esc(a.nota_duplicado) + '</span>'
+    : '';
+  head.innerHTML = '<strong>' + esc(a.nombre_organizacion || '(sin nombre)') + '</strong> ' + estadoBadge + notaBadge;
   div.appendChild(head);
 
   var info = document.createElement('div');
   info.innerHTML =
     '<p class="asig-linea">Responsable: <b>' + esc(a.responsable || '-') + '</b></p>' +
+    '<p class="asig-linea">Cédula: <b>' + esc(a.cedula || '-') + '</b></p>' +
     '<p class="asig-linea">Correo: <b>' + esc(a.correo || '-') + '</b></p>' +
     '<p class="asig-linea">Teléfono: <b>' + esc(a.telefono || '-') + '</b></p>' +
     '<p class="asig-linea">Creado: ' + fechaBonita(a.creada_at) + '</p>';
@@ -374,6 +454,7 @@ function abrirModalNuevoAliado(){
         '<h4>Datos del aliado</h4>' +
         '<label>Nombre de la organización *<input id="nOrg" type="text" placeholder="Ej.: Dunas Producciones"></label>' +
         '<label>Responsable *<input id="nResp" type="text" placeholder="Ej.: María Pérez"></label>' +
+        '<label>Cédula del responsable *<input id="nCed" type="text" placeholder="Ej.: 12345678"></label>' +
         '<label>Correo *<input id="nCorreo" type="email" placeholder="Ej.: contacto@dunas.com"></label>' +
         '<label>Teléfono *<input id="nTel" type="text" placeholder="Ej.: 04141234567"></label>' +
       '</div>' +
@@ -417,6 +498,7 @@ function abrirModalNuevoAliado(){
     bCrear.onclick = async function(){
       var org = caja.querySelector('#nOrg').value.trim();
       var resp = caja.querySelector('#nResp').value.trim();
+      var ced = caja.querySelector('#nCed').value.trim();
       var correo = caja.querySelector('#nCorreo').value.trim();
       var tel = caja.querySelector('#nTel').value.trim();
       var cup = parseInt(caja.querySelector('#nCupones').value, 10);
@@ -426,25 +508,59 @@ function abrirModalNuevoAliado(){
 
       if (!org){ err('Falta el nombre de la organización.'); return; }
       if (!resp){ err('Falta el responsable.'); return; }
+      if (!ced){ err('Falta la cédula del responsable.'); return; }
       if (!correo){ err('Falta el correo.'); return; }
       if (!tel){ err('Falta el teléfono.'); return; }
       if (!cup || cup < 1){ err('Los cupones deben ser 1 o más.'); return; }
 
       bCrear.disabled = true;
-      bCrear.textContent = 'Creando...';
+      bCrear.textContent = 'Verificando...';
       msg.textContent = '';
+
+      // Chequeo de duplicados
+      var dup = [];
+      try {
+        var rDup = await llamar('f_admin_chequear_duplicados_aliado', {
+          p_token: ses.token,
+          p_cedula: ced,
+          p_correo: correo,
+          p_telefono: tel
+        });
+        if (Array.isArray(rDup)) dup = rDup;
+      } catch (e){
+        msg.textContent = 'No se pudo verificar duplicados: ' + e.message;
+        msg.style.color = 'var(--rojo)';
+        bCrear.disabled = false;
+        bCrear.textContent = 'Crear aliado';
+        return;
+      }
+
+      var notaDup = null;
+      if (dup.length > 0){
+        bCrear.disabled = false;
+        bCrear.textContent = 'Crear aliado';
+        var respDup = await modalDuplicados(dup);
+        if (!respDup) return; // canceló
+        notaDup = respDup.nota_duplicado || null;
+        bCrear.disabled = true;
+        bCrear.textContent = 'Creando...';
+      } else {
+        bCrear.textContent = 'Creando...';
+      }
 
       try {
         var r = await llamar('f_admin_crear_aliado', {
           p_token: ses.token,
           p_nombre_organizacion: org,
           p_responsable: resp,
+          p_cedula: ced,
           p_correo: correo,
           p_telefono: tel,
           p_pool_tipo: 'unico',
           p_cupones_unico: cup,
           p_cupones_dia1: null,
-          p_cupones_dia2: null
+          p_cupones_dia2: null,
+          p_nota_duplicado: notaDup
         });
 
         if (!r || r.error){
@@ -457,7 +573,14 @@ function abrirModalNuevoAliado(){
         }
 
         if (fondo.parentNode) fondo.parentNode.removeChild(fondo);
-        resolve(Object.assign({}, r, {datos: {nombre_organizacion: org, responsable: resp, correo: correo, telefono: tel}}));
+        resolve(Object.assign({}, r, {datos: {
+          nombre_organizacion: org,
+          responsable: resp,
+          cedula: ced,
+          correo: correo,
+          telefono: tel,
+          nota_duplicado: notaDup
+        }}));
       } catch (e){
         msg.textContent = 'Fallo: ' + e.message;
         msg.style.color = 'var(--rojo)';
