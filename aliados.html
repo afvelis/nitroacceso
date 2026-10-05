@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nitrotoon Control de acceso</title>
+<style>
+:root{
+  --fondo:#0b1220; --tarjeta:#121c2e; --borde:#24344d; --texto:#eef3f8;
+  --suave:#9fb0c3; --acento:#35d07f; --acento2:#1fa2ff; --aviso:#ffd33d;
+  --rojo:#e05252;
+}
+*{box-sizing:border-box;}
+body{margin:0; background:var(--fondo); color:var(--texto); font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; font-size:17px; line-height:1.5;}
+.franja{height:6px;background:linear-gradient(90deg,var(--acento),var(--acento2));}
+.cabecera{display:flex;gap:14px;align-items:center;padding:20px 16px;max-width:1000px;margin:0 auto;}
+.logo{width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,var(--acento),var(--acento2));display:flex;align-items:center;justify-content:center;font-size:30px;flex:none;}
+.ceja{color:var(--suave);letter-spacing:2px;text-transform:uppercase;font-size:17px;}
+h1{margin:0;font-size:26px;}
+main{max-width:1000px;margin:0 auto;padding:0 16px 40px;display:flex;flex-direction:column;gap:20px;}
+.tarjeta{background:var(--tarjeta);border:1px solid var(--borde);border-radius:16px;padding:20px;box-shadow:0 8px 24px rgba(0,0,0,.35);}
+h2{margin:0 0 12px;font-size:22px;}
+h3{margin:14px 0 6px;font-size:19px;color:var(--acento2);}
+label{display:block;margin:10px 0;font-size:17px;}
+select,input{width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1px solid var(--borde);background:#0d1526;color:var(--texto);font-size:17px;}
+.centrado{text-align:center;}
+.btn{display:inline-block;border:none;border-radius:12px;padding:12px 18px;font-size:17px;font-weight:600;color:#06281a;background:linear-gradient(135deg,var(--acento),#2bb673);cursor:pointer;text-decoration:none;}
+.btn-gris{background:#2a3648;color:var(--texto);}
+.btn-rojo{background:linear-gradient(135deg,#e05252,#c73e3e);color:#fff;}
+.btn-verde{background:linear-gradient(135deg,var(--acento),#2bb673);color:#06281a;}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+.btn-mini{padding:6px 10px;font-size:14px;border-radius:8px;margin:2px 2px 2px 0;}
+.fila{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;}
+.suave{color:var(--suave);}
+.codigo{background:#0d1526;border:1px solid var(--borde);border-radius:10px;padding:12px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:20px;letter-spacing:2px;margin-top:8px;word-break:break-all;}
+.codigo-chico{font-size:14px !important;letter-spacing:0 !important;}
+.badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:14px;margin-right:6px;vertical-align:middle;}
+.badge-tipo{background:#123a5c;color:#9fd2ff;}
+.badge-ok{background:#12402c;color:#7ee2ae;}
+.badge-no{background:#4a1a1a;color:#ff9d9d;}
+.badge-morado{background:#3a2350;color:#d3a6ff;}
+.badge-premio{background:#5c3a12;color:#ffd39f;}
+.badge-pool-dia{background:#3a2350;color:#d3a6ff;}
+.nota-info{background:rgba(31,162,255,.10);border:1px solid var(--acento2);border-radius:10px;padding:12px 14px;margin-top:14px;font-size:15px;color:var(--texto);line-height:1.5;}
+.aviso-rojo-box{background:rgba(224,82,82,.12);border:1px solid var(--rojo);color:var(--rojo);border-radius:10px;padding:12px 14px;margin-top:14px;font-size:15px;line-height:1.5;}
+
+.aliado{border:1px solid var(--borde);border-radius:14px;padding:16px;margin-top:14px;background:#0e1728;}
+.aliado.anulado{border-color:var(--rojo);background:rgba(224,82,82,.06);}
+.aliado-head{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:8px;}
+.aliado-head strong{font-size:19px;}
+.asignacion{background:#0b1220;border:1px solid var(--borde);border-radius:10px;padding:12px;margin-top:10px;}
+.asignacion.anulada{border-color:var(--rojo);background:rgba(224,82,82,.08);}
+.asig-top{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px;}
+.asig-linea{color:var(--suave);font-size:15px;margin:2px 0;}
+.asig-linea b{color:var(--texto);}
+
+.modal-fondo{position:fixed;inset:0;background:rgba(4,8,16,.72);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;z-index:1000;padding:18px;animation:modalFade .15s ease;}
+@keyframes modalFade{from{opacity:0}to{opacity:1}}
+.modal-caja{background:var(--tarjeta);border:1px solid var(--borde);border-radius:16px;padding:22px;max-width:480px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.55);animation:modalPop .18s ease;}
+.modal-caja-grande{max-width:660px;max-height:92vh;overflow-y:auto;}
+@keyframes modalPop{from{transform:scale(.94);opacity:0}to{transform:scale(1);opacity:1}}
+.modal-titulo{margin:0 0 12px;font-size:20px;color:var(--acento);}
+.modal-mensaje{font-size:16px;line-height:1.55;color:var(--texto);margin-bottom:18px;}
+.modal-botones{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:16px;}
+.modal-botones .btn{min-width:110px;padding:11px 16px;}
+.modal-seccion{margin-bottom:14px;padding-bottom:14px;border-bottom:1px dashed var(--borde);}
+.modal-seccion:last-child{border-bottom:none;padding-bottom:0;}
+.modal-seccion h4{margin:0 0 8px;font-size:16px;color:var(--acento2);font-weight:700;}
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header class="cabecera">
+  <div class="logo">🤝</div>
+  <div>
+    <div class="ceja">Aliados</div>
+    <h1>Nitrotoon Control de acceso</h1>
+  </div>
+</header>
+<main>
+
+  <div class="fila" style="margin-top:0">
+    <button class="btn btn-gris" id="btnVolverArriba">← Volver al dashboard</button>
+  </div>
+
+  <section class="tarjeta">
+    <h2 class="centrado">🤝 Gestión de aliados</h2>
+    <p class="suave centrado">Consulta de aliados y sus asignaciones. Solo lectura por ahora.</p>
+    <div id="contenedorAliados" style="margin-top:14px"><p class="suave">Consultando...</p></div>
+  </section>
+
+  <div class="fila">
+    <button class="btn btn-gris" id="btnVolverAbajo">← Volver al dashboard</button>
+  </div>
+
+</main>
+<script src="config.js"></script>
+<script>
+function $(id){ return document.getElementById(id); }
+function esc(t){
+  return String(t == null ? '' : t)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function boton(texto, clase, fn){
+  var b = document.createElement('button');
+  b.className = 'btn ' + clase;
+  b.textContent = texto;
+  b.onclick = function(e){ fn(e.target); };
+  return b;
+}
+function botonMini(texto, clase, fn){
+  var b = document.createElement('button');
+  b.className = 'btn ' + clase + ' btn-mini';
+  b.textContent = texto;
+  b.onclick = function(e){ fn(e.target); };
+  return b;
+}
+
+function abrirModal(opts){
+  return new Promise(function(resolve){
+    var fondo = document.createElement('div');
+    fondo.className = 'modal-fondo';
+    var caja = document.createElement('div');
+    caja.className = 'modal-caja' + (opts.grande ? ' modal-caja-grande' : '');
+    caja.innerHTML =
+      '<h3 class="modal-titulo">' + esc(opts.titulo || '') + '</h3>' +
+      '<div class="modal-mensaje">' + (opts.mensaje || '') + '</div>' +
+      '<div class="modal-botones"></div>';
+    var contB = caja.querySelector('.modal-botones');
+    (opts.botones || []).forEach(function(b){
+      var btn = document.createElement('button');
+      btn.className = 'btn ' + (b.clase || 'btn-gris');
+      btn.textContent = b.texto;
+      btn.onclick = function(){
+        if (fondo.parentNode) fondo.parentNode.removeChild(fondo);
+        resolve(b.valor);
+      };
+      contB.appendChild(btn);
+    });
+    fondo.appendChild(caja);
+    document.body.appendChild(fondo);
+  });
+}
+function modalAlert(titulo, mensaje){ return abrirModal({titulo: titulo, mensaje: mensaje, botones: [{texto:'Aceptar', clase:'btn-verde', valor:true}]}); }
+function modalConfirm(titulo, mensaje, textoOk, textoCancel){
+  return abrirModal({titulo: titulo, mensaje: mensaje, botones: [
+    {texto: textoCancel || 'Cancelar', clase:'btn-gris', valor:false},
+    {texto: textoOk || 'Aceptar', clase:'btn-verde', valor:true}
+  ]});
+}
+
+async function copiarTexto(txt, btn){
+  const original = btn ? btn.textContent : '';
+  try {
+    await navigator.clipboard.writeText(txt);
+    if(btn) { btn.textContent = '¡Copiado!'; setTimeout(() => { btn.textContent = original; }, 1500); }
+  } catch (e) {
+    var ta = document.createElement('textarea'); ta.value = txt;
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); if(btn){ btn.textContent = '¡Copiado!'; setTimeout(() => { btn.textContent = original; }, 1500); } } catch (e2) {}
+    document.body.removeChild(ta);
+  }
+}
+function fechaBonita(iso){
+  try { return new Date(iso).toLocaleDateString('es-VE', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }); } catch (e) { return ''; }
+}
+function msgErrorAliado(r){
+  var map = {
+    ERR_DATOS: 'Faltan datos obligatorios.',
+    ERR_NO_EXISTE: 'Ese registro ya no existe. Recarga la página.',
+    ERR_ANULADA: 'Esa asignación está anulada.',
+    ERR_ALIADO_ANULADO: 'Ese aliado está anulado.',
+    ERR_LINK: 'El link del aliado no es válido.',
+    ERR_NOMBRE: 'El nombre es obligatorio.',
+    ERR_CUPONES: 'La cantidad de cupones no es válida.',
+    ERR_SIN_CUPONES: 'No hay cupones disponibles.',
+    ERR_FECHA_REQUERIDA: 'La fecha es obligatoria.',
+    ERR_FECHA_PASADA: 'La fecha no puede ser anterior a hoy.'
+  };
+  return map[r] || ('El sistema respondió: ' + r);
+}
+
+function textoPool(asi){
+  if (asi.pool_tipo === 'unico'){
+    var total = asi.cupones_unico || 0;
+    var usados = asi.cupones_asignados || 0;
+    var disp = (asi.disponible_unico == null) ? (total - usados) : asi.disponible_unico;
+    return 'Único · Asignadas: <b>' + total + '</b> · Usadas: <b>' + usados + '</b> · Disponibles: <b>' + disp + '</b>';
+  }
+  var d1 = asi.cupones_dia1 || 0;
+  var d2 = asi.cupones_dia2 || 0;
+  var u1 = asi.cupones_asignados_dia1 || 0;
+  var u2 = asi.cupones_asignados_dia2 || 0;
+  var dd1 = (asi.disponible_dia1 == null) ? (d1 - u1) : asi.disponible_dia1;
+  var dd2 = (asi.disponible_dia2 == null) ? (d2 - u2) : asi.disponible_dia2;
+  return 'Por día · D1: <b>' + d1 + '</b> (usadas ' + u1 + ' · disp. ' + dd1 + ') · D2: <b>' + d2 + '</b> (usadas ' + u2 + ' · disp. ' + dd2 + ')';
+}
+
+function renderAliado(a){
+  var div = document.createElement('div');
+  div.className = 'aliado' + (a.activo ? '' : ' anulado');
+
+  var head = document.createElement('div');
+  head.className = 'aliado-head';
+  var estadoBadge = a.activo
+    ? '<span class="badge badge-ok">🟢 Activo</span>'
+    : '<span class="badge badge-no">🔴 Anulado</span>';
+  head.innerHTML = '<strong>' + esc(a.nombre_organizacion || '(sin nombre)') + '</strong> ' + estadoBadge;
+  div.appendChild(head);
+
+  var info = document.createElement('div');
+  info.innerHTML =
+    '<p class="asig-linea">Responsable: <b>' + esc(a.responsable || '-') + '</b></p>' +
+    '<p class="asig-linea">Correo: <b>' + esc(a.correo || '-') + '</b></p>' +
+    '<p class="asig-linea">Teléfono: <b>' + esc(a.telefono || '-') + '</b></p>' +
+    '<p class="asig-linea">Creado: ' + fechaBonita(a.creada_at) + '</p>';
+  div.appendChild(info);
+
+  var asigs = a.asignaciones || [];
+  if (!asigs.length){
+    var p = document.createElement('p');
+    p.className = 'suave';
+    p.style.marginTop = '10px';
+    p.textContent = 'Sin asignaciones.';
+    div.appendChild(p);
+    return div;
+  }
+
+  asigs.forEach(function(asi){
+    var box = document.createElement('div');
+    box.className = 'asignacion' + (asi.estado === 'activa' ? '' : ' anulada');
+
+    var top = document.createElement('div');
+    top.className = 'asig-top';
+    var poolBadge = (asi.pool_tipo === 'unico')
+      ? '<span class="badge badge-tipo">Único</span>'
+      : '<span class="badge badge-pool-dia">Por día</span>';
+    var estBadge = (asi.estado === 'activa')
+      ? '<span class="badge badge-ok">Activa</span>'
+      : '<span class="badge badge-no">Anulada</span>';
+    top.innerHTML = '<span class="codigo codigo-chico" style="margin:0;padding:6px 10px;display:inline-block">' + esc(asi.codigo_link || '-') + '</span> ' + poolBadge + ' ' + estBadge;
+    box.appendChild(top);
+
+    var l1 = document.createElement('p');
+    l1.className = 'asig-linea';
+    l1.innerHTML = textoPool(asi);
+    box.appendChild(l1);
+
+    var l2 = document.createElement('p');
+    l2.className = 'asig-linea';
+    l2.innerHTML = 'Premios creados: <b>' + (asi.premios_creados || 0) + '</b> · Cupones usados: <b>' + (asi.cupones_asignados || 0) + '</b> · Ampliaciones: <b>' + ((asi.ampliaciones || []).length) + '</b>';
+    box.appendChild(l2);
+
+    if (asi.estado !== 'activa' && asi.razon_anulacion){
+      var raz = document.createElement('p');
+      raz.className = 'asig-linea';
+      raz.style.color = 'var(--rojo)';
+      raz.innerHTML = 'Razón de anulación: <b>' + esc(asi.razon_anulacion) + '</b>';
+      box.appendChild(raz);
+    }
+
+    div.appendChild(box);
+  });
+
+  return div;
+}
+
+function renderAliados(arr){
+  var cont = $('contenedorAliados');
+  cont.innerHTML = '';
+  if (!arr || !arr.length){
+    cont.innerHTML = '<p class="suave centrado">Todavía no hay aliados registrados.</p>';
+    return;
+  }
+  arr.forEach(function(a){ cont.appendChild(renderAliado(a)); });
+}
+
+var ses = leerSesion();
+
+async function cargarAliados(){
+  try {
+    var arr = await llamar('f_admin_listar_aliados', { p_token: ses.token });
+    if (arr == null){
+      $('contenedorAliados').innerHTML = '<p class="suave centrado">Tu sesión expiró. Entra de nuevo con tu PIN.</p>';
+      return;
+    }
+    renderAliados(arr);
+  } catch (e) {
+    $('contenedorAliados').innerHTML = '<p class="suave centrado">No se pudo cargar la lista: ' + esc(e.message) + '</p>';
+  }
+}
+
+if (!ses || ses.rol !== 'admin') {
+  location.replace('index.html');
+} else {
+  $('btnVolverArriba').onclick = function(){ location.replace('dashboard.html'); };
+  $('btnVolverAbajo').onclick = function(){ location.replace('dashboard.html'); };
+  cargarAliados();
+}
+</script>
+</body>
+</html>
