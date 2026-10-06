@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nitrotoon Control de acceso - Concursos</title>
+<style>html,body{background:#0b1220;margin:0;}</style>
+<script src="config.js"></script>
+<script>
+  // M-28 + M-31: chequeo de sesión antes de pintar el body.
+  (function(){
+    var s = leerSesion();
+    if (!s || s.rol !== 'admin'){
+      location.replace('acceso-denegado.html');
+    }
+  })();
+</script>
+<style>
+:root{
+  --fondo:#0b1220; --tarjeta:#121c2e; --borde:#24344d; --texto:#eef3f8;
+  --suave:#9fb0c3; --acento:#35d07f; --acento2:#1fa2ff; --aviso:#ffd33d;
+  --rojo:#e05252;
+}
+*{box-sizing:border-box;}
+body{margin:0; background:var(--fondo); color:var(--texto); font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; font-size:17px; line-height:1.5;}
+.franja{height:6px;background:linear-gradient(90deg,var(--acento),var(--acento2));}
+.cabecera{display:flex;gap:14px;align-items:center;padding:20px 16px;max-width:1100px;margin:0 auto;}
+.logo{width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,var(--acento),var(--acento2));display:flex;align-items:center;justify-content:center;font-size:30px;flex:none;}
+.ceja{color:var(--suave);letter-spacing:2px;text-transform:uppercase;font-size:17px;}
+h1{margin:0;font-size:26px;}
+main{max-width:1100px;margin:0 auto;padding:0 16px 40px;display:flex;flex-direction:column;gap:20px;}
+.tarjeta{background:var(--tarjeta);border:1px solid var(--borde);border-radius:16px;padding:20px;box-shadow:0 8px 24px rgba(0,0,0,.35);}
+h2{margin:0 0 12px;font-size:22px;}
+h3{margin:14px 0 6px;font-size:19px;color:var(--acento2);}
+.centrado{text-align:center;}
+.btn{display:inline-block;border:none;border-radius:12px;padding:12px 18px;font-size:17px;font-weight:600;color:#06281a;background:linear-gradient(135deg,var(--acento),#2bb673);cursor:pointer;text-decoration:none;}
+.btn-gris{background:#2a3648;color:var(--texto);}
+.btn-rojo{background:linear-gradient(135deg,#e05252,#c73e3e);color:#fff;}
+.btn-verde{background:linear-gradient(135deg,var(--acento),#2bb673);color:#06281a;}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+.btn-mini{padding:6px 10px;font-size:14px;border-radius:8px;margin:2px 2px 2px 0;}
+.fila{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;}
+.suave{color:var(--suave);}
+.codigo{background:#0d1526;border:1px solid var(--borde);border-radius:10px;padding:12px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:20px;letter-spacing:2px;margin-top:8px;word-break:break-all;}
+.codigo-chico{font-size:14px !important;letter-spacing:0 !important;}
+.badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:14px;margin-right:6px;vertical-align:middle;}
+.badge-tipo{background:#123a5c;color:#9fd2ff;}
+.badge-ok{background:#12402c;color:#7ee2ae;}
+.badge-no{background:#4a1a1a;color:#ff9d9d;}
+.badge-morado{background:#3a2350;color:#d3a6ff;}
+.badge-premio{background:#5c3a12;color:#ffd39f;}
+.badge-pool-dia{background:#3a2350;color:#d3a6ff;}
+.badge-nota{background:#3a2350;color:#d3a6ff;font-size:13px;}
+.badge-aviso{background:rgba(255,211,61,.18);color:var(--aviso);}
+.badge-cerrado{background:rgba(31,162,255,.15);color:var(--acento2);}
+.asig-linea{color:var(--suave);font-size:15px;margin:2px 0;}
+.asig-linea b{color:var(--texto);}
+
+.tabla-concursos{width:100%;border-collapse:collapse;margin-top:10px;font-size:14px;table-layout:fixed;}
+.tabla-concursos th,.tabla-concursos td{border:1px solid var(--borde);padding:8px;text-align:left;vertical-align:top;word-wrap:break-word;}
+.tabla-concursos th{background:#0e1728;color:var(--acento2);font-size:12px;font-weight:700;white-space:normal;line-height:1.25;}
+.tabla-concursos th:nth-child(1),.tabla-concursos td:nth-child(1){width:20%;}
+.tabla-concursos th:nth-child(2),.tabla-concursos td:nth-child(2){width:10%;}
+.tabla-concursos th:nth-child(3),.tabla-concursos td:nth-child(3){width:10%;}
+.tabla-concursos th:nth-child(4),.tabla-concursos td:nth-child(4){width:8%;}
+.tabla-concursos th:nth-child(5),.tabla-concursos td:nth-child(5){width:22%;}
+.tabla-concursos th:nth-child(6),.tabla-concursos td:nth-child(6){width:15%;}
+.tabla-concursos th:nth-child(7),.tabla-concursos td:nth-child(7){width:15%;}
+.tabla-concursos tbody tr:hover{background:rgba(31,162,255,.06);}
+.tabla-concursos td.acciones{white-space:normal;line-height:1.7;padding-top:8px;padding-bottom:8px;}
+.tabla-concursos td.estado-mini{font-size:12px;color:var(--suave);}
+
+.modal-fondo{position:fixed;inset:0;background:rgba(4,8,16,.72);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;z-index:1000;padding:18px;animation:modalFade .15s ease;}
+@keyframes modalFade{from{opacity:0}to{opacity:1}}
+.modal-caja{background:var(--tarjeta);border:1px solid var(--borde);border-radius:16px;padding:22px;max-width:520px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.55);animation:modalPop .18s ease;}
+.modal-caja-grande{max-width:760px;max-height:92vh;overflow-y:auto;}
+@keyframes modalPop{from{transform:scale(.94);opacity:0}to{transform:scale(1);opacity:1}}
+.modal-titulo{margin:0 0 12px;font-size:20px;color:var(--acento);}
+.modal-seccion{margin-bottom:14px;padding-bottom:14px;border-bottom:1px dashed var(--borde);}
+.modal-seccion:last-child{border-bottom:none;padding-bottom:0;}
+.modal-seccion h4{margin:0 0 8px;font-size:16px;color:var(--acento2);font-weight:700;}
+.modal-botones{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:16px;}
+.modal-botones .btn{min-width:110px;padding:11px 16px;}
+.detalle-linea{margin:4px 0;font-size:15px;}
+.detalle-linea b{color:var(--texto);}
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header class="cabecera">
+  <div class="logo">🏆</div>
+  <div>
+    <div class="ceja">Concursos</div>
+    <h1>Nitrotoon Control de acceso</h1>
+  </div>
+</header>
+<main>
+
+  <div class="fila" style="margin-top:0">
+    <button class="btn btn-gris" id="btnVolverArriba">← Volver a aliados</button>
+  </div>
+
+  <section class="tarjeta" id="tarjetaAliado">
+    <h2 class="centrado">🏆 Concursos del aliado</h2>
+    <div id="contenedorInfoAsig" style="margin-top:12px"><p class="suave">Cargando...</p></div>
+  </section>
+
+  <section class="tarjeta" id="tarjetaConcursos">
+    <h2 class="centrado">📜 Historial completo de concursos</h2>
+    <p class="suave centrado">Todos los concursos de esta asignación, incluso cerrados. Solo lectura por ahora.</p>
+    <div id="contenedorConcursos" style="margin-top:12px"><p class="suave">Consultando...</p></div>
+  </section>
+
+  <div class="fila">
+    <button class="btn btn-gris" id="btnVolverAbajo">← Volver a aliados</button>
+  </div>
+
+</main>
+<script>
+function $(id){ return document.getElementById(id); }
+function esc(t){
+  return String(t == null ? '' : t)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function botonMini(texto, clase, fn){
+  var b = document.createElement('button');
+  b.className = 'btn ' + clase + ' btn-mini';
+  b.textContent = texto;
+  b.onclick = function(e){ fn(e.target); };
+  return b;
+}
+function abrirModal(opts){
+  return new Promise(function(resolve){
+    var fondo = document.createElement('div');
+    fondo.className = 'modal-fondo';
+    var caja = document.createElement('div');
+    caja.className = 'modal-caja' + (opts.grande ? ' modal-caja-grande' : '');
+    caja.innerHTML =
+      '<h3 class="modal-titulo">' + esc(opts.titulo || '') + '</h3>' +
+      '<div class="modal-mensaje">' + (opts.mensaje || '') + '</div>' +
+      '<div class="modal-botones"></div>';
+    var contB = caja.querySelector('.modal-botones');
+    (opts.botones || []).forEach(function(b){
+      var btn = document.createElement('button');
+      btn.className = 'btn ' + (b.clase || 'btn-gris');
+      btn.textContent = b.texto;
+      btn.onclick = function(){
+        if (fondo.parentNode) fondo.parentNode.removeChild(fondo);
+        resolve(b.valor);
+      };
+      contB.appendChild(btn);
+    });
+    fondo.appendChild(caja);
+    document.body.appendChild(fondo);
+  });
+}
+function modalAlert(titulo, mensaje){ return abrirModal({titulo: titulo, mensaje: mensaje, botones: [{texto:'Aceptar', clase:'btn-verde', valor:true}]}); }
+async function copiarTexto(txt, btn){
+  const original = btn ? btn.textContent : '';
+  try {
+    await navigator.clipboard.writeText(txt);
+    if(btn) { btn.textContent = '¡Copiado!'; setTimeout(function(){ btn.textContent = original; }, 1500); }
+  } catch (e) {
+    var ta = document.createElement('textarea'); ta.value = txt;
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); if(btn){ btn.textContent = '¡Copiado!'; setTimeout(function(){ btn.textContent = original; }, 1500); } } catch (e2) {}
+    document.body.removeChild(ta);
+  }
+}
+function fechaBonita(iso){
+  try { return new Date(iso).toLocaleDateString('es-VE', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }); } catch (e) { return ''; }
+}
+function fechaCorta(iso){
+  try { return new Date(iso).toLocaleDateString('es-VE', { day:'2-digit', month:'short', year:'numeric' }); } catch (e) { return ''; }
+}
+
+function textoPool(asi){
+  if (asi.pool_tipo === 'unico'){
+    return 'Único · Cupones: <b>' + (asi.cupones_unico || 0) + '</b>';
+  }
+  return 'Por día · D1: <b>' + (asi.cupones_dia1 || 0) + '</b> · D2: <b>' + (asi.cupones_dia2 || 0) + '</b>';
+}
+
+function renderInfoAsig(asig){
+  var cont = $('contenedorInfoAsig');
+  cont.innerHTML = '';
+  var a = asig.aliado || {};
+  var estBadge = (a.activo)
+    ? '<span class="badge badge-ok">🟢 Activo</span>'
+    : '<span class="badge badge-no">🔴 Anulado</span>';
+  var asigBadge = (asig.estado === 'activa')
+    ? '<span class="badge badge-ok">Activa</span>'
+    : '<span class="badge badge-no">Anulada</span>';
+  var poolBadge = (asig.pool_tipo === 'unico')
+    ? '<span class="badge badge-tipo">Único</span>'
+    : '<span class="badge badge-pool-dia">Por día</span>';
+
+  cont.innerHTML =
+    '<div><strong>' + esc(a.nombre_organizacion || '(sin nombre)') + '</strong> ' + estBadge + '</div>' +
+    '<p class="asig-linea" style="margin-top:6px">Responsable: <b>' + esc(a.responsable || '-') + '</b></p>' +
+    '<p class="asig-linea">Correo: <b>' + esc(a.correo || '-') + '</b> · Teléfono: <b>' + esc(a.telefono || '-') + '</b></p>' +
+    '<p class="asig-linea" style="margin-top:8px"><span class="codigo codigo-chico" style="margin:0;padding:4px 8px;display:inline-block">' + esc(asig.codigo_link || '-') + '</span> ' + poolBadge + ' ' + asigBadge + '</p>' +
+    '<p class="asig-linea">' + textoPool(asig) + '</p>' +
+    (asig.estado !== 'activa' && asig.razon_anulacion
+      ? '<p class="asig-linea" style="color:var(--rojo)">Razón de anulación: <b>' + esc(asig.razon_anulacion) + '</b></p>'
+      : '');
+}
+
+function textoGanadorEnTabla(c){
+  if (!c.ganador) return '<span class="suave">—</span>';
+  var g = c.ganador;
+  var nombre = ((g.nombre || '') + ' ' + (g.apellido || '')).trim() || '—';
+  var estadoBadge = '';
+  if (g.estado === 'anulada'){
+    estadoBadge = ' <span class="badge badge-no">Anulada</span>';
+  } else if (g.canjeado_at){
+    estadoBadge = ' <span class="badge badge-ok">Canjeado</span>';
+  }
+  return '<b>' + esc(nombre) + '</b>' + estadoBadge +
+    '<div class="estado-mini">CI: ' + esc(g.cedula || '-') + '</div>' +
+    '<div class="estado-mini">🎟️ ' + (g.cupones_total || 0) + ' cupones · ' + (g.cupones_consumidos || 0) + ' usados</div>';
+}
+
+function textoEnvioCanje(c){
+  if (!c.ganador) return '<span class="suave">—</span>';
+  var g = c.ganador;
+  var partes = [];
+  partes.push('Envío: ' + (g.enviado_at ? '<b>✅ ' + fechaCorta(g.enviado_at) + '</b>' : '<span class="suave">pendiente</span>'));
+  partes.push('Canje: ' + (g.canjeado_at ? '<b>✅ ' + fechaCorta(g.canjeado_at) + ' (D' + (g.canjeado_dia || '-') + ')</b>' : '<span class="suave">pendiente</span>'));
+  return partes.join('<br>');
+}
+
+function renderConcursos(concursos){
+  var cont = $('contenedorConcursos');
+  cont.innerHTML = '';
+  if (!concursos || !concursos.length){
+    cont.innerHTML = '<p class="suave centrado">Este aliado todavía no tiene concursos.</p>';
+    return;
+  }
+  var tabla = document.createElement('table');
+  tabla.className = 'tabla-concursos';
+  tabla.innerHTML =
+    '<thead><tr>' +
+      '<th>Concurso</th>' +
+      '<th>Fecha</th>' +
+      '<th>Estado</th>' +
+      '<th>Cupones</th>' +
+      '<th>Ganador</th>' +
+      '<th>Envío / Canje</th>' +
+      '<th>Acciones</th>' +
+    '</tr></thead><tbody></tbody>';
+  var tbody = tabla.querySelector('tbody');
+  concursos.forEach(function(c){
+    var tr = document.createElement('tr');
+    var estadoBadge = (c.estado === 'abierto')
+      ? '<span class="badge badge-ok">Abierto</span>'
+      : '<span class="badge badge-cerrado">Cerrado</span>';
+    var fechaTxt = c.fecha_concurso ? fechaCorta(c.fecha_concurso) : '<span class="suave">—</span>';
+    tr.innerHTML =
+      '<td><b>' + esc(c.nombre || '-') + '</b>' +
+        (c.descripcion ? '<div class="estado-mini">' + esc(c.descripcion) + '</div>' : '') +
+      '</td>' +
+      '<td>' + fechaTxt + '</td>' +
+      '<td>' + estadoBadge + '</td>' +
+      '<td>' + (c.cupones_reservados || 0) + '</td>' +
+      '<td>' + textoGanadorEnTabla(c) + '</td>' +
+      '<td>' + textoEnvioCanje(c) + '</td>' +
+      '<td class="acciones"></td>';
+    var td = tr.querySelector('.acciones');
+    td.appendChild(botonMini('👁️ Ver detalle', 'btn-gris', function(){ abrirModalDetalle(c); }));
+    tbody.appendChild(tr);
+  });
+  cont.appendChild(tabla);
+}
+
+function abrirModalDetalle(c){
+  var g = c.ganador;
+  var html =
+    '<div class="modal-seccion">' +
+      '<h4>Concurso</h4>' +
+      '<p class="detalle-linea"><b>' + esc(c.nombre || '-') + '</b></p>' +
+      (c.descripcion ? '<p class="detalle-linea">' + esc(c.descripcion) + '</p>' : '') +
+      '<p class="detalle-linea">Fecha: <b>' + (c.fecha_concurso ? fechaCorta(c.fecha_concurso) : '—') + '</b> · Estado: <b>' + esc(c.estado) + '</b></p>' +
+      '<p class="detalle-linea">Cupones reservados: <b>' + (c.cupones_reservados || 0) + '</b></p>' +
+      '<p class="detalle-linea">Creado: ' + fechaBonita(c.creada_at) + (c.cerrada_at ? ' · Cerrado: ' + fechaBonita(c.cerrada_at) : '') + '</p>' +
+    '</div>';
+  if (g){
+    var nombre = ((g.nombre || '') + ' ' + (g.apellido || '')).trim() || '—';
+    var estadoTxt = (g.estado === 'anulada')
+      ? 'Anulada' + (g.razon_anulacion ? ' — ' + esc(g.razon_anulacion) : '')
+      : (g.canjeado_at ? 'Canjeado' : 'Activo');
+    html +=
+      '<div class="modal-seccion">' +
+        '<h4>Ganador</h4>' +
+        '<p class="detalle-linea"><b>' + esc(nombre) + '</b></p>' +
+        '<p class="detalle-linea">CI: <b>' + esc(g.cedula || '-') + '</b></p>' +
+        '<p class="detalle-linea">Correo: <b>' + esc(g.correo || '-') + '</b></p>' +
+        '<p class="detalle-linea">Teléfono: <b>' + esc(g.telefono || '-') + '</b></p>' +
+        '<p class="detalle-linea">Código: <span class="codigo codigo-chico" style="display:inline-block;margin:0;padding:4px 8px">' + esc(g.codigo_link || '-') + '</span></p>' +
+        '<p class="detalle-linea">Estado del premio: <b>' + estadoTxt + '</b></p>' +
+        '<p class="detalle-linea">Cupones: <b>' + (g.cupones_total || 0) + '</b> asignados · <b>' + (g.cupones_consumidos || 0) + '</b> usados</p>' +
+        '<p class="detalle-linea">Días: <b>' + (g.dia1 && g.dia2 ? 'Día 1 y Día 2' : g.dia1 ? 'Día 1' : g.dia2 ? 'Día 2' : '—') + '</b></p>' +
+        '<p class="detalle-linea">Enviado: <b>' + (g.enviado_at ? fechaBonita(g.enviado_at) : 'pendiente') + '</b></p>' +
+        '<p class="detalle-linea">Canjeado: <b>' + (g.canjeado_at ? fechaBonita(g.canjeado_at) + ' (Día ' + (g.canjeado_dia || '-') + ')' : 'pendiente') + '</b></p>' +
+      '</div>';
+  } else {
+    html +=
+      '<div class="modal-seccion">' +
+        '<h4>Ganador</h4>' +
+        '<p class="detalle-linea suave">Este concurso no tiene ganador asignado todavía.</p>' +
+      '</div>';
+  }
+
+  abrirModal({
+    titulo: '👁️ Detalle del concurso',
+    grande: true,
+    mensaje: html,
+    botones: [{texto:'Cerrar', clase:'btn-gris', valor:true}]
+  });
+}
+
+var ses = leerSesion();
+var asignacionId = null;
+
+function obtenerAsignacionId(){
+  var params = new URLSearchParams(location.search);
+  return params.get('asig') || '';
+}
+
+async function cargar(){
+  if (!asignacionId){
+    $('contenedorInfoAsig').innerHTML = '<p class="suave centrado">Falta el parámetro <b>?asig=</b> en la URL.</p>';
+    $('contenedorConcursos').innerHTML = '';
+    return;
+  }
+  try {
+    var r = await llamar('f_admin_ver_concursos_aliado', {
+      p_token: ses.token,
+      p_asignacion_id: asignacionId
+    });
+    if (r == null){
+      $('contenedorInfoAsig').innerHTML = '<p class="suave centrado">Tu sesión expiró. Entra de nuevo con tu PIN.</p>';
+      $('contenedorConcursos').innerHTML = '';
+      return;
+    }
+    if (r.error){
+      var msg = (r.error === 'ERR_NO_EXISTE')
+        ? 'Esa asignación no existe.'
+        : ('Error: ' + r.error);
+      $('contenedorInfoAsig').innerHTML = '<p class="suave centrado">' + esc(msg) + '</p>';
+      $('contenedorConcursos').innerHTML = '';
+      return;
+    }
+    renderInfoAsig(r.asignacion || {});
+    renderConcursos(r.concursos || []);
+  } catch (e) {
+    $('contenedorInfoAsig').innerHTML = '<p class="suave centrado">No se pudo cargar: ' + esc(e.message) + '</p>';
+    $('contenedorConcursos').innerHTML = '';
+  }
+}
+
+function volverAAliados(){
+  location.replace('aliados.html');
+}
+
+asignacionId = obtenerAsignacionId();
+$('btnVolverArriba').onclick = volverAAliados;
+$('btnVolverAbajo').onclick = volverAAliados;
+cargar();
+</script>
+</body>
+</html>
