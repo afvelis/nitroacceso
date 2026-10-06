@@ -4,6 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Nitrotoon Control de acceso</title>
+<style>html,body{background:#0b1220;margin:0;}</style>
+<script src="config.js"></script>
+<script>
+  // M-28: chequeo de sesión ANTES de pintar el body (evita destello).
+  (function(){
+    var s = leerSesion();
+    if (!s || s.rol !== 'admin'){
+      location.replace('acceso-denegado.html');
+    }
+  })();
+</script>
 <style>
 :root{
   --fondo:#0b1220; --tarjeta:#121c2e; --borde:#24344d; --texto:#eef3f8;
@@ -111,17 +122,7 @@ input[type=checkbox]{width:auto;margin:0 8px 0 0;transform:scale(1.3);cursor:poi
   </div>
 
 </main>
-<script src="config.js"></script>
 <script>
-  // M-28: chequeo de sesión ANTES de pintar (evita destello).
-  (function(){
-    var s = leerSesion();
-    if (!s || s.rol !== 'admin'){
-      location.replace('acceso-denegado.html');
-    }
-  })();
-</script>
-<style>
 function $(id){ return document.getElementById(id); }
 function esc(t){
   return String(t == null ? '' : t)
@@ -561,7 +562,6 @@ function abrirModalNuevoAliado(){
       bCrear.textContent = 'Verificando...';
       msg.textContent = '';
 
-      // Chequeo de duplicados
       var dup = [];
       try {
         var rDup = await llamar('f_admin_chequear_duplicados_aliado', {
@@ -584,7 +584,7 @@ function abrirModalNuevoAliado(){
         bCrear.disabled = false;
         bCrear.textContent = 'Crear aliado';
         var respDup = await modalDuplicados(dup);
-        if (!respDup) return; // canceló
+        if (!respDup) return;
         notaDup = respDup.nota_duplicado || null;
         bCrear.disabled = true;
         bCrear.textContent = 'Creando...';
@@ -669,4 +669,3 @@ cargarAliados();
 </script>
 </body>
 </html>
-
