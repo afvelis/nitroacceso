@@ -4,7 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Nitrotoon Control de acceso - Dashboard</title>
+<style>html,body{background:#0b1220;margin:0;}</style>
 <script src="config.js"></script>
+<script>
+  // Chequeo temprano de sesión admin (sin destello).
+  (function(){
+    var s = leerSesion();
+    if (!s || s.rol !== 'admin'){
+      location.replace('index.html');
+    }
+  })();
+</script>
 <style>
 :root{
   --fondo:#0b1220;--tarjeta:#121c2e;--borde:#24344d;--texto:#eef3f8;
@@ -127,12 +137,9 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;backgr
 </main>
 
 <script>
+<script>
 const token = leerSesion()?.token;
 const rol = leerSesion()?.rol;
-
-if(!token || rol !== 'admin'){
-  location.href = 'index.html';
-}
 
 const panelCarga = document.getElementById('panelCarga');
 const panelContenido = document.getElementById('panelContenido');
