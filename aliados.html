@@ -413,6 +413,32 @@ function renderAliado(a){
       box.appendChild(raz);
     }
 
+    if (asi.estado === 'activa'){
+      var linkAliado = BASE + 'aliado.html?a=' + (asi.codigo_link || '');
+      var filaAcc = document.createElement('div');
+      filaAcc.className = 'fila';
+      filaAcc.style.marginTop = '8px';
+
+      var bCopiar = botonMini('📋 Copiar link', 'btn-verde', function(b){ copiarTexto(linkAliado, b); });
+      filaAcc.appendChild(bCopiar);
+
+      var aWA = document.createElement('a');
+      aWA.className = 'btn btn-gris btn-mini';
+      aWA.target = '_blank';
+      aWA.rel = 'noopener';
+      aWA.textContent = '📱 WhatsApp';
+      aWA.href = 'https://wa.me/?text=' + encodeURIComponent('Hola ' + (a.responsable || '') + ', aquí está el link de gestión de premios para ' + (a.nombre_organizacion || '') + ': ' + linkAliado);
+      filaAcc.appendChild(aWA);
+
+      var aMail = document.createElement('a');
+      aMail.className = 'btn btn-gris btn-mini';
+      aMail.textContent = '✉️ Correo';
+      aMail.href = 'mailto:?subject=' + encodeURIComponent('Link de gestión de aliados - ' + (a.nombre_organizacion || '')) + '&body=' + encodeURIComponent('Hola ' + (a.responsable || '') + ',\n\nAquí está el link de gestión de premios:\n' + linkAliado);
+      filaAcc.appendChild(aMail);
+
+      box.appendChild(filaAcc);
+    }
+
     div.appendChild(box);
   });
 
