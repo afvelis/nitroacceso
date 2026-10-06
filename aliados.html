@@ -423,11 +423,12 @@ function renderAliado(a){
       box.appendChild(raz);
     }
 
+        var filaAcc = document.createElement('div');
+    filaAcc.className = 'fila';
+    filaAcc.style.marginTop = '8px';
+
     if (asi.estado === 'activa'){
       var linkAliado = BASE + 'aliado.html?a=' + (asi.codigo_link || '');
-      var filaAcc = document.createElement('div');
-      filaAcc.className = 'fila';
-      filaAcc.style.marginTop = '8px';
 
       var bCopiar = botonMini('📋 Copiar link', 'btn-verde', function(b){ copiarTexto(linkAliado, b); });
       filaAcc.appendChild(bCopiar);
@@ -445,9 +446,14 @@ function renderAliado(a){
       aMail.textContent = '✉️ Correo';
       aMail.href = 'mailto:?subject=' + encodeURIComponent('Link de gestión de aliados - ' + (a.nombre_organizacion || '')) + '&body=' + encodeURIComponent('Hola ' + (a.responsable || '') + ',\n\nAquí está el link de gestión de premios:\n' + linkAliado);
       filaAcc.appendChild(aMail);
-
-      box.appendChild(filaAcc);
     }
+
+    var bConcursos = botonMini('🏆 Ver concursos', 'btn-gris', function(){
+      location.href = 'aliados-concursos.html?asig=' + encodeURIComponent(asi.id);
+    });
+    filaAcc.appendChild(bConcursos);
+
+    box.appendChild(filaAcc);
 
     div.appendChild(box);
   });
