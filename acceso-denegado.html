@@ -28,8 +28,18 @@ p{margin:0 0 22px; color:var(--suave); font-size:16px; line-height:1.55;}
     <div class="icono">🔒</div>
     <h1>Acceso restringido</h1>
     <p>Este módulo es exclusivo para administradores.<br>Si llegaste aquí por error, cierra esta pestaña.</p>
-    <button class="btn" onclick="window.close()">Cerrar pestaña</button>
+        <button class="btn" onclick="intentarCerrar()">Cerrar pestaña</button>
+    <p id="ayudaCerrar" style="display:none; margin-top:16px; color:var(--suave); font-size:14px;">Si no se cerró automáticamente, ciérrala con <b>Ctrl+W</b> (o ⌘+W en Mac).</p>
   </div>
 </main>
+<script>
+function intentarCerrar(){
+  window.close();
+  setTimeout(function(){
+    var el = document.getElementById('ayudaCerrar');
+    if (el) el.style.display = 'block';
+  }, 200);
+}
+</script>
 </body>
 </html>
