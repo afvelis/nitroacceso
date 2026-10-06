@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nitrotoon Control de acceso</title>
+<style>
+:root{
+  --fondo:#0b1220; --tarjeta:#121c2e; --borde:#24344d; --texto:#eef3f8;
+  --suave:#9fb0c3; --acento:#35d07f; --acento2:#1fa2ff;
+}
+*{box-sizing:border-box;}
+body{margin:0; background:var(--fondo); color:var(--texto); font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; font-size:17px; line-height:1.5; min-height:100vh; display:flex; flex-direction:column;}
+.franja{height:6px;background:linear-gradient(90deg,var(--acento),var(--acento2));}
+main{flex:1; display:flex; align-items:center; justify-content:center; padding:20px;}
+.caja{background:var(--tarjeta); border:1px solid var(--borde); border-radius:16px; padding:32px 28px; max-width:440px; width:100%; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,.55);}
+.icono{font-size:56px; margin-bottom:14px;}
+h1{margin:0 0 10px; font-size:22px;}
+p{margin:0 0 22px; color:var(--suave); font-size:16px; line-height:1.55;}
+.btn{display:inline-block; border:none; border-radius:12px; padding:12px 22px; font-size:17px; font-weight:600; color:var(--texto); background:#2a3648; cursor:pointer; text-decoration:none;}
+.btn:hover{background:#36445a;}
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<main>
+  <div class="caja">
+    <div class="icono">🔒</div>
+    <h1>Acceso restringido</h1>
+    <p>Este módulo es exclusivo para administradores.<br>Si llegaste aquí por error, cierra esta pestaña.</p>
+    <button class="btn" onclick="window.close()">Cerrar pestaña</button>
+  </div>
+</main>
+</body>
+</html>
