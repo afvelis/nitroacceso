@@ -654,7 +654,7 @@ async function nuevoAliado(){
 }
 
 if (!ses || ses.rol !== 'admin') {
-  location.replace('index.html');
+    location.replace('acceso-denegado.html');
 } else {
   $('btnVolverArriba').onclick = function(){ location.replace('dashboard.html'); };
   $('btnVolverAbajo').onclick = function(){ location.replace('dashboard.html'); };
