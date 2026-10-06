@@ -109,6 +109,10 @@ select,input{width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1p
 </header>
 <main>
 
+  <div class="fila" style="margin-top:0">
+     <button class="btn btn-gris" id="btnVolverArriba">← Volver al dashboard</button>
+  </div>
+
   <section class="tarjeta" id="cortesias">
     <h2>🎁 Crear cortesía</h2>
     <p class="suave">Solo tu, como administrador, creas pases de cortesía. Al crearlo se genera un link con el o los QR listos para entregar.</p>
@@ -1006,6 +1010,7 @@ if (!ses || ses.rol !== 'admin') {
   location.replace('index.html');
 } else {
   $('btnVolver').onclick = function(){ location.replace('dashboard.html'); };
+  $('btnVolverArriba').onclick = function(){ location.replace('dashboard.html'); };
   $('kModo').onchange = actualizarVisibilidadCortesia;
   $('kRazon').onchange = actualizarVisibilidadCortesia;
   $('btnAddRow1').onclick = function(){ agregarFilaPersona('rowsDia1'); };
