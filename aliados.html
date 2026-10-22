@@ -423,7 +423,7 @@ function renderAliado(a){
       box.appendChild(raz);
     }
 
-        var filaAcc = document.createElement('div');
+    var filaAcc = document.createElement('div');
     filaAcc.className = 'fila';
     filaAcc.style.marginTop = '8px';
 
@@ -446,6 +446,11 @@ function renderAliado(a){
       aMail.textContent = '✉️ Correo';
       aMail.href = 'mailto:?subject=' + encodeURIComponent('Link de gestión de aliados - ' + (a.nombre_organizacion || '')) + '&body=' + encodeURIComponent('Hola ' + (a.responsable || '') + ',\n\nAquí está el link de gestión de premios:\n' + linkAliado);
       filaAcc.appendChild(aMail);
+
+      var bAmpliar = botonMini('➕ Ampliar', 'btn-gris', function(){
+        abrirModalAmpliar(a, asi);
+      });
+      filaAcc.appendChild(bAmpliar);
     }
 
     var bConcursos = botonMini('🏆 Ver concursos', 'btn-gris', function(){
@@ -484,6 +489,124 @@ async function cargarAliados(){
   } catch (e) {
     $('contenedorAliados').innerHTML = '<p class="suave centrado">No se pudo cargar la lista: ' + esc(e.message) + '</p>';
   }
+}
+
+// ─────────────────────────────────────────────────────────────
+// MODAL: Ampliar cupones
+// ─────────────────────────────────────────────────────────────
+function abrirModalAmpliar(a, asi){
+  return new Promise(function(resolve){
+    var fondo = document.createElement('div');
+    fondo.className = 'modal-fondo';
+    var caja = document.createElement('div');
+    caja.className = 'modal-caja modal-caja-grande';
+    
+    var poolHtml = '';
+    if (asi.pool_tipo === 'unico') {
+      poolHtml = '<label class="ancho-total">Cupones a sumar *<input id="aCupones" type="number" min="1" step="1" placeholder="Ej.: 5"></label>';
+    } else {
+      poolHtml = '<label>Cupones a sumar Día 1 *<input id="aCuponesD1" type="number" min="0" step="1" placeholder="Ej.: 0"></label>' +
+                 '<label>Cupones a sumar Día 2 *<input id="aCuponesD2" type="number" min="0" step="1" placeholder="Ej.: 0"></label>';
+    }
+
+    caja.innerHTML = 
+      '<h3 class="modal-titulo">➕ Ampliar cupones</h3>' +
+      '<p class="asig-linea">Aliado: <b>' + esc(a.nombre_organizacion) + '</b> · Asignación: <b>' + esc(asi.codigo_link) + '</b></p>' +
+      '<p class="asig-linea suave" style="margin-bottom:12px">' + textoPool(asi) + '</p>' +
+      '<div class="modal-seccion">' +
+        '<h4>Cupones a agregar</h4>' +
+        '<div class="grid-2col">' + poolHtml + '</div>' +
+      '</div>' +
+      '<div class="modal-seccion">' +
+        '<h4>Justificación</h4>' +
+        '<div class="grid-2col">' +
+          '<label class="ancho-total">Motivo *' +
+            '<select id="aMotivo">' +
+              '<option value="Acordado con organizador">Acordado con organizador</option>' +
+              '<option value="Compensación por error">Compensación por error</option>' +
+              '<option value="Otro">Otro</option>' +
+            '</select>' +
+          '</label>' +
+          '<label class="ancho-total">Detalle (opcional)<input id="aDetalle" type="text" placeholder="Ej.: Se acordó en reunión del lunes"></label>' +
+        '</div>' +
+      '</div>' +
+      '<div id="aMsg" class="suave" style="min-height:22px"></div>' +
+      '<div class="modal-botones"></div>';
+    
+    var contB = caja.querySelector('.modal-botones');
+    
+    var bCancel = document.createElement('button');
+    bCancel.className = 'btn btn-gris';
+    bCancel.textContent = 'Cancelar';
+    bCancel.onclick = function(){
+      if (fondo.parentNode) fondo.parentNode.removeChild(fondo);
+      resolve(null);
+    };
+    contB.appendChild(bCancel);
+
+    var bOk = document.createElement('button');
+    bOk.className = 'btn btn-verde';
+    bOk.textContent = 'Ampliar cupones';
+    bOk.onclick = async function(){
+      var msg = caja.querySelector('#aMsg');
+      var motivo = caja.querySelector('#aMotivo').value;
+      var detalle = caja.querySelector('#aDetalle').value.trim();
+      var datos = { p_token: ses.token, p_asignacion_id: asi.id, p_motivo: motivo, p_motivo_detalle: detalle || null };
+
+      function err(m){ msg.textContent = m; msg.style.color = 'var(--aviso)'; }
+
+      if (asi.pool_tipo === 'unico') {
+        var c = parseInt(caja.querySelector('#aCupones').value, 10);
+        if (!c || c < 1) { err('Los cupones a sumar deben ser 1 o más.'); return; }
+        datos.p_cupones_unico = c;
+        datos.p_cupones_dia1 = null;
+        datos.p_cupones_dia2 = null;
+      } else {
+        var c1 = parseInt(caja.querySelector('#aCuponesD1').value, 10);
+        var c2 = parseInt(caja.querySelector('#aCuponesD2').value, 10);
+        if (isNaN(c1) || c1 < 0) c1 = 0;
+        if (isNaN(c2) || c2 < 0) c2 = 0;
+        if (c1 + c2 < 1) { err('Debes sumar al menos 1 cupón en total (D1 + D2).'); return; }
+        datos.p_cupones_unico = null;
+        datos.p_cupones_dia1 = c1;
+        datos.p_cupones_dia2 = c2;
+      }
+
+      bOk.disabled = true;
+      bOk.textContent = 'Guardando...';
+      msg.textContent = '';
+
+      try {
+        var r = await llamar('f_admin_ampliar_cupones', datos);
+        if (!r || r.error) {
+          var code = (r && r.error) ? r.error : 'ERR_DATOS';
+          err(msgErrorAliado(code));
+          bOk.disabled = false;
+          bOk.textContent = 'Ampliar cupones';
+          return;
+        }
+        
+        if (fondo.parentNode) fondo.parentNode.removeChild(fondo);
+        resolve(r);
+        
+        await modalAlert('✅ Cupones ampliados', 
+          'Se agregaron cupones correctamente.<br><br>' +
+          'Antes: <b>' + r.cupones_antes + '</b><br>' +
+          'Ahora: <b>' + r.cupones_despues + '</b>'
+        );
+        await cargarAliados();
+        
+      } catch (e) {
+        err('Fallo: ' + e.message);
+        bOk.disabled = false;
+        bOk.textContent = 'Ampliar cupones';
+      }
+    };
+    contB.appendChild(bOk);
+
+    fondo.appendChild(caja);
+    document.body.appendChild(fondo);
+  });
 }
 
 // ─────────────────────────────────────────────────────────────
