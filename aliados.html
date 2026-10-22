@@ -341,18 +341,36 @@ function msgErrorAliado(r){
 }
 
 function textoPool(asi){
+  // Calculamos cuántos cupones se han sumado por ampliaciones
+  var ampliado = 0;
+  if (asi.ampliaciones && asi.ampliaciones.length) {
+    ampliado = asi.ampliaciones.reduce(function(acc, amp){
+      return acc + ((amp.cupones_despues || 0) - (amp.cupones_antes || 0));
+    }, 0);
+  }
+
   if (asi.pool_tipo === 'unico'){
     var total = asi.cupones_unico || 0;
+    var base = total - ampliado;
     var usados = asi.cupones_asignados || 0;
     var disp = (asi.disponible_unico == null) ? (total - usados) : asi.disponible_unico;
-    return 'Único · Asignadas: <b>' + total + '</b> · Usadas: <b>' + usados + '</b> · Disponibles: <b>' + disp + '</b>';
+    
+    var textAsignadas = '<b>' + base + '</b>';
+    if (ampliado > 0) {
+      textAsignadas += ' + <b>' + ampliado + '</b>';
+    }
+    
+    return 'Único · Asignadas: ' + textAsignadas + ' · Usadas: <b>' + usados + '</b> · Disponibles: <b>' + disp + '</b>';
   }
+  
   var d1 = asi.cupones_dia1 || 0;
   var d2 = asi.cupones_dia2 || 0;
   var u1 = asi.cupones_asignados_dia1 || 0;
   var u2 = asi.cupones_asignados_dia2 || 0;
   var dd1 = (asi.disponible_dia1 == null) ? (d1 - u1) : asi.disponible_dia1;
   var dd2 = (asi.disponible_dia2 == null) ? (d2 - u2) : asi.disponible_dia2;
+  
+  // Si el pool por día tuviera ampliaciones (a futuro), aquí se podría desglosar
   return 'Por día · D1: <b>' + d1 + '</b> (usadas ' + u1 + ' · disp. ' + dd1 + ') · D2: <b>' + d2 + '</b> (usadas ' + u2 + ' · disp. ' + dd2 + ')';
 }
 
@@ -412,7 +430,7 @@ function renderAliado(a){
 
     var l2 = document.createElement('p');
     l2.className = 'asig-linea';
-    l2.innerHTML = 'Premios creados: <b>' + (asi.premios_creados || 0) + '</b> · Cupones usados: <b>' + (asi.cupones_asignados || 0) + '</b> · Ampliaciones: <b>' + ((asi.ampliaciones || []).length) + '</b>';
+    l2.innerHTML = 'Premios creados: <b>' + (asi.premios_creados || 0) + '</b> · Cupones usados: <b>' + (asi.cupones_asignados || 0) + '</b>';
     box.appendChild(l2);
 
     if (asi.estado !== 'activa' && asi.razon_anulacion){
@@ -503,7 +521,7 @@ function abrirModalAmpliar(a, asi){
     
     var poolHtml = '';
     if (asi.pool_tipo === 'unico') {
-      poolHtml = '<label class="ancho-total">Cupones a sumar *<input id="aCupones" type="number" min="1" step="1" placeholder="Ej.: 5"></label>';
+      poolHtml = '<label class="ancho-total">¿Cuántos cupones deseas agregar? *<input id="aCupones" type="number" min="1" step="1" placeholder="Ej.: 5"></label>';
     } else {
       poolHtml = '<label>Cupones a sumar Día 1 *<input id="aCuponesD1" type="number" min="0" step="1" placeholder="Ej.: 0"></label>' +
                  '<label>Cupones a sumar Día 2 *<input id="aCuponesD2" type="number" min="0" step="1" placeholder="Ej.: 0"></label>';
@@ -514,7 +532,7 @@ function abrirModalAmpliar(a, asi){
       '<p class="asig-linea">Aliado: <b>' + esc(a.nombre_organizacion) + '</b> · Asignación: <b>' + esc(asi.codigo_link) + '</b></p>' +
       '<p class="asig-linea suave" style="margin-bottom:12px">' + textoPool(asi) + '</p>' +
       '<div class="modal-seccion">' +
-        '<h4>Cupones a agregar</h4>' +
+        '<h4>Nuevos cupones</h4>' +
         '<div class="grid-2col">' + poolHtml + '</div>' +
       '</div>' +
       '<div class="modal-seccion">' +
