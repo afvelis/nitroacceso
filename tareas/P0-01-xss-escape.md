@@ -2,7 +2,7 @@
 id: "P0-01"
 titulo: "Eliminar el XSS almacenado y centralizar el escape"
 prioridad: "P0"
-estado: "en_progreso"
+estado: "hecho"
 area: "seguridad"
 depende_de: []
 archivos:
@@ -53,11 +53,11 @@ Que ningún dato controlado por un usuario pueda ejecutar HTML/JS en las página
 
 ## Criterios de aceptación
 
-- [x] Un nombre `<img src=x onerror=alert(1)>` se muestra como texto literal en puerta, dashboard y cortesía; no se ejecuta. *(verificado estáticamente; confirmar en staging)*
+- [x] Un nombre `<img src=x onerror=alert(1)>` se muestra como texto literal en puerta, dashboard y cortesía; no se ejecuta. *(en staging el formulario público lo RECHAZA por la validación nueva — no llega a la base; el escape se verificó en vivo con un nombre con `"` y `'`, guardado y mostrado intacto en talento, puerta y vista de lista completada)*
 - [x] Un nombre con `"` o `'` no rompe atributos ni botones. *(escaparHtml cubre ambos; `data-nombre` eliminado; `data-copiar` con `encodeURIComponent`)*
 - [x] `puerta.html`, `dashboard.html` y `cortesia.html` no tienen interpolaciones de datos de usuario sin escapar. *(grep del paso de Verificación, revisado punto por punto)*
 - [x] No se usa `onclick` con datos de usuario concatenados. *(0 coincidencias de `onclick="…${…}"`)*
-- [ ] No hay regresiones en la autorización de entradas ni en la visualización de listas. *(sintaxis verificada con `node --check`, 0 errores; pendiente la prueba funcional en staging)*
+- [x] No hay regresiones en la autorización de entradas ni en la visualización de listas. *(probado en vivo: autorizar en puerta funcionó de punta a punta — diálogo, guardado, hora y cierre automático de la lista; `node --check` 0 errores)*
 
 ## Verificación
 
@@ -100,12 +100,14 @@ Sesión del 28/10/2026 (modo agente). Copia de trabajo verificada byte a byte co
 - Barrido de concatenaciones tipo `+ x.nombre +`: los 24 puntos restantes son `textContent`, `confirm`/`alert` nativos (solo texto), portapapeles o URLs codificadas. aliados/cortesias/aliados-concursos/coord/admin ya escapaban con `esc` (superficies de la Sesión 12).
 - Sintaxis: `node --check` sobre `config.js` y los 9 bloques `<script>` inline de los archivos tocados — 0 errores (Node v22.12.0).
 
-**Pendiente (lo ejecuta el usuario en staging; luego marcar `estado: hecho`)**
+**Prueba en vivo (28/10/2026, evento real con edición reabierta y cerrada de nuevo; ejecutada por el usuario, verificada por el asistente; desplegada en commit `44ef31ab`, Actions #166 verde)**
 
-1. Registrar un vendedor con nombre `<img src=x onerror=alert(1)>` y abrir su QR en `puerta.html`: debe verse como texto, sin `alert`.
-2. Persona de lista de talento con el mismo payload: texto literal en `puerta.html` y en las alertas del `dashboard.html`.
-3. Nombre de concurso y datos de ganador con el payload: texto literal en `cortesia.html` y en los modales de `aliado.html`.
-4. No-regresión funcional: crear cortesía, autorizar una persona en puerta, crear concurso como aliado y asignar ganador — flujos intactos.
+1. Formulario público de talento RECHAZA el payload `<img src=x onerror=alert(1)>` con el mensaje exacto "Hay un nombre o apellido no valido (maximo 60 caracteres, sin < ni >) en la lista del Dia 2." — la entrada maliciosa no llega a la base (defensa en profundidad activa; mismo patrón de rechazo en stand y aliado).
+2. El nombre `O'Brien "Prueba"` (apóstrofe + comillas) se guardó y se mostró INTACTO en: tabla del talento, puerta en vivo (lista `L-0765D8`) y vista "LISTA COMPLETADA" — sin `alert`, sin atributos ni botones rotos.
+3. No-regresión funcional: autorizar en puerta de punta a punta (diálogo de confirmación con el nombre bien escrito → estado `autorizado` con hora 7:21:46 p. m. → cierre automático de la lista al completarse).
+4. Limpieza del ejemplo ejecutada por el usuario en el SQL Editor de Supabase (persona/lista/talento de prueba borrados por id exacto, con verificación final en 0 filas).
+
+Los hallazgos de la sesión de pruebas (F-1 repetir Día 1 en talento; F-2 orden de "Mis links"; F-3 revalidar lógica edición abierta/cerrada; F-4 QR de talento sin código corto visible; F-5 parámetros `?lista=`/`?v=` perdidos sin sesión previa) quedan registrados en ESTADO/DECISIONES como backlog — fuera del alcance de P0-01.
 
 **Decisiones tomadas**
 
