@@ -1,5 +1,5 @@
 /* config.js - ajustes generales de nitroacceso */
-const NOMBRE_EVENTO = "NITROACCESO";
+const NOMBRE_EVENTO = "NITROSYSTEM";
 const SUPABASE_URL = "https://exrbwctegkzxurzwihvh.supabase.co";
 const SUPABASE_ANON = "sb_publishable_bi7cWsc1qmhvlAE4tdNLbA_bUE-SWDu";
 const BASE = "https://afvelis.github.io/nitroacceso/";

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Nitrotoon Control de acceso</title>
+<title>NitroSystem</title>
 <style>
 :root{
   --fondo:#0b1220; --tarjeta:#121c2e; --borde:#24344d; --texto:#eef3f8;
@@ -50,7 +50,7 @@ li{margin:4px 0;}
   <div class="logo">🚀</div>
   <div>
     <div class="ceja">Acceso de coordinador</div>
-    <h1>Nitrotoon Control de acceso</h1>
+    <h1>NitroSystem</h1>
   </div>
 </header>
 <main>
@@ -258,7 +258,7 @@ function renderLinks(){
   cont.innerHTML = '';
   misLinks.forEach(function(item, idx){
     var link = linkCompleto(item);
-    var textoWA = 'Hola, te comparto el link de registro de ' + item.titulo + ' para Nitrotoon: ' + link;
+    var textoWA = 'Hola, te comparto el link de registro de ' + item.titulo + ' para NitroSystem: ' + link;
     var div = document.createElement('div');
     div.className = 'item';
     var renovado = !!linksRenovados[item.codigo];
@@ -298,7 +298,7 @@ function renderLinks(){
     bMail.onclick = async function(){
       await copiarTexto(textoWA);
       avisoMsg('msgLinks', 'Intentamos abrir tu aplicacion de correo. Si no se abrio nada, no te preocupes: el mensaje ya quedo copiado, pegalo en tu correo o en WhatsApp.', true);
-      window.location.href = urlMail('Nitrotoon - link de registro', textoWA);
+      window.location.href = urlMail('NitroSystem - link de registro', textoWA);
     };
 
     var bEdit = document.createElement('button');

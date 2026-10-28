@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Nitrotoon Control de acceso</title>
+<title>NitroSystem</title>
 <style>
 :root{
   --fondo:#0b1220; --tarjeta:#121c2e; --borde:#24344d; --texto:#eef3f8;
@@ -54,7 +54,7 @@ li{margin:4px 0;}
   <div class="logo">🚀</div>
   <div>
     <div class="ceja">Panel de administracion</div>
-    <h1>Nitrotoon Control de acceso</h1>
+    <h1>NitroSystem</h1>
   </div>
 </header>
 <main>
@@ -280,13 +280,13 @@ function tarjetaCoord(c){
   wa.target = '_blank';
   wa.rel = 'noopener';
   wa.textContent = '📱 WhatsApp';
-  wa.href = urlWA('Hola ' + esc(c.nombre) + ', aquí tienes tu link de acceso para coordinar ' + tipoTxt + ' en Nitrotoon: ' + linkEntrada);
+  wa.href = urlWA('Hola ' + esc(c.nombre) + ', aquí tienes tu link de acceso para coordinar ' + tipoTxt + ' en NitroSystem: ' + linkEntrada);
   fila2.appendChild(wa);
   
   var ml = document.createElement('a');
   ml.className = 'btn btn-gris';
   ml.textContent = '✉️ Correo';
-  ml.href = urlMail('Link de acceso Nitrotoon - Coordinación de ' + tipoTxt, 'Hola ' + esc(c.nombre) + ',\n\nAquí tienes tu link de acceso para coordinar ' + tipoTxt + ' en Nitrotoon:\n\n' + linkEntrada + '\n\nTu código es: ' + c.codigo);
+  ml.href = urlMail('Link de acceso NitroSystem - Coordinación de ' + tipoTxt, 'Hola ' + esc(c.nombre) + ',\n\nAquí tienes tu link de acceso para coordinar ' + tipoTxt + ' en NitroSystem:\n\n' + linkEntrada + '\n\nTu código es: ' + c.codigo);
   fila2.appendChild(ml);
 
   return div;
@@ -392,7 +392,7 @@ function htmlStats(s){
 }
 
 async function guardarInforme(){
-  var nombre = prompt('Nombre del evento para el historico (ej.: Nitrotoon 2026):', 'Nitrotoon ' + new Date().getFullYear());
+  var nombre = prompt('Nombre del evento para el historico (ej.: NitroSystem 2026):', 'NitroSystem ' + new Date().getFullYear());
   if (nombre === null) return;
   nombre = nombre.trim();
   if (!nombre) { alert('Escribe un nombre para el informe.'); return; }

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Registro de Stand - Nitrotoon</title>
+<title>Registro de Stand - NitroSystem</title>
 <style>
 :root {
   --fondo: #0b1220; --tarjeta: #121c2e; --borde: #24344d;
@@ -61,7 +61,7 @@ th { color: var(--suave); font-weight: 600; }
 <div class="container">
   <div class="logo-box">
     <div class="logo">🚀</div>
-    <h1>Nitrotoon Control de acceso</h1>
+    <h1>NitroSystem</h1>
   </div>
 
   <div id="cardAdios" class="tarjeta aviso" style="display:none;">
@@ -449,7 +449,7 @@ function mostrarResultados(soloLectura) {
     const card = document.createElement('div');
     card.className = 'tarjeta brazalete';
     card.innerHTML =
-      '<div class="braz-ceja">Nitrotoon · Control de acceso</div>' +
+      '<div class="braz-ceja">NitroSystem</div>' +
       '<div class="braz-titulo"></div>' +
       '<div class="braz-stand"></div>' +
       '<div class="braz-pill">Válido Día 1 y Día 2</div>' +
@@ -475,7 +475,7 @@ function mostrarResultados(soloLectura) {
     const qrCont = card.querySelector('.qr-box');
     ponerQR(qrCont, urlP, per.codigo_qr);
 
-    const textoRespaldo = 'QR de ' + per.nombre + ' ' + per.apellido + ' para Nitrotoon\n' + nombreStand() + '\nCodigo: ' + per.codigo_qr + '\nLink: ' + urlP;
+    const textoRespaldo = 'QR de ' + per.nombre + ' ' + per.apellido + ' para NitroSystem\n' + nombreStand() + '\nCodigo: ' + per.codigo_qr + '\nLink: ' + urlP;
     const botones = card.querySelectorAll('.botones-qr .btn');
     botones[0].onclick = async function(){
       const img = qrCont.querySelector('img');
@@ -495,7 +495,7 @@ function mostrarResultados(soloLectura) {
       window.open(urlWA(textoRespaldo), '_blank');
     };
     botones[2].onclick = function(){
-      window.location.href = urlMail('Mi QR para Nitrotoon', textoRespaldo);
+      window.location.href = urlMail('Mi QR para NitroSystem', textoRespaldo);
       navigator.clipboard.writeText(textoRespaldo).catch(()=>{});
       setTimeout(() => alert('Si no abrió tu app de correo, el texto ya está copiado en tu portapapeles como respaldo.'), 500);
     };

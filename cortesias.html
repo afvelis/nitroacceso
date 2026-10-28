@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Nitrotoon Control de acceso</title>
+<title>NitroSystem</title>
 <style>
 :root{
   --fondo:#0b1220; --tarjeta:#121c2e; --borde:#24344d; --texto:#eef3f8;
@@ -104,7 +104,7 @@ select,input{width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1p
   <div class="logo">🎁</div>
   <div>
     <div class="ceja">Cortesias</div>
-    <h1>Nitrotoon Control de acceso</h1>
+    <h1>NitroSystem</h1>
   </div>
 </header>
 <main>
@@ -163,7 +163,7 @@ select,input{width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1p
           <input id="kPCup" type="number" min="1" step="1" placeholder="Ej.: 3">
         </label>
         <label class="ancho-total">Nombre del concurso
-          <input id="kPCon" placeholder="Ej.: Concurso de Cosplay Nitrotoon 2026">
+          <input id="kPCon" placeholder="Ej.: Concurso de Cosplay NitroSystem 2026">
         </label>
         <label class="ancho-total">Aliado / Organización que realiza el concurso
           <input id="kPAli" placeholder="Ej.: Dunas Producciones">
@@ -581,10 +581,10 @@ function renderUltimaCreada(){
   fila.className = 'fila';
   fila.appendChild(boton('📋 Copiar link', 'btn-gris', function(b){ copiarTexto(linkDe(c), b); }));
   var wa = document.createElement('a'); wa.className='btn btn-gris'; wa.target='_blank'; wa.rel='noopener'; wa.textContent='📱 WhatsApp';
-  wa.href = urlWA('Hola, aquí está el pase de cortesía para Nitrotoon (' + razonLegible(c.razon, c.causa) + '). Abre este link: ' + linkDe(c));
+  wa.href = urlWA('Hola, aquí está el pase de cortesía para NitroSystem (' + razonLegible(c.razon, c.causa) + '). Abre este link: ' + linkDe(c));
   fila.appendChild(wa);
   var ml = document.createElement('a'); ml.className='btn btn-gris'; ml.textContent='✉️ Correo';
-  ml.href = urlMail('Pase de cortesía Nitrotoon', 'Hola, aquí está el pase de cortesía para Nitrotoon (' + razonLegible(c.razon, c.causa) + '). Abre este link: ' + linkDe(c));
+  ml.href = urlMail('Pase de cortesía NitroSystem', 'Hola, aquí está el pase de cortesía para NitroSystem (' + razonLegible(c.razon, c.causa) + '). Abre este link: ' + linkDe(c));
   fila.appendChild(ml);
   if (c.estado === 'activa' && !congelada) {
     fila.appendChild(boton('✏️ Editar', 'btn-verde', function(){ abrirModalEdicion(c); }));

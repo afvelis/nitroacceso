@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nitrotoon Control de acceso - Cortesía</title>
+<title>NitroSystem - Cortesía</title>
 <script src="config.js"></script>
 <style>
 :root{
@@ -64,7 +64,7 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;backgr
 <header class="cabecera">
   <div class="logo">🚀</div>
   <div>
-    <div class="titulo">Nitrotoon Control de acceso</div>
+    <div class="titulo">NitroSystem</div>
     <div class="subtitulo">Pase de cortesía</div>
   </div>
 </header>
@@ -131,7 +131,7 @@ function pantallaEventoCulminado(){
         <span class="icono">🎉</span>
         <div class="gracias">¡El evento ha culminado!</div>
         <p>Muchas gracias por su apoyo y convicción.</p>
-        <p>Los esperamos en la próxima edición de <strong>Nitrotoon</strong>.</p>
+        <p>Los esperamos en la próxima edición de <strong>NitroSystem</strong>.</p>
         <a class="instagram-btn" href="${INSTAGRAM_URL}" target="_blank" rel="noopener">📸 Síguenos en Instagram @nitrotoon</a>
       </div>
     </div>`;
@@ -172,7 +172,7 @@ function pantallaPremiacion(d){
     textoAcomp = 'Tu premio son ' + cupones + ' entradas gratuitas para ti y ' + acompanantes + ' acompañantes. El ganador y sus acompañantes deben presentarse en la puerta juntos.';
   }
 
-  let mensajeWA = 'Hola ' + nombreCompleto + ', ¡felicidades! Ganaste en ' + (d.concurso || 'el concurso') + '. Aquí está tu pase de premiación para Nitrotoon: ' + linkEntrega;
+  let mensajeWA = 'Hola ' + nombreCompleto + ', ¡felicidades! Ganaste en ' + (d.concurso || 'el concurso') + '. Aquí está tu pase de premiación para NitroSystem: ' + linkEntrega;
 
   let html = '';
   html += '<div class="tarjeta">';
@@ -219,7 +219,7 @@ function pantallaPremiacion(d){
 
   document.getElementById('btnCopiarLink').addEventListener('click', (e) => copiarTexto(linkEntrega, e.target));
   document.getElementById('btnWA').href = urlWA(mensajeWA);
-  document.getElementById('btnMail').href = urlMail('Pase de premiación Nitrotoon', mensajeWA);
+  document.getElementById('btnMail').href = urlMail('Pase de premiación NitroSystem', mensajeWA);
 }
 
 function renderizar(d){
@@ -249,9 +249,9 @@ function renderizar(d){
 
   let mensajeWA;
   if(esLista){
-    mensajeWA = `Hola, aquí está el pase de cortesía de ${d.nombre_organizacion} para Nitrotoon (${razonLegible(d.razon, d.causa)}). Abre este link para ver los QR: ${linkEntrega}`;
+    mensajeWA = `Hola, aquí está el pase de cortesía de ${d.nombre_organizacion} para NitroSystem (${razonLegible(d.razon, d.causa)}). Abre este link para ver los QR: ${linkEntrega}`;
   }else{
-    mensajeWA = `Hola ${tituloPrincipal}, aquí está tu pase de cortesía para Nitrotoon (${razonLegible(d.razon, d.causa)}). Abre este link para ver tu QR: ${linkEntrega}`;
+    mensajeWA = `Hola ${tituloPrincipal}, aquí está tu pase de cortesía para NitroSystem (${razonLegible(d.razon, d.causa)}). Abre este link para ver tu QR: ${linkEntrega}`;
   }
 
   const dia1Vigente = d.dia1 && !d.dia1_cerrado;
@@ -352,7 +352,7 @@ function renderizar(d){
 
   document.getElementById('btnCopiarLink').addEventListener('click', (e) => copiarTexto(linkEntrega, e.target));
   document.getElementById('btnWA').href = urlWA(mensajeWA);
-  document.getElementById('btnMail').href = urlMail('Pase de cortesía Nitrotoon', mensajeWA);
+  document.getElementById('btnMail').href = urlMail('Pase de cortesía NitroSystem', mensajeWA);
 }
 
 (function(){

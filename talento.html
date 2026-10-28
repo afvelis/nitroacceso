@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Nitrotoon Control de acceso</title>
+<title>NitroSystem</title>
 <style>
 :root{
   --fondo:#0b1220; --tarjeta:#121c2e; --borde:#24344d; --texto:#eef3f8;
@@ -57,7 +57,7 @@ th{background:#0d1526;color:var(--suave);}
   <div class="logo">🚀</div>
   <div>
     <div class="ceja">Registro de talento</div>
-    <h1>Nitrotoon Control de acceso</h1>
+    <h1>NitroSystem</h1>
   </div>
 </header>
 <main>
@@ -317,7 +317,7 @@ function mostrarOpcionDia2(sec, rows, l){
 function agregarBotonesQR(fila, msgEl, qrInner, l){
   var img = qrInner.querySelector('img');
   var urlImg = img ? img.src : null;
-  var textoComp = 'Nitrotoon - Lista del Dia ' + l.dia + ' de ' + nombreTalento()
+  var textoComp = 'NitroSystem - Lista del Dia ' + l.dia + ' de ' + nombreTalento()
     + '. Codigo corto: ' + l.codigo_corto
     + '. Link de puerta: ' + urlPuerta('lista', l.codigo_corto)
     + (urlImg ? ' . Ver el QR: ' + urlImg : '');
@@ -348,7 +348,7 @@ function agregarBotonesQR(fila, msgEl, qrInner, l){
   fila.appendChild(boton('Correo', 'btn-azul', async function(){
     await copiarTexto(textoComp);
     pinta(msgEl, 'Intentamos abrir tu aplicacion de correo. Si no se abrio nada, el mensaje ya quedo copiado: pegalo en tu correo o en un grupo.', true);
-    window.location.href = urlMail('Nitrotoon - QR de lista Dia ' + l.dia, textoComp);
+    window.location.href = urlMail('NitroSystem - QR de lista Dia ' + l.dia, textoComp);
   }));
 }
 
