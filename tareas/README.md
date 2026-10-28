@@ -56,7 +56,7 @@ Usa [PLANTILLA.md](PLANTILLA.md) para crear tareas nuevas. No renombres los IDs 
 
 | ID | Tarea | Prioridad | Estado | Depende de |
 |---|---|---|---|---|
-| [P0-01](P0-01-xss-escape.md) | Eliminar el XSS almacenado y centralizar el escape | P0 | pendiente | — |
+| [P0-01](P0-01-xss-escape.md) | Eliminar el XSS almacenado y centralizar el escape | P0 | **hecho** (28/10/2026) | — |
 | [P0-02](P0-02-rls-autorizacion.md) | Verificar y cerrar RLS, grants y autorización por rol | P0 | pendiente | — |
 | [P0-03](P0-03-login-sesiones.md) | Endurecer PIN, rate limit, tokens y bloqueo de sesión | P0 | pendiente | — |
 | [P0-04](P0-04-qr-csp-dependencias.md) | QR local, dependencias vendorizadas y CSP | P0 | pendiente | — |
@@ -73,7 +73,7 @@ Usa [PLANTILLA.md](PLANTILLA.md) para crear tareas nuevas. No renombres los IDs 
 
 ## Orden recomendado
 
-1. **P0-01** (XSS): es el riesgo más directo y se puede corregir sin tocar Supabase.
+1. **P0-01** (XSS): es el riesgo más directo y se puede corregir sin tocar Supabase. ✅ HECHO 28/10/2026.
 2. **P0-02** (RLS/autorización): define si el resto de los controles sirven.
 3. **P0-03** (sesiones): reduce el impacto de un token robado.
 4. **P0-04** (QR/CSP): quita dependencias externas y reduce exfiltración.
