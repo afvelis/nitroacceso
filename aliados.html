@@ -402,7 +402,7 @@ function renderAliado(a){
     var filaAdmin = document.createElement('div');
     filaAdmin.className = 'fila';
     filaAdmin.style.marginTop = '8px';
-    filaAdmin.appendChild(botonMini('🚫 Anular aliado completo', 'btn-rojo', function(){
+    filaAdmin.appendChild(botonMini('🚫 Dar de baja al aliado', 'btn-rojo', function(){
       abrirModalAnularAliado(a);
     }));
     div.appendChild(filaAdmin);
@@ -740,7 +740,7 @@ function abrirModalAnularAsignacion(a, asi){
 }
 
 // ─────────────────────────────────────────────────────────────
-// MODAL: Anular aliado completo (Paso 2 del brief; RPC f_admin_anular_aliado)
+// MODAL: Dar de baja al aliado (Paso 2 del brief; RPC f_admin_anular_aliado)
 // ─────────────────────────────────────────────────────────────
 function abrirModalAnularAliado(a){
   return new Promise(function(resolve){
@@ -752,12 +752,19 @@ function abrirModalAnularAliado(a){
     var activas = (a.asignaciones || []).filter(function(x){ return x.estado === 'activa'; }).length;
 
     caja.innerHTML =
-      '<h3 class="modal-titulo" style="color:var(--rojo)">🚫 Anular aliado completo</h3>' +
+      '<h3 class="modal-titulo" style="color:var(--rojo)">🚫 Dar de baja al aliado</h3>' +
       '<p class="asig-linea">Aliado: <b>' + esc(a.nombre_organizacion) + '</b> · Responsable: <b>' + esc(a.responsable || '-') + '</b></p>' +
+      '<div class="nota-info">' +
+        '<b>¿Para qué sirve?</b> Da de baja al aliado del <b>programa completo</b>: él y todos sus pools dejan de operar. Úsala solo cuando el aliado sale definitivamente.<br>' +
+        '<b>¿En qué se diferencia de "Anular"?</b> El botón Anular vive dentro de una asignación y retira un solo pool, dejando al aliado activo. Esta opción los retira a todos de una vez.' +
+      '</div>' +
       '<div class="aviso-rojo-box">' +
-        '<b>⚠️ Esta acción no se puede deshacer desde esta pantalla.</b><br>' +
-        'Quedará anulado el aliado y <b>todas sus asignaciones activas (' + activas + ')</b>, con sus premios. ' +
-        'La <b>razón que escribas la verán el aliado y los premiados</b> en sus links (M-04).' +
+        '<b>Consecuencias:</b><br>' +
+        '• El aliado queda bloqueado y no podrá volver a operar.<br>' +
+        '• Sus asignaciones activas (<b>' + activas + '</b>) quedarán anuladas.<br>' +
+        '• Los premios de esas asignaciones quedarán anulados.<br>' +
+        '• La <b>razón</b> que escribas la verán el aliado y los premiados en sus links (M-04).<br>' +
+        '• No se puede deshacer desde esta pantalla.' +
       '</div>' +
       '<label style="margin-top:14px">Razón de anulación *' +
         '<textarea id="aaRazon" rows="3" placeholder="Ej.: El aliado solicitó retirarse del programa" style="width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1px solid var(--borde);background:#0d1526;color:var(--texto);font-size:17px;font-family:inherit;resize:vertical;"></textarea>' +
@@ -778,7 +785,7 @@ function abrirModalAnularAliado(a){
 
     var bOk = document.createElement('button');
     bOk.className = 'btn btn-rojo';
-    bOk.textContent = 'Anular aliado completo';
+    bOk.textContent = 'Dar de baja al aliado';
     bOk.onclick = async function(){
       var msg = caja.querySelector('#aaMsg');
       var razon = caja.querySelector('#aaRazon').value.trim();
@@ -801,13 +808,13 @@ function abrirModalAnularAliado(a){
         if (!r){
           err(msgErrorAliado('ERR_SESION'));
           bOk.disabled = false;
-          bOk.textContent = 'Anular aliado completo';
+          bOk.textContent = 'Dar de baja al aliado';
           return;
         }
         if (r.error){
           err(msgErrorAliado(r.error));
           bOk.disabled = false;
-          bOk.textContent = 'Anular aliado completo';
+          bOk.textContent = 'Dar de baja al aliado';
           return;
         }
 
@@ -818,8 +825,8 @@ function abrirModalAnularAliado(a){
         if (fondo.parentNode) fondo.parentNode.removeChild(fondo);
         resolve(r);
 
-        await modalAlert('✅ Aliado anulado',
-          'El aliado <b>' + esc(a.nombre_organizacion || '') + '</b> quedó anulado.<br><br>' +
+        await modalAlert('✅ Aliado dado de baja',
+          'El aliado <b>' + esc(a.nombre_organizacion || '') + '</b> quedó dado de baja.<br><br>' +
           'Asignaciones anuladas: <b>' + cnt(r.asignaciones_anuladas) + '</b><br>' +
           'Premios anulados: <b>' + cnt(r.premios_anulados) + '</b>'
         );
@@ -828,7 +835,7 @@ function abrirModalAnularAliado(a){
       } catch (e){
         err('Fallo: ' + e.message);
         bOk.disabled = false;
-        bOk.textContent = 'Anular aliado completo';
+        bOk.textContent = 'Dar de baja al aliado';
       }
     };
     contB.appendChild(bOk);
