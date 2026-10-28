@@ -1,8 +1,8 @@
 # ESTADO.md — NitroSystem (control de acceso)
 
-Versión del archivo: **3** · Última actualización: **28/10/2026** · Generado en el cierre de la Sesión 12 (28/10/2026)
+Versión del archivo: **4** · Última actualización: **28/10/2026** · Generado en el cierre de la Sesión 13 (28/10/2026)
 
-> Este archivo SOLO lleva el ESTADO del proyecto. Las reglas de trabajo viven en `AGENTS.md` (+ su anexo de continuidad v3). La arquitectura técnica vive en `ARQUITECTURA.md`. Los "por qués" viven en `DECISIONES.md`. Las tareas ejecutables viven en `tareas/`. Si este archivo contradice a `AGENTS.md`, manda `AGENTS.md`. Si contradice al repo, manda el repo.
+> Este archivo SOLO lleva el ESTADO del proyecto. Las reglas de trabajo viven en `AGENTS.md` (+ sus anexos: continuidad v3 y estilo de trato). La arquitectura técnica vive en `ARQUITECTURA.md`. Los "por qués" viven en `DECISIONES.md`. Las tareas ejecutables viven en `tareas/`. Si este archivo contradice a `AGENTS.md`, manda `AGENTS.md`. Si contradice al repo, manda el repo.
 
 ---
 
@@ -10,12 +10,12 @@ Versión del archivo: **3** · Última actualización: **28/10/2026** · Generad
 
 | Módulo | Estado | Verificado |
 | --- | --- | --- |
-| Núcleo de acceso (index, dashboard, admin, coord, talento, stand, puerta, cortesia, cortesias, estadisticas) | ✅ En producción (evento 26/09/2026 ya pasó) · **Rebranding NitroSystem aplicado 28/10** | Sí (15 blobs + Actions #160) |
+| Núcleo de acceso (index, dashboard, admin, coord, talento, stand, puerta, cortesia, cortesias, estadisticas) | ✅ En producción (evento 26/09/2026 ya pasó) · Rebranding NitroSystem aplicado 28/10 · **P0-01 XSS aplicado y probado en vivo 28/10** | Sí (blobs + Actions #166/#167) |
 | aliado.html (público, entra con ?a=ASI-xxx) | ✅ Completo (v2.3) | Sí |
 | aliados.html (admin) | ✅ **COMPLETO — brief cerrado al 100% el 28/10/2026** (detalle abajo) | Sí |
 | aliados-concursos.html (historial por asignación) | ✅ Completo (v2.4) | Sí |
 | acceso-denegado.html | ✅ Completo (v2.4) | Sí |
-| Keep-alive Supabase (GitHub Actions) | ✅ Activo — runs #158–160 verdes el 28/10/2026 | Sí (API Actions 28/10) |
+| Keep-alive Supabase (GitHub Actions) | ✅ Activo — run **#11** verde 28/10 14:15 local (event schedule), cadencia cada 3 días, próximo ~31/10 | Sí (API Actions 28/10) |
 
 **Brief de aliados (workstream A) — cerrado:**
 
@@ -33,6 +33,8 @@ Versión del archivo: **3** · Última actualización: **28/10/2026** · Generad
 
 **Rebranding NitroSystem (28/10/2026):** 15 archivos (14 HTML + config.js), 50 reemplazos, formato **"Solo NitroSystem"** (decisión del usuario). Intactos a propósito: repo y URLs `nitroacceso`, Instagram `@nitrotoon`. Commit "feat: rebranding NitroSystem (paso 5)", Actions #160 verde. Detalle en DECISIONES.md.
 
+**P0-01 — Eliminar el XSS almacenado (28/10/2026, Sesión 13):** 10 archivos (config.js + 8 HTML + `tareas/P0-01-xss-escape.md`), commits `44ef31ab` (fix) y `53ab76ff` (docs), Actions #166/#167 verdes. Escape central `escaparHtml()`/`NA.esc` en config.js + validaciones de entrada como defensa en profundidad. Probado en vivo con ejemplo desde cero: la validación RECHAZA el payload en formularios públicos (no llega a la base) y el escape se verificó con un nombre legítimo con apóstrofe y comillas, intacto en talento → puerta → vista de lista completada; autorización funcionó de punta a punta (no-regresión). Ejemplo de prueba eliminado del SQL Editor por id exacto (verificación en 0 filas). Tarea marcada `hecho`. Detalle completo en `tareas/P0-01-xss-escape.md` (Notas de implementación).
+
 ## 2 · Verificación de arranque (reemplaza el checklist de 5 preguntas de la v2.4)
 
 Al iniciar cualquier sesión, se verifica en este orden. Cada punto dice quién lo hace según el modo: **AGENTE** (asistente con lectura de repo, p. ej. una sesión agéntica) o **CHAT GRATUITO** (el usuario es las manos del asistente y lo reporta mirando GitHub en el navegador).
@@ -43,20 +45,20 @@ Al iniciar cualquier sesión, se verifica en este orden. Cada punto dice quién 
 4. **Backend Supabase** — SIEMPRE el usuario (en ambos modos), SOLO si la sesión va a tocar RPC o esquema: ejecuta las Consultas A (funciones) y B (tablas/columnas) en el SQL Editor y pega los resultados. Los resultados vigentes quedan copiados en ARQUITECTURA.md.
 5. **Excepción crítica** (heredada del método del Sponsorship Audit Engine, igual en ambos modos): si cualquier cosa no encaja (archivo que el manifiesto dice que existe y no está, contradicción entre ESTADO y repo, paso que no cuadra), DETENER y avisar en español llano. No reconstruir en silencio.
 
-**Estado de la verificación vigente (28/10/2026, cierre de la Sesión 12):**
+**Estado de la verificación vigente (28/10/2026, cierre de la Sesión 13):**
 
 - Consulta A (RPC): ✅ cerrada el 27/10. 79 filas = 78 funciones + 1 sobrecarga. Los 3 hallazgos [VERIFICAR] siguen en ARQUITECTURA.md §4, sin decisión de limpieza aún.
 - Consulta B (tablas): ✅ cerrada el 28/10.
-- Sesión 12: NO se tocó el esquema de Supabase; única función reescrita: `f_admin_ampliar_cupones` (BUG-1, semántica de suma — ver DECISIONES.md). Árbol del repo verificado blob a blob en cada upload del día; Actions #158–160 verdes.
+- Sesión 13: NO se tocó el esquema de Supabase (solo DELETEs acotados del ejemplo de prueba, ejecutados y verificados por el usuario en el SQL Editor). Verificación de arranque ejecutada en modo agente: 4 archivos de continuidad comparados blob a blob con `main`, keep-alive run #11 verde. Árbol del repo verificado blob a blob tras cada upload del día (`44ef31ab`, `53ab76ff`).
 - La verificación inicial del checklist v2.4 (5 preguntas) sigue **CERRADA AL 100%**.
 
 ## 3 · Workstreams activos
 
 **A — Brief de aliados: ✅ CERRADO 28/10/2026** (ver §1). Sin trabajo pendiente.
 
-**B — Backlog de seguridad** (`tareas/`, adoptado 27/10, aportado por colaborador de confianza): 12 tareas P0/P1/P2, todas `pendiente`. Orden recomendado: P0-01 (XSS) → P0-02 (RLS) → P0-03 (sesiones) → P0-04 (QR/CSP) → P0-05 (backups). Se trabaja UNA tarea a la vez según `AGENTS.md`. Ninguna tarea de `tareas/` fue tocada en la Sesión 12.
+**B — Backlog de seguridad** (`tareas/`): 12 tareas adoptadas 27/10. **P0-01 (XSS) HECHO 28/10 (Sesión 13)** — ver §1. Quedan 11 `pendiente`. Orden recomendado: **P0-02 (RLS)** → P0-03 (sesiones) → P0-04 (QR/CSP) → P0-05 (backups), luego P1/P2. Se trabaja UNA tarea a la vez según `AGENTS.md`.
 
-**C — Ideas de producto pendientes** (se migrarán a `tareas/` con `PLANTILLA.md` conforme se activen): historial global de concursos (`concursos.html`); extender M-28/M-31 a cortesias/estadisticas/admin; origen (admin vs aliado) en dashboard; razón de anulación al ganador; "ganadas" en vez de "asignadas" en cortesia.html; aviso de concursos sin ganador; motor de envío automático (M-01); tarjetas clicables del dashboard; módulo post-evento (M-21); anti-colisión de códigos (M-22); RBAC (M-29); PIN admin robusto (M-30). **Nuevas 28/10 (Sesión 12):** M-33 humanizar la vista "anulada" del aliado (usar `anulada_at`, que ya existe en base; tono menos seco); M-34 fecha de creación en la tarjeta del admin; M-35 mostrar nombres de premios anulados (requiere cambio de RPC); M-36 módulo de reclamos (formulario en la vista anulada + alerta en dashboard + gestión). ~~unificar NOMBRE_EVENTO "NITROACCESO"→"Nitrotoon"~~ ✅ superada 28/10 (NitroSystem).
+**C — Ideas de producto pendientes** (se migrarán a `tareas/` con `PLANTILLA.md` conforme se activen): historial global de concursos (`concursos.html`); extender M-28/M-31 a cortesias/estadisticas/admin; origen (admin vs aliado) en dashboard; razón de anulación al ganador; "ganadas" en vez de "asignadas" en cortesia.html; aviso de concursos sin ganador; motor de envío automático (M-01); tarjetas clicables del dashboard; módulo post-evento (M-21); anti-colisión de códigos (M-22); RBAC (M-29); PIN admin robusto (M-30). **M-33** humanizar la vista "anulada" del aliado; **M-34** fecha de creación en la tarjeta del admin; **M-35** mostrar nombres de premios anulados (requiere cambio de RPC); **M-36** módulo de reclamos.
 
 **D — Hallazgos RPC del 27/10** (solo documentar por ahora, decisión del usuario):
 1. `f_coord_crear_stand` existe con DOS firmas (sobrecarga: con y sin `p_nombre`) — riesgo PGRST202; verificar cuál usa coord.html antes de cualquier DROP.
@@ -66,11 +68,20 @@ Estas 3 quedan documentadas en ARQUITECTURA.md (§4) con etiqueta `[VERIFICAR]`.
 
 **E — Manuales (solicitud del usuario, 28/10):** manual de uso por módulo (para usuarios finales), memoria técnica viva (ARQUITECTURA.md como evolución) y manual de reparación. Candidato a siguiente workstream junto con B.
 
+**F — Hallazgos de la prueba en vivo (Sesión 13, 28/10)** — descubiertos por el usuario durante la verificación de P0-01; por migrar a `tareas/` con `PLANTILLA.md`:
+- **F-1** El botón "Repetir y editar la del Dia 1" (talento.html:296 → RPC `f_link_talento_copiar`) no copió la lista del Día 1 al Día 2 en la prueba del usuario ("no hace nada"). Investigar: `pg_get_functiondef` de `f_link_talento_copiar` + consola del navegador al pulsarlo.
+- **F-2** "Mis links" de coord.html ordena del más viejo al más nuevo (el recién creado queda al fondo) y no muestra cupo. Propuesta del usuario: historial colapsable con los 2 últimos creados visibles, en orden de creación; evaluar mostrar cupo/registrados por link.
+- **F-3** Revalidar la lógica edición-abierta / edición-cerrada módulo por módulo: qué bloqueos se mantienen (puerta muere con edición abierta; stand/talento ocultan formularios con edición cerrada) y cuáles se ajustan, evitando consecuencias sobre los datos del evento.
+- **F-4** El QR del talento no muestra el código corto en pantalla (stand.html sí lo muestra; el texto del talento pide "dicta el codigo corto" que no se ve). Corrección de 1 línea en construirCajaQR.
+- **F-5** Los parámetros `?lista=`/`?v=` se pierden si no hay sesión previa de puerta (puerta.html:1159-1174: solo rellenan el campo si `tokenSesion` ya existe; el usuario lo rodeó pegando el código `L-0765D8` en el buscador manual). Mejora: releer `location.search` tras el login de puerta.
+
+**Hoja de estilo de trato (acuerdo del usuario, 28/10, Sesión 13):** incorporada como anexo permanente en `AGENTS.md` y registrada en `DECISIONES.md`. Toda sesión futura (chat gratuito o agente) la recibe automáticamente.
+
 ## 4 · Siguiente paso inmediato
 
-1. ✅ HECHO 28/10 (Sesión 12): brief de aliados completo (pasos 4b, 4c, 5, 6), BUG-1 corregido y probado, rebranding NitroSystem (paso 5), cierre documental (este archivo, DECISIONES.md y ARQUITECTURA.md).
-2. 🔲 Sincronizar copias locales del PC: descargar el Raw de `ESTADO.md`, `DECISIONES.md` y `ARQUITECTURA.md` (ya commiteados) y sobreescribir las copias de `moduloAcceso\continuidad\`.
-3. Próxima sesión: arrancar con la verificación de §2 y elegir workstream — **E** (manuales) o **B** (P0-01 XSS). Decisión del usuario al arrancar.
+1. ✅ HECHO 28/10 (Sesión 13): P0-01 XSS completo (implementación, prueba en vivo de las dos capas, limpieza del ejemplo, tarea `hecho` publicada), hoja de estilo incorporada en AGENTS.md, este cierre documental (ESTADO v4 + DECISIONES).
+2. ✅ HECHO 28/10 (Sesión 13): copias locales del PC sincronizadas con el repo (blobs verificados iguales al arrancar; al cierre, ESTADO/AGENTS/DECISIONS se editan en local y sube el usuario).
+3. Próxima sesión: verificación de §2 y elegir workstream — **B — P0-02 (RLS)**, **E — manuales**, o **higiene documental** (migrar M-33…M-36 y F-1…F-5 a `tareas/` con `PLANTILLA.md`). Decisión del usuario al arrancar.
 
 ## 5 · Transición v2.4 → v3 (histórico)
 

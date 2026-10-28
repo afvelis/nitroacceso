@@ -72,3 +72,28 @@ Las subidas manuales del usuario (lápiz en GitHub) pueden seguir yendo directo 
 ### Jerarquía de fuentes
 
 Si hay contradicción: `AGENTS.md` > `ESTADO.md` > repo > memoria del asistente. Las reglas SQL y de seguridad de la sección "Reglas" de arriba siguen vigentes: el usuario ejecuta el SQL y los commits; ningún asistente pide ni maneja secretos.
+
+## Anexo aprobado — Estilo de trato y ritmo de trabajo (28/10/2026, Sesión 13)
+
+Acuerdo permanente del usuario, construido sesión tras sesión. Vale para cualquier IA que asista al proyecto (pública o agente): en chats gratuitos el usuario pega este archivo completo, así que este anexo viaja solo.
+
+### Cómo se trabaja (el ritmo)
+
+1. **UNA instrucción a la vez.** Nunca un "testamento" de pasos juntos. No se manda nada nuevo hasta que el paso actual esté hecho y verificado.
+2. **Cada paso lleva su PRUEBA DEL OBJETIVO, dato a dato:** todos los campos con valores exactos (si es formulario, la tabla completa; si es SQL, el texto completo; si es web, en qué página y qué botón), dónde se ejecuta y QUÉ DEBE VER el usuario en cada punto. No asumir nada.
+3. **El asistente verifica antes de avanzar.** Cuando el usuario dice "subido" o "hecho", el asistente comprueba por sí mismo (blob sha del repo + Actions en verde, o lo que el usuario pegue) y solo entonces dice "correcto" y da el paso siguiente. El reporte del usuario dispara la verificación; no la sustituye.
+4. **Archivos SIEMPRE finales y completos**, listos para sustituir con Ctrl+A → Ctrl+V (o Upload files desde disco). Nunca parches por fragmentos ni instrucciones de edición parcial: un error del usuario aplicando fragmentos puede dañar la trayectoria del proyecto (registrado también en DECISIONES.md, 28/10/2026).
+5. **Cada cambio lleva su INFORME:** qué se cambió y por qué. El usuario quiere entender, no solo obedecer.
+6. **Nada destructivo sin aprobación explícita del usuario** (borrados, SQL de escritura, DROP). Todo el SQL lo ejecuta el usuario en el SQL Editor de Supabase — nunca asumir acceso a la base. Antes de reescribir cualquier RPC: `pg_get_functiondef` primero.
+7. **Si algo no encaja** (archivo que falta, dato que no cuadra, contradicción entre fuentes): DETENER y avisar en español llano. No reconstruir en silencio.
+8. **Si el usuario no entiende, re-explicar sin fastidio.** El usuario avisa cuando algo "hace ruido" aunque no se le pida — su intuición ya encontró un bug real (BUG-1, la función que reemplazaba en vez de sumar).
+
+### Lo que el asistente puede esperar del usuario
+
+- Ejecuta exacto lo que se le manda y reporta por texto: "todo salió como esperas", o pega el texto exacto del error.
+- Sus capturas de pantalla son solo para su archivo personal (carpeta Screenshots de Windows): NO son canal con el asistente. La verificación es por texto y por datos.
+- El usuario ejecuta todos los SQL, sube todos los archivos a GitHub siempre en main (lápiz / Add file / Upload files), y espera el verde de Actions antes de probar nada.
+
+### Formato de cada paso
+
+1. Verificación del paso anterior → "Correcto" · 2. INFORME (qué + por qué) · 3. UNA instrucción con valores exactos · 4. PRUEBA DEL OBJETIVO dato a dato · 5. Reporte del usuario → vuelve a 1.
