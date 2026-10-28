@@ -195,7 +195,7 @@ async function cargar() {
     renderStand();
   } catch (e) {
     document.getElementById('cargando').className = 'tarjeta aviso';
-    document.getElementById('cargando').innerHTML = 'No se pudo conectar con la base de datos.<br><small>' + e.message + '</small>';
+    document.getElementById('cargando').innerHTML = 'No se pudo conectar con la base de datos.<br><small>' + escaparHtml(e.message) + '</small>';
   }
 }
 
@@ -354,6 +354,8 @@ document.getElementById('btnAgregar').onclick = function(){
   msg.textContent = '';
   const p = leerInputs();
   if (!p.nombre || !p.apellido || !p.cedula) { msg.textContent = 'Completa nombre, apellido y cédula.'; return; }
+  if (!textoPersonaValido(p.nombre) || !textoPersonaValido(p.apellido)) { msg.textContent = 'Nombre y apellido no válidos: máximo 60 caracteres y sin los caracteres < o >.'; return; }
+  if (!cedulaValida(p.cedula)) { msg.textContent = 'Cédula no válida: solo números, puntos o espacios (4 a 20 caracteres).'; return; }
   if (editIndex === -1) {
     if (listaPersonas.length >= lugaresRestantes()) { msg.textContent = 'No hay lugares restantes en el stand para agregar más personas.'; return; }
     if (listaPersonas.some(function(x){ return x.cedula === p.cedula; })) { msg.textContent = 'Esa cédula ya está en la lista de abajo.'; return; }
@@ -381,6 +383,9 @@ document.getElementById('btnRegistrar').onclick = async function(){
 
   if (!empresa || !vende) {
     errDiv.textContent = 'Escribe la empresa y qué vende: aplican a toda la lista.'; return;
+  }
+  if (!textoPersonaValido(empresa, 80) || !textoPersonaValido(vende, 120)) {
+    errDiv.textContent = 'Empresa y rubro no válidos: sin los caracteres < o >.'; return;
   }
   if (!listaPersonas.length) {
     errDiv.textContent = 'Agrega al menos una persona a la lista.'; return;

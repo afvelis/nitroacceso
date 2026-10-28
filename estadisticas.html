@@ -527,10 +527,10 @@ function renderizar(d){
       const t = await llamar('f_admin_tiempos', { p_token: token });
       renderTiempos(t);
     }catch(e){
-      document.getElementById('zonaTiempos').innerHTML = '<p class="suave">No se pudieron cargar los tiempos: ' + (e.message || e) + '</p>';
+      document.getElementById('zonaTiempos').innerHTML = '<p class="suave">No se pudieron cargar los tiempos: ' + esc(e.message || e) + '</p>';
     }
   }catch(e){
-    document.getElementById('panelCarga').innerHTML = `<p class="suave" style="color:var(--rojo)">Error al cargar: ${e.message || e}</p>`;
+    document.getElementById('panelCarga').innerHTML = `<p class="suave" style="color:var(--rojo)">Error al cargar: ${esc(e.message || e)}</p>`;
   }
 })();
 </script>

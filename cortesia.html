@@ -178,8 +178,8 @@ function pantallaPremiacion(d){
   html += '<div class="tarjeta">';
   html += '<div class="premiacion">';
   html += '<span class="icono-premio">🏆</span>';
-  html += '<div class="gracias-premio">¡Felicidades, ' + nombreCompleto + '!</div>';
-  html += '<div class="concurso">Ganaste en: <strong>' + (d.concurso || '-') + '</strong></div>';
+  html += '<div class="gracias-premio">¡Felicidades, ' + escaparHtml(nombreCompleto) + '!</div>';
+  html += '<div class="concurso">Ganaste en: <strong>' + escaparHtml(d.concurso || '-') + '</strong></div>';
   html += '</div>';
 
   if (d.canjeado_at){
@@ -201,7 +201,7 @@ function pantallaPremiacion(d){
 
   html += '<div class="tarjeta">';
   html += '<h2>📤 Compartir este pase</h2>';
-  html += '<div class="link-box">' + linkEntrega + '</div>';
+  html += '<div class="link-box">' + escaparHtml(linkEntrega) + '</div>';
   html += '<div class="fila-botones">';
   html += '<button class="btn" id="btnCopiarLink">📋 Copiar link</button>';
   html += '<a class="btn btn-azul" id="btnWA" target="_blank" rel="noopener">📱 WhatsApp</a>';
@@ -261,8 +261,8 @@ function renderizar(d){
   let html = '';
   html += `<div class="tarjeta">
     <h2>🎁 Pase de cortesía</h2>
-    <div class="dato"><strong>${esLista ? 'Organización' : 'Beneficiario'}</strong><span>${tituloPrincipal}</span></div>
-    <div class="dato"><strong>Razón</strong><span class="pill pill-morado">${razonLegible(d.razon, d.causa)}</span></div>
+    <div class="dato"><strong>${esLista ? 'Organización' : 'Beneficiario'}</strong><span>${escaparHtml(tituloPrincipal)}</span></div>
+    <div class="dato"><strong>Razón</strong><span class="pill pill-morado">${escaparHtml(razonLegible(d.razon, d.causa))}</span></div>
     <div class="dato"><strong>Válido para</strong><span class="pill ${algunDiaVigente ? 'pill-azul' : 'pill-rojo'}">${diasTexto(d.dia1, d.dia2)}</span></div>
     <div class="dato"><strong>Modalidad</strong><span class="pill pill-verde">${esLista ? 'Lista (' + (d.listas ? d.listas.length : 0) + ' QR por día)' : 'Pase individual'}</span></div>`;
 
@@ -286,14 +286,14 @@ function renderizar(d){
         html += `<h2>📅 Día ${l.dia}</h2>`;
         html += `<div class="aviso aviso-verde">✅ LISTA COMPLETADA<br>Las ${totalPersonas} personas de esta lista ya ingresaron al evento. Este QR ya no es válido.</div>`;
         html += `<div><strong style="color:var(--suave);font-size:14px">Personas que ingresaron:</strong>
-          <ul class="nombres">${l.personas.map(p => `<li>✅ ${p.nombre} ${p.apellido}</li>`).join('')}</ul>
+          <ul class="nombres">${l.personas.map(p => `<li>✅ ${escaparHtml(p.nombre)} ${escaparHtml(p.apellido)}</li>`).join('')}</ul>
         </div>`;
       } else {
         html += `<h2>📅 QR del Día ${l.dia}</h2>`;
         html += `<p style="color:var(--suave);font-size:15px">Muestra este QR en la puerta el Día ${l.dia}. Todas las personas de la lista entran con este único QR.</p>`;
         html += `<div class="qr-box" id="qr-dia-${l.dia}"></div>`;
         html += `<div><strong style="color:var(--suave);font-size:14px">Personas en esta lista (${autorizadas}/${totalPersonas} han entrado):</strong>
-          <ul class="nombres">${l.personas.map(p => `<li>${p.estado === 'autorizado' ? '✅ ' : '⏳ '}${p.nombre} ${p.apellido}</li>`).join('')}</ul>
+          <ul class="nombres">${l.personas.map(p => `<li>${p.estado === 'autorizado' ? '✅ ' : '⏳ '}${escaparHtml(p.nombre)} ${escaparHtml(p.apellido)}</li>`).join('')}</ul>
         </div>`;
       }
       html += `</div>`;
@@ -318,7 +318,7 @@ function renderizar(d){
 
   html += `<div class="tarjeta">
     <h2>📤 Compartir este pase</h2>
-    <div class="link-box">${linkEntrega}</div>
+    <div class="link-box">${escaparHtml(linkEntrega)}</div>
     <div class="fila-botones">
       <button class="btn" id="btnCopiarLink">📋 Copiar link</button>
       <a class="btn btn-azul" id="btnWA" target="_blank" rel="noopener">📱 WhatsApp</a>
@@ -385,7 +385,7 @@ function renderizar(d){
 
       renderizar(d);
     })
-    .catch(e => { tarjetaError('⚠️ Error', 'No se pudo cargar la cortesía: ' + (e.message || e)); });
+    .catch(e => { tarjetaError('⚠️ Error', 'No se pudo cargar la cortesía: ' + escaparHtml(e.message || e)); });
 })();
 </script>
 </body>

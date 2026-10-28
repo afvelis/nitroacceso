@@ -281,24 +281,35 @@ function renderizar(){
   }
   
   panelAlertas.innerHTML = alertas.map((a, idx) => {
-    let html = `<div class="alerta alerta-${a.tipo}${a.expandible ? ' alerta-clickeable' : ''}" ${a.expandible ? `onclick="toggleDetalle(${idx})"` : ''}>${a.texto}</div>`;
+    let html = `<div class="alerta alerta-${a.tipo}${a.expandible ? ' alerta-clickeable' : ''}" ${a.expandible ? `data-idx="${idx}"` : ''}>${a.texto}</div>`;
     if(a.expandible && a.detalle && a.detalle.length > 0){
       html += `<div id="detalle-${idx}" class="detalle-listas" style="display:none">`;
       a.detalle.forEach(item => {
         const tipoCls = item.tipo === 'talento' ? 'pill-tipo-talento' : 'pill-tipo-cortesia';
         html += `<div class="item-lista">
           <div class="info">
-            <div class="nombre"><span class="pill-tipo ${tipoCls}">${item.tipo.toUpperCase()}</span>${item.nombre}</div>
-            <div class="meta">Código: <strong>${item.codigo}</strong></div>
-            <span class="link-box">${item.link}</span>
+            <div class="nombre"><span class="pill-tipo ${tipoCls}">${escaparHtml(String(item.tipo || '').toUpperCase())}</span>${escaparHtml(item.nombre)}</div>
+            <div class="meta">Código: <strong>${escaparHtml(item.codigo)}</strong></div>
+            <span class="link-box">${escaparHtml(item.link)}</span>
           </div>
-          <button class="btn btn-azul btn-mini" onclick="event.stopPropagation(); copiarLink('${item.link}', this)">📋 Copiar link</button>
+          <button class="btn btn-azul btn-mini" data-copiar="${encodeURIComponent(item.link || '')}">📋 Copiar link</button>
         </div>`;
       });
       html += `</div>`;
     }
     return html;
   }).join('');
+
+  // P0-01: listeners en vez de onclick con datos interpolados.
+  panelAlertas.querySelectorAll('.alerta-clickeable[data-idx]').forEach(el => {
+    el.addEventListener('click', () => toggleDetalle(el.dataset.idx));
+  });
+  panelAlertas.querySelectorAll('button[data-copiar]').forEach(btn => {
+    btn.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      copiarLink(decodeURIComponent(btn.dataset.copiar), btn);
+    });
+  });
   
   panelCarga.style.display = 'none';
   panelContenido.style.display = 'block';
@@ -355,7 +366,7 @@ btnSalir.addEventListener('click', () => {
     datosDashboard = datos;
     renderizar();
   }catch(e){
-    panelCarga.innerHTML = `<div class="alerta alerta-roja">Error al cargar: ${e.message || e}</div>`;
+    panelCarga.innerHTML = `<div class="alerta alerta-roja">Error al cargar: ${escaparHtml(e.message || e)}</div>`;
   }
 })();
 </script>

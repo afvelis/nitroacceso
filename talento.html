@@ -428,6 +428,18 @@ async function guardarDia(l, rows){
       avisoMsg('msgGlobal', 'Hay una fila con campos vacios en la lista del Dia ' + l.dia + '. Completa esa fila o pulsale Quitar.', false);
       return;
     }
+    if (!textoPersonaValido(p.nombre) || !textoPersonaValido(p.apellido)) {
+      avisoMsg('msgGlobal', 'Hay un nombre o apellido no valido (maximo 60 caracteres, sin < ni >) en la lista del Dia ' + l.dia + '.', false);
+      return;
+    }
+    if (!cedulaValida(p.cedula)) {
+      avisoMsg('msgGlobal', 'Hay una cedula no valida (solo numeros, 4 a 20 caracteres) en la lista del Dia ' + l.dia + '.', false);
+      return;
+    }
+    if (!textoPersonaValido(p.cargo, 60)) {
+      avisoMsg('msgGlobal', 'Hay un cargo no valido (sin < ni >) en la lista del Dia ' + l.dia + '.', false);
+      return;
+    }
     arr.push(p);
   }
   if (!arr.length) {

@@ -152,8 +152,8 @@ function modalAlert(mensaje, titulo){
     fondo.className = 'modal-fondo';
     fondo.innerHTML =
       '<div class="modal-caja">' +
-        '<div class="modal-titulo">' + titulo + '</div>' +
-        '<div class="modal-mensaje">' + mensaje + '</div>' +
+        '<div class="modal-titulo">' + escaparHtml(titulo) + '</div>' +
+        '<div class="modal-mensaje">' + escaparHtml(mensaje) + '</div>' +
         '<div class="modal-acciones"><button class="btn" id="modalOkBtn">Aceptar</button></div>' +
       '</div>';
     document.body.appendChild(fondo);
@@ -169,8 +169,8 @@ function modalConfirm(mensaje, titulo){
     fondo.className = 'modal-fondo';
     fondo.innerHTML =
       '<div class="modal-caja">' +
-        '<div class="modal-titulo">' + titulo + '</div>' +
-        '<div class="modal-mensaje">' + mensaje + '</div>' +
+        '<div class="modal-titulo">' + escaparHtml(titulo) + '</div>' +
+        '<div class="modal-mensaje">' + escaparHtml(mensaje) + '</div>' +
         '<div class="modal-acciones">' +
           '<button class="btn btn-gris" id="modalCancelarBtn">Cancelar</button>' +
           '<button class="btn" id="modalAceptarBtn">Aceptar</button>' +
@@ -190,8 +190,8 @@ function modalPrompt(mensaje, valorInicial, titulo){
     fondo.className = 'modal-fondo';
     fondo.innerHTML =
       '<div class="modal-caja">' +
-        '<div class="modal-titulo">' + titulo + '</div>' +
-        '<div class="modal-mensaje">' + mensaje + '</div>' +
+        '<div class="modal-titulo">' + escaparHtml(titulo) + '</div>' +
+        '<div class="modal-mensaje">' + escaparHtml(mensaje) + '</div>' +
         '<input type="text" id="modalPromptInput" style="margin-bottom:14px">' +
         '<div class="modal-acciones">' +
           '<button class="btn btn-gris" id="modalCancelarBtn">Cancelar</button>' +
@@ -400,13 +400,13 @@ function mostrarPanel(html){
 }
 
 function mostrarCargando(msg){
-  panelResultado.innerHTML = `<div class="aviso">${msg}</div>`;
+  panelResultado.innerHTML = `<div class="aviso">${escaparHtml(msg)}</div>`;
   panelResultado.style.display = 'block';
   barraSiguiente.style.display = 'none';
 }
 
 function mostrarError(msg){
-  panelResultado.innerHTML = `<div class="aviso aviso-rojo">${msg}</div>`;
+  panelResultado.innerHTML = `<div class="aviso aviso-rojo">${escaparHtml(msg)}</div>`;
   panelResultado.style.display = 'block';
   barraSiguiente.style.display = 'block';
 }
@@ -576,9 +576,9 @@ async function buscarVendedor(codigoQR){
     
     let html = `<div class="resultado ${yaAutorizado ? 'bloqueado' : ''}">`;
     html += `<div class="dato"><strong>Tipo</strong><span class="pill pill-azul">Vendedor de stand</span></div>`;
-    html += `<div class="dato"><strong>Nombre</strong><span>${vendedor.nombre} ${vendedor.apellido}</span></div>`;
-    html += `<div class="dato"><strong>Cédula</strong><span>${vendedor.cedula}</span></div>`;
-    if(vendedor.empresa) html += `<div class="dato"><strong>Empresa</strong><span>${vendedor.empresa}</span></div>`;
+    html += `<div class="dato"><strong>Nombre</strong><span>${escaparHtml(vendedor.nombre)} ${escaparHtml(vendedor.apellido)}</span></div>`;
+    html += `<div class="dato"><strong>Cédula</strong><span>${escaparHtml(vendedor.cedula)}</span></div>`;
+    if(vendedor.empresa) html += `<div class="dato"><strong>Empresa</strong><span>${escaparHtml(vendedor.empresa)}</span></div>`;
     html += `<div class="dato"><strong>Día</strong><span>Día ${diaSeleccionado}</span></div>`;
     
     if(yaAutorizado){
@@ -648,12 +648,12 @@ async function buscarCortesiaLista(codigo){
     if(total > 0 && total === aut){
       const ultimaPersona = d.personas[d.personas.length - 1];
       const horaUltima = ultimaPersona.marcado_at ? new Date(ultimaPersona.marcado_at).toLocaleTimeString('es-VE') : 'hora no registrada';
-      const nombres = d.personas.map(p => `✅ ${p.nombre} ${p.apellido}`).join('<br>');
+      const nombres = d.personas.map(p => `✅ ${escaparHtml(p.nombre)} ${escaparHtml(p.apellido)}`).join('<br>');
       mostrarPanel(`
         <div class="resultado bloqueado">
           <div class="dato"><strong>Tipo</strong><span class="pill pill-morado">Cortesía por lista</span></div>
-          <div class="dato"><strong>Organización</strong><span>${d.nombre_organizacion || '-'}</span></div>
-          <div class="dato"><strong>Código</strong><span class="mono">${d.codigo_corto}</span></div>
+          <div class="dato"><strong>Organización</strong><span>${escaparHtml(d.nombre_organizacion || '-')}</span></div>
+          <div class="dato"><strong>Código</strong><span class="mono">${escaparHtml(d.codigo_corto)}</span></div>
           <div class="aviso aviso-rojo" style="margin-top:14px">
              LISTA COMPLETADA<br>
             Las ${total} personas de esta lista ya ingresaron al evento. 
@@ -671,9 +671,9 @@ async function buscarCortesiaLista(codigo){
     
     let html = `<div class="resultado">`;
     html += `<div class="dato"><strong>Tipo</strong><span class="pill pill-morado">Cortesía por lista</span></div>`;
-    html += `<div class="dato"><strong>Organización</strong><span>${d.nombre_organizacion || '-'}</span></div>`;
-    html += `<div class="dato"><strong>Razón</strong><span>${razonLegible(d.razon, d.causa)}</span></div>`;
-    html += `<div class="dato"><strong>Código</strong><span class="mono">${d.codigo_corto}</span></div>`;
+    html += `<div class="dato"><strong>Organización</strong><span>${escaparHtml(d.nombre_organizacion || '-')}</span></div>`;
+    html += `<div class="dato"><strong>Razón</strong><span>${escaparHtml(razonLegible(d.razon, d.causa))}</span></div>`;
+    html += `<div class="dato"><strong>Código</strong><span class="mono">${escaparHtml(d.codigo_corto)}</span></div>`;
     html += `<div class="fila-personas">`;
     html += `<div class="aviso" style="margin-bottom:12px">Total: ${total} • ✅ Autorizados: ${aut} • ⏳ Pendientes: ${total - aut}</div>`;
     
@@ -681,13 +681,13 @@ async function buscarCortesiaLista(codigo){
       const ya = p.estado === 'autorizado';
       const hora = p.marcado_at ? new Date(p.marcado_at).toLocaleTimeString('es-VE') : '';
       html += `<div class="persona-item ${idx === d.personas.length - 1 ? 'ultimo' : ''}">`;
-      html += `<div class="persona-info"><div class="persona-nombre">${p.nombre} ${p.apellido}`;
+      html += `<div class="persona-info"><div class="persona-nombre">${escaparHtml(p.nombre)} ${escaparHtml(p.apellido)}`;
       html += ya ? `<span class="estado-badge pill-verde">✅ Entró ${hora}</span>` : `<span class="estado-badge pill-amarillo">Pendiente</span>`;
-      html += `</div><div class="persona-detalle">CI: ${p.cedula}</div></div>`;
+      html += `</div><div class="persona-detalle">CI: ${escaparHtml(p.cedula)}</div></div>`;
       if(ya){
         html += `<span class="pill pill-rojo"> Consumida</span>`;
       }else{
-        html += `<button class="btn btn-mini" data-cpersona="${p.persona_id}" data-nombre="${p.nombre} ${p.apellido}">✅ Autorizar</button>`;
+        html += `<button class="btn btn-mini" data-cpersona="${p.persona_id}">✅ Autorizar</button>`;
       }
       html += `</div>`;
     });
@@ -697,7 +697,6 @@ async function buscarCortesiaLista(codigo){
     panelResultado.querySelectorAll('button[data-cpersona]').forEach(btn => {
       btn.addEventListener('click', async () => {
         const id = btn.getAttribute('data-cpersona');
-        const nombre = btn.getAttribute('data-nombre');
         btn.disabled = true;
         btn.textContent = 'Autorizando...';
         try{
@@ -747,9 +746,9 @@ async function buscarCortesiaIndividual(codigo){
     
     let html = `<div class="resultado ${estado === 'autorizado' ? 'bloqueado' : ''}">`;
     html += `<div class="dato"><strong>Tipo</strong><span class="pill pill-morado">Cortesía individual</span></div>`;
-    html += `<div class="dato"><strong>Nombre</strong><span>${d.nombre} ${d.apellido}</span></div>`;
-    html += `<div class="dato"><strong>Cédula</strong><span>${d.cedula}</span></div>`;
-    html += `<div class="dato"><strong>Razón</strong><span>${razonLegible(d.razon, d.causa)}</span></div>`;
+    html += `<div class="dato"><strong>Nombre</strong><span>${escaparHtml(d.nombre)} ${escaparHtml(d.apellido)}</span></div>`;
+    html += `<div class="dato"><strong>Cédula</strong><span>${escaparHtml(d.cedula)}</span></div>`;
+    html += `<div class="dato"><strong>Razón</strong><span>${escaparHtml(razonLegible(d.razon, d.causa))}</span></div>`;
     html += `<div class="dato"><strong>Días aprobados</strong><span>${diasTexto(d.dia1, d.dia2)}</span></div>`;
     
     if(!aprobado){
@@ -815,9 +814,9 @@ async function buscarPremiacion(codigoQR){
 
     let html = `<div class="resultado ${d.canjeado_at ? 'bloqueado' : ''}">`;
     html += `<div class="dato"><strong>Tipo</strong><span class="pill pill-amarillo">Premiación</span></div>`;
-    html += `<div class="dato"><strong>Ganador</strong><span>${d.nombre} ${d.apellido}</span></div>`;
-    html += `<div class="dato"><strong>Cédula</strong><span>${d.cedula}</span></div>`;
-    html += `<div class="dato"><strong>Concurso</strong><span>${d.concurso || '-'}</span></div>`;
+    html += `<div class="dato"><strong>Ganador</strong><span>${escaparHtml(d.nombre)} ${escaparHtml(d.apellido)}</span></div>`;
+    html += `<div class="dato"><strong>Cédula</strong><span>${escaparHtml(d.cedula)}</span></div>`;
+    html += `<div class="dato"><strong>Concurso</strong><span>${escaparHtml(d.concurso || '-')}</span></div>`;
     html += `<div class="dato"><strong>Cupones totales</strong><span>${cupones}</span></div>`;
     html += `<div class="dato"><strong>Días aprobados</strong><span>${diasTexto(d.dia1, d.dia2)}</span></div>`;
 
@@ -915,10 +914,10 @@ async function buscarListaPorNombre(nombre){
     listas.forEach((l, idx) => {
       html += `<div class="persona-item ${idx === listas.length - 1 ? 'ultimo' : ''}">`;
       html += `<div class="persona-info">`;
-      html += `<div class="persona-nombre">${l.talento || 'Talento'}</div>`;
-      html += `<div class="persona-detalle">Código: ${l.codigo_corto} • Estado: ${l.estado}</div>`;
+      html += `<div class="persona-nombre">${escaparHtml(l.talento || 'Talento')}</div>`;
+      html += `<div class="persona-detalle">Código: ${escaparHtml(l.codigo_corto)} • Estado: ${escaparHtml(l.estado)}</div>`;
       html += `</div>`;
-      html += `<button class="btn btn-mini" data-lista-id="${l.lista_id}" data-codigo="${l.codigo_corto}">Abrir</button>`;
+      html += `<button class="btn btn-mini" data-lista-id="${l.lista_id}" data-codigo="${escaparHtml(l.codigo_corto)}">Abrir</button>`;
       html += `</div>`;
     });
     html += `</div></div>`;
@@ -983,12 +982,12 @@ async function mostrarListaCompleta(lista){
     if(listaCompletada){
       const ultimaPersona = personas[personas.length - 1];
       const horaUltima = ultimaPersona.marcado_at ? new Date(ultimaPersona.marcado_at).toLocaleTimeString('es-VE') : 'hora no registrada';
-      const nombres = personas.map(p => `✅ ${p.nombre} ${p.apellido} (CI: ${p.cedula})`).join('<br>');
+      const nombres = personas.map(p => `✅ ${escaparHtml(p.nombre)} ${escaparHtml(p.apellido)} (CI: ${escaparHtml(p.cedula)})`).join('<br>');
       mostrarPanel(`
         <div class="resultado bloqueado">
           <div class="dato"><strong>Tipo</strong><span class="pill pill-azul">Lista de talento</span></div>
-          <div class="dato"><strong>Talento</strong><span>${lista.talento || 'Talento'}</span></div>
-          <div class="dato"><strong>Código</strong><span class="mono">${lista.codigo_corto}</span></div>
+          <div class="dato"><strong>Talento</strong><span>${escaparHtml(lista.talento || 'Talento')}</span></div>
+          <div class="dato"><strong>Código</strong><span class="mono">${escaparHtml(lista.codigo_corto)}</span></div>
           <div class="aviso aviso-rojo" style="margin-top:14px">
             ⛔ LISTA COMPLETADA<br>
             Las ${totalPersonas} personas de esta lista ya ingresaron al evento. 
@@ -1006,9 +1005,9 @@ async function mostrarListaCompleta(lista){
     
     let html = `<div class="resultado">`;
     html += `<div class="dato"><strong>Tipo</strong><span class="pill pill-azul">Lista de talento</span></div>`;
-    html += `<div class="dato"><strong>Talento</strong><span>${lista.talento || 'Talento'}</span></div>`;
-    html += `<div class="dato"><strong>Código</strong><span class="mono">${lista.codigo_corto}</span></div>`;
-    html += `<div class="dato"><strong>Estado</strong><span class="pill ${lista.estado === 'cerrada' ? 'pill-rojo' : 'pill-verde'}">${lista.estado}</span></div>`;
+    html += `<div class="dato"><strong>Talento</strong><span>${escaparHtml(lista.talento || 'Talento')}</span></div>`;
+    html += `<div class="dato"><strong>Código</strong><span class="mono">${escaparHtml(lista.codigo_corto)}</span></div>`;
+    html += `<div class="dato"><strong>Estado</strong><span class="pill ${lista.estado === 'cerrada' ? 'pill-rojo' : 'pill-verde'}">${escaparHtml(lista.estado)}</span></div>`;
     
     html += `<div class="acciones-lista">`;
     if(lista.estado === 'cerrada'){
@@ -1037,14 +1036,14 @@ async function mostrarListaCompleta(lista){
       
       html += `<div class="persona-item ${idx === personas.length - 1 ? 'ultimo' : ''}">`;
       html += `<div class="persona-info">`;
-      html += `<div class="persona-nombre">${p.nombre} ${p.apellido}`;
+      html += `<div class="persona-nombre">${escaparHtml(p.nombre)} ${escaparHtml(p.apellido)}`;
       if(yaAutorizado){
         html += `<span class="estado-badge pill-verde">✅ Entró el ${fecha} a las ${hora}</span>`;
       }else{
         html += `<span class="estado-badge pill-amarillo">Pendiente</span>`;
       }
       html += `</div>`;
-      html += `<div class="persona-detalle">CI: ${p.cedula} • ${p.cargo}</div>`;
+      html += `<div class="persona-detalle">CI: ${escaparHtml(p.cedula)} • ${escaparHtml(p.cargo)}</div>`;
       html += `</div>`;
       
       if(lista.estado === 'cerrada'){
@@ -1056,7 +1055,7 @@ async function mostrarListaCompleta(lista){
       }else if(yaAutorizado){
         html += `<span class="pill pill-rojo"> Consumada</span>`;
       }else{
-        html += `<button class="btn btn-mini" data-persona="${p.persona_id}" data-nombre="${p.nombre} ${p.apellido}">✅ Autorizar</button>`;
+        html += `<button class="btn btn-mini" data-persona="${p.persona_id}">✅ Autorizar</button>`;
       }
       html += `</div>`;
     });
@@ -1066,7 +1065,6 @@ async function mostrarListaCompleta(lista){
     panelResultado.querySelectorAll('button[data-persona]').forEach(btn => {
       btn.addEventListener('click', async () => {
         const personaId = btn.getAttribute('data-persona');
-        const nombre = btn.getAttribute('data-nombre');
         btn.disabled = true;
         btn.textContent = 'Autorizando...';
         try{

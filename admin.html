@@ -241,7 +241,7 @@ async function cargarLista(){
     if (!arr.length) { cont.innerHTML = '<p class="suave">Todavia no hay coordinadores creados.</p>'; return; }
     arr.forEach(function(c){ cont.appendChild(tarjetaCoord(c)); });
   } catch (e) {
-    cont.innerHTML = '<p class="suave">No se pudo cargar la lista: ' + e.message + '</p>';
+    cont.innerHTML = '<p class="suave">No se pudo cargar la lista: ' + esc(e.message) + '</p>';
   }
 }
 
@@ -426,7 +426,7 @@ async function cargarHistorial(){
     });
     actualizarBotonLimpieza();
   } catch (e) {
-    cont.innerHTML = '<p class="suave">No se pudo cargar el historial: ' + e.message + '</p>';
+    cont.innerHTML = '<p class="suave">No se pudo cargar el historial: ' + esc(e.message) + '</p>';
   }
 }
 
