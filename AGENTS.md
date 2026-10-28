@@ -22,22 +22,14 @@ El backlog accionable de este proyecto vive en [`tareas/`](tareas/README.md).
 ## Estado
 
 El proyecto es un frontend estático (HTML/CSS/JS) para GitHub Pages con backend en Supabase vía RPC. No hay build, tests ni migraciones en el repo. La revisión de seguridad y el detalle de cada tarea están en [`tareas/`](tareas/README.md).
-# ANEXO para AGENTS.md — Protocolo de Continuidad v3
-
-> **Estado: PROPUESTA — el usuario debe aprobarla antes de fusionarla.**
-> Este archivo es el texto exacto que se pegará AL FINAL de `AGENTS.md` (lápiz ✏️ → Ctrl+A no: solo AGREGAR al final → Commit changes → esperar el verde M-26). Si apruebas el anexo tal cual, solo copias desde la línea que dice "INICIO DEL ANEXO" hasta "FIN DEL ANEXO".
-
----
-
-INICIO DEL ANEXO
 
 ## Anexo aprobado — Protocolo de Continuidad v3 (28/10/2026)
 
 El estado del proyecto y la arquitectura viven en el repo:
 
-- [`ESTADO.md`](continuidad/ESTADO.md) — estado vigente: módulos verificados, workstreams, siguiente paso, checklist de arranque. Único archivo volátil.
-- [`ARQUITECTURA.md`](continuidad/ARQUITECTURA.md) — tablas, RPCs verificadas, manifiesto de archivos, reglas SQL. Solo cambia si cambia el esquema.
-- [`DECISIONES.md`](continuidad/DECISIONES.md) — decisiones y por qués. Append-only.
+- [`ESTADO.md`](ESTADO.md) — estado vigente: módulos verificados, workstreams, siguiente paso, checklist de arranque. Único archivo volátil.
+- [`ARQUITECTURA.md`](ARQUITECTURA.md) — tablas, RPCs verificadas, manifiesto de archivos, reglas SQL. Solo cambia si cambia el esquema.
+- [`DECISIONES.md`](DECISIONES.md) — decisiones y por qués. Append-only.
 - Las tareas ejecutables siguen en [`tareas/`](tareas/README.md).
 
 ### Modo chat gratuito (sin agente, sin acceso al repo) — EL MODO PRINCIPAL
@@ -47,7 +39,7 @@ Este proyecto se trabaja con IA pública gratuita, donde el usuario pega los arc
 - Al arrancar, el usuario pega en este orden: (1) este `AGENTS.md` completo, (2) `ESTADO.md` completo, y (3) si la sesión toca RPC/esquema o una tarea de `tareas/`, también ese archivo. El asistente de chat gratuito NO puede abrir enlaces ni el repo: NUNCA asumas que puedes leer URLs ni archivos por tu cuenta.
 - El asistente NUNCA inventa el contenido de un archivo: si necesita editar un HTML/JS/MD, pide al usuario que lo pegue completo (o que lo copie del raw de GitHub). Antes de reescribir cualquier RPC, el usuario ejecuta el `pg_get_functiondef` en el SQL Editor y pega el resultado.
 - La verificación de arranque que "el agente" hace solo, en modo gratuito la hace el usuario mirando GitHub en el navegador y reportando: lista de archivos del repo, últimos commits, estados de `tareas/` y última ejecución del keep-alive en Actions.
-- Al cerrar ("CERRAR SESIÓN" o "handoff"), el asistente entrega LISTO PARA COPIAR: el `ESTADO.md` completo regenerado (versión +1), las líneas nuevas de `DECISIONES.md` (si las hubo), los cambios de `estado:` de las tareas tocadas, y la lista exacta de archivos que el usuario debe actualizar en GitHub (lápiz ✏️ → Ctrl+A → Ctrl+V → Commit changes → esperar el 🟢 de Actions antes de probar, M-26).
+- Al cerrar ("CERRAR SESIÓN" o "handoff"), el asistente entrega LISTO PARA COPIAR: el `ESTADO.md` completo regenerado (versión +1), las líneas nuevas de `DECISIONES.md` (si las hubo), los cambios de `estado:` de las tareas tocadas, y la lista exacta de archivos que el usuario debe actualizar en GitHub (lápiz → Ctrl+A → Ctrl+V → Commit changes → esperar el verde de Actions antes de probar, M-26).
 - Durante la sesión el asistente mantiene el contexto en la conversación (su "caché") y lo vuelca a los archivos SOLO en el cierre. Si nota que la sesión lleva mucho rato o el contexto pesa, propone consolidar y cerrar (regla heredada de la v2.4).
 
 ### Arranque de sesión
@@ -75,18 +67,8 @@ Cuando un asistente tenga acceso de escritura a este repo (token entregado por e
 3. Abre un Pull Request hacia `main`.
 4. SOLO el usuario revisa y fusiona el PR. El agente jamás fusiona ni borra ramas sin orden explícita del usuario.
 
-Las subidas manuales del usuario (lápiz ✏️ en GitHub) pueden seguir yendo directo a `main`, como siempre.
+Las subidas manuales del usuario (lápiz en GitHub) pueden seguir yendo directo a `main`, como siempre.
 
 ### Jerarquía de fuentes
 
-Si hay contradicción: `AGENTS.md` > `ESTADO.md` > repo > memoria del asistente. Las reglas SQL y de seguridad de la Parte "Reglas" de arriba siguen vigentes: el usuario ejecuta el SQL y los commits; ningún asistente pide ni maneja secretos.
-
-FIN DEL ANEXO
-
----
-
-### Qué cambiará en los archivos locales (tu PC)
-
-- `moduloAcceso\IA_Asist_Continuidad\` queda como archivo del método antiguo: los 4 txt v2.4 ya están en su `historico\` y no se actualizan más.
-- Los nuevos documentos viven en `moduloAcceso\continuidad\` (copia local para pegar en chats gratuitos) y en la RAÍZ del repo (fuente de verdad; se decidió el 28/10 dejarlos sin carpeta).
-- Para chats gratuitos (DeepSeek web sin acceso al repo): pega `AGENTS.md` (con el anexo ya fusionado) + `ESTADO.md`, y añade `ARQUITECTURA.md` solo si la sesión toca RPC/esquema.
+Si hay contradicción: `AGENTS.md` > `ESTADO.md` > repo > memoria del asistente. Las reglas SQL y de seguridad de la sección "Reglas" de arriba siguen vigentes: el usuario ejecuta el SQL y los commits; ningún asistente pide ni maneja secretos.
