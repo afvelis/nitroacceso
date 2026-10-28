@@ -1,7 +1,7 @@
-# ARQUITECTURA.md — Nitrotoon Control de acceso
+# ARQUITECTURA.md — NitroSystem
 
 > Fuente técnica de verdad del sistema v3. Solo cambia cuando cambia el esquema o el manifiesto.
-> **Verificada contra la base y el repo:** Consulta A (funciones) 27/10/2026 · Consulta B (tablas) 27-28/10/2026 · árbol del repo 27/10/2026.
+> **Verificada contra la base y el repo:** Consulta A (funciones) 27/10/2026 · Consulta B (tablas) 27-28/10/2026 · árbol del repo 28/10/2026.
 > Si este documento contradice al repo o a la base, mandan el repo y la base — y se corrige este documento al cierre de la sesión.
 > Regla permanente: antes de reescribir cualquier RPC, leer su definición vigente con `SELECT pg_get_functiondef(oid) FROM pg_proc WHERE proname = '<nombre>';`
 
@@ -9,7 +9,7 @@
 
 ## 1 · Identidad del proyecto
 
-- Sistema web de control de acceso para un evento de 2 días llamado comercialmente **"Nitrotoon"**. Encabezado exacto de todas las páginas: "Nitrotoon Control de acceso" (logo 🚀).
+- Sistema web de control de acceso para un evento de 2 días llamado comercialmente **"NitroSystem"** (antes "Nitrotoon"; renombrado 28/10/2026). Encabezado exacto de todas las páginas: "NitroSystem" (logo 🚀).
 - 100% gratis y sin fricción: sin instalaciones, todo vía web — GitHub Pages + Supabase (Free).
 - GitHub: repo **afvelis/nitroacceso** (público). Pages activado (main, /root). Sitio: https://afvelis.github.io/nitroacceso/
 - Supabase: organización "nitro", proyecto **nitrotalentos**. URL: https://exrbwctegkzxurzwihvh.supabase.co (SIN /rest/v1/ al final). Clave publishable en config.js línea 4.
@@ -113,7 +113,7 @@ Verificadas el 27-28/10/2026 con la Consulta B (§8). Las 16 coinciden con lo do
 - `f_admin_ver_concursos_aliado(p_token, p_asignacion_id uuid)` → jsonb {asignacion, concursos}
 - `f_admin_crear_asignacion(p_token, p_aliado_id uuid, p_pool_tipo, p_cupones_unico, p_cupones_dia1, p_cupones_dia2)` → {ok, asignacion_id, codigo_link}
 - `f_admin_listar_aliados(p_token)` → array con aliados + asignaciones + stats (incluye cedula, nota_duplicado, ampliaciones, disponible_unico/dia1/dia2)
-- `f_admin_ampliar_cupones(p_token, p_asignacion_id uuid, p_cupones_unico, p_cupones_dia1, p_cupones_dia2, p_motivo, p_motivo_detalle)` → {ok, cupones_antes, cupones_despues} — usada por el modal del 22/10
+- `f_admin_ampliar_cupones(p_token, p_asignacion_id uuid, p_cupones_unico, p_cupones_dia1, p_cupones_dia2, p_motivo, p_motivo_detalle)` → {ok, cupones_antes, cupones_despues} — usada por el modal del 22/10; **semántica de SUMA desde el 28/10/2026** (antes reemplazaba el total y permitía reducir pools: BUG-1 corregido, ver DECISIONES.md)
 - `f_admin_anular_asignacion(p_token, p_asignacion_id uuid, p_razon)` → {ok, premios_anulados}
 - `f_admin_anular_aliado(p_token, p_aliado_id uuid, p_razon)` → {ok, asignaciones_anuladas, premios_anulados}
 
@@ -146,7 +146,7 @@ Verificadas el 27-28/10/2026 con la Consulta B (§8). Las 16 coinciden con lo do
 
 | # | Archivo | Último cambio | Nota |
 | --- | --- | --- | --- |
-| 1 | config.js | sesión 4 | NOMBRE_EVENTO = "NITROACCESO" (pendiente opcional: unificar a "Nitrotoon") |
+| 1 | config.js | sesión 4 | NOMBRE_EVENTO = "NITROSYSTEM" (28/10/2026; constante sin uso funcional) |
 | 2 | index.html | sesión 4 | Login principal, sin maxlength a propósito |
 | 3 | dashboard.html | 06/10/2026 (v2.4) | Pastilla "🤝 Aliados" + M-31; único "Salir"; tarjetas NO clicables (pendiente) |
 | 4 | admin.html | 04/10/2026 (v2.2) | Sin cortesías ni estadística; secciones: edicion, crear-coordinador, coordinadores, historial |
@@ -156,9 +156,9 @@ Verificadas el 27-28/10/2026 con la Consulta B (§8). Las 16 coinciden con lo do
 | 8 | cortesia.html | 26/09/2026 (v2.1) | Página pública; soporte premiación con pantalla 🏆 |
 | 9 | puerta.html | 02/10/2026 (v2.2) | QR de 3 capas (BarcodeDetector → jsQR CDN → manual) |
 | 10 | estadisticas.html | 04/10/2026 (v2.2) | Solo "← Volver al dashboard"; nunca cierra sesión |
-| 11 | cortesias.html | 06/10/2026 (v2.4) | Panel admin de cortesías; falta pastilla "Gestionar aliados" (pendiente) |
+| 11 | cortesias.html | **28/10/2026** | Panel admin de cortesías; pastilla "🤝 Gestionar aliados" añadida (28/10) |
 | 12 | aliado.html | 05/10/2026 (v2.3) | Módulo público del aliado; entra con ?a=ASI-xxxxxxxx |
-| 13 | aliados.html | **22/10/2026** | Panel admin: listado, crear con duplicados, compartir, Ver concursos y **➕ Ampliar cupones + desglose base+ampliado** (commits 95a6982, 2eb4652). Faltan: Anular asignación, Anular aliado, Agregar asignación |
+| 13 | aliados.html | **28/10/2026** | Panel admin COMPLETO: listado, crear con duplicados, compartir, Ver concursos, ➕ Ampliar cupones (semántica de suma), 🚫 Anular asignación, 🚫 Dar de baja al aliado, ➕ Agregar asignación |
 | 14 | aliados-concursos.html | 06/10/2026 (v2.4) | Historial de concursos por asignación; entra con ?asig=UUID |
 | 15 | acceso-denegado.html | 06/10/2026 (v2.4) | Pantalla cerrada; sin links a login ni dashboard |
 
