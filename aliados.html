@@ -398,6 +398,16 @@ function renderAliado(a){
     '<p class="asig-linea">Creado: ' + fechaBonita(a.creada_at) + '</p>';
   div.appendChild(info);
 
+  if (a.activo){
+    var filaAdmin = document.createElement('div');
+    filaAdmin.className = 'fila';
+    filaAdmin.style.marginTop = '8px';
+    filaAdmin.appendChild(botonMini('🚫 Anular aliado completo', 'btn-rojo', function(){
+      abrirModalAnularAliado(a);
+    }));
+    div.appendChild(filaAdmin);
+  }
+
   var asigs = a.asignaciones || [];
   if (!asigs.length){
     var p = document.createElement('p');
@@ -729,6 +739,104 @@ function abrirModalAnularAsignacion(a, asi){
   });
 }
 
+// ─────────────────────────────────────────────────────────────
+// MODAL: Anular aliado completo (Paso 2 del brief; RPC f_admin_anular_aliado)
+// ─────────────────────────────────────────────────────────────
+function abrirModalAnularAliado(a){
+  return new Promise(function(resolve){
+    var fondo = document.createElement('div');
+    fondo.className = 'modal-fondo';
+    var caja = document.createElement('div');
+    caja.className = 'modal-caja modal-caja-grande';
+
+    var activas = (a.asignaciones || []).filter(function(x){ return x.estado === 'activa'; }).length;
+
+    caja.innerHTML =
+      '<h3 class="modal-titulo" style="color:var(--rojo)">🚫 Anular aliado completo</h3>' +
+      '<p class="asig-linea">Aliado: <b>' + esc(a.nombre_organizacion) + '</b> · Responsable: <b>' + esc(a.responsable || '-') + '</b></p>' +
+      '<div class="aviso-rojo-box">' +
+        '<b>⚠️ Esta acción no se puede deshacer desde esta pantalla.</b><br>' +
+        'Quedará anulado el aliado y <b>todas sus asignaciones activas (' + activas + ')</b>, con sus premios. ' +
+        'La <b>razón que escribas la verán el aliado y los premiados</b> en sus links (M-04).' +
+      '</div>' +
+      '<label style="margin-top:14px">Razón de anulación *' +
+        '<textarea id="aaRazon" rows="3" placeholder="Ej.: El aliado solicitó retirarse del programa" style="width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1px solid var(--borde);background:#0d1526;color:var(--texto);font-size:17px;font-family:inherit;resize:vertical;"></textarea>' +
+      '</label>' +
+      '<div id="aaMsg" class="suave" style="min-height:22px;margin-top:8px"></div>' +
+      '<div class="modal-botones"></div>';
+
+    var contB = caja.querySelector('.modal-botones');
+
+    var bCancel = document.createElement('button');
+    bCancel.className = 'btn btn-gris';
+    bCancel.textContent = 'Cancelar';
+    bCancel.onclick = function(){
+      if (fondo.parentNode) fondo.parentNode.removeChild(fondo);
+      resolve(null);
+    };
+    contB.appendChild(bCancel);
+
+    var bOk = document.createElement('button');
+    bOk.className = 'btn btn-rojo';
+    bOk.textContent = 'Anular aliado completo';
+    bOk.onclick = async function(){
+      var msg = caja.querySelector('#aaMsg');
+      var razon = caja.querySelector('#aaRazon').value.trim();
+
+      function err(m){ msg.textContent = m; msg.style.color = 'var(--aviso)'; }
+
+      if (!razon || razon.length < 3){ err('La razón es obligatoria (mínimo 3 caracteres).'); return; }
+
+      bOk.disabled = true;
+      bOk.textContent = 'Anulando...';
+      msg.textContent = '';
+
+      try {
+        var r = await llamar('f_admin_anular_aliado', {
+          p_token: ses.token,
+          p_aliado_id: a.id,
+          p_razon: razon
+        });
+
+        if (!r){
+          err(msgErrorAliado('ERR_SESION'));
+          bOk.disabled = false;
+          bOk.textContent = 'Anular aliado completo';
+          return;
+        }
+        if (r.error){
+          err(msgErrorAliado(r.error));
+          bOk.disabled = false;
+          bOk.textContent = 'Anular aliado completo';
+          return;
+        }
+
+        function cnt(v){
+          return (typeof v === 'number') ? v : (Array.isArray(v) ? v.length : (v != null ? String(v) : '0'));
+        }
+
+        if (fondo.parentNode) fondo.parentNode.removeChild(fondo);
+        resolve(r);
+
+        await modalAlert('✅ Aliado anulado',
+          'El aliado <b>' + esc(a.nombre_organizacion || '') + '</b> quedó anulado.<br><br>' +
+          'Asignaciones anuladas: <b>' + cnt(r.asignaciones_anuladas) + '</b><br>' +
+          'Premios anulados: <b>' + cnt(r.premios_anulados) + '</b>'
+        );
+        await cargarAliados();
+
+      } catch (e){
+        err('Fallo: ' + e.message);
+        bOk.disabled = false;
+        bOk.textContent = 'Anular aliado completo';
+      }
+    };
+    contB.appendChild(bOk);
+
+    fondo.appendChild(caja);
+    document.body.appendChild(fondo);
+  });
+}
 // ─────────────────────────────────────────────────────────────
 // MODAL: Nuevo aliado
 // ─────────────────────────────────────────────────────────────
