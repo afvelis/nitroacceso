@@ -402,6 +402,9 @@ function renderAliado(a){
     var filaAdmin = document.createElement('div');
     filaAdmin.className = 'fila';
     filaAdmin.style.marginTop = '8px';
+    filaAdmin.appendChild(botonMini('➕ Agregar asignación', 'btn-verde', function(){
+      abrirModalAgregarAsignacion(a);
+    }));
     filaAdmin.appendChild(botonMini('🚫 Dar de baja al aliado', 'btn-rojo', function(){
       abrirModalAnularAliado(a);
     }));
@@ -836,6 +839,127 @@ function abrirModalAnularAliado(a){
         err('Fallo: ' + e.message);
         bOk.disabled = false;
         bOk.textContent = 'Dar de baja al aliado';
+      }
+    };
+    contB.appendChild(bOk);
+
+    fondo.appendChild(caja);
+    document.body.appendChild(fondo);
+  });
+}
+// ─────────────────────────────────────────────────────────────
+// MODAL: Agregar asignación (Paso 3 del brief; RPC f_admin_crear_asignacion)
+// ─────────────────────────────────────────────────────────────
+function abrirModalAgregarAsignacion(a){
+  return new Promise(function(resolve){
+    var fondo = document.createElement('div');
+    fondo.className = 'modal-fondo';
+    var caja = document.createElement('div');
+    caja.className = 'modal-caja modal-caja-grande';
+    caja.innerHTML =
+      '<h3 class="modal-titulo">➕ Agregar asignación</h3>' +
+      '<p class="asig-linea">Aliado: <b>' + esc(a.nombre_organizacion) + '</b> · Responsable: <b>' + esc(a.responsable || '-') + '</b></p>' +
+      '<div class="nota-info">' +
+        'Se creará una <b>asignación nueva</b> con su propio código ASI- y su propio link. ' +
+        'Sus cupones son independientes de las asignaciones anteriores del aliado.' +
+      '</div>' +
+      '<div class="modal-seccion">' +
+        '<h4>Pool de cupones</h4>' +
+        '<div class="grid-2col">' +
+          '<label>Tipo de pool *' +
+            '<select id="gPool">' +
+              '<option value="unico">Único (todos los cupones en un solo pool)</option>' +
+              '<option value="por_dia">Por día (Día 1 y Día 2)</option>' +
+            '</select>' +
+          '</label>' +
+          '<label>Cupones totales *<input id="gCupones" type="number" min="1" step="1" placeholder="Ej.: 10"></label>' +
+        '</div>' +
+        '<p class="nota-form">💡 Por ahora solo está habilitado el pool <b>Único</b>. El pool por día se habilitará en una próxima etapa.</p>' +
+      '</div>' +
+      '<div id="gMsg" class="suave" style="min-height:22px"></div>' +
+      '<div class="modal-botones"></div>';
+
+    var selPool = caja.querySelector('#gPool');
+    selPool.onchange = async function(){
+      if (selPool.value === 'por_dia'){
+        await modalAlert('Disponible próximamente',
+          'El pool <b>por día</b> se habilitará en una próxima etapa.<br><br>Por ahora se trabaja solo con pool <b>Único</b>.');
+        selPool.value = 'unico';
+      }
+    };
+
+    var contB = caja.querySelector('.modal-botones');
+
+    var bCancel = document.createElement('button');
+    bCancel.className = 'btn btn-gris';
+    bCancel.textContent = 'Cancelar';
+    bCancel.onclick = function(){
+      if (fondo.parentNode) fondo.parentNode.removeChild(fondo);
+      resolve(null);
+    };
+    contB.appendChild(bCancel);
+
+    var bOk = document.createElement('button');
+    bOk.className = 'btn btn-verde';
+    bOk.textContent = 'Crear asignación';
+    bOk.onclick = async function(){
+      var msg = caja.querySelector('#gMsg');
+      var cup = parseInt(caja.querySelector('#gCupones').value, 10);
+
+      function err(m){ msg.textContent = m; msg.style.color = 'var(--aviso)'; }
+
+      if (!cup || cup < 1){ err('Los cupones deben ser 1 o más.'); return; }
+
+      bOk.disabled = true;
+      bOk.textContent = 'Creando...';
+      msg.textContent = '';
+
+      try {
+        var r = await llamar('f_admin_crear_asignacion', {
+          p_token: ses.token,
+          p_aliado_id: a.id,
+          p_pool_tipo: 'unico',
+          p_cupones_unico: cup,
+          p_cupones_dia1: null,
+          p_cupones_dia2: null
+        });
+
+        if (!r){
+          err(msgErrorAliado('ERR_SESION'));
+          bOk.disabled = false;
+          bOk.textContent = 'Crear asignación';
+          return;
+        }
+        if (r.error){
+          err(msgErrorAliado(r.error));
+          bOk.disabled = false;
+          bOk.textContent = 'Crear asignación';
+          return;
+        }
+
+        if (fondo.parentNode) fondo.parentNode.removeChild(fondo);
+        resolve(r);
+
+        var codigo = r.codigo_link || '';
+        var link = BASE + 'aliado.html?a=' + codigo;
+
+        await modalCompartirLink({
+          titulo: '✅ Asignación creada',
+          subtitulo: '<b>' + esc(a.nombre_organizacion || '') + '</b>',
+          codigo: codigo,
+          link: link,
+          ayuda: 'Este link es la llave de esta asignación nueva. Compártelo con el aliado.',
+          textoWA: 'Hola ' + (a.responsable || '') + ', aquí está el link de tu nueva asignación de premios para ' + (a.nombre_organizacion || '') + ': ' + link,
+          asuntoMail: 'Nueva asignación de aliados - ' + (a.nombre_organizacion || ''),
+          cuerpoMail: 'Hola ' + (a.responsable || '') + ',\n\nAquí está el link de tu nueva asignación de premios:\n' + link + '\n\nCon este link puedes crear concursos y asignar ganadores.'
+        });
+
+        await cargarAliados();
+
+      } catch (e){
+        err('Fallo: ' + e.message);
+        bOk.disabled = false;
+        bOk.textContent = 'Crear asignación';
       }
     };
     contB.appendChild(bOk);
