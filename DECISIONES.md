@@ -87,5 +87,6 @@
 
 ## 28/10/2026 · Migración al Sistema de Continuidad v3
 
-- 28/10 · Se reemplaza el método "4 txt por versión" por AGENTS.md + continuidad/ESTADO.md + continuidad/ARQUITECTURA.md + continuidad/DECISIONES.md + tareas/, todo versionado en el repo — el traspaso desincronizado del repo causó la pérdida de contexto del 22/10; los docs dentro del repo eliminan esa deriva estructuralmente y sirven igual para chats gratuitos (pegar AGENTS.md + ESTADO.md) que para agentes (leer el repo).
+- 28/10 · Se reemplaza el método "4 txt por versión" por AGENTS.md + ESTADO.md + ARQUITECTURA.md + DECISIONES.md + tareas/, todo versionado en el repo — el traspaso desincronizado del repo causó la pérdida de contexto del 22/10; los docs dentro del repo eliminan esa deriva estructuralmente y sirven igual para chats gratuitos (pegar AGENTS.md + ESTADO.md) que para agentes (leer el repo).
+- 28/10 · Los 3 documentos de continuidad viven en la RAÍZ del repo (sin carpeta) — el usuario los subió así y es más simple para su flujo manual en GitHub web; todas las referencias del sistema apuntan a la raíz.
 - 28/10 · Los 4 txt de la v2.4 pasan a historico/ y dejan de evolucionar — el ESTADO.md v1 hereda todo su contenido vigente (pendientes, reglas, decisiones).

@@ -1,8 +1,8 @@
 # ESTADO.md — Nitrotoon Control de acceso
 
-Versión del archivo: **1** · Última actualización: **28/10/2026** · Generado en la sesión de migración v2.4→v3 (27-28/10/2026)
+Versión del archivo: **2** · Última actualización: **28/10/2026** · Generado en la sesión de migración v2.4→v3 (27-28/10/2026)
 
-> Este archivo SOLO lleva el ESTADO del proyecto. Las reglas de trabajo viven en `AGENTS.md` (+ su anexo de continuidad v3). La arquitectura técnica vive en `continuidad/ARQUITECTURA.md`. Los "por qués" viven en `continuidad/DECISIONES.md`. Las tareas ejecutables viven en `tareas/`. Si este archivo contradice a `AGENTS.md`, manda `AGENTS.md`. Si contradice al repo, manda el repo.
+> Este archivo SOLO lleva el ESTADO del proyecto. Las reglas de trabajo viven en `AGENTS.md` (+ su anexo de continuidad v3). La arquitectura técnica vive en `ARQUITECTURA.md`. Los "por qués" viven en `DECISIONES.md`. Las tareas ejecutables viven en `tareas/`. Si este archivo contradice a `AGENTS.md`, manda `AGENTS.md`. Si contradice al repo, manda el repo.
 
 ---
 
@@ -64,13 +64,13 @@ Estas 3 quedaron documentadas en ARQUITECTURA.md (§4) con etiqueta `[VERIFICAR]
 
 ## 4 · Siguiente paso inmediato
 
-1. Usuario sube al repo la carpeta `continuidad/` (ESTADO.md, DECISIONES.md, ARQUITECTURA.md): Add file → Upload files → commit → esperar el 🟢 de Actions (M-26).
-2. Usuario lee `ANEXO-AGENTS-protocolo-v3.md` (incluye el modo chat gratuito y la regla de ramas para agentes) y, si lo aprueba, pega su bloque al final de `AGENTS.md` → commit → esperar el 🟢.
-3. Elegir y arrancar el workstream del día: **A** (terminar brief de aliados: anular asignación, anular aliado, agregar asignación, pastilla en cortesias.html) o **B** (backlog de seguridad P0-01 XSS).
+1. ✅ HECHO 28/10: los 3 documentos están en la RAÍZ del repo; `AGENTS.md` quedó LIMPIO con el anexo v3 consolidado (commit "docs: AGENTS.md limpio, anexo v3 consolidado", verificado por el asistente); la guía del método está subida (GUIA-Metodo-Continuidad-v3.pdf).
+2. 🔲 PENDIENTE — sincronizar repo con las copias locales: re-subir desde `moduloAcceso\continuidad\` los 3 .md (ESTADO.md v2, DECISIONES.md, ARQUITECTURA.md) con el lápiz (Ctrl+A → Ctrl+V → commit → 🟢), porque el repo tiene las versiones previas con referencias viejas `continuidad/`. Después el asistente re-verifica y declara LISTO para entrar al proyecto.
+3. Con el método afinado: elegir workstream — **A** (terminar brief de aliados: anular asignación, anular aliado, agregar asignación, pastilla) o **B** (backlog P0-01 XSS) — cada paso con su PRUEBA de objetivo.
 
 ## 5 · Transición v2.4 → v3 (histórico)
 
 - Los 4 archivos `prompt-traspaso-nitrotoon-v2.4-*.txt` fueron movidos a `historico/` el 28/10/2026 y **dejan de evolucionar**.
 - Los prompts v2.0–v2.3 ya estaban en `historico/`.
-- El método "4 txt por versión" queda sustituido por: `AGENTS.md` (reglas) + `continuidad/ESTADO.md` (estado) + `continuidad/ARQUITECTURA.md` (técnica) + `continuidad/DECISIONES.md` (por qués) + `tareas/` (backlog). Todo versionado en el repo; los chats gratuitos pegan AGENTS.md + ESTADO.md; los agentes leen el repo directo.
+- El método "4 txt por versión" queda sustituido por: `AGENTS.md` (reglas) + `ESTADO.md` (estado) + `ARQUITECTURA.md` (técnica) + `DECISIONES.md` (por qués) + `tareas/` (backlog). Todo versionado en el repo; los chats gratuitos pegan AGENTS.md + ESTADO.md; los agentes leen el repo directo.
 - `texto-antes-inicio-obligatorio.txt` sigue sirviendo como frase de arranque; ahora debe referir a ESTADO.md en lugar de "los 4 archivos".

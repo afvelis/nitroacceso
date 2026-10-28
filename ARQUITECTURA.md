@@ -162,7 +162,7 @@ Verificadas el 27-28/10/2026 con la Consulta B (§8). Las 16 coinciden con lo do
 | 14 | aliados-concursos.html | 06/10/2026 (v2.4) | Historial de concursos por asignación; entra con ?asig=UUID |
 | 15 | acceso-denegado.html | 06/10/2026 (v2.4) | Pantalla cerrada; sin links a login ni dashboard |
 
-Otros contenidos del repo (no son HTML/JS en vivo): `AGENTS.md`, `tareas/` (backlog de seguridad), `.github/workflows/keep-supabase-alive.yml` (ping cada 3 días a f_cortesia_ver; si esa RPC desaparece, actualizar el curl), `README` (vacío), y desde la migración v3: `continuidad/` (ESTADO, ARQUITECTURA, DECISIONES).
+Otros contenidos del repo (no son HTML/JS en vivo): `AGENTS.md`, `tareas/` (backlog de seguridad), `.github/workflows/keep-supabase-alive.yml` (ping cada 3 días a f_cortesia_ver; si esa RPC desaparece, actualizar el curl), `README` (vacío), y desde la migración v3: `ESTADO.md`, `ARQUITECTURA.md` y `DECISIONES.md` en la RAÍZ del repo (decisión del 28/10: se dejaron en raíz, sin carpeta).
 
 No confundir: **cortesia** (singular, pública) vs **cortesias** (plural, admin) · **aliado** (singular, público) vs **aliados** (admin) vs **aliados-concursos** (admin).
 
