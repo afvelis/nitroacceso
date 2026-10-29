@@ -1,7 +1,7 @@
 # ARQUITECTURA.md — NitroSystem
 
 > Fuente técnica de verdad del sistema v3. Solo cambia cuando cambia el esquema o el manifiesto.
-> **Verificada contra la base y el repo:** Consulta A (funciones) 27/10/2026 · Consulta B (tablas) 27-28/10/2026 · árbol del repo 28/10/2026 · re-verificado 29/10/2026 (higiene documental).
+> **Verificada contra la base y el repo:** Consulta A (funciones) 27/10/2026 · Consulta B (tablas) 27-28/10/2026 · árbol del repo 28-29/10/2026 · **P0-02 completa 29/10/2026: Consultas D-I, cierre de permisos y DROPs** (ver §8 y `docs/seguridad-supabase.md`).
 > Si este documento contradice al repo o a la base, mandan el repo y la base — y se corrige este documento al cierre de la sesión.
 > Regla permanente: antes de reescribir cualquier RPC, leer su definición vigente con `SELECT pg_get_functiondef(oid) FROM pg_proc WHERE proname = '<nombre>';`
 
@@ -50,7 +50,7 @@ Verificadas el 27-28/10/2026 con la Consulta B (§8). Las 16 coinciden con lo do
 | aliado_concursos | id uuid pk, asignacion_id fk cascade, nombre not null, descripcion, fecha_concurso date (obligatoria, hoy o posterior), cupones_reservados int check >=1, estado (abierto\|cerrado), creada_at, cerrada_at |
 | aliado_ampliaciones | id uuid pk, asignacion_id fk cascade, cupones_antes int, cupones_despues int, motivo not null, motivo_detalle, creada_at |
 
-## 4 · Funciones RPC vigentes (verificadas 27/10 con la Consulta A: 79 filas = 78 funciones + 1 sobrecarga)
+## 4 · Funciones RPC vigentes (verificadas 27/10 con la Consulta A: 79 filas = 78 funciones + 1 sobrecarga; tras los DROPs del 29/10 quedan **76 funciones sin sobrecargas** + `rls_auto_enable` = 77 objetos)
 
 ### Internas
 - `f_sesion_rol(p_token uuid)` → text
@@ -87,10 +87,7 @@ Verificadas el 27-28/10/2026 con la Consulta B (§8). Las 16 coinciden con lo do
 - `f_coord_crear_talento(p_codigo_coord, p_nombre, p_dia1, p_dia2, p_correo)`
 - `f_coord_editar_stand(p_codigo_coord, p_codigo_link, p_nombre, p_numero, p_cupo, p_tipo)`
 - `f_coord_editar_talento(p_codigo_coord, p_codigo_link, p_nombre)`
-- `f_coord_crear_stand` — ⚠️ **[VERIFICAR] EXISTE CON DOS FIRMAS (sobrecarga)**:
-  - `(p_codigo_coord, p_numero, p_cupo, p_tipo, p_correo)`
-  - `(p_codigo_coord, p_nombre, p_numero, p_cupo, p_tipo, p_correo)`
-  Antes de tocar este módulo: verificar con pg_get_functiondef cuál usa coord.html y DROPpear la otra (riesgo PGRST202).
+- `f_coord_crear_stand(p_codigo_coord, p_numero, p_cupo, p_tipo, p_correo)` — ✓ resuelta 29/10/2026 (P0-02): esta firma de 5 argumentos es **la única viva** (la que usa coord.html; anon EXECUTE). La sobrecarga de 6 argumentos (con `p_nombre`) quedó solo-postgres tras el cierre de permisos y fue DROPeada — desapareció el riesgo PGRST202. Cuerpo capturado en docs/seguridad-supabase.md.
 
 ### Links externos
 - `f_link_talento_ver(p_codigo_link)` · `f_link_talento_guardar(p_codigo_link, p_dia, p_personas jsonb)` · `f_link_talento_copiar(p_codigo_link, p_dia_origen, p_dia_destino)`
@@ -102,7 +99,7 @@ Verificadas el 27-28/10/2026 con la Consulta B (§8). Las 16 coinciden con lo do
 - `f_puerta_vendedor_por_qr(p_token, p_codigo_qr)` · `f_puerta_vendedor_por_cedula(p_token, p_cedula)` · `f_puerta_marcar_vendedor(p_token, p_vendedor_id uuid, p_dia, p_estado)`
 - `f_puerta_cortesia_lista(p_token, p_codigo_corto)` · `f_puerta_cortesia_individual(p_token, p_codigo_qr)` · `f_puerta_marcar_cortesia(p_token, p_persona_id uuid, p_dia, p_estado)`
 - `f_puerta_premiacion_por_qr(p_token, p_codigo_qr)` · `f_puerta_canjear_premiacion(p_token, p_codigo_qr, p_cupones_usados integer)`
-- `f_puerta_activar_dia2(p_token uuid)` — ⚠️ **[VERIFICAR]** existe en base, no estaba en el traspaso v2.4; probablemente versión antigua de `f_puerta_cerrar_dia_y_activar_siguiente`. No usarla sin verificar quién la llama.
+- ~~`f_puerta_activar_dia2(p_token uuid)`~~ — **DROPeada 29/10/2026 (P0-02)**: era la variante legacy de "activar día 2"; el flujo real usa `f_puerta_cerrar_dia_y_activar_siguiente`. Definición guardada en docs/seguridad-supabase.md para reversión.
 
 ### Pública
 - `f_cortesia_ver(p_codigo_link)` — devuelve razon_anulacion, aliado y origen cuando la cortesía está anulada; aliado + origen cuando está activa (ampliada v2.2). Es la RPC que usa el keep-alive.
@@ -124,10 +121,10 @@ Verificadas el 27-28/10/2026 con la Consulta B (§8). Las 16 coinciden con lo do
 - `f_aliado_eliminar_concurso(p_codigo_link, p_concurso_id uuid)`
 - `f_aliado_asignar_ganador(p_codigo_link, p_concurso_id uuid, p_nombre, p_apellido, p_cedula, p_correo, p_telefono, p_cupones_total, p_dia1, p_dia2)` → {ok, codigo_link, codigo_qr, cortesia_id}
 - `f_aliado_marcar_enviado(p_codigo_link, p_concurso_id uuid)` → {ok, enviado_at}
-- `f_aliado_crear_premio(...)` — **DEPRECADA** (sigue existiendo en base; no usar)
+- ~~`f_aliado_crear_premio(...)`~~ — **DROPeada 29/10/2026 (P0-02)**: ya era un coto que solo devolvía `{"error":"ERR_DEPRECADO_USAR_CONCURSOS"}`; el módulo usa concursos.
 
 ### Utilidad
-- `rls_auto_enable()` — ⚠️ **[VERIFICAR]** sin parámetros, no documentada antes del 27/10; probable helper del backlog de seguridad. Leer su definición antes de decidir si se conserva.
+- `rls_auto_enable()` — ✓ resuelta 29/10/2026 (P0-02): es el handler del event trigger **`ensure_rls`** (`ddl_command_end`, activo) que activa RLS automáticamente en toda tabla nueva de `public`. **Se conserva a propósito** como red de seguridad; solo-postgres, `search_path=pg_catalog`.
 
 ## 5 · Convenciones de códigos (con guion)
 
@@ -162,7 +159,7 @@ Verificadas el 27-28/10/2026 con la Consulta B (§8). Las 16 coinciden con lo do
 | 14 | aliados-concursos.html | 06/10/2026 (v2.4) | Historial de concursos por asignación; entra con ?asig=UUID |
 | 15 | acceso-denegado.html | 06/10/2026 (v2.4) | Pantalla cerrada; sin links a login ni dashboard |
 
-Otros contenidos del repo (no son HTML/JS en vivo): `AGENTS.md`, `tareas/` (backlog de seguridad P0/P1/P2 de la revisión del 27/10 + F-1…F-5 de la prueba en vivo y M-33…M-36 ideas de producto, migradas a tareas el 29/10/2026), `.github/workflows/keep-supabase-alive.yml` (ping cada 3 días a f_cortesia_ver; si esa RPC desaparece, actualizar el curl), `GUIA-Metodo-Continuidad-v3.pdf` (guía del método de continuidad v3, subida en el cierre de la Sesión 13, 28/10/2026), y desde la migración v3: `ESTADO.md`, `ARQUITECTURA.md` y `DECISIONES.md` en la RAÍZ del repo (decisión del 28/10: se dejaron en raíz, sin carpeta). **No existe `README` en la raíz del repo**: el manifiesto lo listaba por error desde la migración v3; corregido el 29/10/2026.
+Otros contenidos del repo (no son HTML/JS en vivo): `AGENTS.md`, `tareas/` (backlog de seguridad P0/P1/P2 de la revisión del 27/10 + F-1…F-5 de la prueba en vivo y M-33…M-36 ideas de producto, migradas a tareas el 29/10/2026), `.github/workflows/keep-supabase-alive.yml` (ping cada 3 días a f_cortesia_ver; si esa RPC desaparece, actualizar el curl), `GUIA-Metodo-Continuidad-v3.pdf` (guía del método de continuidad v3, subida en el cierre de la Sesión 13, 28/10/2026), y desde la migración v3: `ESTADO.md`, `ARQUITECTURA.md` y `DECISIONES.md` en la RAÍZ del repo (decisión del 28/10: se dejaron en raíz, sin carpeta). **No existe `README` en la raíz del repo**: el manifiesto lo listaba por error desde la migración v3; corregido el 29/10/2026. **`docs/`** (carpeta creada el 29/10/2026): contiene `docs/seguridad-supabase.md`, la auditoría de backend de P0-02 (v4, congelada): evidencia de RLS, grants, ACLs, search_path, DROPs, matriz de autorización y SQL exacto del cierre.
 
 No confundir: **cortesia** (singular, pública) vs **cortesias** (plural, admin) · **aliado** (singular, público) vs **aliados** (admin) vs **aliados-concursos** (admin).
 
@@ -189,4 +186,6 @@ ORDER BY table_name, ordinal_position;
 SELECT pg_get_functiondef(oid) FROM pg_proc WHERE proname = '<nombre>';
 ```
 
-Resultados vigentes al 27-28/10/2026: A y B completos, coinciden con las secciones 3 y 4 de este documento. La Consulta A arrojó 79 filas (78 funciones + la sobrecarga de f_coord_crear_stand).
+Resultados vigentes: A y B (27-28/10/2026) coincidían con §3 y §4. La Consulta A arrojó 79 filas (78 funciones + la sobrecarga de f_coord_crear_stand).
+
+**Resultados del 29/10/2026 (P0-02, Sesión 14 — evidencia completa en `docs/seguridad-supabase.md` v4):** la base quedó con **77 objetos** (76 funciones + `rls_auto_enable`): las 16 tablas con **0 privilegios** para `anon`/`authenticated` (solo acceso vía RPC), ninguna función con EXECUTE de PUBLIC (4 normalizadas a anon), `search_path` protegido en todas las SECURITY DEFINER, y 3 objetos muertos eliminados. Nuevas consultas registradas: **D** (firmas+ACL de todo el esquema public), **E** (search_path de las SECURITY DEFINER), **F** (`pg_get_functiondef` de candidatos a DROP — regla: siempre antes de tocar), **G** (event triggers), **H** (matriz token/sesión por función), **I** (rol exigido por función). Matriz de autorización: `f_admin_*` → rol admin · `f_puerta_*` → rol puerta · `f_coord_*` → codigo_coord · `f_link_*`/`f_aliado_*`/`f_cortesia_ver` → codigo_link · internas solo-postgres. Prueba de rechazo con token inventado: null (falla cerrada). Traslados: hash/expiración de tokens → P0-03; staging y prueba con token real de puerta → P1-04.

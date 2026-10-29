@@ -79,7 +79,7 @@ Acuerdo permanente del usuario, construido sesión tras sesión. Vale para cualq
 
 ### Cómo se trabaja (el ritmo)
 
-1. **UNA instrucción a la vez.** Nunca un "testamento" de pasos juntos. No se manda nada nuevo hasta que el paso actual esté hecho y verificado.
+1. **UNA instrucción a la vez.** Nunca un "testamento" de pasos juntos. No se manda nada nuevo hasta que el paso actual esté hecho y verificado. **Granularidad del usuario (29/10/2026):** ni testamentos ni micro-pasos clic por clic — el usuario ya sabe operar GitHub y SQL. La instrucción correcta es: "sube por Upload este archivo" o "este lote", SIEMPRE con la ubicación exacta del archivo/carpeta en disco y el destino exacto en el repo; después el asistente verifica por su cuenta que quedó bien. Si el usuario pide más detalle, se da.
 2. **Cada paso lleva su PRUEBA DEL OBJETIVO, dato a dato:** todos los campos con valores exactos (si es formulario, la tabla completa; si es SQL, el texto completo; si es web, en qué página y qué botón), dónde se ejecuta y QUÉ DEBE VER el usuario en cada punto. No asumir nada.
 3. **El asistente verifica antes de avanzar.** Cuando el usuario dice "subido" o "hecho", el asistente comprueba por sí mismo (blob sha del repo + Actions en verde, o lo que el usuario pegue) y solo entonces dice "correcto" y da el paso siguiente. El reporte del usuario dispara la verificación; no la sustituye.
 4. **Archivos SIEMPRE finales y completos**, listos para sustituir con Ctrl+A → Ctrl+V (o Upload files desde disco). Nunca parches por fragmentos ni instrucciones de edición parcial: un error del usuario aplicando fragmentos puede dañar la trayectoria del proyecto (registrado también en DECISIONES.md, 28/10/2026).
