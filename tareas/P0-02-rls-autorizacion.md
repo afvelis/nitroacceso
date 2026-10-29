@@ -2,7 +2,7 @@
 id: "P0-02"
 titulo: "Verificar y cerrar RLS, grants y autorización por rol"
 prioridad: "P0"
-estado: "pendiente"
+estado: "en_progreso"
 area: "seguridad"
 depende_de: []
 archivos:
@@ -75,4 +75,4 @@ Debe devolver error o `[]`, nunca datos personales. Repetir con `sesiones`, `ven
 
 ## Notas de implementación
 
-> Pendiente.
+> En progreso desde el 29/10/2026 (Sesión 14): fase 1 de auditoría — el usuario ejecuta las Consultas de diagnóstico (RLS, grants, proacl) y pega los resultados; nada se cambia todavía.

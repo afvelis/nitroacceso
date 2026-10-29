@@ -57,7 +57,7 @@ Usa [PLANTILLA.md](PLANTILLA.md) para crear tareas nuevas. No renombres los IDs 
 | ID | Tarea | Prioridad | Estado | Depende de |
 |---|---|---|---|---|
 | [P0-01](P0-01-xss-escape.md) | Eliminar el XSS almacenado y centralizar el escape | P0 | **hecho** (28/10/2026) | — |
-| [P0-02](P0-02-rls-autorizacion.md) | Verificar y cerrar RLS, grants y autorización por rol | P0 | pendiente | — |
+| [P0-02](P0-02-rls-autorizacion.md) | Verificar y cerrar RLS, grants y autorización por rol | P0 | **en_progreso** (29/10/2026) | — |
 | [P0-03](P0-03-login-sesiones.md) | Endurecer PIN, rate limit, tokens y bloqueo de sesión | P0 | pendiente | — |
 | [P0-04](P0-04-qr-csp-dependencias.md) | QR local, dependencias vendorizadas y CSP | P0 | pendiente | — |
 | [P0-05](P0-05-backups-limpieza.md) | Backups, exportación y limpieza segura | P0 | pendiente | — |
