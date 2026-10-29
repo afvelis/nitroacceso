@@ -1,7 +1,7 @@
 # ARQUITECTURA.md — NitroSystem
 
 > Fuente técnica de verdad del sistema v3. Solo cambia cuando cambia el esquema o el manifiesto.
-> **Verificada contra la base y el repo:** Consulta A (funciones) 27/10/2026 · Consulta B (tablas) 27-28/10/2026 · árbol del repo 28/10/2026.
+> **Verificada contra la base y el repo:** Consulta A (funciones) 27/10/2026 · Consulta B (tablas) 27-28/10/2026 · árbol del repo 28/10/2026 · re-verificado 29/10/2026 (higiene documental).
 > Si este documento contradice al repo o a la base, mandan el repo y la base — y se corrige este documento al cierre de la sesión.
 > Regla permanente: antes de reescribir cualquier RPC, leer su definición vigente con `SELECT pg_get_functiondef(oid) FROM pg_proc WHERE proname = '<nombre>';`
 
@@ -142,7 +142,7 @@ Verificadas el 27-28/10/2026 con la Consulta B (§8). Las 16 coinciden con lo do
 - Tras cambios de esquema: `NOTIFY pgrst, 'reload schema';`
 - Comparar correos: `lower(trim(col))`. Cédulas y teléfonos: `regexp_replace(col, '\D', '', 'g')`.
 
-## 7 · Manifiesto de archivos publicados (verificado contra el árbol del repo el 27/10/2026)
+## 7 · Manifiesto de archivos publicados (verificado contra el árbol del repo el 29/10/2026; verificación anterior: 27/10/2026)
 
 | # | Archivo | Último cambio | Nota |
 | --- | --- | --- | --- |
@@ -162,7 +162,7 @@ Verificadas el 27-28/10/2026 con la Consulta B (§8). Las 16 coinciden con lo do
 | 14 | aliados-concursos.html | 06/10/2026 (v2.4) | Historial de concursos por asignación; entra con ?asig=UUID |
 | 15 | acceso-denegado.html | 06/10/2026 (v2.4) | Pantalla cerrada; sin links a login ni dashboard |
 
-Otros contenidos del repo (no son HTML/JS en vivo): `AGENTS.md`, `tareas/` (backlog de seguridad), `.github/workflows/keep-supabase-alive.yml` (ping cada 3 días a f_cortesia_ver; si esa RPC desaparece, actualizar el curl), `README` (vacío), y desde la migración v3: `ESTADO.md`, `ARQUITECTURA.md` y `DECISIONES.md` en la RAÍZ del repo (decisión del 28/10: se dejaron en raíz, sin carpeta).
+Otros contenidos del repo (no son HTML/JS en vivo): `AGENTS.md`, `tareas/` (backlog de seguridad P0/P1/P2 de la revisión del 27/10 + F-1…F-5 de la prueba en vivo y M-33…M-36 ideas de producto, migradas a tareas el 29/10/2026), `.github/workflows/keep-supabase-alive.yml` (ping cada 3 días a f_cortesia_ver; si esa RPC desaparece, actualizar el curl), `GUIA-Metodo-Continuidad-v3.pdf` (guía del método de continuidad v3, subida en el cierre de la Sesión 13, 28/10/2026), y desde la migración v3: `ESTADO.md`, `ARQUITECTURA.md` y `DECISIONES.md` en la RAÍZ del repo (decisión del 28/10: se dejaron en raíz, sin carpeta). **No existe `README` en la raíz del repo**: el manifiesto lo listaba por error desde la migración v3; corregido el 29/10/2026.
 
 No confundir: **cortesia** (singular, pública) vs **cortesias** (plural, admin) · **aliado** (singular, público) vs **aliados** (admin) vs **aliados-concursos** (admin).
 
