@@ -2,7 +2,7 @@
 id: "P0-03"
 titulo: "Endurecer PIN, rate limit, tokens y bloqueo de sesión"
 prioridad: "P0"
-estado: "pendiente"
+estado: "en_progreso"
 area: "seguridad"
 depende_de: []
 archivos:
