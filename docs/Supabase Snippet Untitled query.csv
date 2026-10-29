@@ -1,0 +1,2465 @@
+proname,definicion
+f_admin_activar_coordinador,"CREATE OR REPLACE FUNCTION public.f_admin_activar_coordinador(p_token uuid, p_id uuid, p_activo boolean)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+begin
+  if public.f_sesion_rol(p_token) is distinct from 'admin' then
+    return false;
+  end if;
+  update coordinadores
+     set activo = p_activo
+   where id = p_id;
+  return found;
+end;
+$function$
+"
+f_admin_ampliar_cupones,"CREATE OR REPLACE FUNCTION public.f_admin_ampliar_cupones(p_token uuid, p_asignacion_id uuid, p_cupones_unico integer, p_cupones_dia1 integer, p_cupones_dia2 integer, p_motivo text, p_motivo_detalle text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_rol text;
+  v_pool_tipo text;
+  v_cupones_antes int;
+  v_cupones_despues int;
+BEGIN
+  SELECT rol INTO v_rol FROM sesiones WHERE token = p_token;
+  IF v_rol IS NULL OR v_rol <> 'admin' THEN
+    RETURN jsonb_build_object('error','ERR_SESION');
+  END IF;
+
+  SELECT pool_tipo,
+         CASE WHEN pool_tipo='unico' THEN cupones_unico ELSE (cupones_dia1 + cupones_dia2) END
+    INTO v_pool_tipo, v_cupones_antes
+    FROM aliado_asignaciones WHERE id = p_asignacion_id;
+  IF v_pool_tipo IS NULL THEN
+    RETURN jsonb_build_object('error','ERR_ASIG_NO_EXISTE');
+  END IF;
+
+  IF p_motivo IS NULL OR trim(p_motivo) = '' THEN
+    RETURN jsonb_build_object('error','ERR_MOTIVO');
+  END IF;
+
+  IF v_pool_tipo = 'unico' THEN
+    IF p_cupones_unico IS NULL OR p_cupones_unico < 1 THEN
+      RETURN jsonb_build_object('error','ERR_CUPONES');
+    END IF;
+    v_cupones_despues := v_cupones_antes + p_cupones_unico;
+    UPDATE aliado_asignaciones SET cupones_unico = v_cupones_despues WHERE id = p_asignacion_id;
+  ELSE
+    IF p_cupones_dia1 IS NULL OR p_cupones_dia1 < 0 OR p_cupones_dia2 IS NULL OR p_cupones_dia2 < 0 THEN
+      RETURN jsonb_build_object('error','ERR_CUPONES');
+    END IF;
+    IF p_cupones_dia1 + p_cupones_dia2 < 1 THEN
+      RETURN jsonb_build_object('error','ERR_CUPONES');
+    END IF;
+    v_cupones_despues := v_cupones_antes + p_cupones_dia1 + p_cupones_dia2;
+    UPDATE aliado_asignaciones
+       SET cupones_dia1 = cupones_dia1 + p_cupones_dia1,
+           cupones_dia2 = cupones_dia2 + p_cupones_dia2
+     WHERE id = p_asignacion_id;
+  END IF;
+
+  INSERT INTO aliado_ampliaciones (asignacion_id, cupones_antes, cupones_despues, motivo, motivo_detalle)
+  VALUES (p_asignacion_id, v_cupones_antes, v_cupones_despues, trim(p_motivo), NULLIF(trim(p_motivo_detalle),''));
+
+  RETURN jsonb_build_object('ok', true, 'cupones_antes', v_cupones_antes, 'cupones_despues', v_cupones_despues);
+END;
+$function$
+"
+f_admin_anular_aliado,"CREATE OR REPLACE FUNCTION public.f_admin_anular_aliado(p_token uuid, p_aliado_id uuid, p_razon text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_rol text;
+  v_asigs int;
+  v_premios int;
+BEGIN
+  SELECT rol INTO v_rol FROM sesiones WHERE token = p_token;
+  IF v_rol IS NULL OR v_rol <> 'admin' THEN
+    RETURN jsonb_build_object('error','ERR_SESION');
+  END IF;
+  IF p_razon IS NULL OR trim(p_razon) = '' THEN
+    RETURN jsonb_build_object('error','ERR_RAZON');
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM aliados WHERE id = p_aliado_id) THEN
+    RETURN jsonb_build_object('error','ERR_ALIADO_NO_EXISTE');
+  END IF;
+
+  UPDATE aliados SET activo = false WHERE id = p_aliado_id;
+
+  UPDATE aliado_asignaciones
+     SET estado = 'anulada', razon_anulacion = trim(p_razon), anulada_at = now()
+   WHERE aliado_id = p_aliado_id AND estado = 'activa';
+  GET DIAGNOSTICS v_asigs = ROW_COUNT;
+
+  UPDATE cortesias
+     SET estado = 'anulada', razon_anulacion = trim(p_razon), anulada_at = now()
+   WHERE aliado_id = p_aliado_id AND estado = 'activa';
+  GET DIAGNOSTICS v_premios = ROW_COUNT;
+
+  RETURN jsonb_build_object('ok', true, 'asignaciones_anuladas', v_asigs, 'premios_anulados', v_premios);
+END;
+$function$
+"
+f_admin_anular_asignacion,"CREATE OR REPLACE FUNCTION public.f_admin_anular_asignacion(p_token uuid, p_asignacion_id uuid, p_razon text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_rol text;
+  v_premios int;
+BEGIN
+  SELECT rol INTO v_rol FROM sesiones WHERE token = p_token;
+  IF v_rol IS NULL OR v_rol <> 'admin' THEN
+    RETURN jsonb_build_object('error','ERR_SESION');
+  END IF;
+  IF p_razon IS NULL OR trim(p_razon) = '' THEN
+    RETURN jsonb_build_object('error','ERR_RAZON');
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM aliado_asignaciones WHERE id = p_asignacion_id AND estado = 'activa') THEN
+    RETURN jsonb_build_object('error','ERR_ASIG_NO_EXISTE_O_ANULADA');
+  END IF;
+
+  UPDATE aliado_asignaciones
+     SET estado = 'anulada', razon_anulacion = trim(p_razon), anulada_at = now()
+   WHERE id = p_asignacion_id;
+
+  UPDATE cortesias
+     SET estado = 'anulada', razon_anulacion = trim(p_razon), anulada_at = now()
+   WHERE asignacion_id = p_asignacion_id AND estado = 'activa';
+  GET DIAGNOSTICS v_premios = ROW_COUNT;
+
+  RETURN jsonb_build_object('ok', true, 'premios_anulados', v_premios);
+END;
+$function$
+"
+f_admin_anular_cortesia,"CREATE OR REPLACE FUNCTION public.f_admin_anular_cortesia(p_token uuid, p_codigo_link text)
+ RETURNS text
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_rol text;
+  v_id uuid;
+  v_estado text;
+BEGIN
+  SELECT rol INTO v_rol FROM sesiones WHERE token = p_token;
+  IF v_rol IS NULL OR v_rol <> 'admin' THEN
+    RETURN NULL;
+  END IF;
+
+  SELECT id, estado INTO v_id, v_estado FROM cortesias WHERE codigo_link = p_codigo_link;
+  IF v_id IS NULL THEN
+    RETURN 'ERR_NO_EXISTE';
+  END IF;
+  IF v_estado = 'anulada' THEN
+    RETURN 'ERR_ANULADA';
+  END IF;
+
+  UPDATE cortesias
+  SET estado = 'anulada', anulada_at = now()
+  WHERE id = v_id;
+
+  RETURN 'ok';
+END;
+$function$
+"
+f_admin_borrar_coordinador,"CREATE OR REPLACE FUNCTION public.f_admin_borrar_coordinador(p_token uuid, p_id uuid)
+ RETURNS text
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+begin
+  if public.f_sesion_rol(p_token) is distinct from 'admin' then
+    return null;
+  end if;
+  if exists (select 1 from talentos where coordinador_id = p_id)
+     or exists (select 1 from stands where coordinador_id = p_id) then
+    return 'protegido';
+  end if;
+  delete from coordinadores where id = p_id;
+  if found then
+    return 'ok';
+  end if;
+  return null;
+end;
+$function$
+"
+f_admin_chequear_duplicados_aliado,"CREATE OR REPLACE FUNCTION public.f_admin_chequear_duplicados_aliado(p_token uuid, p_cedula text, p_correo text, p_telefono text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_rol text;
+  v_ced_norm text;
+  v_correo_norm text;
+  v_tel_norm text;
+  v_out jsonb;
+begin
+  select rol into v_rol from sesiones where token = p_token;
+  if v_rol is null or v_rol <> 'admin' then
+    return null;
+  end if;
+
+  v_ced_norm := regexp_replace(coalesce(p_cedula, ''), '\D', '', 'g');
+  v_correo_norm := lower(trim(coalesce(p_correo, '')));
+  v_tel_norm := regexp_replace(coalesce(p_telefono, ''), '\D', '', 'g');
+
+  select coalesce(jsonb_agg(item order by item->>'nombre_organizacion'), '[]'::jsonb)
+  into v_out
+  from (
+    select jsonb_build_object(
+      'tipo', t.tipo,
+      'aliado_id', a.id,
+      'nombre_organizacion', a.nombre_organizacion,
+      'responsable', a.responsable,
+      'activo', a.activo
+    ) as item
+    from aliados a
+    cross join lateral (
+      values
+        (case when v_ced_norm <> '' and regexp_replace(coalesce(a.cedula, ''), '\D', '', 'g') = v_ced_norm then 'cedula' end),
+        (case when v_correo_norm <> '' and lower(trim(coalesce(a.correo, ''))) = v_correo_norm then 'correo' end),
+        (case when v_tel_norm <> '' and regexp_replace(coalesce(a.telefono, ''), '\D', '', 'g') = v_tel_norm then 'telefono' end)
+    ) as t(tipo)
+    where t.tipo is not null
+  ) sub;
+
+  return v_out;
+end;
+$function$
+"
+f_admin_cortesia_agregar_dia,"CREATE OR REPLACE FUNCTION public.f_admin_cortesia_agregar_dia(p_token uuid, p_codigo_link text, p_dia integer)
+ RETURNS text
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_rol text;
+  v_id uuid; v_estado text; v_tipo text;
+BEGIN
+  SELECT rol INTO v_rol FROM sesiones WHERE token = p_token;
+  IF v_rol IS NULL OR v_rol <> 'admin' THEN RETURN NULL; END IF;
+
+  SELECT id, estado, tipo INTO v_id, v_estado, v_tipo FROM cortesias WHERE codigo_link = p_codigo_link;
+  IF v_id IS NULL THEN RETURN 'ERR_NO_EXISTE'; END IF;
+  IF v_estado = 'anulada' THEN RETURN 'ERR_ANULADA'; END IF;
+  IF v_tipo <> 'lista' THEN RETURN 'ERR_MODO'; END IF;
+  IF p_dia NOT IN (1,2) THEN RETURN 'ERR_DATOS'; END IF;
+
+  PERFORM 1 FROM cortesia_listas WHERE cortesia_id = v_id AND dia = p_dia;
+  IF FOUND THEN RETURN 'ERR_YA_EXISTE'; END IF;
+
+  INSERT INTO cortesia_listas (cortesia_id, dia, codigo_corto)
+  VALUES (v_id, p_dia, f_codigo('CL-', 6));
+
+  UPDATE cortesias
+  SET dia1 = CASE WHEN p_dia = 1 THEN true ELSE dia1 END,
+      dia2 = CASE WHEN p_dia = 2 THEN true ELSE dia2 END
+  WHERE id = v_id;
+
+  RETURN 'ok';
+END;
+$function$
+"
+f_admin_cortesia_agregar_persona,"CREATE OR REPLACE FUNCTION public.f_admin_cortesia_agregar_persona(p_token uuid, p_codigo_link text, p_dia integer, p_nombre text, p_apellido text, p_cedula text)
+ RETURNS text
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_rol text;
+  v_id uuid; v_estado text; v_tipo text;
+  v_lista_id uuid;
+BEGIN
+  SELECT rol INTO v_rol FROM sesiones WHERE token = p_token;
+  IF v_rol IS NULL OR v_rol <> 'admin' THEN RETURN NULL; END IF;
+
+  SELECT id, estado, tipo INTO v_id, v_estado, v_tipo FROM cortesias WHERE codigo_link = p_codigo_link;
+  IF v_id IS NULL THEN RETURN 'ERR_NO_EXISTE'; END IF;
+  IF v_estado = 'anulada' THEN RETURN 'ERR_ANULADA'; END IF;
+  IF v_tipo <> 'lista' THEN RETURN 'ERR_MODO'; END IF;
+
+  SELECT cl.id INTO v_lista_id FROM cortesia_listas cl WHERE cl.cortesia_id = v_id AND cl.dia = p_dia;
+  IF v_lista_id IS NULL THEN RETURN 'ERR_NO_LISTA'; END IF;
+
+  IF btrim(COALESCE(p_nombre,'')) = '' OR btrim(COALESCE(p_apellido,'')) = '' OR btrim(COALESCE(p_cedula,'')) = '' THEN
+    RETURN 'ERR_DATOS';
+  END IF;
+
+  PERFORM 1 FROM cortesia_personas WHERE lista_id = v_lista_id AND cedula = btrim(p_cedula);
+  IF FOUND THEN RETURN 'ERR_CEDULA_REPETIDA'; END IF;
+
+  INSERT INTO cortesia_personas (cortesia_id, lista_id, nombre, apellido, cedula)
+  VALUES (v_id, v_lista_id, btrim(p_nombre), btrim(p_apellido), btrim(p_cedula));
+
+  RETURN 'ok';
+END;
+$function$
+"
+f_admin_cortesia_editar_persona,"CREATE OR REPLACE FUNCTION public.f_admin_cortesia_editar_persona(p_token uuid, p_persona_id uuid, p_nombre text, p_apellido text, p_cedula text)
+ RETURNS text
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_rol text;
+  v_persona cortesia_personas%ROWTYPE;
+  v_estado_cortesia text;
+BEGIN
+  SELECT rol INTO v_rol FROM sesiones WHERE token = p_token;
+  IF v_rol IS NULL OR v_rol <> 'admin' THEN RETURN NULL; END IF;
+
+  SELECT * INTO v_persona FROM cortesia_personas WHERE id = p_persona_id;
+  IF v_persona.id IS NULL THEN RETURN 'ERR_NO_EXISTE'; END IF;
+
+  SELECT estado INTO v_estado_cortesia FROM cortesias WHERE id = v_persona.cortesia_id;
+  IF v_estado_cortesia = 'anulada' THEN RETURN 'ERR_ANULADA'; END IF;
+
+  -- Si ya entró, no se edita
+  IF v_persona.lista_id IS NOT NULL THEN
+    IF v_persona.estado = 'autorizado' THEN RETURN 'ERR_USADA'; END IF;
+  ELSE
+    IF v_persona.estado_dia1 = 'autorizado' OR v_persona.estado_dia2 = 'autorizado' THEN RETURN 'ERR_USADA'; END IF;
+  END IF;
+
+  IF btrim(COALESCE(p_nombre,'')) = '' OR btrim(COALESCE(p_apellido,'')) = '' OR btrim(COALESCE(p_cedula,'')) = '' THEN
+    RETURN 'ERR_DATOS';
+  END IF;
+
+  -- Cédula repetida
+  IF v_persona.lista_id IS NOT NULL THEN
+    PERFORM 1 FROM cortesia_personas
+    WHERE lista_id = v_persona.lista_id AND cedula = btrim(p_cedula) AND id <> p_persona_id;
+    IF FOUND THEN RETURN 'ERR_CEDULA_REPETIDA'; END IF;
+  ELSE
+    PERFORM 1 FROM cortesia_personas
+    WHERE cortesia_id = v_persona.cortesia_id AND lista_id IS NULL AND cedula = btrim(p_cedula) AND id <> p_persona_id;
+    IF FOUND THEN RETURN 'ERR_CEDULA_REPETIDA'; END IF;
+  END IF;
+
+  UPDATE cortesia_personas
+  SET nombre = btrim(p_nombre), apellido = btrim(p_apellido), cedula = btrim(p_cedula)
+  WHERE id = p_persona_id;
+
+  RETURN 'ok';
+END;
+$function$
+"
+f_admin_cortesia_quitar_dia,"CREATE OR REPLACE FUNCTION public.f_admin_cortesia_quitar_dia(p_token uuid, p_codigo_link text, p_dia integer)
+ RETURNS text
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_rol text;
+  v_id uuid; v_estado text; v_tipo text;
+  v_otras int;
+BEGIN
+  SELECT rol INTO v_rol FROM sesiones WHERE token = p_token;
+  IF v_rol IS NULL OR v_rol <> 'admin' THEN RETURN NULL; END IF;
+
+  SELECT id, estado, tipo INTO v_id, v_estado, v_tipo FROM cortesias WHERE codigo_link = p_codigo_link;
+  IF v_id IS NULL THEN RETURN 'ERR_NO_EXISTE'; END IF;
+  IF v_estado = 'anulada' THEN RETURN 'ERR_ANULADA'; END IF;
+  IF v_tipo <> 'lista' THEN RETURN 'ERR_MODO'; END IF;
+  IF p_dia NOT IN (1,2) THEN RETURN 'ERR_DATOS'; END IF;
+
+  SELECT COUNT(*) INTO v_otras FROM cortesia_listas WHERE cortesia_id = v_id AND dia <> p_dia;
+  IF v_otras = 0 THEN RETURN 'ERR_DATOS'; END IF;
+
+  PERFORM 1 FROM cortesia_personas cp
+    JOIN cortesia_listas cl ON cl.id = cp.lista_id
+    WHERE cl.cortesia_id = v_id AND cl.dia = p_dia AND cp.estado = 'autorizado';
+  IF FOUND THEN RETURN 'ERR_USADA'; END IF;
+
+  DELETE FROM cortesia_listas WHERE cortesia_id = v_id AND dia = p_dia;
+
+  UPDATE cortesias
+  SET dia1 = CASE WHEN p_dia = 1 THEN false ELSE dia1 END,
+      dia2 = CASE WHEN p_dia = 2 THEN false ELSE dia2 END
+  WHERE id = v_id;
+
+  RETURN 'ok';
+END;
+$function$
+"
+f_admin_cortesia_quitar_persona,"CREATE OR REPLACE FUNCTION public.f_admin_cortesia_quitar_persona(p_token uuid, p_codigo_link text, p_dia integer, p_cedula text)
+ RETURNS text
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_rol text;
+  v_id uuid; v_estado text; v_tipo text;
+  v_lista_id uuid;
+  v_persona_id uuid;
+  v_estado_persona text;
+BEGIN
+  SELECT rol INTO v_rol FROM sesiones WHERE token = p_token;
+  IF v_rol IS NULL OR v_rol <> 'admin' THEN RETURN NULL; END IF;
+
+  SELECT id, estado, tipo INTO v_id, v_estado, v_tipo FROM cortesias WHERE codigo_link = p_codigo_link;
+  IF v_id IS NULL THEN RETURN 'ERR_NO_EXISTE'; END IF;
+  IF v_estado = 'anulada' THEN RETURN 'ERR_ANULADA'; END IF;
+  IF v_tipo <> 'lista' THEN RETURN 'ERR_MODO'; END IF;
+
+  SELECT cl.id INTO v_lista_id FROM cortesia_listas cl WHERE cl.cortesia_id = v_id AND cl.dia = p_dia;
+  IF v_lista_id IS NULL THEN RETURN 'ERR_NO_LISTA'; END IF;
+
+  SELECT cp.id, cp.estado INTO v_persona_id, v_estado_persona
+  FROM cortesia_personas cp
+  WHERE cp.lista_id = v_lista_id AND cp.cedula = btrim(p_cedula);
+  IF v_persona_id IS NULL THEN RETURN 'ERR_NO_EXISTE'; END IF;
+  IF v_estado_persona = 'autorizado' THEN RETURN 'ERR_USADA'; END IF;
+
+  DELETE FROM cortesia_personas WHERE id = v_persona_id;
+
+  RETURN 'ok';
+END;
+$function$
+"
+f_admin_crear_aliado,"CREATE OR REPLACE FUNCTION public.f_admin_crear_aliado(p_token uuid, p_nombre_organizacion text, p_responsable text, p_cedula text, p_correo text, p_telefono text, p_pool_tipo text, p_cupones_unico integer, p_cupones_dia1 integer, p_cupones_dia2 integer, p_nota_duplicado text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_rol text;
+  v_aliado_id uuid;
+  v_asignacion_id uuid;
+  v_codigo text;
+  v_intento int;
+  v_ced_norm text;
+  v_correo_norm text;
+  v_tel_norm text;
+  v_dup_count int;
+begin
+  select rol into v_rol from sesiones where token = p_token;
+  if v_rol is null or v_rol <> 'admin' then
+    return jsonb_build_object('error', 'ERR_SESION');
+  end if;
+
+  if p_nombre_organizacion is null or trim(p_nombre_organizacion) = '' then
+    return jsonb_build_object('error', 'ERR_NOMBRE_ORG');
+  end if;
+  if p_responsable is null or trim(p_responsable) = '' then
+    return jsonb_build_object('error', 'ERR_RESPONSABLE');
+  end if;
+  if p_cedula is null or trim(p_cedula) = '' then
+    return jsonb_build_object('error', 'ERR_CEDULA');
+  end if;
+  if p_pool_tipo not in ('unico','por_dia') then
+    return jsonb_build_object('error', 'ERR_POOL_TIPO');
+  end if;
+  if p_pool_tipo = 'unico' then
+    if p_cupones_unico is null or p_cupones_unico < 1 then
+      return jsonb_build_object('error', 'ERR_CUPONES');
+    end if;
+  else
+    if p_cupones_dia1 is null or p_cupones_dia2 is null
+       or (p_cupones_dia1 + p_cupones_dia2) < 1 then
+      return jsonb_build_object('error', 'ERR_CUPONES');
+    end if;
+  end if;
+
+  v_ced_norm := regexp_replace(p_cedula, '\D', '', 'g');
+  v_correo_norm := lower(trim(coalesce(p_correo, '')));
+  v_tel_norm := regexp_replace(coalesce(p_telefono, ''), '\D', '', 'g');
+
+  select count(*) into v_dup_count
+  from aliados a
+  where
+    (v_ced_norm <> '' and regexp_replace(coalesce(a.cedula, ''), '\D', '', 'g') = v_ced_norm)
+    or (v_correo_norm <> '' and lower(trim(coalesce(a.correo, ''))) = v_correo_norm)
+    or (v_tel_norm <> '' and regexp_replace(coalesce(a.telefono, ''), '\D', '', 'g') = v_tel_norm);
+
+  if v_dup_count > 0 and (p_nota_duplicado is null or trim(p_nota_duplicado) = '') then
+    return jsonb_build_object('error', 'ERR_DUPLICADO_SIN_CONFIRMAR');
+  end if;
+
+  insert into aliados (nombre_organizacion, responsable, cedula, correo, telefono, nota_duplicado)
+  values (
+    trim(p_nombre_organizacion),
+    trim(p_responsable),
+    nullif(trim(p_cedula), ''),
+    nullif(trim(p_correo), ''),
+    nullif(trim(p_telefono), ''),
+    nullif(trim(coalesce(p_nota_duplicado, '')), '')
+  )
+  returning id into v_aliado_id;
+
+  v_intento := 0;
+  loop
+    v_intento := v_intento + 1;
+    v_codigo := f_codigo('ASI-', 8);
+    exit when not exists (select 1 from aliado_asignaciones where codigo_link = v_codigo);
+    if v_intento >= 10 then
+      return jsonb_build_object('error', 'ERR_CODIGO');
+    end if;
+  end loop;
+
+  insert into aliado_asignaciones (
+    aliado_id, codigo_link, pool_tipo, cupones_unico, cupones_dia1, cupones_dia2
+  ) values (
+    v_aliado_id, v_codigo, p_pool_tipo,
+    case when p_pool_tipo = 'unico' then p_cupones_unico else null end,
+    case when p_pool_tipo = 'por_dia' then p_cupones_dia1 else null end,
+    case when p_pool_tipo = 'por_dia' then p_cupones_dia2 else null end
+  ) returning id into v_asignacion_id;
+
+  return jsonb_build_object(
+    'ok', true,
+    'aliado_id', v_aliado_id,
+    'asignacion_id', v_asignacion_id,
+    'codigo_link', v_codigo
+  );
+end;
+$function$
+"
+f_admin_crear_asignacion,"CREATE OR REPLACE FUNCTION public.f_admin_crear_asignacion(p_token uuid, p_aliado_id uuid, p_pool_tipo text, p_cupones_unico integer, p_cupones_dia1 integer, p_cupones_dia2 integer)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_rol text;
+  v_asignacion_id uuid;
+  v_codigo text;
+  v_intento int;
+BEGIN
+  SELECT rol INTO v_rol FROM sesiones WHERE token = p_token;
+  IF v_rol IS NULL OR v_rol <> 'admin' THEN
+    RETURN jsonb_build_object('error', 'ERR_SESION');
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM aliados WHERE id = p_aliado_id) THEN
+    RETURN jsonb_build_object('error', 'ERR_ALIADO_NO_EXISTE');
+  END IF;
+  IF p_pool_tipo NOT IN ('unico','por_dia') THEN
+    RETURN jsonb_build_object('error', 'ERR_POOL_TIPO');
+  END IF;
+  IF p_pool_tipo = 'unico' THEN
+    IF p_cupones_unico IS NULL OR p_cupones_unico < 1 THEN
+      RETURN jsonb_build_object('error', 'ERR_CUPONES');
+    END IF;
+  ELSE
+    IF p_cupones_dia1 IS NULL OR p_cupones_dia2 IS NULL
+       OR (p_cupones_dia1 + p_cupones_dia2) < 1 THEN
+      RETURN jsonb_build_object('error', 'ERR_CUPONES');
+    END IF;
+  END IF;
+
+  v_intento := 0;
+  LOOP
+    v_intento := v_intento + 1;
+    v_codigo := f_codigo('ASI-', 8);
+    EXIT WHEN NOT EXISTS (SELECT 1 FROM aliado_asignaciones WHERE codigo_link = v_codigo);
+    IF v_intento >= 10 THEN
+      RETURN jsonb_build_object('error', 'ERR_CODIGO');
+    END IF;
+  END LOOP;
+
+  INSERT INTO aliado_asignaciones (
+    aliado_id, codigo_link, pool_tipo, cupones_unico, cupones_dia1, cupones_dia2
+  ) VALUES (
+    p_aliado_id, v_codigo, p_pool_tipo,
+    CASE WHEN p_pool_tipo = 'unico' THEN p_cupones_unico ELSE NULL END,
+    CASE WHEN p_pool_tipo = 'por_dia' THEN p_cupones_dia1 ELSE NULL END,
+    CASE WHEN p_pool_tipo = 'por_dia' THEN p_cupones_dia2 ELSE NULL END
+  ) RETURNING id INTO v_asignacion_id;
+
+  RETURN jsonb_build_object(
+    'ok', true,
+    'asignacion_id', v_asignacion_id,
+    'codigo_link', v_codigo
+  );
+END;
+$function$
+"
+f_admin_crear_coordinador,"CREATE OR REPLACE FUNCTION public.f_admin_crear_coordinador(p_token uuid, p_tipo text, p_nombre text, p_correo text)
+ RETURNS text
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare v_codigo text;
+begin
+  if f_sesion_rol(p_token) is distinct from 'admin' then return null; end if;
+  if p_tipo not in ('talentos','stands') then return null; end if;
+  v_codigo := f_codigo('COORD-', 8);
+  insert into coordinadores (tipo, nombre, codigo, correo)
+  values (p_tipo, p_nombre, v_codigo, nullif(btrim(p_correo), ''));
+  return v_codigo;
+end $function$
+"
+f_admin_crear_cortesia_individual,"CREATE OR REPLACE FUNCTION public.f_admin_crear_cortesia_individual(p_token uuid, p_nombre text, p_apellido text, p_cedula text, p_razon text, p_causa text, p_dia1 boolean, p_dia2 boolean)
+ RETURNS text
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_rol text;
+  v_cortesia_id uuid;
+  v_codigo_link text;
+BEGIN
+  SELECT rol INTO v_rol FROM sesiones WHERE token = p_token;
+  IF v_rol IS NULL OR v_rol <> 'admin' THEN
+    RETURN NULL;
+  END IF;
+
+  IF btrim(COALESCE(p_nombre,'')) = '' OR btrim(COALESCE(p_apellido,'')) = '' OR btrim(COALESCE(p_cedula,'')) = '' THEN
+    RETURN 'ERR_DATOS';
+  END IF;
+  IF p_razon IS NULL OR p_razon NOT IN ('prensa','vinculo_familiar','premio','autoridad','otros') THEN
+    RETURN 'ERR_DATOS';
+  END IF;
+  IF p_razon = 'otros' AND (p_causa IS NULL OR btrim(p_causa) = '') THEN
+    RETURN 'ERR_DATOS';
+  END IF;
+  IF NOT COALESCE(p_dia1,false) AND NOT COALESCE(p_dia2,false) THEN
+    RETURN 'ERR_DATOS';
+  END IF;
+
+  v_codigo_link := f_codigo('COR-', 8);
+
+  INSERT INTO cortesias (tipo, nombre_organizacion, razon, causa, dia1, dia2, codigo_link)
+  VALUES ('individual', NULL, p_razon,
+          NULLIF(btrim(COALESCE(p_causa,'')), ''),
+          COALESCE(p_dia1,false), COALESCE(p_dia2,false), v_codigo_link)
+  RETURNING id INTO v_cortesia_id;
+
+  INSERT INTO cortesia_personas (cortesia_id, lista_id, nombre, apellido, cedula, codigo_qr)
+  VALUES (v_cortesia_id, NULL, btrim(p_nombre), btrim(p_apellido), btrim(p_cedula), f_codigo('CI-', 8));
+
+  RETURN v_codigo_link;
+END;
+$function$
+"
+f_admin_crear_cortesia_lista,"CREATE OR REPLACE FUNCTION public.f_admin_crear_cortesia_lista(p_token uuid, p_nombre_organizacion text, p_razon text, p_causa text, p_dia1 boolean, p_dia2 boolean, p_personas_dia1 jsonb, p_personas_dia2 jsonb)
+ RETURNS text
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_rol text;
+  v_cortesia_id uuid;
+  v_codigo_link text;
+  v_lista_id uuid;
+  v_persona jsonb;
+BEGIN
+  SELECT rol INTO v_rol FROM sesiones WHERE token = p_token;
+  IF v_rol IS NULL OR v_rol <> 'admin' THEN
+    RETURN NULL;
+  END IF;
+
+  IF p_razon IS NULL OR p_razon NOT IN ('prensa','vinculo_familiar','premio','autoridad','otros') THEN
+    RETURN 'ERR_DATOS';
+  END IF;
+  IF p_razon = 'otros' AND (p_causa IS NULL OR btrim(p_causa) = '') THEN
+    RETURN 'ERR_DATOS';
+  END IF;
+  IF NOT COALESCE(p_dia1,false) AND NOT COALESCE(p_dia2,false) THEN
+    RETURN 'ERR_DATOS';
+  END IF;
+  IF p_nombre_organizacion IS NULL OR btrim(p_nombre_organizacion) = '' THEN
+    RETURN 'ERR_DATOS';
+  END IF;
+  IF p_dia1 AND (p_personas_dia1 IS NULL OR jsonb_array_length(p_personas_dia1) = 0) THEN
+    RETURN 'ERR_DATOS';
+  END IF;
+  IF p_dia2 AND (p_personas_dia2 IS NULL OR jsonb_array_length(p_personas_dia2) = 0) THEN
+    RETURN 'ERR_DATOS';
+  END IF;
+
+  -- Campos obligatorios de cada persona
+  IF p_dia1 AND EXISTS (
+    SELECT 1 FROM jsonb_array_elements(p_personas_dia1) x
+    WHERE btrim(COALESCE(x->>'nombre','')) = ''
+       OR btrim(COALESCE(x->>'apellido','')) = ''
+       OR btrim(COALESCE(x->>'cedula','')) = ''
+  ) THEN
+    RETURN 'ERR_DATOS';
+  END IF;
+  IF p_dia2 AND EXISTS (
+    SELECT 1 FROM jsonb_array_elements(p_personas_dia2) x
+    WHERE btrim(COALESCE(x->>'nombre','')) = ''
+       OR btrim(COALESCE(x->>'apellido','')) = ''
+       OR btrim(COALESCE(x->>'cedula','')) = ''
+  ) THEN
+    RETURN 'ERR_DATOS';
+  END IF;
+
+  -- Cédulas repetidas dentro de un mismo día
+  IF p_dia1 AND (
+    (SELECT COUNT(*) FROM jsonb_array_elements(p_personas_dia1) x) <>
+    (SELECT COUNT(DISTINCT x->>'cedula') FROM jsonb_array_elements(p_personas_dia1) x)
+  ) THEN
+    RETURN 'ERR_CEDULA_REPETIDA';
+  END IF;
+  IF p_dia2 AND (
+    (SELECT COUNT(*) FROM jsonb_array_elements(p_personas_dia2) x) <>
+    (SELECT COUNT(DISTINCT x->>'cedula') FROM jsonb_array_elements(p_personas_dia2) x)
+  ) THEN
+    RETURN 'ERR_CEDULA_REPETIDA';
+  END IF;
+
+  v_codigo_link := f_codigo('COR-', 8);
+
+  INSERT INTO cortesias (tipo, nombre_organizacion, razon, causa, dia1, dia2, codigo_link)
+  VALUES ('lista', btrim(p_nombre_organizacion), p_razon,
+          NULLIF(btrim(COALESCE(p_causa,'')), ''),
+          COALESCE(p_dia1,false), COALESCE(p_dia2,false), v_codigo_link)
+  RETURNING id INTO v_cortesia_id;
+
+  IF p_dia1 THEN
+    INSERT INTO cortesia_listas (cortesia_id, dia, codigo_corto)
+    VALUES (v_cortesia_id, 1, f_codigo('CL-', 6))
+    RETURNING id INTO v_lista_id;
+
+    FOR v_persona IN SELECT * FROM jsonb_array_elements(p_personas_dia1)
+    LOOP
+      INSERT INTO cortesia_personas (cortesia_id, lista_id, nombre, apellido, cedula)
+      VALUES (v_cortesia_id, v_lista_id,
+              btrim(v_persona->>'nombre'), btrim(v_persona->>'apellido'), btrim(v_persona->>'cedula'));
+    END LOOP;
+  END IF;
+
+  IF p_dia2 THEN
+    INSERT INTO cortesia_listas (cortesia_id, dia, codigo_corto)
+    VALUES (v_cortesia_id, 2, f_codigo('CL-', 6))
+    RETURNING id INTO v_lista_id;
+
+    FOR v_persona IN SELECT * FROM jsonb_array_elements(p_personas_dia2)
+    LOOP
+      INSERT INTO cortesia_personas (cortesia_id, lista_id, nombre, apellido, cedula)
+      VALUES (v_cortesia_id, v_lista_id,
+              btrim(v_persona->>'nombre'), btrim(v_persona->>'apellido'), btrim(v_persona->>'cedula'));
+    END LOOP;
+  END IF;
+
+  RETURN v_codigo_link;
+END;
+$function$
+"
+f_admin_crear_cortesia_premiacion,"CREATE OR REPLACE FUNCTION public.f_admin_crear_cortesia_premiacion(p_token uuid, p_nombre text, p_apellido text, p_cedula text, p_concurso text, p_cupones_total integer, p_aliado text, p_dia1 boolean, p_dia2 boolean)
+ RETURNS text
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_rol text;
+  v_codigo text;
+  v_id uuid;
+BEGIN
+  SELECT rol INTO v_rol FROM sesiones WHERE token = p_token;
+  IF v_rol IS NULL OR v_rol <> 'admin' THEN RETURN NULL; END IF;
+
+  IF p_nombre IS NULL OR trim(p_nombre) = '' THEN RETURN 'ERR_DATOS'; END IF;
+  IF p_apellido IS NULL OR trim(p_apellido) = '' THEN RETURN 'ERR_DATOS'; END IF;
+  IF p_cedula IS NULL OR trim(p_cedula) = '' THEN RETURN 'ERR_DATOS'; END IF;
+  IF p_concurso IS NULL OR trim(p_concurso) = '' THEN RETURN 'ERR_DATOS'; END IF;
+  IF p_cupones_total IS NULL OR p_cupones_total < 1 THEN RETURN 'ERR_DATOS'; END IF;
+  IF p_aliado IS NULL OR trim(p_aliado) = '' THEN RETURN 'ERR_DATOS'; END IF;
+  IF NOT COALESCE(p_dia1,false) AND NOT COALESCE(p_dia2,false) THEN RETURN 'ERR_DATOS'; END IF;
+
+  v_codigo := f_codigo('COR-', 8);
+
+  INSERT INTO cortesias (
+    tipo, nombre_organizacion, razon, causa, dia1, dia2, codigo_link, estado,
+    concurso, cupones_total, cupones_consumidos, aliado
+  ) VALUES (
+    'premiacion', NULL, 'premio', NULL, COALESCE(p_dia1,false), COALESCE(p_dia2,false),
+    v_codigo, 'activa', trim(p_concurso), p_cupones_total, 0, trim(p_aliado)
+  ) RETURNING id INTO v_id;
+
+  INSERT INTO cortesia_personas (
+    cortesia_id, lista_id, nombre, apellido, cedula, codigo_qr,
+    estado, estado_dia1, estado_dia2
+  ) VALUES (
+    v_id, NULL, trim(p_nombre), trim(p_apellido), trim(p_cedula),
+    f_codigo('PR-', 8), 'pendiente', 'pendiente', 'pendiente'
+  );
+
+  RETURN v_codigo;
+END;
+$function$
+"
+f_admin_dashboard,"CREATE OR REPLACE FUNCTION public.f_admin_dashboard(p_token uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_rol text;
+  v_result jsonb;
+BEGIN
+  SELECT rol INTO v_rol FROM sesiones WHERE token = p_token;
+  IF v_rol IS NULL OR v_rol <> 'admin' THEN
+    RETURN NULL;
+  END IF;
+  
+  SELECT jsonb_build_object(
+    'evento', (SELECT jsonb_build_object(
+      'nombre_evento', nombre_evento,
+      'edicion_abierta', edicion_abierta,
+      'dia_activo', dia_activo
+    ) FROM config WHERE id = 1),
+    
+    'contadores', jsonb_build_object(
+      'talentos', (SELECT COUNT(*) FROM talentos),
+      'personas_talento', (SELECT COUNT(*) FROM personas),
+      'stands_patrocinantes', (SELECT COUNT(*) FROM stands WHERE tipo = 'patrocinante'),
+      'stands_pagados', (SELECT COUNT(*) FROM stands WHERE tipo = 'pagado'),
+      'vendedores_patrocinantes', (SELECT COUNT(*) FROM vendedores v JOIN stands s ON s.id = v.stand_id WHERE s.tipo = 'patrocinante'),
+      'vendedores_pagados', (SELECT COUNT(*) FROM vendedores v JOIN stands s ON s.id = v.stand_id WHERE s.tipo = 'pagado'),
+      'coordinadores_activos', (SELECT COUNT(*) FROM coordinadores WHERE activo = true),
+      'coordinadores_revocados', (SELECT COUNT(*) FROM coordinadores WHERE activo = false),
+      'cortesias_activas', (SELECT COUNT(*) FROM cortesias WHERE estado = 'activa'),
+      'cortesias_anuladas', (SELECT COUNT(*) FROM cortesias WHERE estado = 'anulada'),
+      'personas_cortesia', (SELECT COUNT(*) FROM cortesia_personas)
+    ),
+    
+    'puerta_dia1', jsonb_build_object(
+      'personas_autorizadas', (SELECT COUNT(*) FROM personas p JOIN listas l ON l.id = p.lista_id WHERE l.dia = 1 AND p.estado = 'autorizado'),
+      'personas_pendientes', (SELECT COUNT(*) FROM personas p JOIN listas l ON l.id = p.lista_id WHERE l.dia = 1 AND p.estado = 'pendiente'),
+      'vendedores_autorizados', (SELECT COUNT(*) FROM vendedores WHERE estado_dia1 = 'autorizado'),
+      'vendedores_pendientes', (SELECT COUNT(*) FROM vendedores WHERE estado_dia1 = 'pendiente'),
+      'cortesia_autorizados', (
+        (SELECT COUNT(*) FROM cortesia_personas cp JOIN cortesia_listas cl ON cl.id = cp.lista_id WHERE cl.dia = 1 AND cp.estado = 'autorizado') +
+        (SELECT COUNT(*) FROM cortesia_personas cp WHERE cp.lista_id IS NULL AND cp.estado_dia1 = 'autorizado')
+      ),
+      'cortesia_pendientes', (
+        (SELECT COUNT(*) FROM cortesia_personas cp JOIN cortesia_listas cl ON cl.id = cp.lista_id WHERE cl.dia = 1 AND cp.estado = 'pendiente') +
+        (SELECT COUNT(*) FROM cortesia_personas cp WHERE cp.lista_id IS NULL AND cp.estado_dia1 = 'pendiente')
+      ),
+      'listas_cerradas', (
+        (SELECT COUNT(*) FROM listas WHERE dia = 1 AND estado = 'cerrada') +
+        (SELECT COUNT(*) FROM cortesias WHERE estado = 'anulada' AND dia1 = true) +
+        (SELECT COUNT(*) FROM cortesia_listas cl JOIN cortesias c ON c.id = cl.cortesia_id 
+         WHERE cl.dia = 1 AND c.estado = 'activa' 
+         AND NOT EXISTS (SELECT 1 FROM cortesia_personas cp WHERE cp.lista_id = cl.id AND cp.estado <> 'autorizado'))
+      ),
+      'listas_abiertas', (
+        (SELECT COUNT(*) FROM listas WHERE dia = 1 AND estado <> 'cerrada') +
+        (SELECT COUNT(*) FROM cortesia_listas cl JOIN cortesias c ON c.id = cl.cortesia_id 
+         WHERE cl.dia = 1 AND c.estado = 'activa' 
+         AND EXISTS (SELECT 1 FROM cortesia_personas cp WHERE cp.lista_id = cl.id AND cp.estado <> 'autorizado'))
+      ),
+      'listas_abiertas_detalle', (
+        SELECT COALESCE(jsonb_agg(item), '[]'::jsonb)
+        FROM (
+          SELECT jsonb_build_object(
+            'tipo', 'talento',
+            'dia', l.dia,
+            'codigo', l.codigo_corto,
+            'nombre', t.nombre,
+            'link', 'https://afvelis.github.io/nitroacceso/puerta.html?lista=' || l.codigo_corto
+          ) AS item
+          FROM listas l
+          JOIN talentos t ON t.id = l.talento_id
+          WHERE l.dia = 1 AND l.estado <> 'cerrada'
+          UNION ALL
+          SELECT jsonb_build_object(
+            'tipo', 'cortesía',
+            'dia', cl.dia,
+            'codigo', cl.codigo_corto,
+            'nombre', c.nombre_organizacion,
+            'link', 'https://afvelis.github.io/nitroacceso/puerta.html?cl=' || cl.codigo_corto
+          ) AS item
+          FROM cortesia_listas cl
+          JOIN cortesias c ON c.id = cl.cortesia_id
+          WHERE cl.dia = 1 AND c.estado = 'activa'
+          AND EXISTS (SELECT 1 FROM cortesia_personas cp WHERE cp.lista_id = cl.id AND cp.estado <> 'autorizado')
+        ) sub
+      )
+    ),
+    
+    'puerta_dia2', jsonb_build_object(
+      'personas_autorizadas', (SELECT COUNT(*) FROM personas p JOIN listas l ON l.id = p.lista_id WHERE l.dia = 2 AND p.estado = 'autorizado'),
+      'personas_pendientes', (SELECT COUNT(*) FROM personas p JOIN listas l ON l.id = p.lista_id WHERE l.dia = 2 AND p.estado = 'pendiente'),
+      'vendedores_autorizados', (SELECT COUNT(*) FROM vendedores WHERE estado_dia2 = 'autorizado'),
+      'vendedores_pendientes', (SELECT COUNT(*) FROM vendedores WHERE estado_dia2 = 'pendiente'),
+      'cortesia_autorizados', (
+        (SELECT COUNT(*) FROM cortesia_personas cp JOIN cortesia_listas cl ON cl.id = cp.lista_id WHERE cl.dia = 2 AND cp.estado = 'autorizado') +
+        (SELECT COUNT(*) FROM cortesia_personas cp WHERE cp.lista_id IS NULL AND cp.estado_dia2 = 'autorizado')
+      ),
+      'cortesia_pendientes', (
+        (SELECT COUNT(*) FROM cortesia_personas cp JOIN cortesia_listas cl ON cl.id = cp.lista_id WHERE cl.dia = 2 AND cp.estado = 'pendiente') +
+        (SELECT COUNT(*) FROM cortesia_personas cp WHERE cp.lista_id IS NULL AND cp.estado_dia2 = 'pendiente')
+      ),
+      'listas_cerradas', (
+        (SELECT COUNT(*) FROM listas WHERE dia = 2 AND estado = 'cerrada') +
+        (SELECT COUNT(*) FROM cortesias WHERE estado = 'anulada' AND dia2 = true) +
+        (SELECT COUNT(*) FROM cortesia_listas cl JOIN cortesias c ON c.id = cl.cortesia_id 
+         WHERE cl.dia = 2 AND c.estado = 'activa' 
+         AND NOT EXISTS (SELECT 1 FROM cortesia_personas cp WHERE cp.lista_id = cl.id AND cp.estado <> 'autorizado'))
+      ),
+      'listas_abiertas', (
+        (SELECT COUNT(*) FROM listas WHERE dia = 2 AND estado <> 'cerrada') +
+        (SELECT COUNT(*) FROM cortesia_listas cl JOIN cortesias c ON c.id = cl.cortesia_id 
+         WHERE cl.dia = 2 AND c.estado = 'activa' 
+         AND EXISTS (SELECT 1 FROM cortesia_personas cp WHERE cp.lista_id = cl.id AND cp.estado <> 'autorizado'))
+      ),
+      'listas_abiertas_detalle', (
+        SELECT COALESCE(jsonb_agg(item), '[]'::jsonb)
+        FROM (
+          SELECT jsonb_build_object(
+            'tipo', 'talento',
+            'dia', l.dia,
+            'codigo', l.codigo_corto,
+            'nombre', t.nombre,
+            'link', 'https://afvelis.github.io/nitroacceso/puerta.html?lista=' || l.codigo_corto
+          ) AS item
+          FROM listas l
+          JOIN talentos t ON t.id = l.talento_id
+          WHERE l.dia = 2 AND l.estado <> 'cerrada'
+          UNION ALL
+          SELECT jsonb_build_object(
+            'tipo', 'cortesía',
+            'dia', cl.dia,
+            'codigo', cl.codigo_corto,
+            'nombre', c.nombre_organizacion,
+            'link', 'https://afvelis.github.io/nitroacceso/puerta.html?cl=' || cl.codigo_corto
+          ) AS item
+          FROM cortesia_listas cl
+          JOIN cortesias c ON c.id = cl.cortesia_id
+          WHERE cl.dia = 2 AND c.estado = 'activa'
+          AND EXISTS (SELECT 1 FROM cortesia_personas cp WHERE cp.lista_id = cl.id AND cp.estado <> 'autorizado')
+        ) sub
+      )
+    )
+  ) INTO v_result;
+  
+  RETURN v_result;
+END;
+$function$
+"
+f_admin_editar_coordinador,"CREATE OR REPLACE FUNCTION public.f_admin_editar_coordinador(p_token uuid, p_id uuid, p_nombre text, p_correo text)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+begin
+  if public.f_sesion_rol(p_token) is distinct from 'admin' then
+    return false;
+  end if;
+  if coalesce(trim(p_nombre), '') = '' then
+    return false;
+  end if;
+  update coordinadores
+     set nombre = trim(p_nombre),
+         correo = nullif(lower(trim(coalesce(p_correo, ''))), '')
+   where id = p_id;
+  return found;
+end;
+$function$
+"
+f_admin_editar_cortesia,"CREATE OR REPLACE FUNCTION public.f_admin_editar_cortesia(p_token uuid, p_codigo_link text, p_razon text, p_causa text)
+ RETURNS text
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_rol text;
+  v_id uuid;
+  v_estado text;
+BEGIN
+  SELECT rol INTO v_rol FROM sesiones WHERE token = p_token;
+  IF v_rol IS NULL OR v_rol <> 'admin' THEN
+    RETURN NULL;
+  END IF;
+
+  SELECT id, estado INTO v_id, v_estado FROM cortesias WHERE codigo_link = p_codigo_link;
+  IF v_id IS NULL THEN
+    RETURN 'ERR_NO_EXISTE';
+  END IF;
+  IF v_estado = 'anulada' THEN
+    RETURN 'ERR_ANULADA';
+  END IF;
+
+  IF p_razon IS NULL OR p_razon NOT IN ('prensa','vinculo_familiar','premio','autoridad','otros') THEN
+    RETURN 'ERR_DATOS';
+  END IF;
+  IF p_razon = 'otros' AND (p_causa IS NULL OR btrim(p_causa) = '') THEN
+    RETURN 'ERR_DATOS';
+  END IF;
+
+  UPDATE cortesias
+  SET razon = p_razon,
+      causa = NULLIF(btrim(COALESCE(p_causa,'')), '')
+  WHERE id = v_id;
+
+  RETURN 'ok';
+END;
+$function$
+"
+f_admin_editar_cortesia_datos,"CREATE OR REPLACE FUNCTION public.f_admin_editar_cortesia_datos(p_token uuid, p_codigo_link text, p_nombre_organizacion text DEFAULT NULL::text, p_nombre text DEFAULT NULL::text, p_apellido text DEFAULT NULL::text, p_cedula text DEFAULT NULL::text)
+ RETURNS text
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_rol text;
+  v_cortesia cortesias%ROWTYPE;
+  v_persona cortesia_personas%ROWTYPE;
+BEGIN
+  SELECT rol INTO v_rol FROM sesiones WHERE token = p_token;
+  IF v_rol IS NULL OR v_rol <> 'admin' THEN RETURN NULL; END IF;
+
+  SELECT * INTO v_cortesia FROM cortesias WHERE codigo_link = p_codigo_link;
+  IF v_cortesia.id IS NULL THEN RETURN 'ERR_NO_EXISTE'; END IF;
+  IF v_cortesia.estado = 'anulada' THEN RETURN 'ERR_ANULADA'; END IF;
+
+  IF v_cortesia.tipo = 'lista' THEN
+    IF btrim(COALESCE(p_nombre_organizacion,'')) = '' THEN RETURN 'ERR_DATOS'; END IF;
+    UPDATE cortesias SET nombre_organizacion = btrim(p_nombre_organizacion) WHERE id = v_cortesia.id;
+    RETURN 'ok';
+  ELSE
+    SELECT * INTO v_persona FROM cortesia_personas
+      WHERE cortesia_id = v_cortesia.id AND lista_id IS NULL LIMIT 1;
+    IF v_persona.id IS NULL THEN RETURN 'ERR_NO_EXISTE'; END IF;
+
+    IF v_persona.estado_dia1 = 'autorizado' OR v_persona.estado_dia2 = 'autorizado' THEN
+      RETURN 'ERR_USADA';
+    END IF;
+
+    IF btrim(COALESCE(p_nombre,'')) = '' OR btrim(COALESCE(p_apellido,'')) = '' OR btrim(COALESCE(p_cedula,'')) = '' THEN
+      RETURN 'ERR_DATOS';
+    END IF;
+
+    PERFORM 1 FROM cortesia_personas
+      WHERE cortesia_id = v_cortesia.id AND lista_id IS NULL AND cedula = btrim(p_cedula) AND id <> v_persona.id;
+    IF FOUND THEN RETURN 'ERR_CEDULA_REPETIDA'; END IF;
+
+    UPDATE cortesia_personas
+    SET nombre = btrim(p_nombre), apellido = btrim(p_apellido), cedula = btrim(p_cedula)
+    WHERE id = v_persona.id;
+    RETURN 'ok';
+  END IF;
+END;
+$function$
+"
+f_admin_editar_cortesia_dias,"CREATE OR REPLACE FUNCTION public.f_admin_editar_cortesia_dias(p_token uuid, p_codigo_link text, p_dia1 boolean, p_dia2 boolean)
+ RETURNS text
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_rol text;
+  v_id uuid;
+  v_estado text;
+  v_tipo text;
+BEGIN
+  SELECT rol INTO v_rol FROM sesiones WHERE token = p_token;
+  IF v_rol IS NULL OR v_rol <> 'admin' THEN
+    RETURN NULL;
+  END IF;
+
+  SELECT id, estado, tipo INTO v_id, v_estado, v_tipo FROM cortesias WHERE codigo_link = p_codigo_link;
+  IF v_id IS NULL THEN
+    RETURN 'ERR_NO_EXISTE';
+  END IF;
+  IF v_estado = 'anulada' THEN
+    RETURN 'ERR_ANULADA';
+  END IF;
+  IF v_tipo <> 'individual' THEN
+    RETURN 'ERR_MODO';
+  END IF;
+  IF NOT COALESCE(p_dia1,false) AND NOT COALESCE(p_dia2,false) THEN
+    RETURN 'ERR_DATOS';
+  END IF;
+
+  UPDATE cortesias
+  SET dia1 = COALESCE(p_dia1,false), dia2 = COALESCE(p_dia2,false)
+  WHERE id = v_id;
+
+  RETURN 'ok';
+END;
+$function$
+"
+f_admin_editar_cortesia_premiacion,"CREATE OR REPLACE FUNCTION public.f_admin_editar_cortesia_premiacion(p_token uuid, p_codigo_link text, p_nombre text, p_apellido text, p_cedula text, p_concurso text, p_cupones_total integer, p_aliado text)
+ RETURNS text
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_rol text;
+  v_cortesia cortesias%ROWTYPE;
+BEGIN
+  SELECT rol INTO v_rol FROM sesiones WHERE token = p_token;
+  IF v_rol IS NULL OR v_rol <> 'admin' THEN RETURN NULL; END IF;
+
+  SELECT * INTO v_cortesia FROM cortesias WHERE codigo_link = p_codigo_link AND tipo='premiacion';
+  IF NOT FOUND THEN RETURN 'ERR_NO_EXISTE'; END IF;
+  IF v_cortesia.estado = 'anulada' THEN RETURN 'ERR_ANULADA'; END IF;
+  IF v_cortesia.canjeado_at IS NOT NULL THEN RETURN 'ERR_USADA'; END IF;
+
+  IF p_nombre IS NULL OR trim(p_nombre)='' THEN RETURN 'ERR_DATOS'; END IF;
+  IF p_apellido IS NULL OR trim(p_apellido)='' THEN RETURN 'ERR_DATOS'; END IF;
+  IF p_cedula IS NULL OR trim(p_cedula)='' THEN RETURN 'ERR_DATOS'; END IF;
+  IF p_concurso IS NULL OR trim(p_concurso)='' THEN RETURN 'ERR_DATOS'; END IF;
+  IF p_cupones_total IS NULL OR p_cupones_total < 1 THEN RETURN 'ERR_DATOS'; END IF;
+  IF p_aliado IS NULL OR trim(p_aliado)='' THEN RETURN 'ERR_DATOS'; END IF;
+
+  UPDATE cortesias SET
+    concurso = trim(p_concurso),
+    cupones_total = p_cupones_total,
+    aliado = trim(p_aliado)
+  WHERE id = v_cortesia.id;
+
+  UPDATE cortesia_personas SET
+    nombre = trim(p_nombre),
+    apellido = trim(p_apellido),
+    cedula = trim(p_cedula)
+  WHERE cortesia_id = v_cortesia.id AND lista_id IS NULL;
+
+  RETURN 'ok';
+END;
+$function$
+"
+f_admin_estado_dias,"CREATE OR REPLACE FUNCTION public.f_admin_estado_dias(p_token uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_rol text;
+  v_dia_activo int;
+  v_dia1_cerrado bool;
+  v_dia2_cerrado bool;
+BEGIN
+  SELECT rol INTO v_rol FROM sesiones WHERE token = p_token;
+  IF v_rol IS NULL OR v_rol <> 'admin' THEN
+    RETURN NULL;
+  END IF;
+
+  SELECT dia_activo, dia1_cerrado, dia2_cerrado
+  INTO v_dia_activo, v_dia1_cerrado, v_dia2_cerrado
+  FROM config WHERE id = 1;
+
+  RETURN jsonb_build_object(
+    'dia_activo', COALESCE(v_dia_activo, 1),
+    'dia1_cerrado', COALESCE(v_dia1_cerrado, false),
+    'dia2_cerrado', COALESCE(v_dia2_cerrado, false)
+  );
+END;
+$function$
+"
+f_admin_guardar_evento,"CREATE OR REPLACE FUNCTION public.f_admin_guardar_evento(p_token uuid, p_nombre text)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_stats jsonb;
+  v_detalle jsonb;
+  v_segmentacion jsonb;
+  v_tiempos jsonb;
+  v_id uuid;
+begin
+  if public.f_sesion_rol(p_token) is distinct from 'admin' then return null; end if;
+  if coalesce(trim(p_nombre), '') = '' then return null; end if;
+
+  v_stats := public.f_admin_stats(p_token);
+  v_segmentacion := public.f_admin_segmentacion(p_token);
+  v_tiempos := public.f_admin_tiempos(p_token);
+
+  select jsonb_build_object(
+    'talentos', (
+      select coalesce(jsonb_agg(jsonb_build_object(
+        'talento', t.nombre,
+        'dia1', t.dia1,
+        'dia2', t.dia2,
+        'listas', (
+          select coalesce(jsonb_agg(jsonb_build_object(
+            'dia', l.dia,
+            'estado', l.estado,
+            'codigo_corto', l.codigo_corto,
+            'personas', (
+              select coalesce(jsonb_agg(jsonb_build_object(
+                'nombre', p.nombre,
+                'apellido', p.apellido,
+                'cedula', p.cedula,
+                'cargo', p.cargo,
+                'estado', p.estado
+              ) order by p.apellido, p.nombre), '[]'::jsonb)
+              from personas p where p.lista_id = l.id
+            )
+          ) order by l.dia), '[]'::jsonb)
+          from listas l where l.talento_id = t.id
+        )
+      ) order by t.nombre), '[]'::jsonb)
+      from talentos t
+    ),
+    'stands', (
+      select coalesce(jsonb_agg(jsonb_build_object(
+        'numero', s.numero,
+        'tipo', s.tipo,
+        'cupo', s.cupo,
+        'vendedores', (
+          select coalesce(jsonb_agg(jsonb_build_object(
+            'nombre', v.nombre,
+            'apellido', v.apellido,
+            'cedula', v.cedula,
+            'vende', v.vende,
+            'empresa', v.empresa,
+            'estado_dia1', v.estado_dia1,
+            'estado_dia2', v.estado_dia2
+          ) order by v.apellido, v.nombre), '[]'::jsonb)
+          from vendedores v where v.stand_id = s.id
+        )
+      ) order by s.numero), '[]'::jsonb)
+      from stands s
+    ),
+    'segmentacion', coalesce(v_segmentacion, '{}'::jsonb),
+    'tiempos', coalesce(v_tiempos, '{}'::jsonb)
+  ) into v_detalle;
+
+  insert into eventos(nombre, stats, detalle)
+  values (trim(p_nombre), coalesce(v_stats, '{}'::jsonb), coalesce(v_detalle, '{}'::jsonb))
+  returning id into v_id;
+
+  return v_id;
+end;
+$function$
+"
+f_admin_limpiar_todo,"CREATE OR REPLACE FUNCTION public.f_admin_limpiar_todo(p_token uuid)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+begin
+  if public.f_sesion_rol(p_token) is distinct from 'admin' then return false; end if;
+  if not exists (select 1 from eventos) then return false; end if;
+  delete from cortesia_personas where true;
+  delete from cortesias where true;
+  delete from personas where true;
+  delete from listas where true;
+  delete from talentos where true;
+  delete from vendedores where true;
+  delete from stands where true;
+  delete from coordinadores where true;
+  delete from sesiones where true;
+  update config
+    set edicion_abierta = true,
+        dia_activo = 1
+    where id = 1;
+  return true;
+end;
+$function$
+"
+f_admin_listar_aliados,"CREATE OR REPLACE FUNCTION public.f_admin_listar_aliados(p_token uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_rol text;
+begin
+  select rol into v_rol from sesiones where token = p_token;
+  if v_rol is null or v_rol <> 'admin' then
+    return null;
+  end if;
+
+  return coalesce((
+    select jsonb_agg(jsonb_build_object(
+      'id', a.id,
+      'nombre_organizacion', a.nombre_organizacion,
+      'responsable', a.responsable,
+      'cedula', a.cedula,
+      'correo', a.correo,
+      'telefono', a.telefono,
+      'nota_duplicado', a.nota_duplicado,
+      'activo', a.activo,
+      'creada_at', a.creada_at,
+      'asignaciones', coalesce((
+        select jsonb_agg(jsonb_build_object(
+          'id', asi.id,
+          'codigo_link', asi.codigo_link,
+          'pool_tipo', asi.pool_tipo,
+          'cupones_unico', asi.cupones_unico,
+          'cupones_dia1', asi.cupones_dia1,
+          'cupones_dia2', asi.cupones_dia2,
+          'estado', asi.estado,
+          'razon_anulacion', asi.razon_anulacion,
+          'creada_at', asi.creada_at,
+          'premios_creados', (
+            select count(*) from cortesias c
+            where c.asignacion_id = asi.id
+          ),
+          'cupones_asignados', coalesce((
+            select sum(c.cupones_total) from cortesias c
+            where c.asignacion_id = asi.id
+          ), 0),
+          'cupones_asignados_dia1', coalesce((
+            select sum(c.cupones_total) from cortesias c
+            where c.asignacion_id = asi.id and c.dia1 = true
+          ), 0),
+          'cupones_asignados_dia2', coalesce((
+            select sum(c.cupones_total) from cortesias c
+            where c.asignacion_id = asi.id and c.dia2 = true
+          ), 0),
+          'disponible_unico', case when asi.pool_tipo = 'unico'
+            then asi.cupones_unico - coalesce((select sum(c.cupones_total) from cortesias c where c.asignacion_id = asi.id), 0)
+            else null end,
+          'disponible_dia1', case when asi.pool_tipo = 'por_dia'
+            then asi.cupones_dia1 - coalesce((select sum(c.cupones_total) from cortesias c where c.asignacion_id = asi.id and c.dia1 = true), 0)
+            else null end,
+          'disponible_dia2', case when asi.pool_tipo = 'por_dia'
+            then asi.cupones_dia2 - coalesce((select sum(c.cupones_total) from cortesias c where c.asignacion_id = asi.id and c.dia2 = true), 0)
+            else null end,
+          'ampliaciones', coalesce((
+            select jsonb_agg(jsonb_build_object(
+              'cupones_antes', am.cupones_antes,
+              'cupones_despues', am.cupones_despues,
+              'motivo', am.motivo,
+              'motivo_detalle', am.motivo_detalle,
+              'creada_at', am.creada_at
+            ) order by am.creada_at desc)
+            from aliado_ampliaciones am
+            where am.asignacion_id = asi.id
+          ), '[]'::jsonb)
+        ) order by asi.creada_at desc)
+        from aliado_asignaciones asi
+        where asi.aliado_id = a.id
+      ), '[]'::jsonb)
+    ) order by a.creada_at desc)
+    from aliados a
+  ), '[]'::jsonb);
+end;
+$function$
+"
+f_admin_listar_coordinadores,"CREATE OR REPLACE FUNCTION public.f_admin_listar_coordinadores(p_token uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+begin
+  if public.f_sesion_rol(p_token) is distinct from 'admin' then
+    return null;
+  end if;
+  return (
+    select coalesce(jsonb_agg(jsonb_build_object(
+      'id', c.id,
+      'tipo', c.tipo,
+      'nombre', c.nombre,
+      'correo', c.correo,
+      'codigo', c.codigo,
+      'activo', c.activo,
+      'creada_at', c.creada_at
+    ) order by c.creada_at), '[]'::jsonb)
+    from coordinadores c
+  );
+end;
+$function$
+"
+f_admin_listar_cortesias,"CREATE OR REPLACE FUNCTION public.f_admin_listar_cortesias(p_token uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_rol text;
+BEGIN
+  SELECT rol INTO v_rol FROM sesiones WHERE token = p_token;
+  IF v_rol IS NULL OR v_rol <> 'admin' THEN RETURN NULL; END IF;
+
+  RETURN COALESCE((
+    SELECT jsonb_agg(jsonb_build_object(
+      'codigo_link', c.codigo_link,
+      'tipo', c.tipo,
+      'nombre_organizacion', c.nombre_organizacion,
+      'razon', c.razon,
+      'causa', c.causa,
+      'dia1', c.dia1,
+      'dia2', c.dia2,
+      'estado', c.estado,
+      'creada_at', c.creada_at,
+      'total_personas', (CASE WHEN c.tipo='lista' THEN (SELECT COUNT(*) FROM cortesia_personas cp WHERE cp.cortesia_id = c.id) ELSE 1 END),
+      'concurso', c.concurso,
+      'aliado', c.aliado,
+      'cupones_total', c.cupones_total,
+      'cupones_consumidos', c.cupones_consumidos,
+      'canjeado_at', c.canjeado_at,
+      'canjeado_dia', c.canjeado_dia,
+      'persona_nombre', (CASE WHEN c.tipo IN ('individual','premiacion') THEN (SELECT cp.nombre FROM cortesia_personas cp WHERE cp.cortesia_id = c.id AND cp.lista_id IS NULL LIMIT 1) ELSE NULL END),
+      'persona_apellido', (CASE WHEN c.tipo IN ('individual','premiacion') THEN (SELECT cp.apellido FROM cortesia_personas cp WHERE cp.cortesia_id = c.id AND cp.lista_id IS NULL LIMIT 1) ELSE NULL END),
+      'personas_dia1', (CASE
+        WHEN c.tipo='lista' THEN (SELECT COUNT(*) FROM cortesia_personas cp JOIN cortesia_listas cl ON cl.id=cp.lista_id WHERE cp.cortesia_id=c.id AND cl.dia=1)
+        WHEN c.tipo='premiacion' THEN (CASE WHEN c.dia1 THEN COALESCE(c.cupones_total,0) ELSE 0 END)
+        ELSE (CASE WHEN c.dia1 THEN 1 ELSE 0 END) END),
+      'personas_dia2', (CASE
+        WHEN c.tipo='lista' THEN (SELECT COUNT(*) FROM cortesia_personas cp JOIN cortesia_listas cl ON cl.id=cp.lista_id WHERE cp.cortesia_id=c.id AND cl.dia=2)
+        WHEN c.tipo='premiacion' THEN (CASE WHEN c.dia2 THEN COALESCE(c.cupones_total,0) ELSE 0 END)
+        ELSE (CASE WHEN c.dia2 THEN 1 ELSE 0 END) END),
+      'reclamadas_dia1', (CASE
+        WHEN c.tipo='lista' THEN (SELECT COUNT(*) FROM cortesia_personas cp JOIN cortesia_listas cl ON cl.id=cp.lista_id WHERE cp.cortesia_id=c.id AND cl.dia=1 AND cp.estado='autorizado')
+        WHEN c.tipo='premiacion' THEN (CASE WHEN c.canjeado_at IS NOT NULL AND c.canjeado_dia=1 THEN COALESCE(c.cupones_consumidos,0) ELSE 0 END)
+        ELSE (SELECT COUNT(*) FROM cortesia_personas cp WHERE cp.cortesia_id=c.id AND cp.lista_id IS NULL AND cp.estado_dia1='autorizado') END),
+      'reclamadas_dia2', (CASE
+        WHEN c.tipo='lista' THEN (SELECT COUNT(*) FROM cortesia_personas cp JOIN cortesia_listas cl ON cl.id=cp.lista_id WHERE cp.cortesia_id=c.id AND cl.dia=2 AND cp.estado='autorizado')
+        WHEN c.tipo='premiacion' THEN (CASE WHEN c.canjeado_at IS NOT NULL AND c.canjeado_dia=2 THEN COALESCE(c.cupones_consumidos,0) ELSE 0 END)
+        ELSE (SELECT COUNT(*) FROM cortesia_personas cp WHERE cp.cortesia_id=c.id AND cp.lista_id IS NULL AND cp.estado_dia2='autorizado') END)
+    ) ORDER BY c.creada_at DESC)
+    FROM cortesias c
+  ), '[]'::jsonb);
+END;
+$function$
+"
+f_admin_listar_eventos,"CREATE OR REPLACE FUNCTION public.f_admin_listar_eventos(p_token uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+begin
+  if public.f_sesion_rol(p_token) is distinct from 'admin' then return null; end if;
+  return (
+    select coalesce(jsonb_agg(jsonb_build_object(
+      'id', e.id,
+      'nombre', e.nombre,
+      'creado_at', e.creado_at
+    ) order by e.creado_at desc), '[]'::jsonb)
+    from eventos e
+  );
+end;
+$function$
+"
+f_admin_segmentacion,"CREATE OR REPLACE FUNCTION public.f_admin_segmentacion(p_token uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_rol text;
+BEGIN
+  SELECT rol INTO v_rol FROM sesiones WHERE token = p_token;
+  IF v_rol IS NULL OR v_rol <> 'admin' THEN
+    RETURN NULL;
+  END IF;
+
+  RETURN jsonb_build_object(
+    'por_dia', jsonb_build_object(
+      'dia1', jsonb_build_object(
+        'talentos_autorizados', (SELECT COUNT(*) FROM personas p JOIN listas l ON l.id = p.lista_id WHERE l.dia = 1 AND p.estado = 'autorizado'),
+        'talentos_pendientes', (SELECT COUNT(*) FROM personas p JOIN listas l ON l.id = p.lista_id WHERE l.dia = 1 AND p.estado = 'pendiente'),
+        'vendedores_autorizados', (SELECT COUNT(*) FROM vendedores WHERE estado_dia1 = 'autorizado'),
+        'vendedores_pendientes', (SELECT COUNT(*) FROM vendedores WHERE estado_dia1 = 'pendiente'),
+        'cortesia_autorizados', (
+          (SELECT COUNT(*) FROM cortesia_personas cp JOIN cortesia_listas cl ON cl.id = cp.lista_id WHERE cl.dia = 1 AND cp.estado = 'autorizado') +
+          (SELECT COUNT(*) FROM cortesia_personas cp WHERE cp.lista_id IS NULL AND cp.estado_dia1 = 'autorizado')
+        ),
+        'cortesia_pendientes', (
+          (SELECT COUNT(*) FROM cortesia_personas cp JOIN cortesia_listas cl ON cl.id = cp.lista_id WHERE cl.dia = 1 AND cp.estado = 'pendiente') +
+          (SELECT COUNT(*) FROM cortesia_personas cp WHERE cp.lista_id IS NULL AND cp.estado_dia1 = 'pendiente')
+        )
+      ),
+      'dia2', jsonb_build_object(
+        'talentos_autorizados', (SELECT COUNT(*) FROM personas p JOIN listas l ON l.id = p.lista_id WHERE l.dia = 2 AND p.estado = 'autorizado'),
+        'talentos_pendientes', (SELECT COUNT(*) FROM personas p JOIN listas l ON l.id = p.lista_id WHERE l.dia = 2 AND p.estado = 'pendiente'),
+        'vendedores_autorizados', (SELECT COUNT(*) FROM vendedores WHERE estado_dia2 = 'autorizado'),
+        'vendedores_pendientes', (SELECT COUNT(*) FROM vendedores WHERE estado_dia2 = 'pendiente'),
+        'cortesia_autorizados', (
+          (SELECT COUNT(*) FROM cortesia_personas cp JOIN cortesia_listas cl ON cl.id = cp.lista_id WHERE cl.dia = 2 AND cp.estado = 'autorizado') +
+          (SELECT COUNT(*) FROM cortesia_personas cp WHERE cp.lista_id IS NULL AND cp.estado_dia2 = 'autorizado')
+        ),
+        'cortesia_pendientes', (
+          (SELECT COUNT(*) FROM cortesia_personas cp JOIN cortesia_listas cl ON cl.id = cp.lista_id WHERE cl.dia = 2 AND cp.estado = 'pendiente') +
+          (SELECT COUNT(*) FROM cortesia_personas cp WHERE cp.lista_id IS NULL AND cp.estado_dia2 = 'pendiente')
+        )
+      )
+    ),
+    'talentos', COALESCE((
+      SELECT jsonb_agg(jsonb_build_object(
+        'nombre', t.nombre,
+        'dia1', t.dia1,
+        'dia2', t.dia2,
+        'total_personas', (SELECT COUNT(*) FROM personas p JOIN listas l ON l.id = p.lista_id WHERE l.talento_id = t.id),
+        'autorizados', (SELECT COUNT(*) FROM personas p JOIN listas l ON l.id = p.lista_id WHERE l.talento_id = t.id AND p.estado = 'autorizado'),
+        'pendientes', (SELECT COUNT(*) FROM personas p JOIN listas l ON l.id = p.lista_id WHERE l.talento_id = t.id AND p.estado = 'pendiente')
+      ) ORDER BY t.nombre)
+      FROM talentos t
+    ), '[]'::jsonb),
+    'stands', COALESCE((
+      SELECT jsonb_agg(jsonb_build_object(
+        'numero', s.numero,
+        'nombre', s.nombre,
+        'tipo', s.tipo,
+        'cupo', s.cupo,
+        'empresa', s.empresa,
+        'vende', s.vende,
+        'total_vendedores', (SELECT COUNT(*) FROM vendedores v WHERE v.stand_id = s.id),
+        'aut_dia1', (SELECT COUNT(*) FROM vendedores v WHERE v.stand_id = s.id AND v.estado_dia1 = 'autorizado'),
+        'aut_dia2', (SELECT COUNT(*) FROM vendedores v WHERE v.stand_id = s.id AND v.estado_dia2 = 'autorizado')
+      ) ORDER BY s.tipo, s.numero)
+      FROM stands s
+    ), '[]'::jsonb),
+    'cortesias', COALESCE((
+      SELECT jsonb_agg(jsonb_build_object(
+        'codigo_link', c.codigo_link,
+        'tipo', c.tipo,
+        'nombre_organizacion', c.nombre_organizacion,
+        'razon', c.razon,
+        'causa', c.causa,
+        'dia1', c.dia1,
+        'dia2', c.dia2,
+        'estado', c.estado,
+        'concurso', c.concurso,
+        'aliado', c.aliado,
+        'cupones_total', c.cupones_total,
+        'cupones_consumidos', c.cupones_consumidos,
+        'canjeado_at', c.canjeado_at,
+        'canjeado_dia', c.canjeado_dia,
+        'total_personas', (SELECT COUNT(*) FROM cortesia_personas cp WHERE cp.cortesia_id = c.id),
+        'aut_dia1', (
+          (SELECT COUNT(*) FROM cortesia_personas cp JOIN cortesia_listas cl ON cl.id = cp.lista_id WHERE cl.cortesia_id = c.id AND cl.dia = 1 AND cp.estado = 'autorizado') +
+          (SELECT COUNT(*) FROM cortesia_personas cp WHERE cp.cortesia_id = c.id AND cp.lista_id IS NULL AND cp.estado_dia1 = 'autorizado')
+        ),
+        'aut_dia2', (
+          (SELECT COUNT(*) FROM cortesia_personas cp JOIN cortesia_listas cl ON cl.id = cp.lista_id WHERE cl.cortesia_id = c.id AND cl.dia = 2 AND cp.estado = 'autorizado') +
+          (SELECT COUNT(*) FROM cortesia_personas cp WHERE cp.cortesia_id = c.id AND cp.lista_id IS NULL AND cp.estado_dia2 = 'autorizado')
+        )
+      ) ORDER BY c.creada_at DESC)
+      FROM cortesias c
+    ), '[]'::jsonb),
+    'rubros_distintos', (SELECT COUNT(DISTINCT vende) FROM vendedores WHERE vende IS NOT NULL AND vende <> ''),
+    'rubros', COALESCE((
+      SELECT jsonb_agg(jsonb_build_object('vende', r.vende, 'cantidad', r.cantidad) ORDER BY r.cantidad DESC)
+      FROM (
+        SELECT vende, COUNT(*) AS cantidad
+        FROM vendedores
+        WHERE vende IS NOT NULL AND vende <> ''
+        GROUP BY vende
+      ) r
+    ), '[]'::jsonb),
+    'coordinadores', COALESCE((
+      SELECT jsonb_agg(jsonb_build_object(
+        'tipo', c.tipo,
+        'nombre', c.nombre,
+        'codigo', c.codigo,
+        'activo', c.activo
+      ) ORDER BY c.tipo, c.nombre)
+      FROM coordinadores c
+    ), '[]'::jsonb)
+  );
+END;
+$function$
+"
+f_admin_stats,"CREATE OR REPLACE FUNCTION public.f_admin_stats(p_token uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_rol text;
+BEGIN
+  SELECT rol INTO v_rol FROM sesiones WHERE token = p_token;
+  IF v_rol IS NULL OR v_rol <> 'admin' THEN
+    RETURN NULL;
+  END IF;
+
+  RETURN jsonb_build_object(
+    'edicion_abierta', (SELECT edicion_abierta FROM config WHERE id = 1),
+    'personas_dia1', (SELECT COUNT(*) FROM personas p JOIN listas l ON l.id = p.lista_id WHERE l.dia = 1),
+    'autorizados_dia1', (SELECT COUNT(*) FROM personas p JOIN listas l ON l.id = p.lista_id WHERE l.dia = 1 AND p.estado = 'autorizado'),
+    'pendientes_dia1', (SELECT COUNT(*) FROM personas p JOIN listas l ON l.id = p.lista_id WHERE l.dia = 1 AND p.estado = 'pendiente'),
+    'presentes_dia1', (SELECT COUNT(*) FROM vendedores WHERE estado_dia1 = 'autorizado'),
+    'personas_dia2', (SELECT COUNT(*) FROM personas p JOIN listas l ON l.id = p.lista_id WHERE l.dia = 2),
+    'autorizados_dia2', (SELECT COUNT(*) FROM personas p JOIN listas l ON l.id = p.lista_id WHERE l.dia = 2 AND p.estado = 'autorizado'),
+    'pendientes_dia2', (SELECT COUNT(*) FROM personas p JOIN listas l ON l.id = p.lista_id WHERE l.dia = 2 AND p.estado = 'pendiente'),
+    'presentes_dia2', (SELECT COUNT(*) FROM vendedores WHERE estado_dia2 = 'autorizado'),
+    'organizaciones', (SELECT COUNT(*) FROM talentos),
+    'vendedores', (SELECT COUNT(*) FROM vendedores),
+    'rubros_distintos', (SELECT COUNT(DISTINCT vende) FROM vendedores WHERE vende IS NOT NULL AND vende <> ''),
+    'stands_patrocinantes', (SELECT COUNT(*) FROM stands WHERE tipo = 'patrocinante'),
+    'stands_pagados', (SELECT COUNT(*) FROM stands WHERE tipo = 'pagado'),
+    'rubros', COALESCE((
+      SELECT jsonb_agg(jsonb_build_object('vende', r.vende, 'total', r.total) ORDER BY r.total DESC)
+      FROM (
+        SELECT vende, COUNT(*) AS total
+        FROM vendedores
+        WHERE vende IS NOT NULL AND vende <> ''
+        GROUP BY vende
+      ) r
+    ), '[]'::jsonb),
+    'cortesias_activas', (SELECT COUNT(*) FROM cortesias WHERE estado = 'activa'),
+    'cortesias_anuladas', (SELECT COUNT(*) FROM cortesias WHERE estado = 'anulada'),
+    'cortesia_personas_dia1', (
+      (SELECT COUNT(*) FROM cortesia_personas cp JOIN cortesia_listas cl ON cl.id = cp.lista_id WHERE cl.dia = 1) +
+      (SELECT COUNT(*) FROM cortesia_personas cp JOIN cortesias c ON c.id = cp.cortesia_id WHERE cp.lista_id IS NULL AND c.dia1)
+    ),
+    'cortesia_autorizados_dia1', (
+      (SELECT COUNT(*) FROM cortesia_personas cp JOIN cortesia_listas cl ON cl.id = cp.lista_id WHERE cl.dia = 1 AND cp.estado = 'autorizado') +
+      (SELECT COUNT(*) FROM cortesia_personas cp WHERE cp.lista_id IS NULL AND cp.estado_dia1 = 'autorizado')
+    ),
+    'cortesia_pendientes_dia1', (
+      (SELECT COUNT(*) FROM cortesia_personas cp JOIN cortesia_listas cl ON cl.id = cp.lista_id WHERE cl.dia = 1 AND cp.estado = 'pendiente') +
+      (SELECT COUNT(*) FROM cortesia_personas cp WHERE cp.lista_id IS NULL AND cp.estado_dia1 = 'pendiente')
+    ),
+    'cortesia_personas_dia2', (
+      (SELECT COUNT(*) FROM cortesia_personas cp JOIN cortesia_listas cl ON cl.id = cp.lista_id WHERE cl.dia = 2) +
+      (SELECT COUNT(*) FROM cortesia_personas cp JOIN cortesias c ON c.id = cp.cortesia_id WHERE cp.lista_id IS NULL AND c.dia2)
+    ),
+    'cortesia_autorizados_dia2', (
+      (SELECT COUNT(*) FROM cortesia_personas cp JOIN cortesia_listas cl ON cl.id = cp.lista_id WHERE cl.dia = 2 AND cp.estado = 'autorizado') +
+      (SELECT COUNT(*) FROM cortesia_personas cp WHERE cp.lista_id IS NULL AND cp.estado_dia2 = 'autorizado')
+    ),
+    'cortesia_pendientes_dia2', (
+      (SELECT COUNT(*) FROM cortesia_personas cp JOIN cortesia_listas cl ON cl.id = cp.lista_id WHERE cl.dia = 2 AND cp.estado = 'pendiente') +
+      (SELECT COUNT(*) FROM cortesia_personas cp WHERE cp.lista_id IS NULL AND cp.estado_dia2 = 'pendiente')
+    )
+  );
+END;
+$function$
+"
+f_admin_tiempos,"CREATE OR REPLACE FUNCTION public.f_admin_tiempos(p_token uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_rol text;
+BEGIN
+  SELECT rol INTO v_rol FROM public.sesiones WHERE token = p_token;
+  IF v_rol IS DISTINCT FROM 'admin' THEN
+    RETURN NULL;
+  END IF;
+
+  RETURN jsonb_build_object(
+    'coordinadores', COALESCE((
+      SELECT jsonb_agg(jsonb_build_object(
+        'codigo', c.codigo,
+        'nombre', c.nombre,
+        'tipo', c.tipo,
+        'num_talentos', c.num_talentos,
+        'num_stands', c.num_stands,
+        'horas_reaccion', c.horas_reaccion
+      ) ORDER BY c.horas_reaccion ASC NULLS LAST)
+      FROM (
+        SELECT
+          co.codigo, co.nombre, co.tipo,
+          (SELECT COUNT(*) FROM public.talentos t WHERE t.coordinador_id = co.id) AS num_talentos,
+          (SELECT COUNT(*) FROM public.stands s WHERE s.coordinador_id = co.id) AS num_stands,
+          ROUND((EXTRACT(EPOCH FROM (
+            LEAST(
+              (SELECT MIN(t.creada_at) FROM public.talentos t WHERE t.coordinador_id = co.id),
+              (SELECT MIN(s.creada_at) FROM public.stands s WHERE s.coordinador_id = co.id)
+            ) - co.creada_at
+          )) / 3600.0)::numeric, 1) AS horas_reaccion
+        FROM public.coordinadores co
+      ) c
+    ), '[]'::jsonb),
+
+    'talentos_tiempos', COALESCE((
+      SELECT jsonb_agg(jsonb_build_object(
+        'nombre', x.nombre,
+        'coordinador', x.coordinador,
+        'total_personas', x.total_personas,
+        'horas_hasta_primera', x.horas_hasta_primera,
+        'horas_hasta_ultima', x.horas_hasta_ultima,
+        'horas_prom_registro_entrada', x.horas_prom_registro_entrada
+      ) ORDER BY x.horas_hasta_primera ASC NULLS LAST)
+      FROM (
+        SELECT
+          t.nombre,
+          co.nombre AS coordinador,
+          COUNT(p.id) AS total_personas,
+          ROUND((EXTRACT(EPOCH FROM (MIN(p.creada_at) - t.creada_at)) / 3600.0)::numeric, 1) AS horas_hasta_primera,
+          ROUND((EXTRACT(EPOCH FROM (MAX(p.creada_at) - t.creada_at)) / 3600.0)::numeric, 1) AS horas_hasta_ultima,
+          ROUND(AVG(CASE WHEN p.marcado_at IS NOT NULL THEN EXTRACT(EPOCH FROM (p.marcado_at - p.creada_at)) / 3600.0 END)::numeric, 1) AS horas_prom_registro_entrada
+        FROM public.talentos t
+        LEFT JOIN public.coordinadores co ON co.id = t.coordinador_id
+        LEFT JOIN public.listas l ON l.talento_id = t.id
+        LEFT JOIN public.personas p ON p.lista_id = l.id
+        GROUP BY t.id, t.nombre, t.creada_at, co.nombre
+      ) x
+    ), '[]'::jsonb),
+
+    'stands_tiempos', COALESCE((
+      SELECT jsonb_agg(jsonb_build_object(
+        'nombre', x.nombre,
+        'numero', x.numero,
+        'tipo', x.tipo,
+        'coordinador', x.coordinador,
+        'total_vendedores', x.total_vendedores,
+        'horas_hasta_primero', x.horas_hasta_primero,
+        'horas_hasta_ultimo', x.horas_hasta_ultimo,
+        'horas_prom_registro_entrada', x.horas_prom_registro_entrada
+      ) ORDER BY x.horas_hasta_primero ASC NULLS LAST)
+      FROM (
+        SELECT
+          s.nombre, s.numero, s.tipo,
+          co.nombre AS coordinador,
+          COUNT(v.id) AS total_vendedores,
+          ROUND((EXTRACT(EPOCH FROM (MIN(v.creada_at) - s.creada_at)) / 3600.0)::numeric, 1) AS horas_hasta_primero,
+          ROUND((EXTRACT(EPOCH FROM (MAX(v.creada_at) - s.creada_at)) / 3600.0)::numeric, 1) AS horas_hasta_ultimo,
+          ROUND(AVG(CASE WHEN LEAST(v.marcado_dia1_at, v.marcado_dia2_at) IS NOT NULL THEN EXTRACT(EPOCH FROM (LEAST(v.marcado_dia1_at, v.marcado_dia2_at) - v.creada_at)) / 3600.0 END)::numeric, 1) AS horas_prom_registro_entrada
+        FROM public.stands s
+        LEFT JOIN public.coordinadores co ON co.id = s.coordinador_id
+        LEFT JOIN public.vendedores v ON v.stand_id = s.id
+        GROUP BY s.id, s.nombre, s.numero, s.tipo, co.nombre
+      ) x
+    ), '[]'::jsonb)
+  );
+END;
+$function$
+"
+f_admin_toggle_edicion,"CREATE OR REPLACE FUNCTION public.f_admin_toggle_edicion(p_token uuid, p_abierta boolean)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare v_abierta boolean;
+begin
+  if f_sesion_rol(p_token) is distinct from 'admin' then return false; end if;
+  update config set edicion_abierta = p_abierta where id = 1;
+  return true;
+end $function$
+"
+f_admin_ver_concursos_aliado,"CREATE OR REPLACE FUNCTION public.f_admin_ver_concursos_aliado(p_token uuid, p_asignacion_id uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_rol text;
+  v_asignacion jsonb;
+  v_concursos jsonb;
+begin
+  select rol into v_rol from sesiones where token = p_token;
+  if v_rol is null or v_rol <> 'admin' then
+    return null;
+  end if;
+
+  select jsonb_build_object(
+    'asignacion_id', asi.id,
+    'codigo_link', asi.codigo_link,
+    'pool_tipo', asi.pool_tipo,
+    'cupones_unico', asi.cupones_unico,
+    'cupones_dia1', asi.cupones_dia1,
+    'cupones_dia2', asi.cupones_dia2,
+    'estado', asi.estado,
+    'razon_anulacion', asi.razon_anulacion,
+    'creada_at', asi.creada_at,
+    'aliado', jsonb_build_object(
+      'id', a.id,
+      'nombre_organizacion', a.nombre_organizacion,
+      'responsable', a.responsable,
+      'cedula', a.cedula,
+      'correo', a.correo,
+      'telefono', a.telefono,
+      'activo', a.activo
+    )
+  )
+  into v_asignacion
+  from aliado_asignaciones asi
+  join aliados a on a.id = asi.aliado_id
+  where asi.id = p_asignacion_id;
+
+  if v_asignacion is null then
+    return jsonb_build_object('error', 'ERR_NO_EXISTE');
+  end if;
+
+  select coalesce(jsonb_agg(jsonb_build_object(
+    'id', c.id,
+    'nombre', c.nombre,
+    'descripcion', c.descripcion,
+    'fecha_concurso', c.fecha_concurso,
+    'cupones_reservados', c.cupones_reservados,
+    'estado', c.estado,
+    'creada_at', c.creada_at,
+    'cerrada_at', c.cerrada_at,
+    'ganador', (
+      select jsonb_build_object(
+        'cortesia_id', co.id,
+        'codigo_link', co.codigo_link,
+        'estado', co.estado,
+        'cupones_total', co.cupones_total,
+        'cupones_consumidos', co.cupones_consumidos,
+        'canjeado_at', co.canjeado_at,
+        'canjeado_dia', co.canjeado_dia,
+        'enviado_at', co.enviado_at,
+        'razon_anulacion', co.razon_anulacion,
+        'dia1', co.dia1,
+        'dia2', co.dia2,
+        'nombre', cp.nombre,
+        'apellido', cp.apellido,
+        'cedula', cp.cedula,
+        'correo', cp.correo,
+        'telefono', cp.telefono
+      )
+      from cortesias co
+      left join cortesia_personas cp on cp.cortesia_id = co.id
+      where co.concurso_id = c.id
+      limit 1
+    )
+  ) order by c.creada_at desc), '[]'::jsonb)
+  into v_concursos
+  from aliado_concursos c
+  where c.asignacion_id = p_asignacion_id;
+
+  return jsonb_build_object(
+    'asignacion', v_asignacion,
+    'concursos', v_concursos
+  );
+end;
+$function$
+"
+f_admin_ver_cortesia,"CREATE OR REPLACE FUNCTION public.f_admin_ver_cortesia(p_token uuid, p_codigo_link text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_rol text;
+  v_cortesia cortesias%ROWTYPE;
+BEGIN
+  SELECT rol INTO v_rol FROM sesiones WHERE token = p_token;
+  IF v_rol IS NULL OR v_rol <> 'admin' THEN RETURN NULL; END IF;
+
+  SELECT * INTO v_cortesia FROM cortesias WHERE codigo_link = p_codigo_link;
+  IF NOT FOUND THEN RETURN NULL; END IF;
+
+  RETURN jsonb_build_object(
+    'codigo_link', v_cortesia.codigo_link,
+    'tipo', v_cortesia.tipo,
+    'nombre_organizacion', v_cortesia.nombre_organizacion,
+    'razon', v_cortesia.razon,
+    'causa', v_cortesia.causa,
+    'dia1', v_cortesia.dia1,
+    'dia2', v_cortesia.dia2,
+    'estado', v_cortesia.estado,
+    'creada_at', v_cortesia.creada_at,
+    'anulada_at', v_cortesia.anulada_at,
+    'concurso', v_cortesia.concurso,
+    'aliado', v_cortesia.aliado,
+    'cupones_total', v_cortesia.cupones_total,
+    'cupones_consumidos', v_cortesia.cupones_consumidos,
+    'canjeado_at', v_cortesia.canjeado_at,
+    'canjeado_dia', v_cortesia.canjeado_dia,
+    'listas', COALESCE((
+      SELECT jsonb_agg(jsonb_build_object(
+        'dia', cl.dia,
+        'codigo_corto', cl.codigo_corto,
+        'personas', COALESCE((
+          SELECT jsonb_agg(jsonb_build_object(
+            'persona_id', cp.id,
+            'nombre', cp.nombre,
+            'apellido', cp.apellido,
+            'cedula', cp.cedula,
+            'estado', cp.estado,
+            'marcado_at', cp.marcado_at
+          ) ORDER BY cp.nombre, cp.apellido)
+          FROM cortesia_personas cp WHERE cp.lista_id = cl.id
+        ), '[]'::jsonb)
+      ) ORDER BY cl.dia)
+      FROM cortesia_listas cl WHERE cl.cortesia_id = v_cortesia.id
+    ), '[]'::jsonb),
+    'individuales', COALESCE((
+      SELECT jsonb_agg(jsonb_build_object(
+        'persona_id', cp.id,
+        'nombre', cp.nombre,
+        'apellido', cp.apellido,
+        'cedula', cp.cedula,
+        'codigo_qr', cp.codigo_qr,
+        'estado_dia1', cp.estado_dia1,
+        'estado_dia2', cp.estado_dia2,
+        'marcado_dia1_at', cp.marcado_dia1_at,
+        'marcado_dia2_at', cp.marcado_dia2_at
+      ))
+      FROM cortesia_personas cp
+      WHERE cp.cortesia_id = v_cortesia.id AND cp.lista_id IS NULL
+    ), '[]'::jsonb)
+  );
+END;
+$function$
+"
+f_admin_ver_evento,"CREATE OR REPLACE FUNCTION public.f_admin_ver_evento(p_token uuid, p_id uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+begin
+  if public.f_sesion_rol(p_token) is distinct from 'admin' then return null; end if;
+  return (
+    select jsonb_build_object(
+      'nombre', e.nombre,
+      'creado_at', e.creado_at,
+      'stats', e.stats,
+      'detalle', e.detalle
+    )
+    from eventos e where e.id = p_id
+  );
+end;
+$function$
+"
+f_login,"CREATE OR REPLACE FUNCTION public.f_login(p_pin text)
+ RETURNS TABLE(token uuid, rol text)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_rol text;
+begin
+  select case
+           when p_pin = c.pin_admin  then 'admin'
+           when p_pin = c.pin_puerta then 'puerta'
+         end
+    into v_rol
+    from config c
+   where c.id = 1;
+
+  if v_rol is null then
+    return;
+  end if;
+
+  return query
+  insert into public.sesiones(rol)
+  values (v_rol)
+  returning public.sesiones.token, public.sesiones.rol;
+end;
+$function$
+"
+f_puerta_canjear_premiacion,"CREATE OR REPLACE FUNCTION public.f_puerta_canjear_premiacion(p_token uuid, p_codigo_qr text, p_cupones_usados integer)
+ RETURNS text
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_rol text;
+  v_cortesia cortesias%ROWTYPE;
+  v_persona cortesia_personas%ROWTYPE;
+  v_dia_activo int;
+BEGIN
+  SELECT rol INTO v_rol FROM sesiones WHERE token = p_token;
+  IF v_rol IS NULL OR v_rol <> 'puerta' THEN RETURN NULL; END IF;
+
+  SELECT * INTO v_persona FROM cortesia_personas WHERE codigo_qr = p_codigo_qr;
+  IF NOT FOUND THEN RETURN 'ERR_NO_EXISTE'; END IF;
+
+  SELECT * INTO v_cortesia FROM cortesias WHERE id = v_persona.cortesia_id AND tipo = 'premiacion';
+  IF NOT FOUND THEN RETURN 'ERR_NO_EXISTE'; END IF;
+
+  IF v_cortesia.estado = 'anulada' THEN RETURN 'ERR_ANULADA'; END IF;
+  IF v_cortesia.canjeado_at IS NOT NULL THEN RETURN 'ERR_USADA'; END IF;
+
+  SELECT dia_activo INTO v_dia_activo FROM config WHERE id = 1;
+  IF v_dia_activo IS NULL THEN RETURN 'ERR_CONFIG'; END IF;
+
+  IF (v_dia_activo = 1 AND NOT v_cortesia.dia1) OR (v_dia_activo = 2 AND NOT v_cortesia.dia2) THEN
+    RETURN 'ERR_DIA';
+  END IF;
+
+  IF p_cupones_usados IS NULL OR p_cupones_usados < 1 THEN RETURN 'ERR_DATOS'; END IF;
+  IF p_cupones_usados > v_cortesia.cupones_total THEN RETURN 'ERR_DATOS'; END IF;
+
+  UPDATE cortesias SET
+    cupones_consumidos = p_cupones_usados,
+    canjeado_at = now(),
+    canjeado_dia = v_dia_activo
+  WHERE id = v_cortesia.id;
+
+  UPDATE cortesia_personas SET
+    estado_dia1 = CASE WHEN v_dia_activo = 1 THEN 'autorizado' ELSE estado_dia1 END,
+    estado_dia2 = CASE WHEN v_dia_activo = 2 THEN 'autorizado' ELSE estado_dia2 END,
+    marcado_dia1_at = CASE WHEN v_dia_activo = 1 THEN now() ELSE marcado_dia1_at END,
+    marcado_dia2_at = CASE WHEN v_dia_activo = 2 THEN now() ELSE marcado_dia2_at END
+  WHERE id = v_persona.id;
+
+  RETURN 'ok';
+END;
+$function$
+"
+f_puerta_cerrar_dia_y_activar_siguiente,"CREATE OR REPLACE FUNCTION public.f_puerta_cerrar_dia_y_activar_siguiente(p_token uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_rol text;
+  v_dia_activo int;
+  v_listas_cerradas int;
+  v_dia_nuevo int;
+BEGIN
+  SELECT rol INTO v_rol FROM sesiones WHERE token = p_token;
+  IF v_rol IS NULL OR v_rol <> 'puerta' THEN
+    RETURN jsonb_build_object('ok', false, 'error', 'ERR_ROL');
+  END IF;
+
+  SELECT dia_activo INTO v_dia_activo FROM config WHERE id = 1;
+  IF v_dia_activo IS NULL THEN
+    RETURN jsonb_build_object('ok', false, 'error', 'ERR_CONFIG');
+  END IF;
+
+  IF v_dia_activo >= 2 THEN
+    RETURN jsonb_build_object('ok', false, 'error', 'ERR_ULTIMO_DIA');
+  END IF;
+
+  WITH cerradas AS (
+    UPDATE listas
+    SET estado = 'cerrada',
+        cerrada_at = now()
+    WHERE dia = v_dia_activo
+      AND estado <> 'cerrada'
+    RETURNING id
+  )
+  SELECT COUNT(*) INTO v_listas_cerradas FROM cerradas;
+
+  v_dia_nuevo := v_dia_activo + 1;
+  UPDATE config
+  SET dia_activo = v_dia_nuevo,
+      dia1_cerrado = CASE WHEN v_dia_activo = 1 THEN true ELSE dia1_cerrado END,
+      dia2_cerrado = CASE WHEN v_dia_activo = 2 THEN true ELSE dia2_cerrado END
+  WHERE id = 1;
+
+  RETURN jsonb_build_object(
+    'ok', true,
+    'dia_cerrado', v_dia_activo,
+    'dia_nuevo', v_dia_nuevo,
+    'listas_cerradas', v_listas_cerradas
+  );
+END;
+$function$
+"
+f_puerta_cerrar_lista,"CREATE OR REPLACE FUNCTION public.f_puerta_cerrar_lista(p_token uuid, p_lista_id uuid, p_cerrada boolean)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+begin
+  if f_sesion_rol(p_token) is distinct from 'puerta' then return false; end if;
+  update listas set
+    estado = case when p_cerrada then 'cerrada' else 'en_puerta' end,
+    cerrada_at = case when p_cerrada then now() else null end
+  where id = p_lista_id;
+  return found;
+end $function$
+"
+f_puerta_cortesia_individual,"CREATE OR REPLACE FUNCTION public.f_puerta_cortesia_individual(p_token uuid, p_codigo_qr text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_rol text;
+  v_persona cortesia_personas%ROWTYPE;
+  v_cortesia cortesias%ROWTYPE;
+BEGIN
+  SELECT rol INTO v_rol FROM sesiones WHERE token = p_token;
+  IF v_rol IS NULL OR v_rol <> 'puerta' THEN
+    RETURN NULL;
+  END IF;
+
+  SELECT * INTO v_persona FROM cortesia_personas
+  WHERE codigo_qr = upper(btrim(p_codigo_qr)) AND lista_id IS NULL;
+  IF v_persona.id IS NULL THEN
+    RETURN NULL;
+  END IF;
+
+  SELECT * INTO v_cortesia FROM cortesias WHERE id = v_persona.cortesia_id;
+
+  RETURN jsonb_build_object(
+    'anulada', (v_cortesia.estado = 'anulada'),
+    'tipo', 'individual',
+    'persona_id', v_persona.id,
+    'nombre', v_persona.nombre,
+    'apellido', v_persona.apellido,
+    'cedula', v_persona.cedula,
+    'codigo_qr', v_persona.codigo_qr,
+    'razon', v_cortesia.razon,
+    'causa', v_cortesia.causa,
+    'dia1', v_cortesia.dia1,
+    'dia2', v_cortesia.dia2,
+    'estado_dia1', v_persona.estado_dia1,
+    'estado_dia2', v_persona.estado_dia2,
+    'marcado_dia1_at', v_persona.marcado_dia1_at,
+    'marcado_dia2_at', v_persona.marcado_dia2_at
+  );
+END;
+$function$
+"
+f_puerta_cortesia_lista,"CREATE OR REPLACE FUNCTION public.f_puerta_cortesia_lista(p_token uuid, p_codigo_corto text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_rol text;
+  v_lista cortesia_listas%ROWTYPE;
+  v_cortesia cortesias%ROWTYPE;
+BEGIN
+  SELECT rol INTO v_rol FROM sesiones WHERE token = p_token;
+  IF v_rol IS NULL OR v_rol <> 'puerta' THEN
+    RETURN NULL;
+  END IF;
+
+  SELECT * INTO v_lista FROM cortesia_listas WHERE codigo_corto = upper(btrim(p_codigo_corto));
+  IF v_lista.id IS NULL THEN
+    RETURN NULL;
+  END IF;
+
+  SELECT * INTO v_cortesia FROM cortesias WHERE id = v_lista.cortesia_id;
+
+  RETURN jsonb_build_object(
+    'anulada', (v_cortesia.estado = 'anulada'),
+    'tipo', 'lista',
+    'lista_id', v_lista.id,
+    'dia', v_lista.dia,
+    'codigo_corto', v_lista.codigo_corto,
+    'nombre_organizacion', v_cortesia.nombre_organizacion,
+    'razon', v_cortesia.razon,
+    'causa', v_cortesia.causa,
+    'personas', COALESCE((
+      SELECT jsonb_agg(jsonb_build_object(
+        'persona_id', cp.id,
+        'nombre', cp.nombre,
+        'apellido', cp.apellido,
+        'cedula', cp.cedula,
+        'estado', cp.estado,
+        'marcado_at', cp.marcado_at
+      ) ORDER BY cp.nombre, cp.apellido)
+      FROM cortesia_personas cp WHERE cp.lista_id = v_lista.id
+    ), '[]'::jsonb)
+  );
+END;
+$function$
+"
+f_puerta_estado,"CREATE OR REPLACE FUNCTION public.f_puerta_estado(p_token uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_rol text;
+BEGIN
+  SELECT rol INTO v_rol FROM sesiones WHERE token = p_token;
+  IF v_rol IS NULL OR v_rol <> 'puerta' THEN
+    RETURN NULL;
+  END IF;
+  
+  RETURN (SELECT jsonb_build_object(
+    'edicion_abierta', edicion_abierta,
+    'dia_activo', dia_activo,
+    'nombre_evento', nombre_evento
+  ) FROM config WHERE id = 1);
+END;
+$function$
+"
+f_puerta_lista,"CREATE OR REPLACE FUNCTION public.f_puerta_lista(p_token uuid, p_dia integer, p_buscar text)
+ RETURNS jsonb
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+  select coalesce(jsonb_agg(jsonb_build_object(
+    'lista_id', l.id, 'talento', t.nombre, 'codigo_corto', l.codigo_corto, 'estado', l.estado,
+    'personas', coalesce((
+      select jsonb_agg(jsonb_build_object('persona_id', p.id, 'nombre', p.nombre, 'apellido', p.apellido, 'cedula', p.cedula, 'cargo', p.cargo, 'estado', p.estado) order by p.apellido, p.nombre)
+      from personas p where p.lista_id = l.id
+    ), '[]'::jsonb)
+  ) order by t.nombre), '[]'::jsonb)
+  from listas l join talentos t on t.id = l.talento_id
+  where l.dia = p_dia
+    and exists (select 1 from sesiones s where s.token = p_token and s.rol = 'puerta')
+    and (coalesce(btrim(p_buscar), '') = ''
+         or t.nombre ilike '%' || btrim(p_buscar) || '%'
+         or l.codigo_corto = upper(btrim(p_buscar)));
+$function$
+"
+f_puerta_marcar_cortesia,"CREATE OR REPLACE FUNCTION public.f_puerta_marcar_cortesia(p_token uuid, p_persona_id uuid, p_dia integer, p_estado text)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_rol text;
+  v_persona cortesia_personas%ROWTYPE;
+  v_cortesia cortesias%ROWTYPE;
+  v_dia_lista int;
+BEGIN
+  SELECT rol INTO v_rol FROM sesiones WHERE token = p_token;
+  IF v_rol IS NULL OR v_rol <> 'puerta' THEN
+    RETURN FALSE;
+  END IF;
+  IF p_dia NOT IN (1,2) THEN
+    RETURN FALSE;
+  END IF;
+  IF p_estado NOT IN ('pendiente','autorizado') THEN
+    RETURN FALSE;
+  END IF;
+
+  SELECT * INTO v_persona FROM cortesia_personas WHERE id = p_persona_id;
+  IF v_persona.id IS NULL THEN
+    RETURN FALSE;
+  END IF;
+
+  SELECT * INTO v_cortesia FROM cortesias WHERE id = v_persona.cortesia_id;
+  IF v_cortesia.estado <> 'activa' THEN
+    RETURN FALSE;
+  END IF;
+
+  IF v_persona.lista_id IS NOT NULL THEN
+    SELECT dia INTO v_dia_lista FROM cortesia_listas WHERE id = v_persona.lista_id;
+    IF v_dia_lista IS NULL OR v_dia_lista <> p_dia THEN
+      RETURN FALSE;
+    END IF;
+    UPDATE cortesia_personas
+    SET estado = p_estado,
+        marcado_at = CASE WHEN p_estado = 'autorizado' THEN now() ELSE NULL END
+    WHERE id = p_persona_id;
+  ELSE
+    IF p_dia = 1 AND NOT v_cortesia.dia1 THEN RETURN FALSE; END IF;
+    IF p_dia = 2 AND NOT v_cortesia.dia2 THEN RETURN FALSE; END IF;
+    IF p_dia = 1 THEN
+      UPDATE cortesia_personas
+      SET estado_dia1 = p_estado,
+          marcado_dia1_at = CASE WHEN p_estado = 'autorizado' THEN now() ELSE NULL END
+      WHERE id = p_persona_id;
+    ELSE
+      UPDATE cortesia_personas
+      SET estado_dia2 = p_estado,
+          marcado_dia2_at = CASE WHEN p_estado = 'autorizado' THEN now() ELSE NULL END
+      WHERE id = p_persona_id;
+    END IF;
+  END IF;
+
+  RETURN TRUE;
+END;
+$function$
+"
+f_puerta_marcar_persona,"CREATE OR REPLACE FUNCTION public.f_puerta_marcar_persona(p_token uuid, p_persona_id uuid, p_estado text)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+begin
+  if f_sesion_rol(p_token) is distinct from 'puerta' then return false; end if;
+  if p_estado not in ('pendiente','autorizado') then return false; end if;
+  
+  update personas p set
+    estado = p_estado,
+    marcado_at = case when p_estado = 'autorizado' then now() else null end
+  where p.id = p_persona_id
+    and exists (select 1 from listas l where l.id = p.lista_id and l.estado <> 'cerrada');
+  
+  -- NUEVO: Si se autorizó y todas las personas de la lista ya están autorizadas, cerrar la lista automáticamente
+  if found and p_estado = 'autorizado' then
+    if (
+      select bool_and(estado = 'autorizado')
+      from personas
+      where lista_id = (select lista_id from personas where id = p_persona_id)
+    ) then
+      update listas set estado = 'cerrada'
+      where id = (select lista_id from personas where id = p_persona_id)
+        and estado <> 'cerrada';
+    end if;
+  end if;
+  
+  return found;
+end;
+$function$
+"
+f_puerta_marcar_vendedor,"CREATE OR REPLACE FUNCTION public.f_puerta_marcar_vendedor(p_token uuid, p_vendedor_id uuid, p_dia integer, p_estado text)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+begin
+  if f_sesion_rol(p_token) is distinct from 'puerta' then return false; end if;
+  if p_estado not in ('pendiente','autorizado') then return false; end if;
+  if p_dia = 1 then
+    update vendedores set
+      estado_dia1 = p_estado,
+      marcado_dia1_at = case when p_estado = 'autorizado' then now() else null end
+    where id = p_vendedor_id;
+  else
+    update vendedores set
+      estado_dia2 = p_estado,
+      marcado_dia2_at = case when p_estado = 'autorizado' then now() else null end
+    where id = p_vendedor_id;
+  end if;
+  return found;
+end $function$
+"
+f_puerta_personas_de_lista,"CREATE OR REPLACE FUNCTION public.f_puerta_personas_de_lista(p_token uuid, p_lista_id uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_rol text;
+BEGIN
+  SELECT rol INTO v_rol FROM sesiones WHERE token = p_token;
+  IF v_rol IS NULL OR v_rol <> 'puerta' THEN
+    RETURN NULL;
+  END IF;
+
+  RETURN (
+    SELECT jsonb_agg(
+      jsonb_build_object(
+        'persona_id', p.id,
+        'nombre', p.nombre,
+        'apellido', p.apellido,
+        'cedula', p.cedula,
+        'cargo', p.cargo,
+        'estado', p.estado,
+        'marcado_at', p.marcado_at,
+        'lista_codigo', l.codigo_corto,
+        'talento_nombre', t.nombre,
+        'dia', l.dia,
+        'lista_estado', l.estado
+      )
+      ORDER BY p.nombre, p.apellido
+    )
+    FROM personas p
+    JOIN listas l ON l.id = p.lista_id
+    JOIN talentos t ON t.id = l.talento_id
+    WHERE p.lista_id = p_lista_id
+  );
+END;
+$function$
+"
+f_puerta_premiacion_por_qr,"CREATE OR REPLACE FUNCTION public.f_puerta_premiacion_por_qr(p_token uuid, p_codigo_qr text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_rol text;
+  v_cortesia cortesias%ROWTYPE;
+  v_persona cortesia_personas%ROWTYPE;
+  v_dia_activo int;
+BEGIN
+  SELECT rol INTO v_rol FROM sesiones WHERE token = p_token;
+  IF v_rol IS NULL OR v_rol <> 'puerta' THEN RETURN NULL; END IF;
+
+  SELECT * INTO v_persona FROM cortesia_personas WHERE codigo_qr = p_codigo_qr;
+  IF NOT FOUND THEN RETURN NULL; END IF;
+
+  SELECT * INTO v_cortesia FROM cortesias WHERE id = v_persona.cortesia_id AND tipo = 'premiacion';
+  IF NOT FOUND THEN RETURN NULL; END IF;
+
+  IF v_cortesia.estado = 'anulada' THEN
+    RETURN jsonb_build_object('anulada', true);
+  END IF;
+
+  SELECT dia_activo INTO v_dia_activo FROM config WHERE id = 1;
+
+  RETURN jsonb_build_object(
+    'anulada', false,
+    'nombre', v_persona.nombre,
+    'apellido', v_persona.apellido,
+    'cedula', v_persona.cedula,
+    'concurso', v_cortesia.concurso,
+    'cupones_total', v_cortesia.cupones_total,
+    'cupones_consumidos', v_cortesia.cupones_consumidos,
+    'canjeado_at', v_cortesia.canjeado_at,
+    'canjeado_dia', v_cortesia.canjeado_dia,
+    'dia1', v_cortesia.dia1,
+    'dia2', v_cortesia.dia2,
+    'dia_activo', v_dia_activo
+  );
+END;
+$function$
+"
+f_puerta_vendedor_por_cedula,"CREATE OR REPLACE FUNCTION public.f_puerta_vendedor_por_cedula(p_token uuid, p_cedula text)
+ RETURNS jsonb
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+  select jsonb_build_object('vendedor_id', v.id, 'nombre', v.nombre, 'apellido', v.apellido, 'cedula', v.cedula, 'vende', v.vende, 'empresa', v.empresa, 'stand', s.numero, 'estado_dia1', v.estado_dia1, 'estado_dia2', v.estado_dia2)
+  from vendedores v join stands s on s.id = v.stand_id
+  where v.cedula = btrim(p_cedula)
+    and exists (select 1 from sesiones s2 where s2.token = p_token and s2.rol = 'puerta');
+$function$
+"
+f_puerta_vendedor_por_qr,"CREATE OR REPLACE FUNCTION public.f_puerta_vendedor_por_qr(p_token uuid, p_codigo_qr text)
+ RETURNS jsonb
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+  select jsonb_build_object(
+    'vendedor_id', v.id,
+    'nombre', v.nombre,
+    'apellido', v.apellido,
+    'cedula', v.cedula,
+    'vende', v.vende,
+    'empresa', v.empresa,
+    'stand', s.numero,
+    'estado_dia1', v.estado_dia1,
+    'estado_dia2', v.estado_dia2,
+    'marcado_dia1_at', v.marcado_dia1_at,
+    'marcado_dia2_at', v.marcado_dia2_at
+  )
+  from vendedores v join stands s on s.id = v.stand_id
+  where v.codigo_qr = upper(btrim(p_codigo_qr))
+    and exists (select 1 from sesiones s2 where s2.token = p_token and s2.rol = 'puerta');
+$function$
+"
+f_sesion_rol,"CREATE OR REPLACE FUNCTION public.f_sesion_rol(p_token uuid)
+ RETURNS text
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+  select rol from sesiones where token = p_token;
+$function$
+"
