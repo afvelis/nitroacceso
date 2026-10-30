@@ -94,7 +94,7 @@ function renderizar(){
         <span class="progreso-stats">✅ ${p1.totalAutorizados} autorizados / ⏳ ${p1.totalGeneral - p1.totalAutorizados} pendientes</span>
       </div>
       <div class="barra-fondo">
-        <div class="barra-relleno" style="width:${p1.pct}%">${p1.pct}%</div>
+        <div class="barra-relleno">${p1.pct}%</div>
       </div>
     </div>
     <div class="progreso-dia">
@@ -103,10 +103,14 @@ function renderizar(){
         <span class="progreso-stats">✅ ${p2.totalAutorizados} autorizados /  ${p2.totalGeneral - p2.totalAutorizados} pendientes</span>
       </div>
       <div class="barra-fondo">
-        <div class="barra-relleno" style="width:${p2.pct}%">${p2.pct}%</div>
+        <div class="barra-relleno">${p2.pct}%</div>
       </div>
     </div>
   `;
+  // P0-04 4b: el ancho de las barras va por CSSOM (la CSP bloquea el atributo style=)
+  const barras = progresoDias.querySelectorAll('.barra-relleno');
+  if (barras[0]) barras[0].style.width = p1.pct + '%';
+  if (barras[1]) barras[1].style.width = p2.pct + '%';
   
   // ALERTAS con detalle expandible de listas pendientes
   let alertas = [];
@@ -144,7 +148,7 @@ function renderizar(){
   panelAlertas.innerHTML = alertas.map((a, idx) => {
     let html = `<div class="alerta alerta-${a.tipo}${a.expandible ? ' alerta-clickeable' : ''}" ${a.expandible ? `data-idx="${idx}"` : ''}>${a.texto}</div>`;
     if(a.expandible && a.detalle && a.detalle.length > 0){
-      html += `<div id="detalle-${idx}" class="detalle-listas" style="display:none">`;
+      html += `<div id="detalle-${idx}" class="detalle-listas oculto">`;
       a.detalle.forEach(item => {
         const tipoCls = item.tipo === 'talento' ? 'pill-tipo-talento' : 'pill-tipo-cortesia';
         html += `<div class="item-lista">
@@ -179,7 +183,7 @@ function renderizar(){
 function toggleDetalle(idx){
   const el = document.getElementById('detalle-' + idx);
   if(el){
-    el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    el.classList.toggle('oculto');
   }
 }
 
