@@ -205,7 +205,7 @@ function pintarConcursos(){
   const concursos = DATOS.concursos || [];
 
   if(concursos.length === 0){
-    zona.innerHTML = '<p style="color:var(--suave);text-align:center;padding:10px">No hay concursos que mostrar en este momento.</p>';
+    zona.innerHTML = '<p class="vacio-notice">No hay concursos que mostrar en este momento.</p>';
     return;
   }
 
@@ -217,7 +217,7 @@ function pintarConcursos(){
       : '<span class="pill pill-morado">Cerrado · ganador asignado</span>';
     const fechaCreaTxt = c.creada_at ? fmtFecha(c.creada_at.substring(0, 10)) : '-';
     const fechaEjecTxt = c.fecha_concurso ? fmtFecha(c.fecha_concurso) : '—';
-    const descTxt = c.descripcion ? '<div style="color:var(--suave);font-size:13px;margin-top:4px">' + esc(c.descripcion) + '</div>' : '';
+    const descTxt = c.descripcion ? '<div class="desc-suave13">' + esc(c.descripcion) + '</div>' : '';
 
     let botones = '';
     if(abierto){
@@ -328,10 +328,10 @@ function abrirModalConcurso(existente){
       '</label>' +
       '<label>Fecha de ejecución del concurso *' +
         '<input id="inFechaConc" type="date" value="' + esc(c.fecha_concurso || '') + '">' +
-        '<div style="color:var(--suave);font-size:12px;margin-top:6px;font-weight:normal;line-height:1.45">Indica cuándo se realizará el concurso y se elegirá al ganador. Podrás editarla mientras el evento siga vigente. Si el calendario no funciona, escribe la fecha en formato AAAA-MM-DD (debe ser hoy o posterior).</div>' +
+        '<div class="hint-fecha12">Indica cuándo se realizará el concurso y se elegirá al ganador. Podrás editarla mientras el evento siga vigente. Si el calendario no funciona, escribe la fecha en formato AAAA-MM-DD (debe ser hoy o posterior).</div>' +
       '</label>' +
       '<label>Entradas reservadas para este concurso *' +
-        '<input id="inCupConc" type="number" min="1" value="' + c.cupones_reservados + '" style="max-width:160px">' +
+        '<input id="inCupConc" type="number" min="1" value="' + c.cupones_reservados + '" class="campo-corto">' +
       '</label>' +
       '<div class="modal-acciones">' +
         '<button class="btn btn-gris" id="mCancelar">Cancelar</button>' +
@@ -431,12 +431,12 @@ async function abrirModalGanador(concurso){
       '<label>Correo electrónico *<input id="gCorreo" type="email" maxlength="120" placeholder="Ej.: maria@correo.com"></label>' +
       '<label>Teléfono / WhatsApp *<input id="gTelefono" maxlength="30" placeholder="Ej.: +58 414 1234567"></label>' +
       '<label>Entradas que consume este premio (máx. ' + concurso.cupones_reservados + ')*' +
-        '<input id="gCupones" type="number" min="1" max="' + concurso.cupones_reservados + '" value="' + concurso.cupones_reservados + '" style="max-width:160px">' +
+        '<input id="gCupones" type="number" min="1" max="' + concurso.cupones_reservados + '" value="' + concurso.cupones_reservados + '" class="campo-corto">' +
       '</label>' +
-      '<div style="margin-bottom:12px">' +
-        '<div style="color:var(--suave);font-size:14px;margin-bottom:6px">Días autorizados *</div>' +
-        '<label style="display:flex;gap:8px;align-items:center;color:var(--texto)"><input type="checkbox" id="gD1" style="width:auto"> Día 1</label>' +
-        '<label style="display:flex;gap:8px;align-items:center;color:var(--texto)"><input type="checkbox" id="gD2" style="width:auto"> Día 2</label>' +
+      '<div class="mb-12">' +
+        '<div class="lbl-dias">Días autorizados *</div>' +
+        '<label class="fila-check"><input type="checkbox" id="gD1" class="chk-auto"> Día 1</label>' +
+        '<label class="fila-check"><input type="checkbox" id="gD2" class="chk-auto"> Día 2</label>' +
       '</div>' +
       '<div class="modal-acciones">' +
         '<button class="btn btn-gris" id="mCancelar">Cancelar</button>' +
@@ -736,7 +736,7 @@ async function cargar(){
     pintarTodo();
     document.getElementById('panelPrincipal').style.display = 'block';
   }catch(e){
-    document.getElementById('panelCarga').innerHTML = '<p style="color:var(--rojo)">Error al cargar: ' + esc(e.message || e) + '</p>';
+    document.getElementById('panelCarga').innerHTML = '<p class="texto-rojo">Error al cargar: ' + esc(e.message || e) + '</p>';
   }
 }
 
