@@ -108,7 +108,7 @@ function pantallaPremiacion(d){
 
   if (d.canjeado_at){
     const f = formatearFecha(d.canjeado_at);
-    html += '<div class="aviso aviso-rojo aviso-grande" style="margin-top:14px">';
+    html += '<div class="aviso aviso-rojo aviso-grande mt-14">';
     html += '<span class="canjeada-icono">✅</span>';
     html += '<strong>Tu premio ya fue canjeado.</strong><br>';
     html += 'Validado el <strong>' + f.fecha + '</strong> a las <strong>' + f.hora + '</strong>.<br><br>';
@@ -191,7 +191,7 @@ function renderizar(d){
     <div class="dato"><strong>Modalidad</strong><span class="pill pill-verde">${esLista ? 'Lista (' + (d.listas ? d.listas.length : 0) + ' QR por día)' : 'Pase individual'}</span></div>`;
 
   if(!algunDiaVigente){
-    html += `<div class="aviso aviso-rojo aviso-grande" style="margin-top:14px">
+    html += `<div class="aviso aviso-rojo aviso-grande mt-14">
       ⛔ <strong>Esta cortesía ya no tiene días vigentes.</strong><br>
       Todos los días aprobados ya cerraron. Los QR ya no funcionan en la puerta.
     </div>`;
@@ -209,14 +209,14 @@ function renderizar(d){
       if(completada){
         html += `<h2>📅 Día ${l.dia}</h2>`;
         html += `<div class="aviso aviso-verde">✅ LISTA COMPLETADA<br>Las ${totalPersonas} personas de esta lista ya ingresaron al evento. Este QR ya no es válido.</div>`;
-        html += `<div><strong style="color:var(--suave);font-size:14px">Personas que ingresaron:</strong>
+        html += `<div><strong class="suave-14">Personas que ingresaron:</strong>
           <ul class="nombres">${l.personas.map(p => `<li>✅ ${escaparHtml(p.nombre)} ${escaparHtml(p.apellido)}</li>`).join('')}</ul>
         </div>`;
       } else {
         html += `<h2>📅 QR del Día ${l.dia}</h2>`;
-        html += `<p style="color:var(--suave);font-size:15px">Muestra este QR en la puerta el Día ${l.dia}. Todas las personas de la lista entran con este único QR.</p>`;
+        html += `<p class="nota-15">Muestra este QR en la puerta el Día ${l.dia}. Todas las personas de la lista entran con este único QR.</p>`;
         html += `<div class="qr-box" id="qr-dia-${l.dia}"></div>`;
-        html += `<div><strong style="color:var(--suave);font-size:14px">Personas en esta lista (${autorizadas}/${totalPersonas} han entrado):</strong>
+        html += `<div><strong class="suave-14">Personas en esta lista (${autorizadas}/${totalPersonas} han entrado):</strong>
           <ul class="nombres">${l.personas.map(p => `<li>${p.estado === 'autorizado' ? '✅ ' : '⏳ '}${escaparHtml(p.nombre)} ${escaparHtml(p.apellido)}</li>`).join('')}</ul>
         </div>`;
       }
@@ -234,7 +234,7 @@ function renderizar(d){
     else {
       html += `<div class="tarjeta">
         <h2>🎟️ Tu QR personal</h2>
-        <p style="color:var(--suave);font-size:15px">Muestra este QR en la puerta los días aprobados. Es personal e intransferible.</p>
+        <p class="nota-15">Muestra este QR en la puerta los días aprobados. Es personal e intransferible.</p>
         <div class="qr-box" id="qr-ind"></div>
       </div>`;
     }
@@ -248,7 +248,7 @@ function renderizar(d){
       <a class="btn btn-azul" id="btnWA" target="_blank" rel="noopener">📱 WhatsApp</a>
       <a class="btn btn-gris" id="btnMail">✉️ Correo</a>
     </div>
-    <div class="aviso aviso-verde" style="margin-top:14px">Si el QR no escanea en la puerta, el personal puede escribir el código que aparece debajo del QR.</div>
+    <div class="aviso aviso-verde mt-14">Si el QR no escanea en la puerta, el personal puede escribir el código que aparece debajo del QR.</div>
   </div>`;
 
   contenido.innerHTML = html;
