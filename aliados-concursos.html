@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-2PBlJD7nUBSHF4Cqip77lAP27xMG9A4vVijuMD6+C0s='; img-src 'self' data: blob:; connect-src 'self' https://exrbwctegkzxurzwihvh.supabase.co; font-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'; style-src 'self' 'sha256-Ap/wiyMCny8yb4LLl3ZaAbpnECNG8gk2xGhKoeP25ys=' 'sha256-ZPcWx88KfPk6iiGUaxvgoOcPOZduN35aOh5DdiMHmnA='">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>NitroSystem - Concursos</title>
 <style>html,body{background:#0b1220;margin:0;}</style>
@@ -83,6 +84,14 @@ h3{margin:14px 0 6px;font-size:19px;color:var(--acento2);}
 .modal-botones .btn{min-width:110px;padding:11px 16px;}
 .detalle-linea{margin:4px 0;font-size:15px;}
 .detalle-linea b{color:var(--texto);}
+/* ===== P0-04 fase 4b: clases que sustituyen a los style= de este HTML y de js/aliados-concursos.js ===== */
+.fila-mt0{margin-top:0}
+.mt-12{margin-top:12px}
+.asig-mt6{margin-top:6px}
+.asig-mt8{margin-top:8px}
+.codigo-inline{margin:0;padding:4px 8px;display:inline-block}
+.codigo-inline2{display:inline-block;margin:0;padding:4px 8px}
+.rojo{color:var(--rojo)}
 </style>
 </head>
 <body>
@@ -96,19 +105,19 @@ h3{margin:14px 0 6px;font-size:19px;color:var(--acento2);}
 </header>
 <main>
 
-  <div class="fila" style="margin-top:0">
+  <div class="fila fila-mt0">
     <button class="btn btn-gris" id="btnVolverArriba">← Volver a aliados</button>
   </div>
 
   <section class="tarjeta" id="tarjetaAliado">
     <h2 class="centrado">🏆 Concursos del aliado</h2>
-    <div id="contenedorInfoAsig" style="margin-top:12px"><p class="suave">Cargando...</p></div>
+    <div id="contenedorInfoAsig" class="mt-12"><p class="suave">Cargando...</p></div>
   </section>
 
   <section class="tarjeta" id="tarjetaConcursos">
     <h2 class="centrado">📜 Historial completo de concursos</h2>
     <p class="suave centrado">Todos los concursos de esta asignación, incluso cerrados. Solo lectura por ahora.</p>
-    <div id="contenedorConcursos" style="margin-top:12px"><p class="suave">Consultando...</p></div>
+    <div id="contenedorConcursos" class="mt-12"><p class="suave">Consultando...</p></div>
   </section>
 
   <div class="fila">
