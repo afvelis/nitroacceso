@@ -516,18 +516,18 @@ async function abrirModalEdicion(c){
           '<label class="ancho-total">Concurso<input id="pCon" type="text" ' + (soloLectura ? 'disabled' : '') + '></label>' +
           '<label class="ancho-total">Aliado / Organización<input id="pAli" type="text" ' + (soloLectura ? 'disabled' : '') + '></label>' +
         '</div>' +
-        '<p class="suave" style="margin-top:10px">Canjeado: ' + (c.cupones_consumidos || 0) + '/' + (c.cupones_total || 0) + ' cupones' + (c.canjeado_at ? ' el ' + fechaBonita(c.canjeado_at) + ' (Día ' + (c.canjeado_dia||'-') + ')' : '') + '</p>'
+        '<p class="suave mt-10">Canjeado: ' + (c.cupones_consumidos || 0) + '/' + (c.cupones_total || 0) + ' cupones' + (c.canjeado_at ? ' el ' + fechaBonita(c.canjeado_at) + ' (Día ' + (c.canjeado_dia||'-') + ')' : '') + '</p>'
       ) : (
         '<label>Razón<select id="eRazon" ' + (soloLectura ? 'disabled' : '') + '></select></label>' +
-        '<div id="eCausaWrap" style="display:none"><label>Causa específica<input id="eCausa" type="text" ' + (soloLectura ? 'disabled' : '') + '></label></div>' +
+        '<div id="eCausaWrap" class="oculto"><label>Causa específica<input id="eCausa" type="text" ' + (soloLectura ? 'disabled' : '') + '></label></div>' +
         '<div id="eOrgWrap"><label>Nombre de la organización<input id="eOrg" type="text" ' + (soloLectura ? 'disabled' : '') + '></label></div>' +
-        '<div id="eIndWrap" style="display:none"><label>Nombre<input id="eNom" type="text" ' + (soloLectura ? 'disabled' : '') + '></label><label>Apellido<input id="eApe" type="text" ' + (soloLectura ? 'disabled' : '') + '></label><label>Cédula<input id="eCed" type="text" ' + (soloLectura ? 'disabled' : '') + '></label></div>'
+        '<div id="eIndWrap" class="oculto"><label>Nombre<input id="eNom" type="text" ' + (soloLectura ? 'disabled' : '') + '></label><label>Apellido<input id="eApe" type="text" ' + (soloLectura ? 'disabled' : '') + '></label><label>Cédula<input id="eCed" type="text" ' + (soloLectura ? 'disabled' : '') + '></label></div>'
       )) +
     '</div>' +
     '<div class="modal-seccion">' +
       '<h4>Días aprobados</h4>' +
       '<div id="eDiasActuales" class="suave">-</div>' +
-      '<div id="eDiasBotones" class="fila" style="margin-top:8px"></div>' +
+      '<div id="eDiasBotones" class="fila mt-8"></div>' +
     '</div>' +
     (esPremiacion ? '' :
       '<div class="modal-seccion" id="ePersonasSeccion">' +
@@ -627,7 +627,7 @@ async function abrirModalEdicion(c){
           var origen = null;
           listas.forEach(function(lx){ if (lx.dia !== l.dia && !diaCerrado(lx.dia) && (lx.personas||[]).length > 0) origen = lx; });
           if (origen){
-            html += '<div class="fila" style="margin-top:8px"><button class="btn btn-verde btn-mini" data-copiar-desde="' + origen.dia + '" data-copiar-a="' + l.dia + '">📋 Copiar personas del Día ' + origen.dia + ' (' + origen.personas.length + ')</button></div>';
+            html += '<div class="fila mt-8"><button class="btn btn-verde btn-mini" data-copiar-desde="' + origen.dia + '" data-copiar-a="' + l.dia + '">📋 Copiar personas del Día ' + origen.dia + ' (' + origen.personas.length + ')</button></div>';
           }
         }
         html += '<div class="fila-persona" data-dia="' + l.dia + '"><input placeholder="Nombre" class="aNom"><input placeholder="Apellido" class="aApe"><input placeholder="Cedula" class="aCed"><button class="btn btn-gris btn-mini" data-agregar-p="' + l.dia + '">+ Agregar</button></div>';
