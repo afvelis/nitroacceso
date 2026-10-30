@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-f6gMiZw7xhQQTEBhMQlDfHzPpJwEO2mdlSURmW594bU='; img-src 'self' data: blob:; connect-src 'self' https://exrbwctegkzxurzwihvh.supabase.co; font-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'; style-src 'self' 'sha256-Ap/wiyMCny8yb4LLl3ZaAbpnECNG8gk2xGhKoeP25ys=' 'sha256-NPcAPSQcHt02q7fzjA31p5djc1MVIgsSfow1yUgs/+8='">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NitroSystem - Dashboard</title>
 <style>html,body{background:#0b1220;margin:0;}</style>
@@ -73,6 +74,13 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;backgr
 .pill-tipo{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;margin-right:6px}
 .pill-tipo-talento{background:rgba(31,162,255,.2);color:var(--acento2)}
 .pill-tipo-cortesia{background:rgba(186,104,255,.2);color:#c68cff}
+/* ===== P0-04 fase 4b: clases que sustituyen a los style= de este HTML y de js/dashboard.js ===== */
+.oculto{display:none}
+.suave{color:var(--suave)}
+.mb-8{margin-bottom:8px}
+.suave-15{color:var(--suave);font-size:15px}
+.centro{text-align:center}
+.btn-atajo-aliado{margin-left:8px;background:linear-gradient(135deg,var(--acento),#26a866);color:#06281a}
 </style>
 </head>
 <body>
@@ -88,20 +96,20 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;backgr
 <main class="contenedor">
   <div class="atajo">
     <a href="cortesias.html" class="btn-atajo">🎁 Nueva cortesía</a>
-    <a href="aliados.html" class="btn-atajo" style="margin-left:8px;background:linear-gradient(135deg,var(--acento),#26a866);color:#06281a">🤝 Aliados</a>
+    <a href="aliados.html" class="btn-atajo" class="btn-atajo btn-atajo-aliado">🤝 Aliados</a>
   </div>
 
   <div id="panelCarga" class="tarjeta">
-    <p style="color:var(--suave)">Cargando resumen...</p>
+    <p class="suave">Cargando resumen...</p>
   </div>
 
-  <div id="panelContenido" style="display:none">
+  <div id="panelContenido" class="oculto">
     <div class="tarjeta">
       <h2>📌 Estado del evento</h2>
       <div class="estado-evento">
         <div class="estado-info">
-          <div style="margin-bottom:8px"><span id="pillEstado" class="estado-pill estado-abierto">Cargando...</span></div>
-          <div style="color:var(--suave);font-size:15px">Día activo: <span id="diaActivo" class="pill-dia">-</span></div>
+          <div class="mb-8"><span id="pillEstado" class="estado-pill estado-abierto">Cargando...</span></div>
+          <div class="suave-15">Día activo: <span id="diaActivo" class="pill-dia">-</span></div>
         </div>
         <button class="btn btn-rojo" id="btnToggleEdicion">🔒 Cerrar edición</button>
       </div>
@@ -130,7 +138,7 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;backgr
       <div id="panelAlertas"></div>
     </div>
 
-    <div class="tarjeta" style="text-align:center">
+    <div class="tarjeta centro">
       <button class="btn btn-gris" id="btnSalir">🚪 Salir</button>
     </div>
   </div>
