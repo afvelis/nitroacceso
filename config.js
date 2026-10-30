@@ -249,11 +249,14 @@ function ponerQR(contenedor, data, textoCodigo) {
   }
   cargarLibreriaQR().then(function (ok) {
     if (vacio()) return;
-    contenedor.innerHTML = "";
-    if (ok && construirQR(contenedor, data, textoCodigo)) {
-      dibujarPieQR(contenedor, textoCodigo);
-    } else {
-      textoQRContenedor(contenedor, data, textoCodigo);
+    // Solo se vacía si de verdad hay que pintar aquí: si la rama síncrona de
+    // arriba ya dibujó, este .then no debe borrar el QR ni el pie del código.
+    if (contenedor.childNodes.length === 0) {
+      if (ok && construirQR(contenedor, data, textoCodigo)) {
+        dibujarPieQR(contenedor, textoCodigo);
+      } else {
+        textoQRContenedor(contenedor, data, textoCodigo);
+      }
     }
   });
 }
