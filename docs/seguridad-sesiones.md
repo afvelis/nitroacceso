@@ -57,7 +57,7 @@
 | # | Prueba | Resultado |
 | --- | --- | --- |
 | 1 | Rate limit: 5 fallas reales (bloque `DO` en SQL Editor, cubo `desconocida`) + 6º intento | `ERROR: P0001: BLOQUEADO…` en la línea del RAISE — criterio cumplido |
-| 2 | Registro de intentos | Filas con IP real `153.51.231.69` + user-agent (exitosos) y fallidas |
+| 2 | Registro de intentos | Filas con la IP real del usuario + user-agent (exitosos y fallidos); el valor de la IP no se documenta (dato personal) |
 | 3 | Sesiones nuevas | `token_hash` de 64, `device_label`, `expira_at = creada_at + 8 h`, `ultimo_uso_at` actualizándose tras Fase D |
 | 4 | Reescritura por lotes | Conteos 10 → 23 → 28 → 36 con guardián; 0 residuos de chequeo viejo |
 | 5 | Humo de app tras cada fase | Dashboard, estadísticas, cortesías, aliados, puerta (marcado en vivo) — "APP OK" |
