@@ -220,9 +220,13 @@ function agregarBotonesQR(fila, msgEl, qrInner, l){
     + (urlImg ? ' . Ver el QR: ' + urlImg : '');
 
   fila.appendChild(boton('Copiar QR', 'btn-gris', async function(){
-    if (urlImg) {
+    // P0-04: el <img> del QR se crea al pintarlo (local), no antes. Se busca en el
+    // momento del clic para no caer siempre al respaldo de texto.
+    var imgAhora = qrInner.querySelector('img');
+    var urlAhora = imgAhora ? imgAhora.src : null;
+    if (urlAhora) {
       try {
-        await copiarImagen(urlImg);
+        await copiarImagen(urlAhora);
         pinta(msgEl, 'QR copiado como imagen: pegalo en tu grupo o chat con Ctrl+V o manteniendo pulsado.', true);
         return;
       } catch (e) {}
