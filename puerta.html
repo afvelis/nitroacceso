@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://exrbwctegkzxurzwihvh.supabase.co; font-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'; style-src 'self' 'sha256-N0R4ahSpDJ5fhmNWMuGLi4vBozdBQhWxVdVHihZ3+GU='">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NitroSystem - Puerta</title>
 <script src="config.js"></script>
@@ -70,6 +71,20 @@ label{display:block;margin-bottom:6px;color:var(--suave);font-size:15px}
 .modal-mensaje{color:var(--texto);white-space:pre-wrap;line-height:1.55;margin-bottom:18px}
 .modal-acciones{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
 .modal-acciones .btn{padding:10px 18px;font-size:16px}
+/* ===== P0-04 fase 4b: clases que sustituyen a los style= de este HTML y de js/puerta.js ===== */
+@layer oculto-classico{
+  .oculto{display:none !important}
+}
+.nota-suave{margin-bottom:14px;color:var(--suave)}
+.mt-14{margin-top:14px}
+.mb-14{margin-bottom:14px}
+.mt-20{margin-top:20px}
+.mb-16{margin-bottom:16px}
+.mb-12{margin-bottom:12px}
+.fila-codigo{display:flex;gap:8px;margin-bottom:16px}
+.nota-camara{text-align:center;color:var(--suave);font-size:14px}
+.centro-margen{margin:10px auto;display:block}
+.campo-cupones{max-width:140px;margin-bottom:14px}
 </style>
 </head>
 <body>
@@ -85,13 +100,13 @@ label{display:block;margin-bottom:6px;color:var(--suave);font-size:15px}
 <main class="contenedor">
   <div class="tarjeta" id="tarjetaLogin">
     <h2>🔐 Sesión de puerta</h2>
-    <p style="color:var(--suave);margin-bottom:14px">Ingresa el PIN de puerta para comenzar.</p>
+    <p class="nota-suave">Ingresa el PIN de puerta para comenzar.</p>
     <label for="pin">PIN de puerta</label>
     <input type="password" id="pin" inputmode="numeric" placeholder="••••••">
-    <div style="margin-top:14px"><button class="btn" id="btnEntrar">Entrar</button></div>
+    <div class="mt-14"><button class="btn" id="btnEntrar">Entrar</button></div>
   </div>
 
-  <div class="tarjeta" id="tarjetaEventoAbierto" style="display:none">
+  <div class="tarjeta oculto" id="tarjetaEventoAbierto">
     <h2>⚠️ Evento aún abierto</h2>
     <div class="aviso aviso-rojo">
       <strong>La base de datos no está congelada.</strong><br><br>
@@ -101,7 +116,7 @@ label{display:block;margin-bottom:6px;color:var(--suave);font-size:15px}
     <button class="btn btn-gris" id="btnSalirEventoAbierto">🚪 Salir</button>
   </div>
 
-  <div class="tarjeta" id="tarjetaPrincipal" style="display:none">
+  <div class="tarjeta oculto" id="tarjetaPrincipal">
     <h2>🎯 Control de acceso</h2>
     
     <label>Día de control</label>
@@ -110,34 +125,34 @@ label{display:block;margin-bottom:6px;color:var(--suave);font-size:15px}
       <button id="btnDia2"> DÍA 2<span class="candado" id="estadoDia2"></span></button>
     </div>
 
-    <div id="panelCerrarDia1" style="display:none;margin-bottom:16px">
+    <div class="oculto mb-16" id="panelCerrarDia1">
       <button class="btn btn-rojo btn-grande" id="btnCerrarDia1"> Cerrar Día 1 y activar Día 2</button>
     </div>
 
-    <div id="panelEscaneo" style="display:none">
+    <div class="oculto" id="panelEscaneo">
       <div class="aviso" id="avisoDia"></div>
 
       <button class="btn btn-grande btn-azul" id="btnEscanear">📷 ESCANEAR QR</button>
       
-      <div style="display:flex;gap:8px;margin-bottom:16px">
+      <div class="fila-codigo">
         <input type="text" id="inputManual" placeholder="Código (L-, V-, CL-, CI-, PR-) o nombre del talento">
         <button class="btn" id="btnBuscarManual">Buscar</button>
       </div>
 
-      <div id="visorContainer" style="display:none">
+      <div class="oculto" id="visorContainer">
         <video id="visorQR" autoplay playsinline muted></video>
-        <p style="text-align:center;color:var(--suave);font-size:14px">Apunta la cámara al código QR</p>
-        <button class="btn btn-rojo" id="btnDetenerScan" style="display:block;margin:10px auto">⏹ Detener cámara</button>
+        <p class="nota-camara">Apunta la cámara al código QR</p>
+        <button class="btn btn-rojo centro-margen" id="btnDetenerScan">⏹ Detener cámara</button>
       </div>
 
-      <div id="panelResultado" style="display:none;margin-top:20px"></div>
+      <div class="oculto mt-20" id="panelResultado"></div>
 
-      <div id="barraSiguiente" class="barra-siguiente" style="display:none">
+      <div class="barra-siguiente oculto" id="barraSiguiente">
         <button class="btn btn-grande" id="btnSiguiente">🔄 Escanear siguiente entrada</button>
       </div>
     </div>
 
-    <div style="margin-top:20px">
+    <div class="mt-20">
       <button class="btn btn-gris" id="btnSalir">🚪 Cerrar sesión</button>
     </div>
   </div>
