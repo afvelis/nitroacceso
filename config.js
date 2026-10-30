@@ -110,26 +110,68 @@ function urlPuerta(param, valor) {
   return BASE + "puerta.html?" + param + "=" + encodeURIComponent(valor);
 }
 
-function ponerQR(contenedor, data, textoCodigo) {
-  contenedor.innerHTML = "";
-  const img = document.createElement("img");
-  img.alt = "codigo QR";
-  img.width = 220;
-  img.height = 220;
-  img.src = "https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=" + encodeURIComponent(data);
-  img.onerror = function () {
-    const img2 = document.createElement("img");
-    img2.alt = "codigo QR";
-    img2.width = 220;
-    img2.height = 220;
-    img2.src = "https://quickchart.io/qr?size=220&text=" + encodeURIComponent(data);
-    img2.onerror = function () {
-      contenedor.innerHTML = "<p style='font-size:28px;font-weight:800;color:#000;'>" + textoCodigo + "</p>";
-    };
-    contenedor.innerHTML = "";
-    contenedor.appendChild(img2);
-  };
-  contenedor.appendChild(img);
+// ===== P0-04 · QR local (sin servicios de terceros) =====
+// ANTES: la imagen del QR se pedía a un servicio de terceros (y un segundo
+// servicio como respaldo), con el código del pase dentro de la URL. Ese código
+// es una credencial: quien lo ve puede usarlo. Además, sin internet no había QR.
+// AHORA: el QR se dibuja en el propio navegador con vendor/qrcode-generator.
+// El código del pase NUNCA sale del equipo. Si la librería no cargara, se
+// muestra el código y el link en texto (el respaldo manual del día del evento).
+//
+// Se dibuja en un <canvas> y además se deja el resultado como <img> con una
+// URL data: (mismo tamaño de antes, 220x220). talento.html usa img.src para
+// "Copiar QR" (fetch + portapapeles), así que el <img> debe seguir existiendo.
+var QR_LIB_URL = new URL("vendor/qrcode-generator-1.4.4.js", document.currentScript ? document.currentScript.src : location.href).href;
+var QR_UTF8_URL = new URL("vendor/qrcode-generator-1.4.4-utf8.js", document.currentScript ? document.currentScript.src : location.href).href;
+var qrLibreriaEstado = { estado: "sin-cargar", promesa: null };
+var qrContador = 0;
+
+function cargarLibreriaQR() {
+  if (typeof window.qrcode === "function") { qrLibreriaEstado.estado = "lista"; return Promise.resolve(true); }
+  if (qrLibreriaEstado.promesa) return qrLibreriaEstado.promesa;
+  function cargar(src) {
+    return new Promise(function (resolver) {
+      const s = document.createElement("script");
+      s.src = src;
+      s.async = true;
+      s.onload = function () { resolver(true); };
+      s.onerror = function () { resolver(false); };
+      document.head.appendChild(s);
+    });
+  }
+  qrLibreriaEstado.estado = "cargando";
+  qrLibreriaEstado.promesa = cargar(QR_LIB_URL).then(function (ok) {
+    if (!ok) { qrLibreriaEstado.estado = "fallo"; return false; }
+    // El gancho UTF-8 es opcional: permite ñ y acentos en el texto codificado.
+    return cargar(QR_UTF8_URL).then(function () {
+      qrLibreriaEstado.estado = "lista";
+      return typeof window.qrcode === "function";
+    });
+  });
+  return qrLibreriaEstado.promesa;
+}
+
+function textoQRContenedor(contenedor, data, textoCodigo) {
+  const caja = document.createElement("div");
+  const pCodigo = document.createElement("p");
+  pCodigo.textContent = "Código: " + textoCodigo;
+  pCodigo.style.fontSize = "28px";
+  pCodigo.style.fontWeight = "800";
+  pCodigo.style.color = "#000";
+  pCodigo.style.letterSpacing = "2px";
+  pCodigo.style.textAlign = "center";
+  const pLink = document.createElement("p");
+  pLink.textContent = String(data);
+  pLink.style.fontSize = "12px";
+  pLink.style.color = "#333";
+  pLink.style.wordBreak = "break-all";
+  pLink.style.textAlign = "center";
+  caja.appendChild(pCodigo);
+  if (String(data) !== String(textoCodigo)) caja.appendChild(pLink);
+  contenedor.appendChild(caja);
+}
+
+function dibujarPieQR(contenedor, textoCodigo) {
   const p = document.createElement("p");
   p.textContent = "Codigo: " + textoCodigo;
   p.style.fontSize = "22px";
@@ -140,6 +182,80 @@ function ponerQR(contenedor, data, textoCodigo) {
   p.style.fontFamily = "ui-monospace, Menlo, Consolas, monospace";
   p.style.textAlign = "center";
   contenedor.appendChild(p);
+}
+
+// Dibuja, de forma SÍNCRONA (sin bloquear la UI con esperas), el QR de `data`.
+// La mayoría de los códigos de este sistema caben entre 21x21 y 45x45 módulos,
+// así que no hay coste apreciable en listas largas.
+function construirQR(contenedor, data, textoCodigo) {
+  if (typeof window.qrcode !== "function") return false;
+  let qr = null;
+  try {
+    qr = window.qrcode(0, "M");
+    qr.addData(String(data));
+    qr.make();
+  } catch (e) {
+    try {
+      qr = window.qrcode(0, "L");
+      qr.addData(String(data));
+      qr.make();
+    } catch (e2) {
+      return false;
+    }
+  }
+  const n = qr.getModuleCount();
+  const escala = Math.max(2, Math.floor(220 / (n + 8)));
+  const margen = escala * 4;
+  const lado = n * escala + margen * 2;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = lado;
+  canvas.height = lado;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return false;
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, lado, lado);
+  ctx.fillStyle = "#000000";
+  for (let fila = 0; fila < n; fila++) {
+    for (let col = 0; col < n; col++) {
+      if (qr.isDark(fila, col)) {
+        ctx.fillRect(margen + col * escala, margen + fila * escala, escala, escala);
+      }
+    }
+  }
+
+  const url = canvas.toDataURL("image/png");
+  const img = document.createElement("img");
+  img.alt = "codigo QR";
+  img.width = 220;
+  img.height = 220;
+  img.style.width = "220px";
+  img.style.height = "220px";
+  img.src = url;
+  // Guardamos también el texto para que "Copiar QR" no dependa de img.src.
+  img.setAttribute("data-qr-texto", String(data));
+  contenedor.appendChild(img);
+  return true;
+}
+
+function ponerQR(contenedor, data, textoCodigo) {
+  contenedor.innerHTML = "";
+  const token = "qr" + (++qrContador);
+  contenedor.setAttribute("data-qr-token", token);
+  const vacio = function () { return contenedor.getAttribute("data-qr-token") !== token; };
+
+  if (typeof window.qrcode === "function") {
+    if (construirQR(contenedor, data, textoCodigo)) { dibujarPieQR(contenedor, textoCodigo); return; }
+  }
+  cargarLibreriaQR().then(function (ok) {
+    if (vacio()) return;
+    contenedor.innerHTML = "";
+    if (ok && construirQR(contenedor, data, textoCodigo)) {
+      dibujarPieQR(contenedor, textoCodigo);
+    } else {
+      textoQRContenedor(contenedor, data, textoCodigo);
+    }
+  });
 }
 
 function linkWA(texto) {
