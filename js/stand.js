@@ -180,7 +180,7 @@ function renderTabla() {
   const tbody = document.getElementById('cuerpoTabla');
   tbody.innerHTML = '';
   if (!listaPersonas.length) {
-    tbody.innerHTML = '<tr><td colspan="4" style="color:var(--suave);">Todavía no hay personas en la lista.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4" class="suave">Todavía no hay personas en la lista.</td></tr>';
   } else {
     listaPersonas.forEach(function(p, i){
       const tr = document.createElement('tr');
