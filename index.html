@@ -43,7 +43,7 @@ input:focus{outline:2px solid var(--acento2);border-color:var(--acento2)}
   <div class="tarjeta">
     <h2>🔐 Ingreso al sistema</h2>
     <label for="pin" style="display:block;margin-bottom:10px;color:var(--suave);font-size:15px">Escribe tu PIN</label>
-    <input type="password" id="pin" inputmode="numeric" placeholder="••••" autocomplete="off">
+    <input type="password" id="pin" inputmode="numeric" placeholder="••••••" autocomplete="off">
     <button class="btn" id="btnEntrar">Entrar</button>
     <div class="aviso-error" id="msgError"></div>
   </div>
@@ -95,7 +95,13 @@ btnEntrar.addEventListener('click', async () => {
     guardarSesion(r[0].token, r[0].rol);
     redirigirPorRol(r[0].rol);
   }catch(e){
-    msgError.textContent = 'Error al entrar: ' + (e.message || e);
+    // P0-03: mensajes legibles y sin filtrar detalles internos.
+    const msgRaw = (e && e.message) ? e.message : String(e);
+    if(msgRaw.indexOf('BLOQUEADO') !== -1){
+      msgError.textContent = '⛔ Bloqueado: demasiados intentos fallidos desde esta conexión. Espera 15 minutos y vuelve a intentar.';
+    }else{
+      msgError.textContent = 'Error al entrar. Revisa tu conexión e intenta de nuevo.';
+    }
     msgError.style.display = 'block';
     btnEntrar.disabled = false;
     btnEntrar.textContent = 'Entrar';
