@@ -2,7 +2,7 @@
 id: "P0-04"
 titulo: "QR local, dependencias vendorizadas y CSP"
 prioridad: "P0"
-estado: "pendiente"
+estado: "en_progreso"
 area: "seguridad"
 depende_de: []
 archivos:
