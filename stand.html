@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://exrbwctegkzxurzwihvh.supabase.co; font-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'; style-src 'self' 'sha256-lCVKlIu11KztF4Q4+js33rAfKBQqB6+eUkyutRkWdZk='">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Registro de Stand - NitroSystem</title>
 <style>
@@ -54,6 +55,12 @@ th { color: var(--suave); font-weight: 600; }
 .braz-ok { color: var(--acento); font-size: 18px; font-weight: 600; text-align: center; margin: 0 0 12px; }
 .botones-finales { display: flex; gap: 10px; flex-wrap: wrap; }
 .botones-finales .btn { flex: 1; min-width: 160px; margin-top: 0; }
+/* ===== P0-04 fase 4b: clases que sustituyen a los style= de este HTML y de js/stand.js ===== */
+.oculto{display:none}
+.suave{color:var(--suave)}
+.suave-m0{color:var(--suave);margin:0}
+.suave-4{color:var(--suave);margin:0 0 4px}
+.suave-mt10{color:var(--suave);margin:10px 0 0}
 </style>
 </head>
 <body>
@@ -64,23 +71,23 @@ th { color: var(--suave); font-weight: 600; }
     <h1>NitroSystem</h1>
   </div>
 
-  <div id="cardAdios" class="tarjeta aviso" style="display:none;">
+  <div id="cardAdios" class="tarjeta aviso oculto">
     Sesión finalizada en este equipo: los campos quedaron limpios y el resumen cerrado. Si el navegador no cerró la pestaña automáticamente, ciérrala con la X o entrega el equipo. Tu QR guardado sigue siendo válido.
   </div>
 
   <div id="cargando" class="tarjeta">Cargando información del stand...</div>
 
-  <div id="infoStand" class="tarjeta" style="display:none;">
+  <div id="infoStand" class="tarjeta oculto">
     <h2 id="stTitulo"></h2>
     <p>Tipo: <strong id="stTipo"></strong></p>
     <p>Cupo: <strong id="stCupo"></strong> | Registrados: <strong id="stReg"></strong> | Quedan: <strong id="stQuedan"></strong></p>
   </div>
 
-  <div id="avisoCerrado" class="tarjeta aviso" style="display:none;"></div>
+  <div id="avisoCerrado" class="tarjeta aviso oculto"></div>
 
-  <div id="formLote" class="tarjeta" style="display:none;">
+  <div id="formLote" class="tarjeta oculto">
     <h2>Datos del negocio</h2>
-    <p style="color:var(--suave);margin:0 0 4px;">Si ya estaban llenos, es lo que registraste antes: puedes dejarlos así o cambiarlos.</p>
+    <p class="suave-4">Si ya estaban llenos, es lo que registraste antes: puedes dejarlos así o cambiarlos.</p>
     <label>Empresa *</label><input type="text" id="inEmpresa" />
     <label>Qué vende *</label><input type="text" id="inVende" />
 
@@ -90,23 +97,23 @@ th { color: var(--suave); font-weight: 600; }
     <label>Cédula *</label><input type="text" id="inCedula" placeholder="Ej.: V-12345678" />
     <div class="fila-botones">
       <button class="btn btn-azul" id="btnAgregar">Agregar a la lista</button>
-      <button class="btn btn-gris" id="btnCancelarEdit" style="display:none;">Cancelar modificacion</button>
+      <button class="btn btn-gris" id="btnCancelarEdit oculto">Cancelar modificacion</button>
     </div>
     <div id="msgPersona" class="error"></div>
 
     <h3>Lista de personas autorizadas</h3>
-    <p id="msgCupo" style="color:var(--suave);margin:0;"></p>
+    <p id="msgCupo" class="suave-m0"></p>
     <table>
       <thead><tr><th>Nombre</th><th>Apellido</th><th>Cédula</th><th>Acciones</th></tr></thead>
       <tbody id="cuerpoTabla"></tbody>
     </table>
 
     <button class="btn" id="btnRegistrar">Registrar y generar los QR</button>
-    <p style="color:var(--suave);">Si registras menos personas que los lugares disponibles, solo se generan esos QR. Puedes volver con este mismo link para agregar los faltantes mientras el administrador no cierre la edición. Una vez cerrada, no se puede agregar ni quitar: quien quedó con QR entra, y quien no esté registrado paga entrada.</p>
+    <p class="suave">Si registras menos personas que los lugares disponibles, solo se generan esos QR. Puedes volver con este mismo link para agregar los faltantes mientras el administrador no cierre la edición. Una vez cerrada, no se puede agregar ni quitar: quien quedó con QR entra, y quien no esté registrado paga entrada.</p>
     <div id="msgError" class="error"></div>
   </div>
 
-  <div id="recuperarQR" class="tarjeta" style="display:none;">
+  <div id="recuperarQR" class="tarjeta oculto">
     <h2>¿Ya te registraste?</h2>
     <p>Escribe tu cédula para recuperar tu QR.</p>
     <input type="text" id="inCedulaRec" placeholder="Cédula" />
@@ -114,12 +121,12 @@ th { color: var(--suave); font-weight: 600; }
     <div id="msgRec" class="error"></div>
   </div>
 
-  <div id="cardFinalizar" class="tarjeta" style="display:none;">
+  <div id="cardFinalizar" class="tarjeta oculto">
     <button class="btn btn-rojo" id="btnFinalizar">🚪 Finalizar sesión</button>
-    <p style="color:var(--suave);margin:10px 0 0;">Limpia este equipo (campos, lista y QR en pantalla) y cierra el link. Los QR guardados siguen siendo válidos.</p>
+    <p class="suave-mt10">Limpia este equipo (campos, lista y QR en pantalla) y cierra el link. Los QR guardados siguen siendo válidos.</p>
   </div>
 
-  <div id="pantallaQR" style="display:none;">
+  <div id="pantallaQR" class="oculto">
     <p class="braz-ok">✅ Registro completado: estos son los brazaletes del stand.</p>
     <div id="listaQRs"></div>
     <div class="botones-finales">
@@ -128,7 +135,7 @@ th { color: var(--suave); font-weight: 600; }
   </div>
 </div>
 
-<div class="barra-fija" id="barraFija" style="display:none;">
+<div class="barra-fija" id="barraFija oculto">
   <button class="btn" id="btnTermine">✅ Terminé: ver mis QR</button>
 </div>
 
