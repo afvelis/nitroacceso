@@ -46,7 +46,7 @@ function modalPrompt(mensaje, valorInicial, titulo){
       '<div class="modal-caja">' +
         '<div class="modal-titulo">' + escaparHtml(titulo) + '</div>' +
         '<div class="modal-mensaje">' + escaparHtml(mensaje) + '</div>' +
-        '<input type="text" id="modalPromptInput" style="margin-bottom:14px">' +
+        '<input type="text" id="modalPromptInput" class="mb-14">' +
         '<div class="modal-acciones">' +
           '<button class="btn btn-gris" id="modalCancelarBtn">Cancelar</button>' +
           '<button class="btn" id="modalAceptarBtn">Aceptar</button>' +
@@ -522,14 +522,14 @@ async function buscarCortesiaLista(codigo){
           <div class="dato"><strong>Tipo</strong><span class="pill pill-morado">Cortesía por lista</span></div>
           <div class="dato"><strong>Organización</strong><span>${escaparHtml(d.nombre_organizacion || '-')}</span></div>
           <div class="dato"><strong>Código</strong><span class="mono">${escaparHtml(d.codigo_corto)}</span></div>
-          <div class="aviso aviso-rojo" style="margin-top:14px">
+          <div class="aviso aviso-rojo mt-14">
              LISTA COMPLETADA<br>
             Las ${total} personas de esta lista ya ingresaron al evento. 
             Última entrada registrada a las <strong>${horaUltima}</strong>.
             Este QR ya no es válido.
           </div>
           <div class="fila-personas">
-            <div class="aviso" style="margin-bottom:12px">Personas que ingresaron:</div>
+            <div class="aviso mb-12">Personas que ingresaron:</div>
             ${nombres}
           </div>
         </div>
@@ -543,7 +543,7 @@ async function buscarCortesiaLista(codigo){
     html += `<div class="dato"><strong>Razón</strong><span>${escaparHtml(razonLegible(d.razon, d.causa))}</span></div>`;
     html += `<div class="dato"><strong>Código</strong><span class="mono">${escaparHtml(d.codigo_corto)}</span></div>`;
     html += `<div class="fila-personas">`;
-    html += `<div class="aviso" style="margin-bottom:12px">Total: ${total} • ✅ Autorizados: ${aut} • ⏳ Pendientes: ${total - aut}</div>`;
+    html += `<div class="aviso mb-12">Total: ${total} • ✅ Autorizados: ${aut} • ⏳ Pendientes: ${total - aut}</div>`;
     
     d.personas.forEach((p, idx) => {
       const ya = p.estado === 'autorizado';
@@ -697,7 +697,7 @@ async function buscarPremiacion(codigoQR){
     } else {
       html += `<div class="aviso">🎟️ <strong>Selecciona cuántos cupones consume este premio.</strong><br>Al confirmar, el QR queda consumido del todo y no se puede usar de nuevo, aunque no se usen todos los cupones.</div>`;
       html += `<label>Cupones que consumen ahora (1 a ${cupones})</label>`;
-      html += `<input type="number" id="inputCupones" min="1" max="${cupones}" value="${cupones}" style="max-width:140px;margin-bottom:14px">`;
+      html += `<input type="number" id="inputCupones" min="1" max="${cupones}" value="${cupones}" class="campo-cupones">`;
       html += `<button class="btn btn-grande" id="btnCanjearPremio">✅ AUTORIZAR Y CONSUMIR PREMIO</button>`;
     }
     html += `</div>`;
@@ -856,14 +856,14 @@ async function mostrarListaCompleta(lista){
           <div class="dato"><strong>Tipo</strong><span class="pill pill-azul">Lista de talento</span></div>
           <div class="dato"><strong>Talento</strong><span>${escaparHtml(lista.talento || 'Talento')}</span></div>
           <div class="dato"><strong>Código</strong><span class="mono">${escaparHtml(lista.codigo_corto)}</span></div>
-          <div class="aviso aviso-rojo" style="margin-top:14px">
+          <div class="aviso aviso-rojo mt-14">
             ⛔ LISTA COMPLETADA<br>
             Las ${totalPersonas} personas de esta lista ya ingresaron al evento. 
             Última entrada registrada a las <strong>${horaUltima}</strong>.
             Este QR ya no es válido.
           </div>
           <div class="fila-personas">
-            <div class="aviso" style="margin-bottom:12px">Personas que ingresaron:</div>
+            <div class="aviso mb-12">Personas que ingresaron:</div>
             ${nombres}
           </div>
         </div>
@@ -886,11 +886,11 @@ async function mostrarListaCompleta(lista){
     html += `</div>`;
     
     if(lista.estado === 'cerrada'){
-      html += `<div class="aviso aviso-rojo" style="margin-bottom:12px">⛔ LISTA CERRADA<br>Esta lista fue cerrada y ya no permite nuevas autorizaciones. Las personas pendientes no pueden entrar.</div>`;
+      html += `<div class="aviso aviso-rojo mb-12">⛔ LISTA CERRADA<br>Esta lista fue cerrada y ya no permite nuevas autorizaciones. Las personas pendientes no pueden entrar.</div>`;
     }
     
     html += `<div class="fila-personas">`;
-    html += `<div class="aviso ${lista.estado === 'cerrada' && pendientes > 0 ? 'aviso-rojo' : ''}" style="margin-bottom:12px">`;
+    html += `<div class="aviso mb-12 ${lista.estado === 'cerrada' && pendientes > 0 ? 'aviso-rojo' : ''}">`;
     html += `Total: ${totalPersonas} • ✅ Autorizados: ${autorizados} • ⏳ Pendientes: ${pendientes}`;
     if(lista.estado === 'cerrada' && pendientes > 0){
       html += `<br><strong>Lista cerrada: las personas pendientes NO pueden entrar.</strong>`;
