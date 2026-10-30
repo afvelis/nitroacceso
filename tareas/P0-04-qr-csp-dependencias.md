@@ -2,7 +2,7 @@
 id: "P0-04"
 titulo: "QR local, dependencias vendorizadas y CSP"
 prioridad: "P0"
-estado: "en_progreso"
+estado: "bloqueado"
 area: "seguridad"
 depende_de: []
 archivos:
@@ -37,9 +37,9 @@ Generar y leer QR sin depender de servicios externos, servir las librerías desd
 - [x] Reemplazar `ponerQR` en `config.js` para generar el QR localmente en un `<canvas>` o `<img>` con data URL. Mantener el texto del código como fallback.
 - [x] Vendorizar `jsQR` (o usar `BarcodeDetector` con fallback local) y servirlo desde el mismo origen. Eliminar la carga desde CDN.
 - [x] Añadir `integrity` y `crossorigin` a cualquier script externo que quede. *(No queda ningún script externo: los tres se sirven desde `vendor/`.)*
-- [ ] Añadir `Referrer-Policy: no-referrer` y `noindex` en páginas de pases, admin y puerta.
-- [ ] Configurar CSP. Si se usa Cloudflare/Netlify, hacerlo por cabecera; en GitHub Pages, usar `meta` para lo soportado y documentar la limitación.
-- [ ] Externalizar los scripts inline o usar hashes/nonces para que la CSP sea efectiva. Mientras haya `'unsafe-inline'`, la CSP no evita la ejecución de XSS.
+- [x] Añadir `Referrer-Policy: no-referrer` y `noindex` en páginas de pases, admin y puerta.
+- [x] Configurar CSP. Si se usa Cloudflare/Netlify, hacerlo por cabecera; en GitHub Pages, usar `meta` para lo soportado y documentar la limitación. *(Sin Cloudflare confirmado por cabeceras: `server: GitHub.com`, `via: 1.1 varnish`, `x-served-by: cache-mia…`. Por tanto la CSP va por `<meta>`. Hecha en 5 de 14 páginas; ver Notas de la fase 4a.)*
+- [x] Externalizar los scripts inline o usar hashes/nonces para que la CSP sea efectiva. Mientras haya `'unsafe-inline'`, la CSP no evita la ejecución de XSS. *(14 de 17 bloques externalizados a `js/`; los 3 restantes se quedan inline a propósito, ver Notas de la fase 3.)*
 - [x] Verificar que la cámara sigue funcionando en Android/iOS y en el navegador que se usará en puerta. *(Verificado en el navegador de puerta del usuario: lectura por cámara de un QR de vendedor y ficha con botón Autorizar.)*
 - [x] Medir que la generación local no bloquea la UI con listas grandes; si hace falta, generar en un `requestIdleCallback` o en un worker. *(Medido: un QR de código corto es de 33-37 módulos y se dibuja al instante; una URL larga de lista llega a 41 módulos. El dibujo es síncrono y sin red, no hay esperas que colgar la UI.)*
 
@@ -48,9 +48,9 @@ Generar y leer QR sin depender de servicios externos, servir las librerías desd
 - [x] El sitio no hace peticiones a `api.qrserver.com`, `quickchart.io` ni `cdn.jsdelivr.net`.
 - [x] Los QR se generan sin conexión (o con la app ya cargada) y el código de respaldo sigue visible.
 - [x] La cámara lee QR con `BarcodeDetector` y con el fallback local.
-- [ ] La CSP no rompe login, generación de QR, escaneo, copiado ni WhatsApp/correo.
-- [ ] `Referrer-Policy` y `noindex` están presentes en las páginas sensibles.
-- [ ] Un XSS de prueba no puede enviar datos a un dominio externo por `connect-src`/`img-src`.
+- [x] La CSP no rompe login, generación de QR, escaneo, copiado ni WhatsApp/correo. *(Verificado en las 5 páginas con CSP activa: 5/5 «OK» del usuario, con estilos y funciones intactas.)*
+- [x] `Referrer-Policy` y `noindex` están presentes en las páginas sensibles.
+- [x] Un XSS de prueba no puede enviar datos a un dominio externo por `connect-src`/`img-src`. *(Cumplido por configuración en las 5 páginas con CSP: `connect-src` solo `'self'` + Supabase; `img-src` solo `'self' data: blob:`. Queda pendiente la prueba con payload explícito para las 9 páginas restantes.)*
 
 ## Verificación
 
@@ -95,7 +95,7 @@ Los cinco están en `main` y coinciden byte a byte con los verificados en local 
 - Estructura del QR contrastada con el estándar: los módulos de datos coinciden con los totales oficiales en **16/16 versiones** (v1…v16).
 - Respaldo: con la librería caída se muestra código y link en texto.
 - Repo servido: 0 referencias a `api.qrserver.com`, `quickchart.io` o `cdn.jsdelivr.net` en los 16 archivos que sirve el sitio.
-- **En vivo (usuario):** QR dibujado en `stand.html?s=STD-21B563B1`; pie `Codigo: V-…` copiado y pegado en `puerta.html` (Día 2) → ficha del vendedor con botón Autorizar; y **lectura por cámara** del mismo QR → ficha con Autorizar. QR también dibujado en `talento.html`.
+- **En vivo (usuario):** QR dibujado en `stand.html?s=STD-XXXXXXX (el del evento)`; pie `Codigo: V-…` copiado y pegado en `puerta.html` (Día 2) → ficha del vendedor con botón Autorizar; y **lectura por cámara** del mismo QR → ficha con Autorizar. QR también dibujado en `talento.html`.
 
 **Riesgos y pendientes**
 
@@ -105,6 +105,143 @@ Los cinco están en `main` y coinciden byte a byte con los verificados en local 
 
 **Fuera de alcance confirmado:** `puerta.html` **nunca dibuja QR**, es la página que lo lee. Que al pegar un código muestre la ficha y no un QR es el diseño correcto.
 
-### Fases 2-4
+### Fase 2 — Referrer-Policy y noindex (30/10/2026) · COMPLETA Y VERIFICADA
 
-> Pendientes.
+**Qué cambió**
+
+- Se añadieron dos metadatos en el `<head>`, justo debajo de `<meta charset="UTF-8">`:
+  ```html
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  ```
+- `noindex, nofollow` (12 páginas): `talento.html`, `stand.html`, `cortesia.html`, `cortesias.html`, `admin.html`, `dashboard.html`, `puerta.html`, `coord.html`, `estadisticas.html`, `aliados.html`, `aliados-concursos.html`, `aliado.html`.
+- Solo `no-referrer` (2 páginas neutras): `index.html`, `acceso-denegado.html`. No se les pone `noindex` para no arriesgar nada en el login.
+
+**Por qué**
+
+- Sin `noindex`, un buscador puede indexar un link de pase con nombres y cédulas.
+- Sin `no-referrer`, al pulsar un enlace externo (Instagram, WhatsApp) el navegador envía la URL completa de la página, que **lleva el código del pase** (`?t=`, `?c=`, `?s=`).
+- Va por `<meta>` porque GitHub Pages no permite añadir cabeceras HTTP desde el repo. Es la limitación documentada; `frame-ancestors` y demás quedan para la fase 4.
+
+**Cambio estrictamente aditivo — verificado de dos formas**
+
+1. Reconstrucción: quitando las líneas nuevas, cada archivo es **idéntico carácter por carácter** al de `main` — 14/14 OK.
+2. Comprobación inversa: **+2 líneas añadidas y 0 perdidas** en las 12 páginas con `noindex`; **+1 línea y 0 perdidas** en las 2 neutras.
+
+**Archivos y resultado en `main`**
+
+| Archivo | Bytes | SHA-256 (inicio) | En `main` |
+| --- | --- | --- | --- |
+| `acceso-denegado.html` | 2.079 | `d1fcd468b96ae74b` | idéntico |
+| `admin.html` | 40.932 | `df15973807929661` | idéntico |
+| `aliado.html` | 46.911 | `ffbc8e4a08756d10` | idéntico |
+| `aliados.html` | 50.211 | `239e4e3fe5a39f49` | idéntico |
+| `aliados-concursos.html` | 17.861 | `f70839a65a4033c5` | idéntico |
+| `coord.html` | 21.775 | `d3890282c08992ab` | idéntico |
+| `cortesia.html` | 19.676 | `1139a538e9b21884` | idéntico |
+| `cortesias.html` | 53.713 | `d542d808224c614d` | idéntico |
+| `dashboard.html` | 17.505 | `a03cf5ad7bb70834` | idéntico |
+| `estadisticas.html` | 27.338 | `a9bc14fa96769288` | idéntico |
+| `index.html` | 4.716 | `24b01f6438fb389f` | idéntico |
+| `puerta.html` | 50.921 | `2a06b4aeff096bf1` | idéntico |
+| `stand.html` | 26.915 | `5312ae82fb01f525` | idéntico |
+| `talento.html` | 19.447 | `e5ef427f0997ed5a` | idéntico |
+
+**Verificación en vivo:** `stand.html?s=STD-XXXXXXX (el del evento)` sigue dibujando el QR después del lote (confirmado por el usuario).
+
+**Pendiente arrastrado:** los ~110 atributos `style="..."` inline siguen en pie hasta la fase 3.
+
+### Fase 3 — scripts inline a `js/` (30/10/2026) · COMPLETA
+
+**Qué cambió**
+
+- Se sacaron **14 de los 17 bloques** `<script>` inline a archivos propios en `js/`, uno por página. En el HTML, el bloque se sustituyó **en su mismo sitio** por `<script src="js/<pagina>.js"></script>`, sin `defer` ni `async`, para no alterar el orden de ejecución respecto a `config.js`.
+- **No se reescribió ni una línea de código**: el texto se movió byte a byte. Verificado por reconstrucción: volviendo a meter el bloque original en el HTML nuevo, cada archivo queda idéntico carácter por carácter al de `main`.
+
+**Lote 1 — páginas públicas (7 páginas + 7 JS)**
+
+`index`, `talento`, `stand`, `cortesia`, `cortesias`, `coord`, `acceso-denegado`. HTML antes → después (B): 4.650→2.908, 19.337→5.196, 26.719→8.526, 19.431→4.953, 53.311→13.033, 21.672→7.083, 2.023→1.885. Verificado en `main` (14/14 idénticos). Probado por el usuario: QR de stand, «Copiar QR», campo del PIN, listado de cortesías, listado y copia en `coord`, y QR de talento copiado a WhatsApp.
+
+**Lote 2 — páginas del panel (7 páginas + 7 JS)**
+
+`admin`, `dashboard`, `aliados`, `aliados-concursos`, `estadisticas`, `puerta`, `aliado`. Verificado en `main` (14/14 idénticos). Probado por el usuario: `puerta` (un código `V-` del evento → ficha con Autorizar), login → `dashboard`, `estadisticas` y `aliados`.
+
+**Los 3 bloques que se quedan inline, a propósito**
+
+`dashboard.html`, `aliados.html` y `aliados-concursos.html` tienen un mini-script de **chequeo de sesión antes de pintar el body** (M-28). Pasarlo a archivo externo obligaría al navegador a descargarlo antes de decidir y, en ese hueco, se vería el panel a alguien sin sesión: sería una regresión de seguridad. Se resolverá en la fase 4 con `hash` en la CSP, no moviéndolo.
+
+**Arreglo fuera de guion: el pie del código QR**
+
+Al probar el lote 1 se descubrió que en `talento.html` **el pie `Codigo: L-…` no se veía**. Tres causas encadenadas, corregidas en `config.js`:
+
+1. `ponerQR` borraba el contenedor dentro del `.then` de carga de la librería y pisaba lo ya pintado. Ahora solo borra si está vacío.
+2. El pie heredaba el fondo oscuro de la página: texto negro sobre negro. Ahora lleva fondo y color propios (`#000` sobre `#fff`).
+3. Con `display:inline-block` el pie se montaba **al lado** del QR. Ahora es `block` + `width:fit-content` + `margin:auto` + `clear:both`: siempre debajo y centrado.
+
+Además, en `js/talento.js` el botón «Copiar QR» leía `img.src` al construir la página, cuando el `<img>` local aún no existía, y caía siempre al respaldo de texto. Ahora busca la imagen en el momento del clic. Confirmado por el usuario pegando la imagen en WhatsApp.
+
+**Verificación en vivo del pie:** debajo del QR, etiqueta blanca con `Codigo: L-XXXXXX` en negro y centrada.
+
+**Lección registrada:** antes de dar un cambio por roto, recargar con `Ctrl+F5`. La caché del navegador sirvió el `config.js` viejo y dio por fallido un arreglo que ya estaba bien.
+
+### Fase 4a — CSP estricta en 5 páginas (30/10/2026) · COMPLETA Y VERIFICADA
+
+**Hosting confirmado por cabeceras (no por suposición):** `server: GitHub.com`, `via: 1.1 varnish`, `x-served-by: cache-mia-kfll1870045-MIA`. **No hay Cloudflare.** Por tanto la CSP va por `<meta>` y `frame-ancestors` no es aplicable.
+
+**Páginas con CSP activa (5 de 14):** `index.html`, `coord.html`, `admin.html`, `estadisticas.html`, `acceso-denegado.html`.
+
+**CSP aplicada:**
+
+```
+default-src 'self'; script-src 'self'; style-src 'self' 'sha256-<bloque <style> de esa página>';
+img-src 'self' data: blob:; connect-src 'self' https://exrbwctegkzxurzwihvh.supabase.co;
+font-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'
+```
+
+**Sin `'unsafe-inline'` en ningún sitio.** Para lograrlo se eliminaron en esas 5 páginas **todos** los atributos inline (11 en total):
+
+| Página | Antes | Ahora |
+| --- | --- | --- |
+| `acceso-denegado.html` | 1 `style` + 1 `onclick` | `.nota-ayuda` en CSS · `addEventListener('click')` en su `js/` |
+| `index.html` | 1 `style` | `<label class="etiqueta-pin">` |
+| `coord.html` | 1 `style` (dentro de `coord.js`) | `<p class="suave nota-renovado">` |
+| `admin.html` | 3 `style` + 1 `onclick` (dentro de `admin.js`) | `.campo-modal`, `.fila-compacta`, `.codigo-enlace`; el botón de imprimir del informe se engancha con `addEventListener` dentro del documento de la ventana nueva |
+| `estadisticas.html` | 4 `style` | `.oculto`, `.texto-error`, y las **2 barras de progreso**: `style="width:X%"` → `data-ancho="X"` aplicado por CSSOM (`el.style.width`), que la CSP **no** bloquea porque no es atributo inline |
+
+**Trampa detectada y corregida antes de entregar:** el primer intento puso `style-src 'self'` a secas, lo que **habría bloqueado el `<style>` del `<head>` de las 5 páginas** y las habría dejado sin estilos. Se corrigió añadiendo el `sha256` del bloque `<style>` de cada página. Verificado: el hash recalculado desde el archivo final coincide con el de su CSP en 5/5.
+
+**Verificación**
+
+- Atributos inline restantes en los 10 archivos: **0**.
+- `node --check` de los 5 `js/`: **5/5 OK**.
+- Sin `setAttribute('style')` ni `cssText` en el JS de esas páginas (solo CSSOM, permitido).
+- Subido a `main`: **10/10 idénticos** por SHA-256; CSP y `style-src 'sha256-…'` presentes en las 5.
+- **En vivo (usuario):** las 5 páginas cargan con estilos y funcionan.
+
+**Pendiente de la fase 4b — 9 páginas, 121 conversiones**
+
+| Página | `style=` | `onclick=` |
+| --- | --- | --- |
+| `puerta.html` | 22 | 0 |
+| `aliado.html` | 20 | 0 |
+| `aliados.html` | 20 | 0 |
+| `stand.html` | 14 | 0 |
+| `cortesias.html` | 14 | 0 |
+| `dashboard.html` | 9 | 0 |
+| `aliados-concursos.html` | 8 | 0 |
+| `cortesia.html` | 8 | 0 |
+| `talento.html` | 0 (ya limpia) | 0 |
+
+`dashboard.html`, `aliados.html`, `aliados-concursos.html` necesitan además el `sha256` de su mini-script de sesión (M-28), que se conserva inline a propósito para no perder el anti-destello.
+
+**Método probado que se debe repetir en cada página del 4b:** sacar los `style=` a clases en el `<style>` de esa página → recalcular el `sha256` del bloque → ponerlo en su CSP → verificar que el hash recalculado coincide → probar la página con `Ctrl+F5` y mirar la consola.
+
+### Por qué la tarea queda `bloqueado` y no `hecho`
+
+Los criterios de aceptación están cubiertos, pero **no en todo el sitio**: la CSP está activa en 5 de 14 páginas y las 9 restantes (121 conversiones, incluidas `puerta.html` y `stand.html`, que son las del evento) siguen sin CSP. Marcarla `hecho` sería mentir sobre el estado.
+
+**Lo que desbloquea:** ejecutar la fase 4b página por página con el método de arriba. No hay bloqueo técnico ni dependencia externa: es trabajo pendiente, y `estado: bloqueado` se usa aquí en el sentido de «no puede darse por terminada», no de «espera algo de alguien».
+
+**Al cerrar la 4b:** poner `estado: "hecho"` y actualizar esta nota.
+
+
