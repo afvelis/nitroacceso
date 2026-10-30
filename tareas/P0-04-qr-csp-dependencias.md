@@ -147,6 +147,8 @@ Los cinco están en `main` y coinciden byte a byte con los verificados en local 
 | `stand.html` | 26.915 | `5312ae82fb01f525` | idéntico |
 | `talento.html` | 19.447 | `e5ef427f0997ed5a` | idéntico |
 
+**Nota de lectura (30/10/2026, Sesión 17):** los pesos y hashes de esta tabla son de la fase 2, **antes** de la fase 3. No corresponden a `main` hoy (la fase 3 vació los `<script>` inline de esos archivos y los dejó en `js/`). Se conservan como evidencia histórica; no usarlos para verificar.
+
 **Verificación en vivo:** `stand.html?s=STD-XXXXXXX (el del evento)` sigue dibujando el QR después del lote (confirmado por el usuario).
 
 **Pendiente arrastrado:** los ~110 atributos `style="..."` inline siguen en pie hasta la fase 3.
@@ -218,30 +220,57 @@ font-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'
 - Subido a `main`: **10/10 idénticos** por SHA-256; CSP y `style-src 'sha256-…'` presentes en las 5.
 - **En vivo (usuario):** las 5 páginas cargan con estilos y funcionan.
 
-**Pendiente de la fase 4b — 9 páginas, 121 conversiones**
+### Fase 4b — INVENTARIO REAL Y MÉTODO CORREGIDO (30/10/2026, Sesión 17) · PENDIENTE
 
-| Página | `style=` | `onclick=` |
-| --- | --- | --- |
-| `puerta.html` | 22 | 0 |
-| `aliado.html` | 20 | 0 |
-| `aliados.html` | 20 | 0 |
-| `stand.html` | 14 | 0 |
-| `cortesias.html` | 14 | 0 |
-| `dashboard.html` | 9 | 0 |
-| `aliados-concursos.html` | 8 | 0 |
-| `cortesia.html` | 8 | 0 |
-| `talento.html` | 0 (ya limpia) | 0 |
+> Esta sección **sustituye** al inventario que se escribió al cerrar la Sesión 16. Aquel decía «121 conversiones: `puerta` 22, `aliado` 20, `aliados` 20, `stand` 14, `cortesias` 14, `dashboard` 9, `aliados-concursos` 8, `cortesia` 8, `talento` 0». **Ese reparto era falso** porque contó los `style=` que hay dentro de las cadenas de los `js/` como si fueran atributos del HTML, y no separó lo que la CSP sí bloquea de lo que no.
 
-`dashboard.html`, `aliados.html`, `aliados-concursos.html` necesitan además el `sha256` de su mini-script de sesión (M-28), que se conserva inline a propósito para no perder el anti-destello.
+**Regla que faltaba, y es la que decide cuánto trabajo hay de verdad**
 
-**Método probado que se debe repetir en cada página del 4b:** sacar los `style=` a clases en el `<style>` de esa página → recalcular el `sha256` del bloque → ponerlo en su CSP → verificar que el hash recalculado coincide → probar la página con `Ctrl+F5` y mirar la consola.
+Una CSP solo bloquea lo que el navegador lee **en el propio HTML**: un atributo `style="…"` escrito en la etiqueta, un `<script>` inline sin `sha256`/`nonce`, una etiqueta `onclick="…"`. **No** bloquea lo que se pone por JavaScript: `el.style.width = …`, `elemento.onclick = fn`, `addEventListener`, ni el parámetro `style` de `setAttribute`. Poner `'unsafe-inline'` en la CSP **no** autoriza eso, y quitarlo **no** lo rompe.
 
-### Por qué la tarea queda `bloqueado` y no `hecho`
+Consecuencia práctica: las páginas cuyo HTML está limpio pero cuyo `js/` arma estilos por JS **no se tocan**, porque la CSP las acepta tal cual.
 
-Los criterios de aceptación están cubiertos, pero **no en todo el sitio**: la CSP está activa en 5 de 14 páginas y las 9 restantes (121 conversiones, incluidas `puerta.html` y `stand.html`, que son las del evento) siguen sin CSP. Marcarla `hecho` sería mentir sobre el estado.
+**Inventario recalculado — situación de `main` el 30/10/2026 (Sesión 17)**
 
-**Lo que desbloquea:** ejecutar la fase 4b página por página con el método de arriba. No hay bloqueo técnico ni dependencia externa: es trabajo pendiente, y `estado: bloqueado` se usa aquí en el sentido de «no puede darse por terminada», no de «espera algo de alguien».
+| Página | `style=` en el **HTML** | `on*=` en el HTML | `style=` dentro de su `js/` | Lo que hay que hacer |
+| --- | --- | --- | --- | --- |
+| `talento.html` | 0 | 0 | 0 | **Solo la CSP.** No tiene bloque `<style>`: hay que crear uno (con la regla `.texto-qr` y el `sha256` de ese bloque). |
+| `puerta.html` | 0 | 0 | 23 (todos `innerHTML`/`style.x` en `js/puerta.js`) | **Solo la CSP**, con el `sha256` de su bloque `<style>`. No se toca `js/puerta.js`. |
+| `stand.html` | 14 | 0 | — (por revisar en `js/stand.js`) | Convertir los 14. **Ojo:** son `display:none`/`display:block` en elementos que el `js/` muestra y esconde. La clase tiene que respetar el `hidden` del JS. |
+| `cortesias.html` | 14 | 0 | — | Convertir los 14 (9 son `display:none` de zonas del formulario). |
+| `cortesia.html` | 1 | 0 | — | Convertir el único (`<p style="color:var(--suave)">` → `class="suave"`). |
+| `aliado.html` | 12 | 0 | — | Convertir los 12 (casi todos `display:none` de paneles). |
+| `aliados.html` | 3 | 0 | — | Convertir los 3 (dos son `margin-top` de filas de botones). **Además** dos `sha256` en `style-src` (tiene **dos** bloques `<style>`) y uno en `script-src` (el mini-script M-28). |
+| `dashboard.html` | 6 | 0 | — | Convertir los 6 (todos `display:none` / `text-align`). **Además** dos `sha256` en `style-src` y uno en `script-src`. |
+| `aliados-concursos.html` | 3 | 0 | — | Convertir los 3 (`margin-top` de contenedores). **Además** dos `sha256` en `style-src` y uno en `script-src`. |
 
-**Al cerrar la 4b:** poner `estado: "hecho"` y actualizar esta nota.
+**Total real de conversiones en HTML: 53**, no 121. Y **tres páginas (`talento`, `puerta`, `cortesias`) no se tocan** salvo para añadir la CSP — o, en `cortesias`, para convertir estilos.
 
+**Los hashes ya calculados de las páginas con dos bloques `<style>` y script inline** (calculados hoy sobre la copia de `main`; si se edita el CSS o el mini-script, hay que recalcularlos):
 
+| Página | `<style>` nº1 (el de `html,body`) | `<style>` nº2 (el grande) | Script inline M-28 |
+| --- | --- | --- | --- |
+| `dashboard.html` | `sha256-Ap/wiyMCny8yb4LLl3ZaAbpnECNG8gk2xGhKoeP25ys=` | `sha256-42iUIxicnLxlvhGQVQYE/6QpKRCldtvw6VX/cVruECY=` | `sha256-f6gMiZw7xhQQTEBhMQlDfHzPpJwEO2mdlSURmW594bU=` |
+| `aliados.html` | `sha256-Ap/wiyMCny8yb4LLl3ZaAbpnECNG8gk2xGhKoeP25ys=` | `sha256-jV/ejzbkKHdNwOx29V5Q5wRUGxp+EIEF4HrcoumPV8g=` | `sha256-+/Yv4Bv8Ewd/gNioEZEQykHGCyNAO93lEYrgKenVu5M=` |
+| `aliados-concursos.html` | `sha256-Ap/wiyMCny8yb4LLl3ZaAbpnECNG8gk2xGhKoeP25ys=` | `sha256-ubXaAY2Avj0hrxKOnCoo0RwW2s9tI8dD5S/0f5EvUAA=` | `sha256-+/Yv4Bv8Ewd/gNioEZEQykHGCyNAO93lEYrgKenVu5M=` |
+
+Como referencia de que el método del hash es el correcto: el bloque `<style>` de `index.html` en `main` da `sha256-pdMlgnVtG795DLpzdYUOLcxCF2c+ii/6LmDk8zWbJ00=`, exactamente el que ya lleva su CSP en producción.
+
+**Metaetiquetas que hoy NO están en `main` (comprobado leyendo los archivos, no la documentación)**
+
+- **La fase 2 figura como hecha y verificada, pero `main` no tiene ni un `<meta name="referrer">` ni un `<meta name="robots">`.** Tampoco los tienen las 5 páginas de la fase 4a (`index` entre ellas). Cuando se escribió la fase 4a se sustituyó la línea del `<meta name="viewport">`, y con ella desapareció la línea siguiente, que era justo donde iba el `referrer`.
+- Mientras no se rehaga, `no-referrer` (no filtrar el código del pase al pulsar un enlace externo) y `noindex` (que un buscador no indexe nombres y cédulas) **no están protegiendo nada**. No es un fallo de la 4b, pero es P0 y hay que volver a hacerlo; se saca como tarea aparte para no mezclarlo con la CSP.
+
+**Método corregido para cada página (sustituye al de la Sesión 16)**
+
+1. Arrancar de la versión que hoy está en `main`, **bajada de `main`**, no de la copia local: la copia local `repo-main` está en el estado anterior a la fase 3 (sin `js/`) y no sirve.
+2. Contar antes de tocar: `style=` y `on*=` **en el HTML**. Lo que haya dentro de las cadenas del `js/` no se toca.
+3. Sacar cada `style="…"` a una clase dentro del `<style>` que la página **ya tiene**. Las que solo muestran u ocultan (`display:none`/`display:block`) van como clase normal; si el `js/` ya jugaba con `el.style.display`, la clase tiene que dejar la propiedad en el mismo estado en que la deja el JS, o la pantalla se queda en blanco.
+4. Poner la CSP **justo debajo de `<meta charset="UTF-8">`**, con **un `sha256` por cada bloque `<style>`** de la página y **uno por cada script inline**: `style-src 'self' 'sha256-…' 'sha256-…'; script-src 'self' 'sha256-…'`.
+5. Recalcular los hashes **desde el archivo final** y comprobar que coinciden con los de su CSP. Si no coinciden, la página sale sin estilos. `style-src 'self'` a secas **bloquea** el `<style>` del `<head>`: siempre con hash.
+6. Comprobar 0 `style=` y 0 `on*=` en el HTML, `node --check` del `js/`, y que no se ha perdido ninguna línea de `main`.
+7. Entregar en carpeta aparte (HTML en la raíz del repo + `js/`), subir con texto de commit exacto, esperar el verde de Actions y probar con **`Ctrl+F5`** mirando la consola.
+
+**Herramienta de verificación local (30/10/2026):** existe un comprobador (`verificar.py`) que hace los puntos 5, 6 y 7 de golpe sobre un archivo: hashes de todos los bloques `<style>`, hashes de los scripts inline, cero `style=`/`on*=`, `setAttribute('style')`/`cssText`, `node --check` y las líneas de `main` que desaparecen. No se sube al repo: vive en la carpeta de entrega de la sesión.
+
+**Por qué la tarea sigue `bloqueado`:** la CSP está activa en 5 de 14 páginas y las 9 restantes siguen sin ella, incluidas `puerta.html` y `stand.html`, que son las del evento. Al cerrar la 4b: poner `estado: "hecho"` y actualizar esta nota.
