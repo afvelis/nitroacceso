@@ -107,6 +107,20 @@ li{margin:4px 0;}
     </div>
     <p id="notaLimpieza" class="suave"></p>
   </section>
+
+  <section class="tarjeta" id="sesiones">
+    <h2>Sesiones y seguridad</h2>
+    <p class="suave">Aqui ves las sesiones activas del sistema (panel y puerta). "Revocar" cierra TODAS las demas sesiones menos esta. La rotacion cambia un PIN por uno nuevo de exactamente 6 digitos: el nuevo queda guardado cifrado (bcrypt) y el anterior deja de servir.</p>
+    <div class="fila">
+      <button class="btn" id="btnVerSesiones">Ver sesiones activas</button>
+      <button class="btn btn-rojo" id="btnRevocarSesiones">Revocar todas las demas sesiones</button>
+    </div>
+    <div class="fila">
+      <button class="btn btn-gris" id="btnRotarAdmin">Rotar PIN admin</button>
+      <button class="btn btn-gris" id="btnRotarPuerta">Rotar PIN puerta</button>
+    </div>
+    <div id="listaSesiones"></div>
+  </section>
  
   <div class="fila">
     <button class="btn btn-gris" id="btnVolver">← Volver al dashboard</button>
@@ -175,6 +189,88 @@ function diasTexto(d1, d2){
 
 var ses = leerSesion();
 var historialHay = false;
+
+// ===== P0-03 · Auto-bloqueo por inactividad (5 min) =====
+// Candado local: garantiza que el temporizador se instale una sola vez.
+var naAutoBloqueoActivo = false;
+function activarAutoBloqueo(){
+  if (naAutoBloqueoActivo) return;
+  naAutoBloqueoActivo = true;
+  iniciarAutoBloqueo();
+}
+
+// ===== P0-03 · Sesiones y seguridad =====
+function textoCorto(t, n){
+  t = t || '';
+  return t.length > n ? t.slice(0, n) + '…' : t;
+}
+
+async function cargarSesiones(){
+  var cont = $('listaSesiones');
+  cont.innerHTML = '<p class="suave">Consultando sesiones...</p>';
+  try {
+    var arr = await llamar('f_admin_sesiones', { p_token: ses.token });
+    cont.innerHTML = '';
+    if (!arr || !arr.length) { cont.innerHTML = '<p class="suave">Sin sesiones activas (o tu sesion expiro: entra de nuevo con tu PIN).</p>'; return; }
+    arr.forEach(function(s){
+      var div = document.createElement('div');
+      div.className = 'item';
+      var tipo = (s.rol === 'admin') ? 'Admin' : 'Puerta';
+      var disp = textoCorto(s.device_label || 'Dispositivo desconocido', 60);
+      var html =
+        '<div><strong>' + esc(tipo) + '</strong>' +
+        (s.propia ? '<span class="badge badge-ok">Esta sesion</span>' : '<span class="badge badge-tipo">Otra</span>') + '</div>' +
+        '<p class="suave">Sesion (hash): ' + esc(s.sesion_hash) + ' · Creada: ' + esc(fechaBonita(s.creada_at)) + '</p>' +
+        '<p class="suave">Expira: ' + esc(fechaBonita(s.expira_at)) +
+        (s.ultimo_uso_at ? ' · Ultimo uso: ' + esc(fechaBonita(s.ultimo_uso_at)) : ' · Sin usos registrados') + '</p>' +
+        '<p class="suave">Dispositivo: ' + esc(disp) + '</p>';
+      div.innerHTML = html;
+      cont.appendChild(div);
+    });
+  } catch (e) {
+    cont.innerHTML = '<p class="suave">No se pudo cargar: ' + esc(e.message) + '</p>';
+  }
+}
+
+async function revocarSesiones(){
+  if (!confirm('Esto cerrara TODAS las demas sesiones activas (panel y puerta). ESTA sesion no se toca. Continuar?')) return;
+  try {
+    var n = await llamar('f_admin_revocar_sesiones', { p_token: ses.token });
+    if (n === -1) { alert('Tu sesion expiro: entra de nuevo con tu PIN.'); return; }
+    alert('Listo: ' + n + ' sesion(es) revocada(s). Esta sesion sigue activa.');
+    await cargarSesiones();
+  } catch (e) { alert('Fallo: ' + e.message); }
+}
+
+async function rotarPin(objetivo){
+  var nombre = (objetivo === 'admin') ? 'admin' : 'puerta';
+  var actual = prompt('Rotar PIN ' + nombre + '.\n\nPaso 1 de 2: escribe tu PIN ADMIN ACTUAL (prueba de presencia):');
+  if (actual === null) return;
+  actual = actual.trim();
+  if (!actual) { alert('Escribe tu PIN admin actual.'); return; }
+  var nuevo = prompt('Paso 2 de 2: escribe el PIN ' + nombre + ' NUEVO (exactamente 6 digitos):');
+  if (nuevo === null) return;
+  nuevo = nuevo.trim();
+  if (!/^[0-9]{6}$/.test(nuevo)) { alert('El nuevo PIN debe ser exactamente 6 digitos.'); return; }
+  try {
+    var r = await llamar('f_admin_rotar_pin', { p_token: ses.token, p_objetivo: objetivo, p_pin_actual: actual, p_pin_nuevo: nuevo });
+    if (r === 'ok') {
+      alert('PIN ' + nombre + ' rotado. El anterior ya no sirve.');
+    } else if (r === 'ERR_PIN_ACTUAL') {
+      alert('El PIN admin actual no coincide.');
+    } else if (r === 'ERR_FORMATO') {
+      alert('El nuevo PIN debe ser exactamente 6 digitos.');
+    } else if (r === 'ERR_IGUAL') {
+      alert('El nuevo PIN es igual al actual.');
+    } else if (r === 'ERR_OBJETIVO') {
+      alert('Objetivo invalido.');
+    } else if (r === 'ERR_CONFIG') {
+      alert('Error de configuracion: falta el PIN en la base.');
+    } else {
+      alert('No se pudo rotar el PIN (sesion expirada o error). Recarga e intenta de nuevo.');
+    }
+  } catch (e) { alert('Fallo: ' + e.message); }
+}
 
 async function cargarEstado(){
   try {
@@ -652,11 +748,16 @@ async function limpiarTodo(){
 if (!ses || ses.rol !== 'admin') {
   location.replace('index.html');
 } else {
+  activarAutoBloqueo();
   $('btnCerrarEdicion').onclick = function(){ cambiarEdicion(false); };
   $('btnAbrirEdicion').onclick = function(){ cambiarEdicion(true); };
   $('btnCrearCoord').onclick = crearCoord;
   $('btnGuardarInforme').onclick = guardarInforme;
   $('btnLimpiarTodo').onclick = limpiarTodo;
+  $('btnVerSesiones').onclick = cargarSesiones;
+  $('btnRevocarSesiones').onclick = revocarSesiones;
+  $('btnRotarAdmin').onclick = function(){ rotarPin('admin'); };
+  $('btnRotarPuerta').onclick = function(){ rotarPin('puerta'); };
   $('btnVolver').onclick = function(){ location.replace('dashboard.html'); };
   cargarEstado();
   cargarLista();
