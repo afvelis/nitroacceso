@@ -181,11 +181,20 @@ function dibujarPieQR(contenedor, textoCodigo) {
   p.style.fontWeight = "800";
   p.style.color = "#000";
   p.style.backgroundColor = "#fff";
-  p.style.display = "inline-block";
+  // display:block + width:fit-content + margin auto = el pie siempre va DEBAJO del
+  // QR y centrado. Con inline-block se montaba al lado cuando el contenedor no
+  // tiene ancho fijo (talento.html). clear:both lo separa de cualquier flotante.
+  p.style.display = "block";
+  p.style.width = "fit-content";
+  p.style.maxWidth = "100%";
+  p.style.marginLeft = "auto";
+  p.style.marginRight = "auto";
+  p.style.clear = "both";
   p.style.padding = "6px 14px";
   p.style.borderRadius = "8px";
   p.style.letterSpacing = "2px";
   p.style.marginTop = "12px";
+  p.style.marginBottom = "0";
   p.style.fontFamily = "ui-monospace, Menlo, Consolas, monospace";
   p.style.textAlign = "center";
   p.style.whiteSpace = "nowrap";
