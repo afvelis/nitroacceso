@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://exrbwctegkzxurzwihvh.supabase.co; font-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'; style-src 'self' 'sha256-VzWngoXgA8DV2Yk2WC7y7/zBHINSTiUnsZWRDPREFE4='">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>NitroSystem</title>
 <style>
@@ -96,6 +97,13 @@ select,input{width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1p
 .persona-lista{margin:4px 0;padding:4px 8px;background:rgba(0,0,0,.25);border-radius:6px;font-size:14px;}
 .estado-mini{font-size:12px;color:var(--suave);}
 .aviso-dia-cerrado{color:var(--rojo);font-size:14px;margin-top:6px;}
+/* ===== P0-04 fase 4b: clases que sustituyen a los style= de este HTML y de js/cortesias.js ===== */
+.oculto{display:none}
+.fila-mt0{margin-top:0}
+.color-aviso{color:var(--aviso)}
+.mt-6{margin-top:6px}
+.mt-8{margin-top:8px}
+.mt-10{margin-top:10px}
 </style>
 </head>
 <body>
@@ -109,7 +117,7 @@ select,input{width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1p
 </header>
 <main>
 
-  <div class="fila" style="margin-top:0">
+  <div class="fila fila-mt0">
      <button class="btn btn-gris" id="btnVolverArriba">← Volver al dashboard</button>
      <a class="btn btn-verde" href="aliados.html">🤝 Gestionar aliados</a>
   </div>
@@ -118,7 +126,7 @@ select,input{width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1p
     <h2>🎁 Crear cortesía</h2>
     <p class="suave">Solo tu, como administrador, creas pases de cortesía. Al crearlo se genera un link con el o los QR listos para entregar.</p>
 
-    <div id="avisoEventoCerrado" class="aviso-rojo-box" style="display:none">
+    <div id="avisoEventoCerrado" class="aviso-rojo-box oculto">
       🔒 <strong>El evento ya pasó (ambos días cerrados).</strong> El módulo de premiación queda en <strong>solo lectura</strong>: no se pueden crear, editar ni anular premiaciones. Sí puedes consultarlas en el histórico.
     </div>
 
@@ -136,7 +144,7 @@ select,input{width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1p
       </label>
     </div>
 
-    <div id="zonaInd" style="display:none">
+    <div id="zonaInd" class="oculto">
       <label>Nombre
         <input id="kNom" placeholder="Ej.: Juan">
       </label>
@@ -148,7 +156,7 @@ select,input{width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1p
       </label>
     </div>
 
-    <div id="zonaPremiacion" style="display:none">
+    <div id="zonaPremiacion" class="oculto">
       <div class="grid-premiacion">
         <label>Nombre del ganador
           <input id="kPNom" placeholder="Ej.: Maria">
@@ -180,11 +188,11 @@ select,input{width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1p
           <option value="otros">Otros</option>
         </select>
       </label>
-      <div id="zonaCausa" style="display:none">
+      <div id="zonaCausa" class="oculto">
         <label>Causa especifica
           <input id="kCausa" placeholder="Ej.: Invitado especial del alcalde">
         </label>
-        <p class="suave" style="color:var(--aviso)">Indique la causa de la cortesia: este texto quedara registrado en el sistema.</p>
+        <p class="suave color-aviso">Indique la causa de la cortesia: este texto quedara registrado en el sistema.</p>
       </div>
     </div>
 
@@ -199,7 +207,7 @@ select,input{width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1p
       <div class="fila">
         <button class="btn btn-gris" id="btnAddRow1">+ Agregar persona</button>
       </div>
-      <div id="bloqueDia2" style="display:none">
+      <div id="bloqueDia2" class="oculto">
         <h3>Personas del Dia 2 (excepción)</h3>
         <div id="rowsDia2"></div>
         <div class="fila">
@@ -215,8 +223,8 @@ select,input{width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1p
     <p id="msgCortesia" class="suave"></p>
   </section>
 
-  <section class="tarjeta tarjeta-ultima" id="panelUltima" style="display:none">
-    <h2 style="margin-top:6px">⭐ Última cortesía creada</h2>
+  <section class="tarjeta tarjeta-ultima oculto" id="panelUltima">
+    <h2 class="mt-6">⭐ Última cortesía creada</h2>
     <div id="contenidoUltima"></div>
   </section>
 
