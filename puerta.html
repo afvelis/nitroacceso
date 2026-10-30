@@ -87,7 +87,7 @@ label{display:block;margin-bottom:6px;color:var(--suave);font-size:15px}
     <h2>🔐 Sesión de puerta</h2>
     <p style="color:var(--suave);margin-bottom:14px">Ingresa el PIN de puerta para comenzar.</p>
     <label for="pin">PIN de puerta</label>
-    <input type="password" id="pin" inputmode="numeric" placeholder="••••">
+    <input type="password" id="pin" inputmode="numeric" placeholder="••••••">
     <div style="margin-top:14px"><button class="btn" id="btnEntrar">Entrar</button></div>
   </div>
 
@@ -247,6 +247,16 @@ let scanningInterval = null;
 let listaActualId = null;
 let listaActualCodigo = null;
 
+// ===== P0-03 · Auto-bloqueo por inactividad (5 min) =====
+// Candado local: garantiza que iniciarAutoBloqueo() corra UNA sola vez por
+// carga de página, sin importar por dónde entre (login o sesión existente).
+let naAutoBloqueoActivo = false;
+function activarAutoBloqueo(){
+  if(naAutoBloqueoActivo) return;
+  naAutoBloqueoActivo = true;
+  iniciarAutoBloqueo();
+}
+
 function razonLegible(r, causa){
   const map = { prensa:'Prensa', vinculo_familiar:'Vínculo familiar', premio:'Premio', autoridad:'Autoridad', otros:'Otros' };
   let t = map[r] || r;
@@ -371,6 +381,7 @@ btnEntrar.addEventListener('click', async () => {
     }
     guardarSesion(r[0].token, r[0].rol);
     tokenSesion = r[0].token;
+    activarAutoBloqueo();
     await verificarEstadoEvento();
   }catch(e){
     alert('Error al entrar: ' + (e.message || e));
@@ -1154,6 +1165,7 @@ async function mostrarListaCompleta(lista){
   const s = leerSesion();
   if(s && s.rol === 'puerta'){
     tokenSesion = s.token;
+    activarAutoBloqueo();
     verificarEstadoEvento();
   }
   const params = new URLSearchParams(location.search);
