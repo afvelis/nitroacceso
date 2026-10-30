@@ -6,7 +6,10 @@ function esc(t){
 }
 function pinta(el, texto, ok){
   el.textContent = texto;
-  el.style.color = ok ? 'var(--acento)' : 'var(--aviso)';
+  // P0-04 fase 4b: el color se aplica por clase (texto-ok / texto-aviso) y no por
+  // CSSOM, para que todo lo que pinta esta pagina quede cubierto por la CSP.
+  el.classList.remove('texto-ok', 'texto-aviso');
+  el.classList.add(ok ? 'texto-ok' : 'texto-aviso');
 }
 function avisoMsg(id, texto, ok){ pinta($(id), texto, ok); }
 function boton(texto, clase, fn){
@@ -380,4 +383,3 @@ $('btnCerrarPestana').onclick = function(){
 };
 
 cargar();
-
