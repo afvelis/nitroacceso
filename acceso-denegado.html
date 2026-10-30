@@ -2,6 +2,8 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://exrbwctegkzxurzwihvh.supabase.co; font-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'; style-src 'self' 'sha256-c6xqkljDoTXOqhquR6hGizy5OJX/oLIpIrgjvGPc5fE='">
+
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>NitroSystem</title>
 <style>
@@ -19,6 +21,7 @@ h1{margin:0 0 10px; font-size:22px;}
 p{margin:0 0 22px; color:var(--suave); font-size:16px; line-height:1.55;}
 .btn{display:inline-block; border:none; border-radius:12px; padding:12px 22px; font-size:17px; font-weight:600; color:var(--texto); background:#2a3648; cursor:pointer; text-decoration:none;}
 .btn:hover{background:#36445a;}
+  .nota-ayuda{display:none;margin-top:16px;color:var(--suave);font-size:14px;}
 </style>
 </head>
 <body>
@@ -28,8 +31,8 @@ p{margin:0 0 22px; color:var(--suave); font-size:16px; line-height:1.55;}
     <div class="icono">🔒</div>
     <h1>Acceso restringido</h1>
     <p>Este módulo es exclusivo para administradores.<br>Si llegaste aquí por error, cierra esta pestaña.</p>
-        <button class="btn" onclick="intentarCerrar()">Cerrar pestaña</button>
-    <p id="ayudaCerrar" style="display:none; margin-top:16px; color:var(--suave); font-size:14px;">Si no se cerró automáticamente, ciérrala con <b>Ctrl+W</b> (o ⌘+W en Mac).</p>
+        <button class="btn" id="btnCerrar">Cerrar pestaña</button>
+    <p id="ayudaCerrar" class="nota-ayuda">Si no se cerró automáticamente, ciérrala con <b>Ctrl+W</b> (o ⌘+W en Mac).</p>
   </div>
 </main>
 <script src="js/acceso-denegado.js"></script>

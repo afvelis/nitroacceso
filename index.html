@@ -2,6 +2,8 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://exrbwctegkzxurzwihvh.supabase.co; font-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'; style-src 'self' 'sha256-pdMlgnVtG795DLpzdYUOLcxCF2c+ii/6LmDk8zWbJ00='">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NitroSystem</title>
 <script src="config.js"></script>
@@ -27,6 +29,7 @@ input:focus{outline:2px solid var(--acento2);border-color:var(--acento2)}
 .btn:active{transform:scale(.97)}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 .aviso-error{margin-top:14px;padding:10px;border-radius:8px;background:rgba(224,82,82,.12);border:1px solid var(--rojo);color:var(--rojo);font-size:15px;display:none}
+  .etiqueta-pin{display:block;margin-bottom:10px;color:var(--suave);font-size:15px;}
 </style>
 </head>
 <body>
@@ -42,7 +45,7 @@ input:focus{outline:2px solid var(--acento2);border-color:var(--acento2)}
 <main class="contenedor">
   <div class="tarjeta">
     <h2>🔐 Ingreso al sistema</h2>
-    <label for="pin" style="display:block;margin-bottom:10px;color:var(--suave);font-size:15px">Escribe tu PIN</label>
+    <label for="pin" class="etiqueta-pin">Escribe tu PIN</label>
     <input type="password" id="pin" inputmode="numeric" placeholder="••••••" autocomplete="off">
     <button class="btn" id="btnEntrar">Entrar</button>
     <div class="aviso-error" id="msgError"></div>
