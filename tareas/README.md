@@ -58,7 +58,7 @@ Usa [PLANTILLA.md](PLANTILLA.md) para crear tareas nuevas. No renombres los IDs 
 |---|---|---|---|---|
 | [P0-01](P0-01-xss-escape.md) | Eliminar el XSS almacenado y centralizar el escape | P0 | **hecho** (28/10/2026) | — |
 | [P0-02](P0-02-rls-autorizacion.md) | Verificar y cerrar RLS, grants y autorización por rol | P0 | **hecho** (29/10/2026) | — |
-| [P0-03](P0-03-login-sesiones.md) | Endurecer PIN, rate limit, tokens y bloqueo de sesión | P0 | pendiente | — |
+| [P0-03](P0-03-login-sesiones.md) | Endurecer PIN, rate limit, tokens y bloqueo de sesión | P0 | **hecho** (29/10/2026) | — |
 | [P0-04](P0-04-qr-csp-dependencias.md) | QR local, dependencias vendorizadas y CSP | P0 | pendiente | — |
 | [P0-05](P0-05-backups-limpieza.md) | Backups, exportación y limpieza segura | P0 | pendiente | — |
 | [P1-01](P1-01-integridad-escaneos-cupones.md) | Escaneos atómicos, cupones y cédulas duplicadas | P1 | pendiente | P0-02 |
@@ -84,7 +84,7 @@ Usa [PLANTILLA.md](PLANTILLA.md) para crear tareas nuevas. No renombres los IDs 
 
 1. **P0-01** (XSS): es el riesgo más directo y se puede corregir sin tocar Supabase. ✅ HECHO 28/10/2026.
 2. **P0-02** (RLS/autorización): define si el resto de los controles sirven. ✅ HECHO 29/10/2026.
-3. **P0-03** (sesiones): reduce el impacto de un token robado.
+3. **P0-03** (sesiones): reduce el impacto de un token robado. ✅ HECHO 29/10/2026 — PINs de 6 dígitos con bcrypt, rate limit 5 fallas/15 min, sesiones de 8 h solo-hash, revocación y salida real, auto-bloqueo 5 min. Detalle en [P0-03](P0-03-login-sesiones.md) y en `docs/seguridad-sesiones.md`.
 4. **P0-04** (QR/CSP): quita dependencias externas y reduce exfiltración.
 5. **P0-05** (backups): protege contra el error humano y el borrado accidental.
 6. **P1-01** y **P1-02**: integridad y separación de roles en puerta.
