@@ -79,12 +79,12 @@ function renderInfoAsig(asig){
 
   cont.innerHTML =
     '<div><strong>' + esc(a.nombre_organizacion || '(sin nombre)') + '</strong> ' + estBadge + '</div>' +
-    '<p class="asig-linea" style="margin-top:6px">Responsable: <b>' + esc(a.responsable || '-') + '</b></p>' +
+    '<p class="asig-linea asig-mt6">Responsable: <b>' + esc(a.responsable || '-') + '</b></p>' +
     '<p class="asig-linea">Correo: <b>' + esc(a.correo || '-') + '</b> · Teléfono: <b>' + esc(a.telefono || '-') + '</b></p>' +
-    '<p class="asig-linea" style="margin-top:8px"><span class="codigo codigo-chico" style="margin:0;padding:4px 8px;display:inline-block">' + esc(asig.codigo_link || '-') + '</span> ' + poolBadge + ' ' + asigBadge + '</p>' +
+    '<p class="asig-linea asig-mt8"><span class="codigo codigo-chico codigo-inline">' + esc(asig.codigo_link || '-') + '</span> ' + poolBadge + ' ' + asigBadge + '</p>' +
     '<p class="asig-linea">' + textoPool(asig) + '</p>' +
     (asig.estado !== 'activa' && asig.razon_anulacion
-      ? '<p class="asig-linea" style="color:var(--rojo)">Razón de anulación: <b>' + esc(asig.razon_anulacion) + '</b></p>'
+      ? '<p class="asig-linea rojo">Razón de anulación: <b>' + esc(asig.razon_anulacion) + '</b></p>'
       : '');
 }
 
@@ -178,7 +178,7 @@ function abrirModalDetalle(c){
         '<p class="detalle-linea">CI: <b>' + esc(g.cedula || '-') + '</b></p>' +
         '<p class="detalle-linea">Correo: <b>' + esc(g.correo || '-') + '</b></p>' +
         '<p class="detalle-linea">Teléfono: <b>' + esc(g.telefono || '-') + '</b></p>' +
-        '<p class="detalle-linea">Código: <span class="codigo codigo-chico" style="display:inline-block;margin:0;padding:4px 8px">' + esc(g.codigo_link || '-') + '</span></p>' +
+        '<p class="detalle-linea">Código: <span class="codigo codigo-chico codigo-inline2">' + esc(g.codigo_link || '-') + '</span></p>' +
         '<p class="detalle-linea">Estado del premio: <b>' + estadoTxt + '</b></p>' +
         '<p class="detalle-linea">Cupones: <b>' + (g.cupones_total || 0) + '</b> asignados · <b>' + (g.cupones_consumidos || 0) + '</b> usados</p>' +
         '<p class="detalle-linea">Días: <b>' + (g.dia1 && g.dia2 ? 'Día 1 y Día 2' : g.dia1 ? 'Día 1' : g.dia2 ? 'Día 2' : '—') + '</b></p>' +
