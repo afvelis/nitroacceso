@@ -435,7 +435,10 @@ btnSiguiente.addEventListener('click', siguienteEscaneo);
 function cargarJsQR(callback){
   if(window.jsQR){ callback(true); return; }
   const script = document.createElement('script');
-  script.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
+  // P0-04: jsQR se sirve desde este mismo sitio (vendor/). Antes venía de un CDN
+  // externo: si fallaba, no había lectura por cámara; si estaba comprometido,
+  // podía ejecutar código en la puerta. El respaldo manual sigue igual.
+  script.src = 'vendor/jsqr-1.4.0.js';
   script.onload = () => callback(true);
   script.onerror = () => callback(false);
   document.head.appendChild(script);
