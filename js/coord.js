@@ -125,7 +125,7 @@ function renderLinks(){
       '<div><strong>' + esc(item.titulo) + '</strong>' +
       (renovado ? '<span class="badge-renov">Renovado</span>' : '') + '</div>' +
       '<div class="codigo">' + esc(link) + '</div>' +
-      (renovado ? '<p class="suave" style="margin:8px 0 0;">El link anterior de este registro quedo anulado: usa y reenvia solo este.</p>' : '') +
+      (renovado ? '<p class="suave nota-renovado">El link anterior de este registro quedo anulado: usa y reenvia solo este.</p>' : '') +
       '<div class="fila"></div>' +
       '<div class="panel-edit" hidden></div>';
     var fila = div.querySelector('.fila');

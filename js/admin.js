@@ -48,7 +48,7 @@ function modalPrompt(mensaje, valorInicial, titulo, esClave){
       '<div class="modal-caja">' +
         '<div class="modal-titulo">' + esc(titulo) + '</div>' +
         '<div class="modal-mensaje">' + esc(mensaje) + '</div>' +
-        '<input type="' + (esClave ? 'password' : 'text') + '" id="modalPromptInput" style="margin-bottom:14px">' +
+        '<input type="' + (esClave ? 'password' : 'text') + '" id="modalPromptInput" class="campo-modal">' +
         '<div class="modal-acciones">' +
           '<button class="btn btn-gris" id="modalCancelarBtn">Cancelar</button>' +
           '<button class="btn" id="modalAceptarBtn">Aceptar</button>' +
@@ -295,8 +295,8 @@ function tarjetaCoord(c){
     '<span class="badge ' + (c.activo ? 'badge-ok">Activo' : 'badge-no">Revocado') + '</span></div>' +
     '<div class="codigo">' + esc(c.codigo) + '</div>' +
     '<p class="suave">' + (c.correo ? esc(c.correo) : 'Sin correo registrado') + (fecha ? ' · Creado el ' + fecha : '') + '</p>' +
-    '<div class="fila" style="margin-bottom:8px"></div>' +
-    '<div class="codigo" style="font-size:14px;word-break:break-all;">' + esc(linkEntrada) + '</div>' +
+    '<div class="fila fila-compacta"></div>' +
+    '<div class="codigo codigo-enlace">' + esc(linkEntrada) + '</div>' +
     '<div class="fila"></div>';
     
   var fila1 = div.querySelectorAll('.fila')[0];
@@ -484,6 +484,9 @@ async function verInforme(ev){
     w.document.open();
     w.document.write(htmlInforme(d));
     w.document.close();
+    // CSP: el boton se engancha aqui, dentro del documento del informe, no con onclick inline.
+    var bImp = w.document.getElementById('btnImprimir');
+    if (bImp) { bImp.addEventListener('click', function(){ w.print(); }); }
   } catch (e) { alert('Fallo al abrir el informe: ' + e.message); }
 }
 
@@ -634,9 +637,10 @@ function htmlInforme(d){
     '.nota{background:#fff8dc;border:1px solid #cc9;padding:10px;margin-bottom:14px;}' +
     'button{font-size:17px;padding:10px 16px;margin-bottom:10px;}' +
     '@media print{.noprint{display:none;}}' +
+      '.campo-modal{margin-bottom:14px;} .fila-compacta{margin-bottom:8px;} .codigo-enlace{font-size:14px;word-break:break-all;}' +
     '</style></head><body>' +
     '<div class="nota noprint">Para sacar el PDF: pulsa el boton y en la ventana de impresion elige como destino "Guardar como PDF".</div>' +
-    '<div class="noprint"><button onclick="window.print()">Imprimir / Guardar PDF</button></div>' +
+    '<div class="noprint"><button id="btnImprimir">Imprimir / Guardar PDF</button></div>' +
     '<h1>Informe del evento: ' + esc(d.nombre) + '</h1>' +
     '<p>Guardado el: ' + fechaBonita(d.creado_at) + '</p>' +
     '<h2>Estadisticas generales</h2>' + htmlStats(d.stats || {});

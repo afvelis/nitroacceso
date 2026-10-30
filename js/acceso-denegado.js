@@ -6,3 +6,4 @@ function intentarCerrar(){
   }, 200);
 }
 
+document.getElementById('btnCerrar').addEventListener('click', intentarCerrar);

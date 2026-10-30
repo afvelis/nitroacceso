@@ -202,7 +202,7 @@ function renderizar(d){
           <div class="ranking-info">
             <div class="ranking-nombre">${esc(r.nombre)}</div>
             <div class="ranking-detalle">${esc(r.detalle)}</div>
-            <div class="barra-progreso"><div class="barra-fill ${clase}" style="width:${Math.min(r.tasa,100)}%">${r.tasa}%</div></div>
+            <div class="barra-progreso"><div class="barra-fill ${clase}" data-ancho="${Math.min(r.tasa,100)}">${r.tasa}%</div></div>
           </div>
           <div class="ranking-valor">
             <div class="grande">${r.presentes}</div>
@@ -246,7 +246,7 @@ function renderizar(d){
     rubrosOrdenados.slice(0, 10).forEach((r, i) => {
       const porcentaje = totalRubroPersonas > 0 ? Math.round((r.personas / totalRubroPersonas) * 100) : 0;
       const clase = claseBarra(porcentaje);
-      rh += `<tr><td>${i+1}</td><td>${esc(r.vende)}</td><td>${r.cantidad}</td><td>${r.personas}</td><td><div class="barra-progreso"><div class="barra-fill ${clase}" style="width:${Math.min(porcentaje,100)}%">${porcentaje}%</div></div></td></tr>`;
+      rh += `<tr><td>${i+1}</td><td>${esc(r.vende)}</td><td>${r.cantidad}</td><td>${r.personas}</td><td><div class="barra-progreso"><div class="barra-fill ${clase}" data-ancho="${Math.min(porcentaje,100)}">${porcentaje}%</div></div></td></tr>`;
     });
     rh += `</table>`;
   } else {
@@ -387,6 +387,18 @@ function renderizar(d){
       document.getElementById('zonaTiempos').innerHTML = '<p class="suave">No se pudieron cargar los tiempos: ' + esc(e.message || e) + '</p>';
     }
   }catch(e){
-    document.getElementById('panelCarga').innerHTML = `<p class="suave" style="color:var(--rojo)">Error al cargar: ${esc(e.message || e)}</p>`;
+    document.getElementById('panelCarga').innerHTML = `<p class="suave texto-error">Error al cargar: ${esc(e.message || e)}</p>`;
   }
 })();
+// P0-04: los anchos de las barras se aplican por CSSOM (propiedad), no con el atributo style
+// inline, para poder cerrar style-src en la CSP. Un MutationObserver los refresca
+// cada vez que se repinta un panel.
+function aplicarAnchosBarras(){
+  var nodos = document.querySelectorAll('[data-ancho]');
+  for (var i = 0; i < nodos.length; i++) {
+    var v = nodos[i].getAttribute('data-ancho');
+    nodos[i].style.width = (v === null ? '' : v + '%');
+  }
+}
+aplicarAnchosBarras();
+new MutationObserver(aplicarAnchosBarras).observe(document.body, { childList: true, subtree: true });
