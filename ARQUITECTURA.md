@@ -1,7 +1,7 @@
 # ARQUITECTURA.md — NitroSystem
 
 > Fuente técnica de verdad del sistema v3. Solo cambia cuando cambia el esquema o el manifiesto.
-> **Verificada contra la base y el repo:** Consulta A (funciones) 27/10/2026 · Consulta B (tablas) 27-28/10/2026 · árbol del repo 28-29/10/2026 · **P0-02 completa 29/10/2026: Consultas D-I, cierre de permisos y DROPs** (ver §8 y `docs/seguridad-supabase.md`).
+> **Verificada contra la base y el repo:** Consulta A (funciones) 27/10/2026 · Consulta B (tablas) 27-28/10/2026 · árbol del repo 28-29/10/2026 · **P0-02 completa 29/10/2026: Consultas D-I, cierre de permisos y DROPs** (ver §8 y `docs/seguridad-supabase.md`) · **P0-03 completa 29-30/10/2026: sesiones solo-hash, rate limit, PINs bcrypt, columna `token` eliminada** (ver §8 y `docs/seguridad-sesiones.md`).
 > Si este documento contradice al repo o a la base, mandan el repo y la base — y se corrige este documento al cierre de la sesión.
 > Regla permanente: antes de reescribir cualquier RPC, leer su definición vigente con `SELECT pg_get_functiondef(oid) FROM pg_proc WHERE proname = '<nombre>';`
 
@@ -27,14 +27,15 @@
 8. Ganador de premiación: link cortesia.html?c= (con tipo premiación)
 9. Aliado: link aliado.html?a=ASI-xxxxxxxx (pool de cupones, crea concursos y asigna ganadores)
 
-## 3 · Tablas (16) — RLS activado en todas SIN políticas; todo acceso vía funciones SECURITY DEFINER
+## 3 · Tablas (17) — RLS activado en todas SIN políticas; todo acceso vía funciones SECURITY DEFINER
 
-Verificadas el 27-28/10/2026 con la Consulta B (§8). Las 16 coinciden con lo documentado en v2.4, salvo una adición menor (sesiones.creada_at).
+Verificadas el 27-28/10/2026 con la Consulta B (§8); `login_intentos` añadida y `sesiones` ampliada el 29/10/2026 (P0-03). Las originales 16 coinciden con lo documentado en v2.4, salvo una adición menor (sesiones.creada_at).
 
 | Tabla | Columnas verificadas |
 | --- | --- |
 | config | id=1, nombre_evento, edicion_abierta bool, pin_admin, pin_puerta, dia_activo int default 1 check in (1,2), dia1_cerrado bool, dia2_cerrado bool |
-| sesiones | token uuid, rol text, **creada_at** (columna existe en base; no estaba en el traspaso v2.4) |
+| sesiones | **token_hash** (64 hex, PK desde el 30/10/2026), rol text (admin\|puerta), device_label, creada_at, expira_at, revocado_at, ultimo_uso_at — **la columna `token` fue ELIMINADA (P0-03); el token vive solo en el navegador** |
+| login_intentos | id, ip, dispositivo, exito bool, creada_at (nueva 29/10/2026, P0-03; auditoría de logins; se barre en la limpieza de fin de evento) |
 | coordinadores | id uuid, tipo, nombre, codigo, correo, creada_at, activo bool |
 | talentos | id, nombre, dia1, dia2, codigo_link, correo_link, coordinador_id uuid, creada_at, links_anulados text[] |
 | listas | id, talento_id, dia int, estado text, codigo_corto, cerrada_at |
@@ -50,12 +51,19 @@ Verificadas el 27-28/10/2026 con la Consulta B (§8). Las 16 coinciden con lo do
 | aliado_concursos | id uuid pk, asignacion_id fk cascade, nombre not null, descripcion, fecha_concurso date (obligatoria, hoy o posterior), cupones_reservados int check >=1, estado (abierto\|cerrado), creada_at, cerrada_at |
 | aliado_ampliaciones | id uuid pk, asignacion_id fk cascade, cupones_antes int, cupones_despues int, motivo not null, motivo_detalle, creada_at |
 
-## 4 · Funciones RPC vigentes (verificadas 27/10 con la Consulta A: 79 filas = 78 funciones + 1 sobrecarga; tras los DROPs del 29/10 quedan **76 funciones sin sobrecargas** + `rls_auto_enable` = 77 objetos)
+## 4 · Funciones RPC vigentes (verificadas 27/10 con la Consulta A: 79 filas = 78 funciones + 1 sobrecarga; tras los DROPs del 29/10 quedaron 76; **tras P0-03 (29-30/10) quedan 81 funciones + `rls_auto_enable` = 82 objetos**: 5 nuevas y 41 reescritas)
 
 ### Internas
-- `f_sesion_rol(p_token uuid)` → text
+- `f_sesion_ok(p_token uuid, p_rol_requerido text)` → boolean — **guardián único (P0-03)**: valida hash+revocación+expiración+rol y anota `ultimo_uso_at`; la usan 36 funciones
+- `f_sesion_rol(p_token uuid)` → text — misma validación devolviendo el rol; la usan las 13 helper-users (P0-03)
 - `f_codigo(p_prefijo text, p_largo integer)` → text (prefijos SIEMPRE con guion)
-- `f_login(p_pin text)` → table(token uuid, rol text)
+- `f_login(p_pin text)` → table(token uuid, rol text) — **P0-03**: rate limit 5 fallas/15 min por IP (error BLOQUEADO), registra `login_intentos`, crea sesión de 8 h guardando SOLO el hash del token; los PINs se validan por bcrypt (`extensions.crypt`) — la aceptación en claro murió con las rotaciones del 29/10
+
+### Sesiones y seguridad (nuevas en P0-03)
+- `f_logout(p_token uuid)` → boolean — revoca la propia sesión (salida real; la usan los botones Salir vía config.js)
+- `f_admin_sesiones(p_token uuid)` → table(sesion_hash, rol, device_label, creada_at, expira_at, ultimo_uso_at, propia) — vista del panel; el hash se muestra truncado a 12
+- `f_admin_revocar_sesiones(p_token uuid)` → integer — revoca TODAS las sesiones activas EXCEPTO la propia; -1 si el token es inválido
+- `f_admin_rotar_pin(p_token uuid, p_objetivo text, p_pin_actual text, p_pin_nuevo text)` → text — exige el PIN admin actual (prueba de presencia, también para rotar el de puerta) y PIN nuevo exactamente de 6 dígitos; guarda bcrypt
 
 ### Admin
 - `f_admin_toggle_edicion(p_token, p_abierta boolean)`
@@ -66,7 +74,7 @@ Verificadas el 27-28/10/2026 con la Consulta B (§8). Las 16 coinciden con lo do
 - `f_admin_borrar_coordinador(p_token, p_id uuid)`
 - `f_admin_stats(p_token)` · `f_admin_dashboard(p_token)` · `f_admin_segmentacion(p_token)` · `f_admin_tiempos(p_token)`
 - `f_admin_guardar_evento(p_token, p_nombre)` · `f_admin_listar_eventos(p_token)` · `f_admin_ver_evento(p_token, p_id uuid)`
-- `f_admin_limpiar_todo(p_token)` · `f_admin_estado_dias(p_token)`
+- `f_admin_limpiar_todo(p_token)` — **P0-03**: también borra `sesiones` y `login_intentos` (el cierre del evento cierra todas las sesiones) · `f_admin_estado_dias(p_token)`
 
 ### Cortesías admin
 - `f_admin_crear_cortesia_lista(p_token, p_nombre_organizacion, p_razon, p_causa, p_dia1, p_dia2, p_personas_dia1 jsonb, p_personas_dia2 jsonb)`
@@ -143,15 +151,15 @@ Verificadas el 27-28/10/2026 con la Consulta B (§8). Las 16 coinciden con lo do
 
 | # | Archivo | Último cambio | Nota |
 | --- | --- | --- | --- |
-| 1 | config.js | sesión 4 | NOMBRE_EVENTO = "NITROSYSTEM" (28/10/2026; constante sin uso funcional) |
-| 2 | index.html | sesión 4 | Login principal, sin maxlength a propósito |
-| 3 | dashboard.html | 06/10/2026 (v2.4) | Pastilla "🤝 Aliados" + M-31; único "Salir"; tarjetas NO clicables (pendiente) |
-| 4 | admin.html | 04/10/2026 (v2.2) | Sin cortesías ni estadística; secciones: edicion, crear-coordinador, coordinadores, historial |
+| 1 | config.js | **30/10/2026** (sesión 15) | Salida real (f_logout) + iniciarAutoBloqueo 5 min (P0-03) |
+| 2 | index.html | **30/10/2026** | Placeholder de 6 puntos + BLOQUEADO legible sin filtrar errores (P0-03) |
+| 3 | dashboard.html | 06/10/2026 (v2.4) | Pastilla "🤝 Aliados" + M-31; único "Salir"; tarjetas NO clicables (pendiente). SIN cambios en P0-03 a propósito: su Salir hereda la salida real de config.js |
+| 4 | admin.html | **30/10/2026 (v2)** | Modales propios en toda la página (regla v2.1) + tarjeta "Sesiones y seguridad" (P0-03); sin cortesías ni estadística |
 | 5 | coord.html | sesión 4 | Panel del coordinador; rota códigos al editar |
 | 6 | talento.html | sesión 4 | CONGELADO: botón "Cerrar esta pestaña" y panel azul Día 2 no se tocan |
 | 7 | stand.html | sesión 4 | Registro por lote en una transacción |
 | 8 | cortesia.html | 26/09/2026 (v2.1) | Página pública; soporte premiación con pantalla 🏆 |
-| 9 | puerta.html | 02/10/2026 (v2.2) | QR de 3 capas (BarcodeDetector → jsQR CDN → manual) |
+| 9 | puerta.html | **30/10/2026** | QR de 3 capas (BarcodeDetector → jsQR CDN → manual) + auto-bloqueo 5 min + placeholder de 6 puntos (P0-03) |
 | 10 | estadisticas.html | 04/10/2026 (v2.2) | Solo "← Volver al dashboard"; nunca cierra sesión |
 | 11 | cortesias.html | **28/10/2026** | Panel admin de cortesías; pastilla "🤝 Gestionar aliados" añadida (28/10) |
 | 12 | aliado.html | 05/10/2026 (v2.3) | Módulo público del aliado; entra con ?a=ASI-xxxxxxxx |
@@ -159,7 +167,7 @@ Verificadas el 27-28/10/2026 con la Consulta B (§8). Las 16 coinciden con lo do
 | 14 | aliados-concursos.html | 06/10/2026 (v2.4) | Historial de concursos por asignación; entra con ?asig=UUID |
 | 15 | acceso-denegado.html | 06/10/2026 (v2.4) | Pantalla cerrada; sin links a login ni dashboard |
 
-Otros contenidos del repo (no son HTML/JS en vivo): `AGENTS.md`, `tareas/` (backlog de seguridad P0/P1/P2 de la revisión del 27/10 + F-1…F-5 de la prueba en vivo y M-33…M-36 ideas de producto, migradas a tareas el 29/10/2026), `.github/workflows/keep-supabase-alive.yml` (ping cada 3 días a f_cortesia_ver; si esa RPC desaparece, actualizar el curl), `GUIA-Metodo-Continuidad-v3.pdf` (guía del método de continuidad v3, subida en el cierre de la Sesión 13, 28/10/2026), y desde la migración v3: `ESTADO.md`, `ARQUITECTURA.md` y `DECISIONES.md` en la RAÍZ del repo (decisión del 28/10: se dejaron en raíz, sin carpeta). **No existe `README` en la raíz del repo**: el manifiesto lo listaba por error desde la migración v3; corregido el 29/10/2026. **`docs/`** (carpeta creada el 29/10/2026): contiene `docs/seguridad-supabase.md`, la auditoría de backend de P0-02 (v4, congelada): evidencia de RLS, grants, ACLs, search_path, DROPs, matriz de autorización y SQL exacto del cierre.
+Otros contenidos del repo (no son HTML/JS en vivo): `AGENTS.md`, `tareas/` (backlog de seguridad P0/P1/P2 de la revisión del 27/10 + F-1…F-5 de la prueba en vivo y M-33…M-36 ideas de producto, migradas a tareas el 29/10/2026), `.github/workflows/keep-supabase-alive.yml` (ping cada 3 días a f_cortesia_ver; si esa RPC desaparece, actualizar el curl), `GUIA-Metodo-Continuidad-v3.pdf` (guía del método de continuidad v3, subida en el cierre de la Sesión 13, 28/10/2026), y desde la migración v3: `ESTADO.md`, `ARQUITECTURA.md` y `DECISIONES.md` en la RAÍZ del repo (decisión del 28/10: se dejaron en raíz, sin carpeta). **No existe `README` en la raíz del repo**: el manifiesto lo listaba por error desde la migración v3; corregido el 29/10/2026. **`docs/`** (carpeta creada el 29/10/2026): contiene `docs/seguridad-supabase.md`, la auditoría de backend de P0-02 (v4, congelada): evidencia de RLS, grants, ACLs, search_path, DROPs, matriz de autorización y SQL exacto del cierre · `docs/seguridad-sesiones.md` (añadido 30/10/2026, P0-03): modelo de sesiones, logins y PINs con evidencia de verificación · `docs/Supabase Snippet Untitled query.csv` (29/10/2026): respaldo de las 54 definiciones de funciones pre-P0-03, póliza de reversión (renombrar a `respaldo-funciones-pre-p003.csv` como higiene).
 
 No confundir: **cortesia** (singular, pública) vs **cortesias** (plural, admin) · **aliado** (singular, público) vs **aliados** (admin) vs **aliados-concursos** (admin).
 
@@ -189,3 +197,5 @@ SELECT pg_get_functiondef(oid) FROM pg_proc WHERE proname = '<nombre>';
 Resultados vigentes: A y B (27-28/10/2026) coincidían con §3 y §4. La Consulta A arrojó 79 filas (78 funciones + la sobrecarga de f_coord_crear_stand).
 
 **Resultados del 29/10/2026 (P0-02, Sesión 14 — evidencia completa en `docs/seguridad-supabase.md` v4):** la base quedó con **77 objetos** (76 funciones + `rls_auto_enable`): las 16 tablas con **0 privilegios** para `anon`/`authenticated` (solo acceso vía RPC), ninguna función con EXECUTE de PUBLIC (4 normalizadas a anon), `search_path` protegido en todas las SECURITY DEFINER, y 3 objetos muertos eliminados. Nuevas consultas registradas: **D** (firmas+ACL de todo el esquema public), **E** (search_path de las SECURITY DEFINER), **F** (`pg_get_functiondef` de candidatos a DROP — regla: siempre antes de tocar), **G** (event triggers), **H** (matriz token/sesión por función), **I** (rol exigido por función). Matriz de autorización: `f_admin_*` → rol admin · `f_puerta_*` → rol puerta · `f_coord_*` → codigo_coord · `f_link_*`/`f_aliado_*`/`f_cortesia_ver` → codigo_link · internas solo-postgres. Prueba de rechazo con token inventado: null (falla cerrada). Traslados: hash/expiración de tokens → P0-03; staging y prueba con token real de puerta → P1-04.
+
+**Resultados del 29-30/10/2026 (P0-03, Sesión 15 — evidencia completa en `docs/seguridad-sesiones.md`):** la base quedó con **82 objetos** (81 funciones + `rls_auto_enable`): `sesiones` solo-hash (PK `token_hash`, columna `token` eliminada), tabla `login_intentos` cerrada a anon/authenticated, 5 funciones nuevas (`f_sesion_ok`, `f_logout`, `f_admin_sesiones`, `f_admin_revocar_sesiones`, `f_admin_rotar_pin`) y 41 reescritas (39 inline en 4 lotes + `f_login` + `f_admin_limpiar_todo`). Verificaciones: conteo por lote (guardián 10→23→28→36), residuos del chequeo viejo = 0 (`prosrc ilike '%token = p_token%'` → 0 filas), rate limit probado EN VIVO (5 fallas → BLOQUEADO), rotaciones de PIN verificadas con booleanos (`true,true`), revocación en vivo (1 activa / 10 revocadas), humo "APP OK" tras cada fase. Regla nueva de verificación: **las claves se auditan SOLO con booleanos** — jamás prefijos, largos ni fragmentos.
