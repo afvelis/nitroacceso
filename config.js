@@ -68,9 +68,42 @@ function guardarSesion(token, rol) {
 function leerSesion() {
   return { token: sessionStorage.getItem("na_token"), rol: sessionStorage.getItem("na_rol") };
 }
+
+// ===== P0-03 · Salida real =====
+// Antes: solo borraba el token del navegador (la sesión seguía viva en la base).
+// Ahora: revoca la sesión en la base (f_logout) y además limpia el navegador.
+// La revocación va "dispara y olvida": el cierre local nunca se bloquea si la
+// red falla; la sesión residual igual expira sola (8 h).
 function borrarSesion() {
+  const s = leerSesion();
+  const t = s && s.token;
   sessionStorage.removeItem("na_token");
   sessionStorage.removeItem("na_rol");
+  if (t) {
+    try {
+      llamar("f_logout", { p_token: t }).catch(function () {});
+    } catch (e) {}
+  }
+}
+
+// ===== P0-03 · Auto-bloqueo por inactividad =====
+// Si la página queda 5 minutos sin interacción (clic, tecla, toque, scroll o
+// movimiento del ratón), cierra la sesión real (borrarSesion → f_logout) y
+// regresa al login. Pensado para el PC de la puerta y el panel del admin.
+const NA_INACTIVIDAD_MS = 5 * 60 * 1000;
+function iniciarAutoBloqueo() {
+  let temporizador = null;
+  function reiniciar() {
+    if (temporizador) clearTimeout(temporizador);
+    temporizador = setTimeout(function () {
+      borrarSesion();
+      location.replace("index.html");
+    }, NA_INACTIVIDAD_MS);
+  }
+  ["click", "keydown", "mousemove", "touchstart", "scroll"].forEach(function (ev) {
+    document.addEventListener(ev, reiniciar, { passive: true });
+  });
+  reiniciar();
 }
 
 function urlPuerta(param, valor) {
