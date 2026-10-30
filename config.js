@@ -174,13 +174,23 @@ function textoQRContenedor(contenedor, data, textoCodigo) {
 function dibujarPieQR(contenedor, textoCodigo) {
   const p = document.createElement("p");
   p.textContent = "Codigo: " + textoCodigo;
+  // P0-04: el pie lleva fondo y color propios. Sin esto, en páginas cuyo QR vive
+  // dentro de un div sin clase (talento.html) el texto negro caía sobre el fondo
+  // oscuro de la página y quedaba ilegible.
   p.style.fontSize = "22px";
   p.style.fontWeight = "800";
   p.style.color = "#000";
+  p.style.backgroundColor = "#fff";
+  p.style.display = "inline-block";
+  p.style.padding = "6px 14px";
+  p.style.borderRadius = "8px";
   p.style.letterSpacing = "2px";
   p.style.marginTop = "12px";
   p.style.fontFamily = "ui-monospace, Menlo, Consolas, monospace";
   p.style.textAlign = "center";
+  p.style.whiteSpace = "nowrap";
+  p.style.position = "relative";
+  p.style.zIndex = "1";
   contenedor.appendChild(p);
 }
 
