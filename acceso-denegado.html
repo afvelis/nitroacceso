@@ -2,7 +2,6 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>NitroSystem</title>
 <style>
@@ -33,14 +32,6 @@ p{margin:0 0 22px; color:var(--suave); font-size:16px; line-height:1.55;}
     <p id="ayudaCerrar" style="display:none; margin-top:16px; color:var(--suave); font-size:14px;">Si no se cerró automáticamente, ciérrala con <b>Ctrl+W</b> (o ⌘+W en Mac).</p>
   </div>
 </main>
-<script>
-function intentarCerrar(){
-  window.close();
-  setTimeout(function(){
-    var el = document.getElementById('ayudaCerrar');
-    if (el) el.style.display = 'block';
-  }, 200);
-}
-</script>
+<script src="js/acceso-denegado.js"></script>
 </body>
 </html>
