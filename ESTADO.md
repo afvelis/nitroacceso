@@ -1,6 +1,6 @@
 # ESTADO.md — NitroSystem (control de acceso)
 
-Versión del archivo: **6** · Última actualización: **30/10/2026** · Generado en el cierre de la Sesión 15 (29-30/10/2026)
+Versión del archivo: **7** · Última actualización: **30/10/2026** · Generado en el cierre de la Sesión 16 (30/10/2026)
 
 > Este archivo SOLO lleva el ESTADO del proyecto. Las reglas de trabajo viven en `AGENTS.md` (+ sus anexos: continuidad v3 y estilo de trato). La arquitectura técnica vive en `ARQUITECTURA.md`. Los "por qués" viven en `DECISIONES.md`. Las tareas ejecutables viven en `tareas/`. Si este archivo contradice a `AGENTS.md`, manda `AGENTS.md`. Si contradice al repo, manda el repo.
 
@@ -16,9 +16,12 @@ Versión del archivo: **6** · Última actualización: **30/10/2026** · Generad
 | aliados-concursos.html (historial por asignación) | ✅ Completo (v2.4) | Sí |
 | acceso-denegado.html | ✅ Completo (v2.4) | Sí |
 | Backend Supabase (seguridad) | ✅ **P0-02 COMPLETA 29/10** — RLS 16/16, 0 privilegios, sin EXECUTE de PUBLIC, search_path protegido, matriz de autorización verificada · **P0-03 COMPLETA 29-30/10** — sesiones solo-hash con expiración/revocación/último uso, rate limit 5/15 min por IP, PINs bcrypt de 6 dígitos, login real/revocación/auto-bloqueo, columna `token` eliminada (PK por `token_hash`) | Sí (P0-02: Consultas A-I; P0-03: conteos por lote + pruebas en vivo; smoke "APP OK" en cada fase) |
-| Keep-alive Supabase (GitHub Actions) | ✅ Activo — run **#11** verde 28/10 14:15 local, cadencia cada 3 días, **próximo ~31/10 (mañana)** | Sí (API Actions 28/10) |
+| Keep-alive Supabase (GitHub Actions) | ✅ Activo — run **#11** verde 28/10 14:15 local, cadencia cada 3 días, **próximo ~31/10** | Pendiente de revisar al arrancar la próxima sesión |
+| **Seguridad de frontend (P0-04)** | 🟡 **Fases 1, 2, 3 y 4a HECHAS Y VERIFICADAS. Falta la 4b** (9 páginas sin CSP) | Sí (SHA-256 contra `main` + pruebas en vivo del usuario) |
 
 **Higiene documental (29/10/2026, Sesión 14):** F-1…F-5 (hallazgos de la prueba en vivo) y M-33…M-36 (ideas de producto) migrados a `tareas/` con PLANTILLA.md; `tareas/README.md` quedó como índice del backlog (21 tareas). Manifiesto de ARQUITECTURA §7 corregido (no existe README en la raíz; se registró la carpeta `docs/`). Commits `02d60db` y `6ce8a1c`, Actions verdes.
+
+**P0-04 — QR local, dependencias vendorizadas y CSP (30/10/2026, Sesión 16): 4 de 5 fases HECHAS Y VERIFICADAS; queda la 4b.** Fase 1: QR generado en local con `vendor/qrcode-generator-1.4.4.js` (+ gancho UTF-8) y `jsQR` 1.4.0 vendorizado; cero peticiones a `qrserver`/`quickchart`/`jsdelivr`; cámara probada en vivo. Fase 2: `Referrer-Policy: no-referrer` y `noindex, nofollow` por `<meta>` en 14 páginas. Fase 3: 14 de 17 scripts inline movidos a `js/`, sin reescribir código (verificado por reconstrucción exacta); los 3 mini-scripts de sesión (M-28) se quedan inline a propósito. Fase 4a: **CSP estricta sin `'unsafe-inline'` en 5 páginas** (`index`, `coord`, `admin`, `estadisticas`, `acceso-denegado`) con `sha256` del bloque `<style>` de cada una; 11 atributos inline eliminados; barras dinámicas por CSSOM. Hospedaje confirmado sin Cloudflare (`server: GitHub.com`, `via: 1.1 varnish`), así que la CSP va por `<meta>` y `frame-ancestors` no aplica. **Falta la fase 4b: 9 páginas, 121 conversiones** (`puerta` 22, `aliado` 20, `aliados` 20, `stand` 14, `cortesias` 14, `dashboard` 9, `aliados-concursos` 8, `cortesia` 8, `talento` 0). Tarea en `estado: bloqueado` con 15/15 casillas y el método a repetir documentado. Arreglos colaterales en `config.js`: el pie del código QR ya no se borra, se ve (fondo propio) y va debajo del QR; «Copiar QR» busca la imagen en el momento del clic.
 
 **P0-03 — Endurecer PIN, rate limit, tokens y bloqueo de sesión (29-30/10/2026, Sesión 15): COMPLETA y VERIFICADA en 6 fases.** Fase A: respaldo de las 54 definiciones que tocan sesión en `docs/Supabase Snippet Untitled query.csv` (commit `fe6f3ac`). Fase B: pgcrypto a `extensions`, `sesiones` +5 columnas, tabla `login_intentos`, tablas nacen cerradas. Fase C: guardián `f_sesion_ok` + `f_sesion_rol` por hash + `f_login` con rate limit (5 fallas/15 min, probado EN VIVO: el 6º intento revienta con BLOQUEADO). Fase D: las 39 inline reescritas en 4 lotes (36 al guardián, 3 `LANGUAGE sql` con hash inline); verificación por conteo tras cada lote (10→23→28→36) y 0 chequeos residuales. Fase E: `f_logout`, `f_admin_sesiones`, `f_admin_revocar_sesiones` (excluye la propia), `f_admin_rotar_pin` (6 dígitos, bcrypt); frontend: salida real, auto-bloqueo 5 min, panel "Sesiones y seguridad", `admin.html` v2 con modales propios (regla v2.1); rotaciones reales ejecutadas (booleanos `true,true`; viejos rechazados). Fase F: `f_login` sin token en claro, columna `token` eliminada, PK por `token_hash`, limpieza de fin de evento barre sesiones + login_intentos. Detalle y evidencia: `docs/seguridad-sesiones.md` y Notas del task (3 incidentes con lecciones: lote en proyecto equivocado → verificar por conteo; diálogos nativos suprimidos → modales; fuga de prefijo de PIN en consulta → regla "claves solo booleanos" + cura por rotación). Commits de la sesión: `edf6c8d` (ESTADO v5), `896e26c` (task en_progreso), `fe6f3ac` (respaldo), `config.js`, `index.html`, `puerta.html`, `admin.html` (v1 y v2), task `hecho`, `docs/seguridad-sesiones.md`, `tareas/README.md` — Actions verdes.
 
@@ -49,7 +52,7 @@ Al iniciar cualquier sesión, se verifica en este orden. Cada punto dice quién 
 
 **A — Brief de aliados: ✅ CERRADO 28/10/2026.** Sin trabajo pendiente.
 
-**B — Backlog de seguridad** (`tareas/`): **P0-01 HECHO 28/10 · P0-02 HECHA 29/10 · P0-03 HECHA 29-30/10.** Quedan 9 `pendiente`: P0-04 (QR/CSP), P0-05 (backups), P1-01…P1-04, P2-01…P2-03. Orden recomendado: **P0-04 → P0-05**, luego P1/P2. Se trabaja UNA tarea a la vez según `AGENTS.md`.
+**B — Backlog de seguridad** (`tareas/`): **P0-01 HECHO 28/10 · P0-02 HECHA 29/10 · P0-03 HECHA 29-30/10 · P0-04 EN CURSO (4 de 5 fases; falta la 4b) 30/10.** Quedan 8 `pendiente`: P0-05 (backups), P1-01…P1-04, P2-01…P2-03, más la **4b de P0-04**. Orden recomendado: **cerrar P0-04 (4b) → P0-05**, luego P1/P2. Se trabaja UNA tarea a la vez según `AGENTS.md`.
 
 **C — Ideas de producto pendientes** (las activadas migran a `tareas/` con `PLANTILLA.md`): historial global de concursos (`concursos.html`); extender M-28/M-31 a cortesias/estadisticas/admin; origen (admin vs aliado) en dashboard; razón de anulación al ganador; "ganadas" en vez de "asignadas" en cortesia.html; aviso de concursos sin ganador; motor de envío automático (M-01); tarjetas clicables del dashboard; módulo post-evento (M-21); anti-colisión de códigos (M-22); RBAC (M-29); **depuración de admin.html** (petición explícita del usuario 29/10: separar actividades medulares de secundarias — la página está sobrecargada). **M-33…M-36 ya viven en `tareas/`** (migradas 29/10).
 
@@ -68,19 +71,21 @@ Al iniciar cualquier sesión, se verifica en este orden. Cada punto dice quién 
 
 **Hoja de estilo de trato (28/10) + reglas del 29/10 (granularidad; una consulta SQL a la vez; ruta+commit por cambio; claves solo booleanos):** incorporadas como anexo permanente en `AGENTS.md` y registradas en `DECISIONES.md`.
 
+**Reglas nuevas de la Sesión 16 (30/10) — pendiente agregarlas al anexo de `AGENTS.md` si el usuario lo aprueba:**
+
+- **`Ctrl+F5` antes de declarar un fallo.** GitHub Pages sirve con `cache-control: max-age=600`. Una prueba sin recarga forzada puede reportar como roto algo que ya está bien; nos costó una vuelta completa con el pie del QR.
+- **Los `.md` se suben con el lápiz** (abrir el archivo en GitHub → Ctrl+A → Ctrl+V), nunca por arrastre: el arrastre de `.md` dio «Something went really wrong» y error 500 dos veces, mientras los `.html` del mismo lote subían sin problema.
+- **Toda instrucción de prueba lleva URL completa + qué botón pulsar + qué debe verse + qué aparece si el dato no existe.** «Abre tu link de talento» y «pulsa la pestaña de Talento» hicieron perder turnos: `coord.html` no tiene pestañas (el tipo lo fija el código `COORD-`) y `puerta.html` nunca dibuja QR.
+- **Cada lote se entrega en una carpeta aparte, solo con lo de ese lote.**
+
 ## 4 · Siguiente paso inmediato
 
-1. ✅ HECHO 29-30/10 (Sesión 15): **P0-03 completa en 6 fases** — sesiones solo-hash con expiración/revocación, rate limit probado en vivo, PINs bcrypt de 6 dígitos, salida real, auto-bloqueo, panel de sesiones; columna `token` eliminada. Evidencia en `docs/seguridad-sesiones.md`; tarea `hecho`; backlog actualizado.
-2. **Próxima sesión:** verificación de §2 (¡incluye revisar el keep-alive, corre ~31/10!) y elegir UNA:
-   - **P0-04 — QR local, dependencias vendorizadas y CSP** (continúa la línea de seguridad).
-   - **P0-05 — Backups, exportación y limpieza segura.**
-   - **F-1 — Reparar el botón «Repetir y editar la del Día 1»** de talento.html (la única P1 funcional).
-   - **E — Manuales.**
-   - Crear las tareas del workstream **G** (5-10 minutos, 3 archivos con PLANTILLA.md).
-   Decisión del usuario al arrancar.
-3. **Recordatorio operativo:** el keep-alive debe correr **~31/10** (run siguiente al #11 del 28/10). Si al arrancar la próxima sesión no aparece verde en Actions, revisar el workflow `keep-supabase-alive.yml`.
-4. **Nota PINs:** desde P0-03, los PINs de admin y puerta son de **6 dígitos** y están rotados (el usuario los custodia en papel). Si se pierden: rotar desde el panel exige el PIN admin vigente; si se pierde el de admin, la recuperación es por base (nuevo hash bcrypt generado por el asistente con `pg_get_functiondef` → usuario ejecuta) — documentar en el manual E.
-
+1. ✅ HECHO 30/10 (Sesión 16): **P0-04 fases 1, 2, 3 y 4a** — QR local, `jsQR` vendorizado, `noindex` + `Referrer-Policy`, scripts a `js/` y **CSP estricta sin `'unsafe-inline'` en 5 páginas**. Evidencia en `tareas/P0-04-qr-csp-dependencias.md` (15/15 casillas); la tarea queda `estado: bloqueado` a propósito.
+2. **Próxima sesión — primera tarea: cerrar la fase 4b de P0-04.** 9 páginas, 121 conversiones. Método en las Notas de la tarea: sacar los `style=` a clases → recalcular el `sha256` del `<style>` → ponerlo en su CSP → verificar que coincide → prueba con `Ctrl+F5` y consola limpia. Orden sugerido por uso real: `puerta.html` (22) → `stand.html` (14) → `talento.html` (0: solo falta la CSP) → `cortesia.html` (8) → `cortesias.html` (14) → `dashboard.html` (9 + `sha256` del mini-script) → `aliados.html` (20 + mini-script) → `aliados-concursos.html` (8 + mini-script) → `aliado.html` (20).
+3. **Después: P0-05 — Backups, exportación y limpieza segura.** Sin empezar. El usuario debe elegir alcance: **A** (respaldo manual, sin tocar Supabase) o **A y B** (además automatizarlo, con decisión de coste).
+4. **Verificación de arranque de §2, incluido el keep-alive:** debe haber corrido **~31/10**. Si no aparece verde en Actions, revisar `keep-supabase-alive.yml`.
+5. **Otras opciones cuando la 4b esté cerrada:** **F-1** (botón «Repetir y editar la del Día 1» de `talento.html`, la única P1 funcional), **E — Manuales**, o crear las tareas del workstream **G**.
+6. **Nota PINs:** desde P0-03, los PINs de admin y puerta son de **6 dígitos** y están rotados (el usuario los custodia en papel). Si se pierden: rotar desde el panel exige el PIN admin vigente; si se pierde el de admin, la recuperación es por base (nuevo hash bcrypt generado por el asistente → el usuario ejecuta) — documentar en el manual E.
 ## 5 · Transición v2.4 → v3 (histórico)
 
 - Los 4 archivos `prompt-traspaso-nitrotoon-v2.4-*.txt` fueron movidos a `historico/` el 28/10/2026 y **dejan de evolucionar**.
