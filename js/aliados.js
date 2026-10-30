@@ -67,7 +67,7 @@ function modalCompartirLink(opts){
         '<div class="codigo codigo-chico">' + esc(opts.link) + '</div>' +
         (opts.ayuda ? '<p class="nota-form">' + opts.ayuda + '</p>' : '') +
       '</div>' +
-      '<div class="fila" id="filaShare" style="justify-content:flex-start;margin-top:0"></div>' +
+      '<div class="fila fila-ini" id="filaShare"></div>' +
       '<div class="modal-botones"></div>';
 
     var fila = caja.querySelector('#filaShare');
@@ -131,17 +131,17 @@ function modalDuplicados(duplicados){
     }).join('');
 
     caja.innerHTML =
-      '<h3 class="modal-titulo" style="color:var(--aviso)">⚠️ Coincidencias detectadas</h3>' +
+      '<h3 class="modal-titulo titulo-aviso">⚠️ Coincidencias detectadas</h3>' +
       '<div class="modal-mensaje">' +
         'Los siguientes datos ya están registrados en otro(s) aliado(s):' +
-        '<div style="margin-top:10px">' + listaHtml + '</div>' +
+        '<div class="mt-10">' + listaHtml + '</div>' +
         '<p class="nota-form">Si es la misma organización (sucursales, representante distinto, etc.), puedes continuar. La decisión quedará registrada.</p>' +
       '</div>' +
       '<label class="check-label">' +
         '<input type="checkbox" id="dupCheck">' +
         '<span>Confirmo que es la <b>misma organización</b> (sucursales o representante adicional) y quiero continuar.</span>' +
       '</label>' +
-      '<label style="margin-top:14px">Motivo / sucursal (opcional)' +
+      '<label class="mt-14">Motivo / sucursal (opcional)' +
         '<input type="text" id="dupNota" placeholder="Ej.: Sucursal Maracay">' +
       '</label>' +
       '<div class="modal-botones"></div>';
@@ -308,7 +308,7 @@ function renderAliado(a){
     var estBadge = (asi.estado === 'activa')
       ? '<span class="badge badge-ok">Activa</span>'
       : '<span class="badge badge-no">Anulada</span>';
-    top.innerHTML = '<span class="codigo codigo-chico" style="margin:0;padding:6px 10px;display:inline-block">' + esc(asi.codigo_link || '-') + '</span> ' + poolBadge + ' ' + estBadge;
+    top.innerHTML = '<span class="codigo codigo-chico codigo-mini6">' + esc(asi.codigo_link || '-') + '</span> ' + poolBadge + ' ' + estBadge;
     box.appendChild(top);
 
     var l1 = document.createElement('p');
@@ -423,7 +423,7 @@ function abrirModalAmpliar(a, asi){
     caja.innerHTML = 
       '<h3 class="modal-titulo">➕ Ampliar cupones</h3>' +
       '<p class="asig-linea">Aliado: <b>' + esc(a.nombre_organizacion) + '</b> · Asignación: <b>' + esc(asi.codigo_link) + '</b></p>' +
-      '<p class="asig-linea suave" style="margin-bottom:12px">' + textoPool(asi) + '</p>' +
+      '<p class="asig-linea suave mb-12">' + textoPool(asi) + '</p>' +
       '<div class="modal-seccion">' +
         '<h4>Nuevos cupones</h4>' +
         '<div class="grid-2col">' + poolHtml + '</div>' +
@@ -441,7 +441,7 @@ function abrirModalAmpliar(a, asi){
           '<label class="ancho-total">Detalle (opcional)<input id="aDetalle" type="text" placeholder="Ej.: Se acordó en reunión del lunes"></label>' +
         '</div>' +
       '</div>' +
-      '<div id="aMsg" class="suave" style="min-height:22px"></div>' +
+      '<div id="aMsg" class="suave min-h22"></div>' +
       '<div class="modal-botones"></div>';
     
     var contB = caja.querySelector('.modal-botones');
@@ -531,17 +531,17 @@ function abrirModalAnularAsignacion(a, asi){
     caja.className = 'modal-caja modal-caja-grande';
 
     caja.innerHTML =
-      '<h3 class="modal-titulo" style="color:var(--rojo)">🚫 Anular asignación</h3>' +
+      '<h3 class="modal-titulo titulo-rojo">🚫 Anular asignación</h3>' +
       '<p class="asig-linea">Aliado: <b>' + esc(a.nombre_organizacion) + '</b> · Asignación: <b>' + esc(asi.codigo_link) + '</b></p>' +
       '<div class="aviso-rojo-box">' +
         '<b>⚠️ Esta acción no se puede deshacer desde esta pantalla.</b><br>' +
         'La asignación quedará anulada y sus cupones no usados quedarán sin efecto. ' +
         'La <b>razón que escribas la verán el aliado y los premiados</b> en sus links (M-04).' +
       '</div>' +
-      '<label style="margin-top:14px">Razón de anulación *' +
-        '<textarea id="anRazon" rows="3" placeholder="Ej.: El aliado solicitó retirar su participación" style="width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1px solid var(--borde);background:#0d1526;color:var(--texto);font-size:17px;font-family:inherit;resize:vertical;"></textarea>' +
+      '<label class="mt-14">Razón de anulación *' +
+        '<textarea id="anRazon" rows="3" placeholder="Ej.: El aliado solicitó retirar su participación" class="campo-texto"></textarea>' +
       '</label>' +
-      '<div id="anMsg" class="suave" style="min-height:22px;margin-top:8px"></div>' +
+      '<div id="anMsg" class="suave min-h22 mt-8"></div>' +
       '<div class="modal-botones"></div>';
 
     var contB = caja.querySelector('.modal-botones');
@@ -630,7 +630,7 @@ function abrirModalAnularAliado(a){
     var activas = (a.asignaciones || []).filter(function(x){ return x.estado === 'activa'; }).length;
 
     caja.innerHTML =
-      '<h3 class="modal-titulo" style="color:var(--rojo)">🚫 Dar de baja al aliado</h3>' +
+      '<h3 class="modal-titulo titulo-rojo">🚫 Dar de baja al aliado</h3>' +
       '<p class="asig-linea">Aliado: <b>' + esc(a.nombre_organizacion) + '</b> · Responsable: <b>' + esc(a.responsable || '-') + '</b></p>' +
       '<div class="nota-info">' +
         '<b>¿Para qué sirve?</b> Da de baja al aliado del <b>programa completo</b>: él y todos sus pools dejan de operar. Úsala solo cuando el aliado sale definitivamente.<br>' +
@@ -644,10 +644,10 @@ function abrirModalAnularAliado(a){
         '• La <b>razón</b> que escribas la verán el aliado y los premiados en sus links (M-04).<br>' +
         '• No se puede deshacer desde esta pantalla.' +
       '</div>' +
-      '<label style="margin-top:14px">Razón de anulación *' +
-        '<textarea id="aaRazon" rows="3" placeholder="Ej.: El aliado solicitó retirarse del programa" style="width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1px solid var(--borde);background:#0d1526;color:var(--texto);font-size:17px;font-family:inherit;resize:vertical;"></textarea>' +
+      '<label class="mt-14">Razón de anulación *' +
+        '<textarea id="aaRazon" rows="3" placeholder="Ej.: El aliado solicitó retirarse del programa" class="campo-texto"></textarea>' +
       '</label>' +
-      '<div id="aaMsg" class="suave" style="min-height:22px;margin-top:8px"></div>' +
+      '<div id="aaMsg" class="suave min-h22 mt-8"></div>' +
       '<div class="modal-botones"></div>';
 
     var contB = caja.querySelector('.modal-botones');
@@ -751,7 +751,7 @@ function abrirModalAgregarAsignacion(a){
         '</div>' +
         '<p class="nota-form">💡 Por ahora solo está habilitado el pool <b>Único</b>. El pool por día se habilitará en una próxima etapa.</p>' +
       '</div>' +
-      '<div id="gMsg" class="suave" style="min-height:22px"></div>' +
+      '<div id="gMsg" class="suave min-h22"></div>' +
       '<div class="modal-botones"></div>';
 
     var selPool = caja.querySelector('#gPool');
@@ -877,7 +877,7 @@ function abrirModalNuevoAliado(){
         '</div>' +
         '<p class="nota-form">💡 Por ahora solo está habilitado el pool <b>Único</b>. El pool por día se habilitará en una próxima etapa.</p>' +
       '</div>' +
-      '<div id="nMsg" class="suave" style="min-height:22px"></div>' +
+      '<div id="nMsg" class="suave min-h22"></div>' +
       '<div class="modal-botones"></div>';
 
     var selPool = caja.querySelector('#nPool');
