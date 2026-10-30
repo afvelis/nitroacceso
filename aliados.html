@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-+/Yv4Bv8Ewd/gNioEZEQykHGCyNAO93lEYrgKenVu5M='; img-src 'self' data: blob:; connect-src 'self' https://exrbwctegkzxurzwihvh.supabase.co; font-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'; style-src 'self' 'sha256-Ap/wiyMCny8yb4LLl3ZaAbpnECNG8gk2xGhKoeP25ys=' 'sha256-1I2DN1EeBtdvkJOMgsYjRnfqKcWf0Nj4jca9UWcCQsk='">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>NitroSystem</title>
 <style>html,body{background:#0b1220;margin:0;}</style>
@@ -91,6 +92,18 @@ input[type=checkbox]{width:auto;margin:0 8px 0 0;transform:scale(1.3);cursor:poi
 .modal-seccion{margin-bottom:14px;padding-bottom:14px;border-bottom:1px dashed var(--borde);}
 .modal-seccion:last-child{border-bottom:none;padding-bottom:0;}
 .modal-seccion h4{margin:0 0 8px;font-size:16px;color:var(--acento2);font-weight:700;}
+/* ===== P0-04 fase 4b: clases que sustituyen a los style= de este HTML y de js/aliados.js ===== */
+.fila-mt0{margin-top:0}
+.fila-fin{justify-content:flex-end;margin-top:6px}
+.mt-14{margin-top:14px}
+.mt-10{margin-top:10px}
+.mt-8{margin-top:8px}
+.mb-12{margin-bottom:12px}
+.min-h22{min-height:22px}
+.titulo-aviso{color:var(--aviso)}
+.titulo-rojo{color:var(--rojo)}
+.codigo-mini6{margin:0;padding:6px 10px;display:inline-block}
+.campo-texto{width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1px solid var(--borde);background:#0d1526;color:var(--texto);font-size:17px;font-family:inherit;resize:vertical;}
 </style>
 </head>
 <body>
@@ -104,17 +117,17 @@ input[type=checkbox]{width:auto;margin:0 8px 0 0;transform:scale(1.3);cursor:poi
 </header>
 <main>
 
-  <div class="fila" style="margin-top:0">
+  <div class="fila fila-mt0">
     <button class="btn btn-gris" id="btnVolverArriba">← Volver al dashboard</button>
   </div>
 
   <section class="tarjeta">
     <h2 class="centrado">🤝 Gestión de aliados</h2>
     <p class="suave centrado">Crea aliados, consulta sus asignaciones y gestiona sus cupones.</p>
-    <div class="fila" style="justify-content:flex-end;margin-top:6px">
+    <div class="fila fila-fin">
       <button class="btn btn-verde" id="btnNuevoAliado">➕ Nuevo aliado</button>
     </div>
-    <div id="contenedorAliados" style="margin-top:14px"><p class="suave">Consultando...</p></div>
+    <div id="contenedorAliados" class="mt-14"><p class="suave">Consultando...</p></div>
   </section>
 
   <div class="fila">
