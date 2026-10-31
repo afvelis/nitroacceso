@@ -59,8 +59,9 @@ Usa [PLANTILLA.md](PLANTILLA.md) para crear tareas nuevas. No renombres los IDs 
 | [P0-01](P0-01-xss-escape.md) | Eliminar el XSS almacenado y centralizar el escape | P0 | **hecho** (28/10/2026) | — |
 | [P0-02](P0-02-rls-autorizacion.md) | Verificar y cerrar RLS, grants y autorización por rol | P0 | **hecho** (29/10/2026) | — |
 | [P0-03](P0-03-login-sesiones.md) | Endurecer PIN, rate limit, tokens y bloqueo de sesión | P0 | **hecho** (29/10/2026) | — |
-| [P0-04](P0-04-qr-csp-dependencias.md) | QR local, dependencias vendorizadas y CSP | P0 | pendiente | — |
+| [P0-04](P0-04-qr-csp-dependencias.md) | QR local, dependencias vendorizadas y CSP | P0 | **hecho** (30/10/2026) | — |
 | [P0-05](P0-05-backups-limpieza.md) | Backups, exportación y limpieza segura | P0 | pendiente | — |
+| [P0-06](P0-06-metas-no-referrer-noindex.md) | Reponer meta no-referrer y noindex en las páginas | P0 | **hecho** (31/10/2026) | P0-04 |
 | [P1-01](P1-01-integridad-escaneos-cupones.md) | Escaneos atómicos, cupones y cédulas duplicadas | P1 | pendiente | P0-02 |
 | [P1-02](P1-02-roles-estado-puerta.md) | Rol supervisor y revalidación de estado en puerta | P1 | pendiente | P0-02 |
 | [P1-03](P1-03-auditoria-privacidad.md) | Auditoría de acciones y privacidad de datos | P1 | pendiente | P0-02 |
