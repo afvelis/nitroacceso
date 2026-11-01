@@ -108,10 +108,12 @@ li{margin:4px 0;}
 
   <section class="tarjeta" id="historial">
     <h2>Historial e informes</h2>
-    <p class="suave">Guarda una foto completa del evento con sus estadisticas. Desde aqui abres el informe y lo guardas como PDF. La limpieza final solo se desbloquea con al menos un informe guardado.</p>
+    <p class="suave">Guarda una foto completa del evento con sus estadisticas. Desde aqui abres el informe y lo guardas como PDF. Antes de limpiar, descarga el respaldo completo en JSON: es el archivo que protege los datos y habilita la limpieza final.</p>
     <div class="fila">
       <button class="btn" id="btnGuardarInforme">Guardar informe del evento</button>
+      <button class="btn btn-gris" id="btnExportarRespaldo">Descargar respaldo completo (JSON)</button>
     </div>
+    <p id="respaldoEstado" class="suave">Todavia no hay respaldo en esta pestaña.</p>
     <div id="listaHistorial"><p class="suave">Consultando...</p></div>
     <div class="fila">
       <button class="btn btn-rojo" id="btnLimpiarTodo" disabled>Limpiar todo para el proximo evento</button>
