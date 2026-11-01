@@ -441,6 +441,136 @@ async function guardarInforme(){
   } catch (e) { alert('Fallo al guardar: ' + e.message); }
 }
 
+/* ====== P0-05 · Respaldo completo (JSON) + candados de la limpieza ======
+   Alcance A: todo con las RPC existentes, sin tocar Supabase.
+   - Nucleo: se guarda un informe NUEVO (foto fresca y consistente) y se lee de
+     vuelta: talentos/listas/personas y stands/vendedores completos, tambien
+     los de links anulados (la funcion los trae sin filtro).
+   - Resto: cortesias (+personas por cortesia), aliados/asignaciones
+     (+concursos por asignacion), coordinadores y estado de los dias.
+   - Sesiones y login_intentos NO se exportan a proposito: son estado
+     transitorio de seguridad que la limpieza borra; restaurarlos seria un error.
+   - El respaldo queda registrado en esta pestaña (sessionStorage) y es el
+     candado de la limpieza, junto al PIN y la confirmacion tipada. */
+function leerRespaldo(){
+  try { return JSON.parse(sessionStorage.getItem('na_respaldo') || 'null'); }
+  catch (e) { return null; }
+}
+function haceMinutos(ts){
+  var m = Math.round((Date.now() - ts) / 60000);
+  return m <= 0 ? 'menos de 1 minuto' : (m === 1 ? '1 minuto' : m + ' minutos');
+}
+
+async function exportarRespaldo(){
+  var nombre = await modalPrompt('Nombre del evento para el respaldo (tambien se guarda como informe en el historial):', 'NitroSystem ' + new Date().getFullYear(), 'Descargar respaldo completo');
+  if (nombre === null) return;
+  nombre = nombre.trim();
+  if (!nombre) { alert('Escribe un nombre para el respaldo.'); return; }
+  try {
+    var id = await llamar('f_admin_guardar_evento', { p_token: ses.token, p_nombre: nombre });
+    if (!id) { alert('No se pudo guardar el informe del respaldo (sesion expirada o nombre vacio).'); return; }
+    var base = await Promise.all([
+      llamar('f_admin_ver_evento', { p_token: ses.token, p_id: id }),
+      llamar('f_admin_listar_cortesias', { p_token: ses.token }),
+      llamar('f_admin_listar_aliados', { p_token: ses.token }),
+      llamar('f_admin_listar_coordinadores', { p_token: ses.token }),
+      llamar('f_admin_estado_dias', { p_token: ses.token }),
+      llamar('f_admin_sesiones', { p_token: ses.token })
+    ]);
+    var informe = base[0];
+    if (!informe) { alert('No se pudo leer el informe recien guardado. Intentalo de nuevo.'); return; }
+    var cortesias = base[1] || [];
+    var aliados = base[2] || [];
+    var coordinadores = base[3] || [];
+    var estadoDias = base[4] || null;
+    var sesionesVisibles = base[5] || [];
+
+    var estado = $('respaldoEstado');
+    if (estado) estado.textContent = 'Armando respaldo: leyendo personas de cada cortesia y concursos de cada asignacion...';
+
+    var cortesiasDetalle = [];
+    for (var i = 0; i < cortesias.length; i++) {
+      var det = null, errD = null;
+      try { det = await llamar('f_admin_ver_cortesia', { p_token: ses.token, p_codigo_link: cortesias[i].codigo_link }); }
+      catch (e2) { errD = String(e2 && e2.message ? e2.message : e2); }
+      cortesiasDetalle.push({ codigo_link: cortesias[i].codigo_link, detalle: det, error: errD });
+    }
+
+    var concursosPorAsignacion = [];
+    for (var ali = 0; ali < aliados.length; ali++) {
+      var asigs = aliados[ali].asignaciones || [];
+      for (var k = 0; k < asigs.length; k++) {
+        var ver = null, errC = null;
+        try { ver = await llamar('f_admin_ver_concursos_aliado', { p_token: ses.token, p_asignacion_id: asigs[k].id }); }
+        catch (e3) { errC = String(e3 && e3.message ? e3.message : e3); }
+        concursosPorAsignacion.push({ asignacion_id: asigs[k].id, codigo_link: asigs[k].codigo_link, ver: ver, error: errC });
+      }
+    }
+
+    // Conteos del dry-run: fuente = este respaldo, recien verificado.
+    var detalle = informe.detalle || {};
+    var talentos = detalle.talentos || [], stands = detalle.stands || [];
+    var nListas = 0, nPersonas = 0;
+    talentos.forEach(function(t){ (t.listas || []).forEach(function(l){ nListas++; nPersonas += (l.personas || []).length; }); });
+    var nVendedores = 0;
+    stands.forEach(function(s){ nVendedores += (s.vendedores || []).length; });
+    var nCortesiaPersonas = 0;
+    cortesiasDetalle.forEach(function(cd){
+      if (!cd.detalle) return;
+      (cd.detalle.listas || []).forEach(function(l){ nCortesiaPersonas += (l.personas || []).length; });
+      nCortesiaPersonas += (cd.detalle.individuales || []).length;
+    });
+    var nAsignaciones = 0, nConcursos = 0;
+    aliados.forEach(function(al){ nAsignaciones += (al.asignaciones || []).length; });
+    concursosPorAsignacion.forEach(function(x){ if (x.ver) nConcursos += (x.ver.concursos || []).length; });
+
+    var conteos = {
+      talentos: talentos.length,
+      listas: nListas,
+      personas: nPersonas,
+      stands: stands.length,
+      vendedores: nVendedores,
+      coordinadores: coordinadores.length,
+      cortesias: cortesias.length,
+      cortesia_personas: nCortesiaPersonas,
+      aliados: aliados.length,
+      asignaciones_aliado: nAsignaciones,
+      concursos_aliado: nConcursos,
+      sesiones_activas_visibles: sesionesVisibles.length
+    };
+
+    var archivo = 'respaldo-' + nombre.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') + '-' + new Date().toISOString().slice(0, 10) + '.json';
+    var respaldo = {
+      tipo: 'respaldo-nitrosystem',
+      version: 1,
+      generado_at: new Date().toISOString(),
+      evento: { nombre: nombre, informe_id: id, informe_guardado_at: informe.creado_at },
+      conteos: conteos,
+      datos: {
+        informe: informe,
+        cortesias: cortesias,
+        cortesias_detalle: cortesiasDetalle,
+        aliados: aliados,
+        concursos_por_asignacion: concursosPorAsignacion,
+        coordinadores: coordinadores,
+        estado_dias: estadoDias
+      }
+    };
+    var bola = new Blob([JSON.stringify(respaldo, null, 2)], { type: 'application/json' });
+    var url = URL.createObjectURL(bola);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = archivo;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 5000);
+    sessionStorage.setItem('na_respaldo', JSON.stringify({ ts: Date.now(), informe_id: id, nombre: nombre, archivo: archivo, conteos: conteos }));
+    actualizarBotonLimpieza();
+    alert('Respaldo descargado: ' + archivo + '\n\nGuarda ese archivo en tu PC (o USB). Es el respaldo que exige la limpieza.');
+  } catch (e) { alert('Fallo al armar el respaldo: ' + e.message); }
+}
+
 async function cargarHistorial(){
   var cont = $('listaHistorial');
   try {
@@ -469,10 +599,21 @@ async function cargarHistorial(){
 
 function actualizarBotonLimpieza(){
   var b = $('btnLimpiarTodo');
-  b.disabled = !historialHay;
-  $('notaLimpieza').textContent = historialHay
-    ? 'Candado abierto: hay al menos un informe guardado, la limpieza esta disponible.'
-    : 'Candado cerrado: guarda primero un informe del evento para poder limpiar.';
+  var r = leerRespaldo();
+  var respaldoOk = !!r && ((Date.now() - r.ts) <= 30 * 60 * 1000);
+  b.disabled = !(historialHay && respaldoOk);
+  var nota = $('notaLimpieza');
+  if (!historialHay) {
+    nota.textContent = 'Candado cerrado: guarda primero un informe del evento para poder limpiar.';
+  } else if (!r) {
+    nota.textContent = 'Candado cerrado: falta el respaldo completo (JSON). Descargalo con el boton de arriba.';
+  } else if (!respaldoOk) {
+    nota.textContent = 'Candado cerrado: tu respaldo tiene mas de 30 minutos (hace ' + haceMinutos(r.ts) + '). Descarga uno nuevo antes de limpiar.';
+  } else {
+    nota.textContent = 'Candado abierto: respaldo verificado hace ' + haceMinutos(r.ts) + '. La limpieza pedira tu PIN y el nombre del evento.';
+  }
+  var estado = $('respaldoEstado');
+  if (estado && r) estado.textContent = 'Ultimo respaldo: ' + r.archivo + ' (hace ' + haceMinutos(r.ts) + ').';
 }
 
 async function verInforme(ev){
@@ -677,13 +818,78 @@ function htmlInforme(d){
   return h;
 }
 
+/* Modal propio del dry-run: muestra EXACTAMENTE lo que se borrara (según el
+   respaldo verificado) y exige escribir el nombre del evento. Sin alert/confirm. */
+function modalConfirmarLimpieza(r){
+  return new Promise(function(resolve){
+    var fondo = document.createElement('div');
+    fondo.className = 'modal-fondo';
+    var c = r.conteos;
+    function linea(nombre, valor){ return '<div>' + esc(nombre) + ': <b>' + esc(String(valor)) + '</b></div>'; }
+    fondo.innerHTML =
+      '<div class="modal-caja">' +
+        '<div class="modal-titulo">Limpiar todo: ultima revision</div>' +
+        '<div class="modal-mensaje">Respaldo verificado: <b>' + esc(r.archivo) + '</b> (hace ' + esc(haceMinutos(r.ts)) + '). Esto se borrara, segun ese respaldo:</div>' +
+        '<div class="codigo">' +
+          linea('personas', c.personas) +
+          linea('listas', c.listas) +
+          linea('talentos', c.talentos) +
+          linea('vendedores', c.vendedores) +
+          linea('stands', c.stands) +
+          linea('coordinadores', c.coordinadores) +
+          linea('cortesias', c.cortesias) +
+          linea('personas de cortesia', c.cortesia_personas) +
+          linea('sesiones', 'todas (activas visibles: ' + c.sesiones_activas_visibles + ')') +
+          linea('login_intentos', 'todos') +
+        '</div>' +
+        '<div class="modal-mensaje suave">NO se borran: los informes guardados y los aliados con sus asignaciones y concursos. La config queda con la edicion abierta y el dia activo en 1. Despues de limpiar tu sesion se cierra.</div>' +
+        '<div class="modal-mensaje">Escribe el nombre del evento (<b>' + esc(r.nombre) + '</b>) para confirmar:</div>' +
+        '<input type="text" id="modalNombreLimpieza" class="campo-modal">' +
+        '<div class="modal-acciones">' +
+          '<button class="btn btn-gris" id="modalCancelarBtn">Cancelar</button>' +
+          '<button class="btn btn-rojo" id="modalAceptarBtn" disabled>Continuar con la limpieza</button>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(fondo);
+    var inp = fondo.querySelector('#modalNombreLimpieza');
+    var btnOk = fondo.querySelector('#modalAceptarBtn');
+    setTimeout(function(){ inp.focus(); }, 50);
+    inp.addEventListener('input', function(){ btnOk.disabled = inp.value.trim() !== r.nombre; });
+    inp.addEventListener('keydown', function(e){ if (e.key === 'Enter' && !btnOk.disabled) btnOk.click(); });
+    var cerrar = function(v){ fondo.remove(); resolve(v); };
+    fondo.querySelector('#modalCancelarBtn').addEventListener('click', function(){ cerrar(false); });
+    fondo.querySelector('#modalAceptarBtn').addEventListener('click', function(){ cerrar(true); });
+    fondo.addEventListener('click', function(e){ if (e.target === fondo) cerrar(false); });
+  });
+}
+
 async function limpiarTodo(){
   if (!historialHay) { alert('Primero guarda un informe del evento: es tu candado de seguridad.'); return; }
-  if (!await modalConfirm('Esto vaciara TODAS las tablas de trabajo (personas, listas, talentos, vendedores, stands, coordinadores y sesiones) para empezar el proximo evento. El historial y sus informes NO se tocan. Las cortesias tambien se vacian. Continuar?', 'Limpiar todo')) return;
-  if (!await modalConfirm('SEGUNDA CONFIRMACION: despues de esto tu sesion se cerrara y tendras que entrar de nuevo con tu PIN. Seguro quieres limpiar?', 'Segunda confirmacion')) return;
+  var r = leerRespaldo();
+  if (!r) { alert('Respaldo requerido: descarga primero el respaldo completo (JSON). Es el respaldo que protege estos datos.'); return; }
+  if ((Date.now() - r.ts) > 30 * 60 * 1000) {
+    alert('Tu respaldo tiene mas de 30 minutos (hace ' + haceMinutos(r.ts) + '). Descarga uno nuevo antes de limpiar.');
+    return;
+  }
+  if (!await modalConfirmarLimpieza(r)) return;
+  var pin = await modalPrompt('Re-autenticacion: escribe tu PIN de administrador para autorizar la limpieza.', '', 'PIN de administrador', true);
+  if (!pin) return;
+  try {
+    var lr = await llamar('f_login', { p_pin: pin });
+    var tok = (lr && lr.length) ? lr[0].token : null;
+    var rol = (lr && lr.length) ? lr[0].rol : null;
+    if (tok) llamar('f_logout', { p_token: tok }).catch(function(){});
+    if (rol !== 'admin') { alert('Ese PIN no es del administrador. Limpieza cancelada.'); return; }
+  } catch (e4) {
+    var m = String(e4 && e4.message ? e4.message : e4);
+    if (m.indexOf('BLOQUEADO') !== -1) { alert('Bloqueado por demasiados intentos fallidos (15 min). Limpieza cancelada.'); return; }
+    alert('No se pudo verificar el PIN. Limpieza cancelada.');
+    return;
+  }
   try {
     var ok = await llamar('f_admin_limpiar_todo', { p_token: ses.token });
     if (!ok) { alert('No se pudo limpiar. Recuerda: debe existir al menos un informe guardado.'); return; }
+    sessionStorage.removeItem('na_respaldo');
     borrarSesion();
     alert('Limpieza completada. Entra de nuevo con tu PIN para empezar el proximo evento.');
     location.replace('index.html');
@@ -698,6 +904,7 @@ if (!ses || ses.rol !== 'admin') {
   $('btnAbrirEdicion').onclick = function(){ cambiarEdicion(true); };
   $('btnCrearCoord').onclick = crearCoord;
   $('btnGuardarInforme').onclick = guardarInforme;
+  $('btnExportarRespaldo').onclick = exportarRespaldo;
   $('btnLimpiarTodo').onclick = limpiarTodo;
   $('btnVerSesiones').onclick = cargarSesiones;
   $('btnRevocarSesiones').onclick = revocarSesiones;
