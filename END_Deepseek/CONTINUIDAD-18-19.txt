@@ -1,0 +1,37 @@
+CONTINUIDAD — Sesión 18 → Sesión 19
+================================================================================
+
+RESUMEN DE LA SESIÓN 18 (31/10/2026, ~20:00 - ~20:45):
+- P0-05 alcance A entregado y verificado: blobs exactos (admin.html 58d2cc21, js/admin.js 209f50c6), Actions #251/#252 verdes.
+- Pruebas en vivo: 1 OK (candado sin respaldo), 2 OK (exportación JSON), 4 OK (consola). Paso 3 parcial: usuario paró al ver la tabla de conteos porque decidió que el modelo de "un solo evento + limpieza total" no es el definitivo (visión multi-evento). La funcionalidad del modal (nombre mal = botón gris, nombre exacto = se habilita, Cancelar en PIN) es operativa.
+- APROBADO: M-37 (multi-evento, dashboard centro de control hasta 3 simultáneos) + M-38 (aprobación de coordinadores desde dashboard).
+- DEROGADA: regla del lápiz para .md (30/10). Upload para TODO incl. .md es el método oficial; plan B = copiar/pegar si GitHub falla.
+- P0-05 marcada hecho en tarea y README del backlog.
+
+ARCHIVOS DEL LOTE DE CIERRE (subir TODOS juntos en una sola subida al repo, en la raíz):
+  entregas/cierre-s18/P0-05-backups-limpieza.md     (reemplaza la versión del repo — marcado hecho)
+  entregas/cierre-s18/tareas/M-37-multi-evento.md   (nueva tarea: multi-evento)
+  entregas/cierre-s18/tareas/M-38-aprobacion-coordinadores.md  (nueva tarea: coordinadores)
+  entregas/cierre-s18/tareas/README.md              (índice actualizado: P0-05 hecho + M-37/M-38)
+
+ARCHIVOS DEL LOTE DE CIERRE (subir en una sola subida a la RAÍZ del repo):
+  entregas/cierre-s18/ESTADO.md                     (v9, actualizado P0-05 hecho + M-37/M-38)
+  entregas/cierre-s18/DECISIONES.md                 (3 entradas nuevas: derogación lápiz, P0-05 alcance A, M-37)
+  entregas/cierre-s18/SEGURIDAD-NitroSystem.md      (v2, §7 registro + §8 G6 actualizada)
+
+COMO SUBIR (todos los archivos juntos):
+  1) En GitHub, ir al repo afvelis/nitroacceso → botón "Add file" → "Upload files"
+  2) Arrastrar TODOS los archivos de ambos lotes juntos (10 archivos en total)
+  3) Commit message EXACTO: "Cierre sesion 18: P0-05 hecho, M-37 M-38, ESTADO DECISIONES SEGURIDAD"
+  4) Esperar el verde de Actions antes de probar nada.
+
+PRÓXIMA SESIÓN (Sesión 19) — pasos sugeridos:
+  1) Subir lote de cierre.
+  2) Verificar Actions verdes.
+  3) Elegir primera tarea: P0-04 fase 4b (9 páginas, CSP), F-1 (botón F-1), o pendientes menores.
+  4) M-37/M-38 registrados en el backlog; no arrancar sin staging (P1-04) y sin cerrar deuda.
+
+MINI-PRUEBA PENDIENTE DE P0-05 (opcional, 2 min, cero riesgo):
+  En admin.html (ya con respaldo): "Limpiar todo" → escribir nombre mal (botón gris) → escribir nombre exacto (botón habilita) → Continuar → Cancelar en modal PIN. Fin.
+
+NOTA: El usuario no subió P0-05 al repo (solo código), solo el lote de cierre (docs).

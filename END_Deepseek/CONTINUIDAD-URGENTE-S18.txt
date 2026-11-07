@@ -1,0 +1,13 @@
+CONTINUIDAD URGENTE — Sesión 18 (31/10/2026, ~20:45) — corte por falla eléctrica
+================================================================================
+
+ESTADO AL CORTAR:
+- P0-05 alcance A: LOTE 1 YA EN MAIN Y VERIFICADO (commits d36ec9b5 admin.html, 8e5fac99 js/admin.js; Pages #251 y #252 verdes; blobs exactos 58d2cc21… y 209f50c6…).
+- Pruebas en vivo: 1 OK (candado sin respaldo), 2 OK (exportación JSON), 4 OK (consola). PENDIENTE mini-prueba 3: modal limpieza → nombre mal = botón gris; nombre exacto = se habilita; Continuar → Cancelar en el PIN. Cero riesgo.
+- APROBADO por el usuario: registrar M-37 (multi-evento) y M-38 (aprobación de coordinadores). YA CREADOS en entregas\cierre-s18\tareas\.
+- PENDIENTE DEL CIERRE (cuando el usuario dé la orden o diga CERRAR SESIÓN):
+  1) Mini-prueba 3 de P0-05 (usuario).
+  2) Lote de tareas (1 subida, carpeta tareas/): P0-05-backups-limpieza.md actualizado (hecho + notas, alcance A; fase C/servidor queda absorbida por M-37), tareas/README.md (fila P0-05 hecho + filas M-37 y M-38), M-37-multi-evento.md, M-38-aprobacion-coordinadores.md. Commit: "Cierre sesion 18: P0-05 hecho, backlog M-37 y M-38".
+  3) CERRAR SESIÓN: ESTADO.md v9, DECISIONES.md (nuevas entradas: Upload para TODO incl. .md sustituye regla del lápiz; visión multi-evento M-37/M-38 aprobada como siguiente gran paso tras cerrar deuda; P0-05 alcance A entregado), SEGURIDAD-NitroSystem.md §7 (G6 restaurada + registro P0-05), TXT continuidad 18→19. Entregar en LOCAL: TXT + SEGURIDAD.
+- Multi-evento (decisión del usuario 31/10): dashboard centro de control, hasta 3 eventos simultáneos, cada uno desde cero, cierre-archivado sustituye limpieza. Arranca SOLO tras cerrar deuda (F-1 etc.) y con staging (P1-04). No ejecutar hoy.
+- Referencias de sesión: user aprobó alcance A; conteos dry-run verificados en vivo; el informe snapshot trae TODOS los talentos/listas/personas/stands/vendedores (con anulados) — confirmado vía definición CSV f_admin_guardar_evento.
