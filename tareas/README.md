@@ -60,7 +60,7 @@ Usa [PLANTILLA.md](PLANTILLA.md) para crear tareas nuevas. No renombres los IDs 
 | [P0-02](P0-02-rls-autorizacion.md) | Verificar y cerrar RLS, grants y autorización por rol | P0 | **hecho** (29/10/2026) | — |
 | [P0-03](P0-03-login-sesiones.md) | Endurecer PIN, rate limit, tokens y bloqueo de sesión | P0 | **hecho** (29/10/2026) | — |
 | [P0-04](P0-04-qr-csp-dependencias.md) | QR local, dependencias vendorizadas y CSP | P0 | **hecho** (30/10/2026) | — |
-| [P0-05](P0-05-backups-limpieza.md) | Backups, exportación y limpieza segura | P0 | pendiente | — |
+| [P0-05](P0-05-backups-limpieza.md) | Backups, exportación y limpieza segura | P0 | **hecho** (31/10/2026) · Alcance A: respaldo JSON + candado doble + re-autenticación PIN + confirmación tipada + dry-run con conteos exactos (fases B-D absorbidas por M-37) | — |
 | [P0-06](P0-06-metas-no-referrer-noindex.md) | Reponer meta no-referrer y noindex en las páginas | P0 | **hecho** (31/10/2026) | P0-04 |
 | [P1-01](P1-01-integridad-escaneos-cupones.md) | Escaneos atómicos, cupones y cédulas duplicadas | P1 | pendiente | P0-02 |
 | [P1-02](P1-02-roles-estado-puerta.md) | Rol supervisor y revalidación de estado en puerta | P1 | pendiente | P0-02 |
@@ -78,6 +78,8 @@ Usa [PLANTILLA.md](PLANTILLA.md) para crear tareas nuevas. No renombres los IDs 
 | [M-34](M-34-fecha-creacion-tarjeta-admin.md) | Mostrar la fecha de creación en la tarjeta del aliado (aliados.html) | P2 | pendiente | — |
 | [M-35](M-35-nombres-premios-anulados.md) | Mostrar nombres de premios anulados (requiere cambio de RPC) | P2 | pendiente | — |
 | [M-36](M-36-modulo-reclamos.md) | Módulo de reclamos | P2 | pendiente | — |
+| [M-37](M-37-multi-evento.md) | Multi-evento: gestionar hasta 3 eventos simultáneos desde el dashboard | P2 | pendiente | P1-04 |
+| [M-38](M-38-aprobacion-coordinadores.md) | Aprobación de coordinadores desde el dashboard (solicitar → aprobar/rechazar) | P2 | pendiente | — |
 
 ---
 
@@ -86,12 +88,12 @@ Usa [PLANTILLA.md](PLANTILLA.md) para crear tareas nuevas. No renombres los IDs 
 1. **P0-01** (XSS): es el riesgo más directo y se puede corregir sin tocar Supabase. ✅ HECHO 28/10/2026.
 2. **P0-02** (RLS/autorización): define si el resto de los controles sirven. ✅ HECHO 29/10/2026.
 3. **P0-03** (sesiones): reduce el impacto de un token robado. ✅ HECHO 29/10/2026 — PINs de 6 dígitos con bcrypt, rate limit 5 fallas/15 min, sesiones de 8 h solo-hash, revocación y salida real, auto-bloqueo 5 min. Detalle en [P0-03](P0-03-login-sesiones.md) y en `docs/seguridad-sesiones.md`.
-4. **P0-04** (QR/CSP): quita dependencias externas y reduce exfiltración.
-5. **P0-05** (backups): protege contra el error humano y el borrado accidental.
+4. **P0-04** (QR/CSP): quita dependencias externas y reduce exfiltración. ✅ HECHO 30/10/2026 (5/5 fases, CSP en 14/14 páginas).
+5. **P0-05** (backups): protege contra el error humano y el borrado accidental. ✅ HECHO 31/10/2026 (alcance A: respaldo JSON + candado doble + re-autenticación PIN + confirmación tipada + dry-run; fases B-D absorbidas por M-37).
 6. **P1-01** y **P1-02**: integridad y separación de roles en puerta.
 7. **P1-03** y **P1-04**: auditoría, privacidad y base para probar con seguridad.
 8. **P2**: confiabilidad, mantenibilidad y operación.
-9. Las tareas **F-1…F-5** (hallazgos de la prueba en vivo del 28/10/2026) y **M-33…M-36** (ideas de producto) están fuera del orden de seguridad: se toman una a la vez cuando el usuario lo decida. F-1 es la única P1 porque es un botón que no funciona.
+9. Las tareas **F-1…F-5** (hallazgos de la prueba en vivo del 28/10/2026) y **M-33…M-38** (ideas de producto) están fuera del orden de seguridad: se toman una a la vez cuando el usuario lo decida. F-1 es la única P1 porque es un botón que no funciona. **M-37** es el siguiente gran paso aprobado por el usuario: multi-evento (hasta 3 simultáneos), se inicia tras cerrar la deuda y con staging (P1-04) — **NO se arranca sin staging**.
 
 ---
 
