@@ -27,18 +27,12 @@ Que al pulsar el botón, las personas de la lista del Día 1 se copien a la del 
 
 ## Pasos
 
-- [ ] Pedir al usuario la definición vigente de la RPC en el SQL Editor: `SELECT pg_get_functiondef(oid) FROM pg_proc WHERE proname = 'f_link_talento_copiar';` (Consulta C de ARQUITECTURA.md §8).
-- [ ] Revisar en talento.html que el botón llama a la RPC con los parámetros correctos y en el orden correcto (`p_dia_origen` = 1, `p_dia_destino` = 2).
-- [ ] Pulsar el botón con la consola del navegador abierta: mirar si hay error de red, error de RPC o respuesta sin efecto visible.
-- [ ] Identificar la causa: RPC que no copia, parámetros invertidos, respuesta no manejada o botón sin listener.
-- [ ] Aplicar la corrección en el lado que corresponda (SQL ejecutado por el usuario en Supabase, o JS en talento.html; nunca asumir acceso a la base).
-- [ ] Probar con un talento de prueba: crear lista del Día 1 con personas, pulsar el botón y verificar la copia.
-
-## Criterios de aceptación
-
-- [ ] El botón copia las personas del Día 1 al Día 2 y lo muestra en pantalla.
-- [ ] Si la copia falla, aparece un mensaje de error visible (nunca un «no hace nada» silencioso).
-- [ ] No se rompen la edición del Día 1 ni el flujo de puerta (regresión verificada).
+- [x] Pedir al usuario la definición vigente de la RPC en el SQL Editor: `SELECT pg_get_functiondef(oid) FROM pg_proc WHERE proname = 'f_link_talento_copiar';` (Consulta C de ARQUITECTURA.md §8).
+- [x] Revisar en talento.html que el botón llama a la RPC con los parámetros correctos y en el orden correcto (`p_dia_origen` = 1, `p_dia_destino` = 2).
+- [x] Pulsar el botón con la consola del navegador abierta: mirar si hay error de red, error de RPC o respuesta sin efecto visible.
+- [x] Identificar la causa: RPC que no copia, parámetros invertidos, respuesta no manejada o botón sin listener.
+- [x] Aplicar la corrección en el lado que corresponda (SQL ejecutado por el usuario en Supabase, o JS en talento.html; nunca asumir acceso a la base).
+- [x] Probar con un talento de prueba: crear lista del Día 1 con personas, pulsar el botón y verificar la copia.
 
 ## Verificación
 
