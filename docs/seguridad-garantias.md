@@ -82,7 +82,7 @@ Cuando detectes una vulnerabilidad, un método débil o una regla de este archiv
 
 ---
 
-*Fin de SEGURIDAD-NitroSystem.md v1. Este archivo crece con el proyecto: en cada cierre de sesión se actualiza el registro y, si corresponde, las garantías.*
+*Fin de SEGURIDAD-NitroSystem.md v2. Este archivo crece con el proyecto: en cada cierre de sesión se actualiza el registro y, si corresponde, las garantías.*
 
 ## 8 · Garantías actualizadas (31/10/2026)
 
