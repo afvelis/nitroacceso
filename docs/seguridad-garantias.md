@@ -1,6 +1,6 @@
 # SEGURIDAD-NitroSystem.md — Garantías de seguridad y protocolo de mejora
 
-Versión: **1** · 31/10/2026 · **Archivo LOCAL — no se sube al repo.** Lo lee cualquier IA (agéntica o de chat) antes de escribir una sola línea de código de este proyecto. Se actualiza en cada «CERRAR SESIÓN».
+Versión: **2** · 31/10/2026 · Rescatado al repo el 09/11/2026 como `docs/seguridad-garantias.md` (antes vivía en el kit `END_Deepseek/`, ya retirado). Lo lee cualquier IA (agéntica o de chat) antes de escribir una sola línea de código de este proyecto. Se actualiza en cada «CERRAR SESIÓN».
 
 > CÓMO USAR ESTE ARCHIVO: define las garantías de seguridad YA GANADAS por el proyecto y las reglas que todo desarrollo nuevo debe traer **de fábrica**, no como arreglo posterior. Complementa (no reemplaza) a `AGENTS.md` (reglas de trabajo), `ESTADO.md` (estado), `ARQUITECTURA.md` (técnica) y `DECISIONES.md` (por qués). Si detectas que una regla de aquí es falla, está obsoleta o es mejorable, NO lo callas y NO lo arreglas en silencio: aplica el **Protocolo de mejora continua** (§6).
 
@@ -30,11 +30,11 @@ Versión: **1** · 31/10/2026 · **Archivo LOCAL — no se sube al repo.** Lo le
 **G5 · Dependencias vendorizadas (P0-04 fases 1-3).** Cero CDN, cero servicios externos: QR generado local (`vendor/qrcode-generator-1.4.4.js` + gancho UTF-8) y lectura con `vendor/jsqr-1.4.0.js`. Los códigos de pase jamás viajan a servicios de terceros. Si alguna vez se necesita un script externo: con `integrity` + `crossorigin` y justificación escrita.
 
 **G6 · Metadatos de privacidad por página.** `<meta name="referrer" content="no-referrer">` y `<meta name="robots" content="noindex, nofollow">` en las páginas sensibles (pases, admin, puerta).
-- ⚠️ **ESTADO ACTUAL (31/10/2026): REGRESIÓN ABIERTA.** Los metas NO están en `main` (verificado leyendo los archivos): una edición posterior a la fase 2 los borró de todas las páginas. Es la primera tarea correctiva P0 de la sesión 18. Toda página nueva debe nacer con ellos para no engrosar la deuda.
+- **ESTADO ACTUAL (cerrada el 31/10/2026 por P0-06):** `no-referrer` presente en las 14 páginas; `noindex, nofollow` en las 12 sensibles (`index.html` y `acceso-denegado.html` lo omiten a propósito por ser pantallas neutras). Se perdió una vez por una edición posterior a la fase 2 y se restituyó con los commits `7be043ab` (14 HTML) y `65416e41` (tarea + índice). Regla: toda página nueva nace con ellos y el orden del `<head>` es charset → CSP → referrer/robots → viewport.
 
 **G7 · Integridad de los cambios (lecciones de la sesión 17, en DECISIONES.md).** Clases de mostrar/ocultar **planas** (sin `!important` ni `@layer`) para que el JS pueda ganarlas por CSSOM (incidente: puerta en blanco). Conversiones masivas con **prueba de igualdad de ids** original vs entregable (incidente: stand). Todo cambio verificado por **blob sha1 contra `main`** antes de declararlo "correcto". `node --check` para los `js/`. Actions en verde ANTES de probar; pruebas con `Ctrl+F5` (caché de Pages: 10 min) mirando la consola.
 
-**G8 · Higiene operativa.** Nunca imprimir códigos reales V-/STD/cortesía ni PINs en el chat: las pruebas son negativas (sin parámetro, código malo, sesión ausente). Sin secretos en el repo ni en el cliente. Los `.md` se suben con el lápiz (Ctrl+A → Ctrl+V), nunca por arrastre. Los archivos grandes se bajan con Ctrl+S del raw + verificación de blob (la copia del navegador trae CRLF y pierde la última línea: reparar y re-verificar). Jamás reconstruir archivos de memoria: solo copias verificadas byte a byte.
+**G8 · Higiene operativa.** Nunca imprimir códigos reales V-/STD/cortesía ni PINs en el chat: las pruebas son negativas (sin parámetro, código malo, sesión ausente). Sin secretos en el repo ni en el cliente. Los cambios se suben por Upload files (arrastrar), incluidos los `.md`; plan B si GitHub falla (500 o «Something went really wrong»): copiar/pegar con el lápiz (Ctrl+A → Ctrl+V). Regla del lápiz derogada el 31/10/2026. Los archivos grandes se bajan con Ctrl+S del raw + verificación de blob (la copia del navegador trae CRLF y pierde la última línea: reparar y re-verificar). Jamás reconstruir archivos de memoria: solo copias verificadas byte a byte.
 
 ## 3 · Al crear algo nuevo (checklist de fábrica)
 
@@ -72,16 +72,17 @@ Cuando detectes una vulnerabilidad, un método débil o una regla de este archiv
 | Fecha | Tipo | Descripción | Clasificación | Estado | Referencia |
 | --- | --- | --- | --- | --- | --- |
 | 31/10/2026 | apertura | Registro creado con la postura v1 (G1-G8). | — | vigente | este archivo |
-| 31/10/2026 | regresión | `no-referrer` + `noindex` ausentes en las 14 páginas de `main` (borrados por una edición posterior a la fase 2). | URGENTE (P0) | abierta — primera tarea sesión 18 | tareas/P0-04 §Metaetiquetas |
+| 31/10/2026 | regresión | `no-referrer` + `noindex` ausentes en las 14 páginas de `main` (borrados por una edición posterior a la fase 2). | URGENTE (P0) | **cerrada** por P0-06 (commits 7be043ab / 65416e41) | tareas/P0-04 §Metaetiquetas |
 | 31/10/2026 | verificación pendiente | Prueba de XSS con payload explícito (la protección está garantizada por configuración: `connect-src`/`img-src` cerrados). | MANEJABLE | abierta — opcional | tareas/P0-04 |
 | 31/10/2026 | operación | Keep-alive de Supabase: revisar ejecución ~31/10 en Actions. | rutina | pendiente de revisar | ESTADO.md §4 |
 | 31/10/2026 | cierre P0-06 | P0-06 ejecutado: reponer `<meta name="referrer" content="no-referrer">` y `<meta name="robots" content="noindex, nofollow">` en las 14 páginas; corregir fila P0-06 del README del backlog. Commits `7be043ab` (14 HTML) y `65416e41` (tarea + README). Actions #249/#250 verdes. | URGENTE | **hecho** | tareas/P0-06 |
 | 31/10/2026 | P0-05 alcance A | Respaldo JSON descargable + candado doble (informe + respaldo ≤30 min) en "Limpiar todo" + re-autenticación PIN (f_login/f_logout) + confirmación tipada del nombre + dry-run con conteos exactos del respaldo verificado (talentos/listas/personas/stands/vendedores completos, inclusive anulados). Blobs `58d2cc21…` y `209f50c6…`, commits `d36ec9b5` / `8e5fac99`, Actions #251/#252 verdes. Fases B-D absorbidas por M-37 (multi-evento sustituye limpieza total). | URGENTE (P0) | **hecho** | tareas/P0-05 |
-| 31/10/2026 | G6 restaurada | La protección contra borrado accidental (G6) quedó restaurada y reforzada tras P0-05 alcance A: ya no basta un token robado para limpiar; hacePIN, nombre exacto y respaldo verificado ≤30 min. Regla de G6 actualizada: ver §8 abajo. | G6 | vigente | P0-05 / M-37 |
+| 31/10/2026 | G6 restaurada | La protección contra borrado accidental (G6) quedó restaurada y reforzada tras P0-05 alcance A: ya no basta un token robado para limpiar; hace falta el PIN, el nombre exacto y respaldo verificado ≤30 min. Regla de G6 actualizada: ver §8 abajo. | G6 | vigente | P0-05 / M-37 |
+| 09/11/2026 | documentación | Se rescata este archivo del kit `END_Deepseek/` a `docs/seguridad-garantias.md` y se corrige G6 (cerrada) y G8 (regla del lápiz derogada). El kit se retira porque su copia de ESTADO decía que faltaba la fase 4b de P0-04 y es falso. | MANEJABLE | vigente | este archivo |
 
 ---
 
-*Fin de SEGURIDAD-NitroSystem.md v1. Este archivo crece con el proyecto: en cada cierre de sesión se actualiza el registro y, si corresponde, las garantías.*
+*Fin de SEGURIDAD-NitroSystem.md v2. Este archivo crece con el proyecto: en cada cierre de sesión se actualiza el registro y, si corresponde, las garantías.*
 
 ## 8 · Garantías actualizadas (31/10/2026)
 
