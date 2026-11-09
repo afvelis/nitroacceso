@@ -2,7 +2,7 @@
 id: "P1-04"
 titulo: "Staging, migraciones, tests y CI"
 prioridad: "P1"
-estado: "pendiente"
+estado: "en_progreso"
 area: "operacion"
 depende_de: ["P0-02"]
 archivos:
@@ -65,5 +65,14 @@ Tener un entorno de staging separado, el esquema versionado, pruebas automatizad
 - Reemplazar GitHub Pages por otra plataforma (se puede proponer, pero no es requisito).
 
 ## Notas de implementación
+
+### Progreso (2026-11-09)
+
+- (a) Proyecto de staging creado y verificado vacío: URL `https://adoqujnnnrlgmvwbnwbl.supabase.co`, responde y no tiene ninguna tabla ni función.
+- (b) Volcado DDL de producción extraído por el usuario desde el SQL Editor con consultas a catálogos (solo lectura) y versionado en `docs/sql/volcado-produccion-2026-11-09.csv` (285 filas).
+- (c) Esquema inicial generado en `supabase/migrations/0001_esquema_inicial.sql` con 17 tablas, 75 restricciones, 1 índice, 82 funciones, 17 RLS, el event trigger `ensure_rls` y el mapa de permisos real (78 grant + 4 revoke). Generado con `scripts/volcado-a-migracion.py` a partir del volcado; se excluyeron los 6 event triggers de Supabase/PostgREST (`issue_graphql_placeholder`, `issue_pg_cron_access`, `issue_pg_graphql_access`, `issue_pg_net_access`, `pgrst_ddl_watch`, `pgrst_drop_watch`) porque ya existen en cualquier proyecto nuevo.
+- (d) Seed ficticio en `supabase/seed.sql`: config con PINs de staging (`100000` admin / `200000` puerta, solo staging), 2 coordinadores, 1 talento con 2 listas y 3 personas, 1 stand con 2 vendedores, 1 cortesía tipo lista con su lista y 2 personas, 1 aliado con asignación y concurso. Re-ejecutable (`on conflict do nothing`), cero datos reales.
+- (e) Pendiente inmediato: aplicar migración + seed en staging y verificar con las consultas A y B.
+- (f) Sigue pendiente de P1-04: separar `config.js` por entorno, banner de entorno, tests E2E, CI y README raíz.
 
 > Pendiente.
