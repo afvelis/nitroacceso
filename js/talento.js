@@ -194,13 +194,16 @@ function mostrarOpcionDia2(sec, rows, l){
   var fila = document.createElement('div');
   fila.className = 'fila';
   fila.appendChild(boton('Repetir y editar la del Dia 1', '', async function(){
+    console.info('[talento] copiar Dia 1 -> Dia 2: inicio');
     try {
       var ok = await llamar('f_link_talento_copiar', {
         p_codigo_link: CODIGO, p_dia_origen: 1, p_dia_destino: 2
       });
       if (ok === true) { await cargar(); return; }
-      pinta($('msgGlobal'), 'No se pudo copiar la lista al Dia 2 (quizas el Dia 2 ya tiene integrantes).', false);
+      console.warn('[talento] copiar Dia 1 -> Dia 2: la RPC devolvio', ok);
+      pinta($('msgGlobal'), 'No se pudo copiar al Dia 2. Revisa que la edicion este abierta, que el Dia 1 tenga integrantes y que el Dia 2 siga vacio.', false);
     } catch (e) {
+      console.error('[talento] copiar Dia 1 -> Dia 2: error', e);
       pinta($('msgGlobal'), 'No se pudo conectar: ' + e.message, false);
     }
   }));

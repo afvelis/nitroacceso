@@ -64,7 +64,7 @@ Al iniciar cualquier sesión, se verifica en este orden. Cada punto dice quién 
 
 **E — Manuales (solicitud del usuario, 28/10):** manual de uso por módulo (usuarios finales), memoria técnica viva (ARQUITECTURA.md) y manual de reparación. Candidato a siguiente workstream junto con B.
 
-**F — Hallazgos de la prueba en vivo (28/10): ✅ MIGRADOS a `tareas/` el 29/10** como F-1…F-5. **F-1 es la única P1** (botón «Repetir y editar la del Día 1» de talento.html que "no hace nada").
+**F — Hallazgos de la prueba en vivo (28/10): ✅ MIGRADOS a `tareas/` el 29/10** como F-1…F-5. **F-1 (la única P1) quedó HECHA el 09/11/2026:** la RPC `f_link_talento_copiar` exigía `en_edicion` también en la lista de origen (al cerrarse el Día 1 quedaba `cerrada` y devolvía `false`); el usuario aplicó el `CREATE OR REPLACE` en la base y se verificó con una transacción con ROLLBACK sobre un talento con Día 1 cerrado (9 personas) y Día 2 vacío → `true` y 9 copiadas dentro de la transacción, sin cambios persistidos. Frontend corregido en `js/talento.js` (mensaje honesto + trazas en consola). Detalle en `tareas/F-1-talento-copiar-dia2.md` y respaldo SQL en `docs/sql/f_link_talento_copiar.sql`.
 
 **G — Pendientes surgidos de P0-03 (29-30/10, sin tarea propia aún — ver M-37/M-38 y la sección H más abajo):**
 - **Depurar admin.html** (petición explícita del usuario): separar actividades medulares de las secundarias; la página está sobrecargada.
@@ -90,9 +90,10 @@ Al iniciar cualquier sesión, se verifica en este orden. Cada punto dice quién 
 2. ✅ HECHO 31/10 (Sesión 18): **P0-06** (metas `no-referrer` en 14/14 páginas + `noindex` en las 12 sensibles; commits `7be043ab`/`65416e41`) y **P0-05 alcance A** (respaldo JSON + candado doble + re-autenticación PIN + confirmación tipada + dry-run con conteos exactos; blobs `58d2cc21`/`209f50c6`, commits `d36ec9b5`/`8e5fac99`, Actions #251/#252 verdes; fases B-D absorbidas por M-37).
 3. **Próxima sesión — primera tarea: F-1** (botón «Repetir y editar la del Día 1» de `talento.html`, la única P1 funcional).
 4. **Después de F-1: F-2…F-5 pendientes, P1-01…P1-04, P2-01…P2-03, o M-33…M-36.**
-5. **M-37 (multi-evento) es el siguiente gran paso aprobado por el usuario: se iniciará solo tras cerrar la deuda (F-1, pendientes menores) y con staging (P1-04). No arrancar hoy.**
+5. **M-37 (multi-evento) es el siguiente gran paso aprobado por el usuario: se iniciará solo tras cerrar la deuda (pendientes menores) y con staging (P1-04). No arrancar hoy.**
 6. **Verificación de arranque de §2, incluido el keep-alive:** run **#12** verde 31/10 ~13:08 local; el siguiente debe caer ~03/11. Si no aparece verde en Actions, revisar `keep-supabase-alive.yml`.
 7. **Nota PINs:** desde P0-03, los PINs de admin y puerta son de **6 dígitos** y están rotados (el usuario los custodia en papel). Si se pierden: rotar desde el panel exige el PIN admin vigente; si se pierde el de admin, la recuperación es por base (nuevo hash bcrypt generado por el asistente → el usuario ejecuta) — documentar en el manual E.
+8. ✅ **F-1 cerrada el 09/11/2026** (RPC `f_link_talento_copiar` reescrita en la base por el usuario + frontend corregido en `js/talento.js`; verificada con transacción y ROLLBACK, sin cambios persistidos; detalle en `tareas/F-1-talento-copiar-dia2.md`). **Siguiente candidato: P1-04 (staging, migraciones, tests y CI)** — es lo que permitiría probar formularios y clics reales (como el clic del botón de F-1, no probado en pantalla porque `edicion_abierta` está en `false`) sin pedir SQL cada vez.
 ## 5 · Transición v2.4 → v3 (histórico)
 
 - Los 4 archivos `prompt-traspaso-nitrotoon-v2.4-*.txt` fueron movidos a `historico/` el 28/10/2026 y **dejan de evolucionar**.

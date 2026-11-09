@@ -2,7 +2,7 @@
 id: "F-1"
 titulo: "Reparar el botón «Repetir y editar la del Día 1» en talento.html"
 prioridad: "P1"
-estado: "pendiente"
+estado: "hecho"
 area: "datos"
 depende_de: []
 archivos:
@@ -51,4 +51,53 @@ Prueba manual con un talento de prueba: guardar 2-3 personas en el Día 1, pulsa
 
 ## Notas de implementación
 
-> Pendiente.
+**Cerrada el 09/11/2026.**
+
+### Causa raíz
+
+La RPC `public.f_link_talento_copiar(p_codigo_link text, p_dia_origen integer, p_dia_destino integer)` exigía `estado = 'en_edicion'` en la lista de **origen** (además del destino). Al cerrarse el Día 1 su lista pasa a `cerrada`, la función devolvía `false` y el frontend pintaba «quizás el Día 2 ya tiene integrantes», que no era la causa real. El botón sí tenía su listener y llamaba a la RPC con los parámetros correctos.
+
+### Arreglo aplicado en Supabase (ejecutado por el usuario; el agente no ejecuta SQL)
+
+`CREATE OR REPLACE` de `public.f_link_talento_copiar`:
+
+- Acepta la lista de origen en `cerrada` o `en_edicion` (si hubiera varias, gana la que está en edición).
+- Mantiene el destino obligatoriamente en `en_edicion`, para que se pueda editar después.
+- Añade `limit 1` en las búsquedas de config, talento, origen y destino (evita «query returned more than one row»).
+- Devuelve el resultado de `get diagnostics v_n = row_count; return v_n > 0;` (antes devolvía `true` aunque copiara 0 filas).
+
+### Verificación en la base
+
+Consulta de comprobación ejecutada por el usuario: `existe = true`, `tiene_arreglo = true`, `tiene_conteo = true` y la restricción vieja (`en_edicion` en el origen) ausente.
+
+### Prueba funcional sin efectos persistidos
+
+Transacción con ROLLBACK sobre un talento con Día 1 cerrado (9 personas) y Día 2 vacío:
+
+```sql
+begin;
+update config set edicion_abierta = true;
+select f_link_talento_copiar('<codigo_link>', 1, 2);  -- -> true
+select count(*) from personas where lista_id = <lista_dia2>;  -- -> 9
+rollback;
+```
+
+Resultado dentro de la transacción: `true` y 9 personas copiadas al Día 2. Tras el ROLLBACK: `edicion_abierta = false`, Día 2 con 0 personas y total de la tabla `personas` sin cambios (35). Sin cambios persistidos.
+
+### Frontend
+
+Mensaje de error corregido para nombrar las tres causas reales («edición abierta, Día 1 con integrantes, Día 2 vacío») y trazas en consola (`console.info` al inicio, `console.warn` si la RPC devuelve falso, `console.error` en excepción), en `js/talento.js`, función `mostrarOpcionDia2`. No se cambió la lógica: misma RPC, mismos parámetros y `await cargar()` cuando devuelve `true`. `pinta()` usa `textContent` (no `innerHTML`), así que no hace falta escapado adicional.
+
+### Pendiente / riesgo
+
+No se probó el clic en la pantalla real porque `edicion_abierta` está en `false` (evento terminado); la prueba se hizo a nivel de RPC. Queda cubierto por [P1-04](P1-04-staging.md) (staging).
+
+### Respaldo SQL
+
+Definiciones SQL de la función (versión PRE para revertir y POST vigente) guardadas en `docs/sql/f_link_talento_copiar.sql`.
+
+## Criterios de aceptación
+
+- [x] El botón copia las personas del Día 1 al Día 2 y lo muestra en pantalla. *(verificado a nivel de RPC con transacción y ROLLBACK: `true` y 9 personas copiadas; clic en pantalla pendiente de P1-04 porque `edicion_abierta` está en `false`)*
+- [x] Si la copia falla, aparece un mensaje de error visible (nunca un «no hace nada» silencioso). *(mensaje nuevo que nombra las tres causas reales + trazas `console.info`/`warn`/`error` en `js/talento.js`)*
+- [x] No se rompen la edición del Día 1 ni el flujo de puerta (regresión verificada). *(la copia con ROLLBACK dejó la lista del Día 1 y su estado sin tocar; el cambio de frontend es solo el mensaje y las trazas, sin tocar lógica ni puerta)*

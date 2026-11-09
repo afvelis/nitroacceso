@@ -69,7 +69,7 @@ Usa [PLANTILLA.md](PLANTILLA.md) para crear tareas nuevas. No renombres los IDs 
 | [P2-01](P2-01-offline-pwa.md) | Modo offline y cola de escaneos para el día del evento | P2 | pendiente | P0-04 |
 | [P2-02](P2-02-refactor-accesibilidad.md) | Refactor a módulos compartidos y accesibilidad | P2 | pendiente | P1-04 |
 | [P2-03](P2-03-observabilidad-runbook.md) | Observabilidad y runbook de incidentes | P2 | pendiente | P1-03 |
-| [F-1](F-1-talento-copiar-dia2.md) | Reparar el botón «Repetir y editar la del Día 1» en talento.html | P1 | pendiente | — |
+| [F-1](F-1-talento-copiar-dia2.md) | Reparar el botón «Repetir y editar la del Día 1» en talento.html | P1 | **hecho** (09/11/2026) | — |
 | [F-2](F-2-coord-mis-links-orden-cupo.md) | Reordenar «Mis links» de coord.html (más nuevo primero) y evaluar mostrar cupo | P2 | pendiente | — |
 | [F-3](F-3-auditoria-edicion-abierta-cerrada.md) | Revalidar la lógica edición-abierta / edición-cerrada módulo por módulo | P2 | pendiente | — |
 | [F-4](F-4-qr-talento-codigo-corto.md) | Mostrar el código corto en el QR del talento | P2 | pendiente | — |
@@ -93,7 +93,7 @@ Usa [PLANTILLA.md](PLANTILLA.md) para crear tareas nuevas. No renombres los IDs 
 6. **P1-01** y **P1-02**: integridad y separación de roles en puerta.
 7. **P1-03** y **P1-04**: auditoría, privacidad y base para probar con seguridad.
 8. **P2**: confiabilidad, mantenibilidad y operación.
-9. Las tareas **F-1…F-5** (hallazgos de la prueba en vivo del 28/10/2026) y **M-33…M-38** (ideas de producto) están fuera del orden de seguridad: se toman una a la vez cuando el usuario lo decida. F-1 es la única P1 porque es un botón que no funciona. **M-37** es el siguiente gran paso aprobado por el usuario: multi-evento (hasta 3 simultáneos), se inicia tras cerrar la deuda y con staging (P1-04) — **NO se arranca sin staging**.
+9. Las tareas **F-1…F-5** (hallazgos de la prueba en vivo del 28/10/2026) y **M-33…M-38** (ideas de producto) están fuera del orden de seguridad: se toman una a la vez cuando el usuario lo decida. F-1 quedó HECHA el 09/11/2026 (causa raíz en la RPC `f_link_talento_copiar`, arreglada en la base por el usuario y verificada con transacción y ROLLBACK). Ya no queda ninguna P1 de las tareas F. **M-37** es el siguiente gran paso aprobado por el usuario: multi-evento (hasta 3 simultáneos), se inicia tras cerrar la deuda y con staging (P1-04) — **NO se arranca sin staging**.
 
 ---
 
