@@ -1,8 +1,124 @@
 /* config.js - ajustes generales de nitroacceso */
 const NOMBRE_EVENTO = "NITROSYSTEM";
-const SUPABASE_URL = "https://exrbwctegkzxurzwihvh.supabase.co";
-const SUPABASE_ANON = "sb_publishable_bi7cWsc1qmhvlAE4tdNLbA_bUE-SWDu";
-const BASE = "https://afvelis.github.io/nitroacceso/";
+
+// ===== P1-04 · Fase B: entornos staging/producción =====
+// Cómo probar contra staging (Fase B):
+//   1) Añadir ?env=staging a la URL de la página (p. ej. index.html?env=staging), o
+//   2) Definir window.__NA_ENV__ = "staging" ANTES de cargar este script.
+// Seguridad (blindaje): en cualquier host *.github.io (incluido afvelis.github.io,
+// el sitio público real) se ignora CUALQUIER override (?env= o __NA_ENV__) y se
+// fuerza producción, para que un enlace mal copiado nunca conecte el sitio
+// público a la base de pruebas. Cuando se ignora un override se avisa por consola.
+// Valores aceptados: "staging", "produccion" y "prod" (alias); cualquier otro
+// valor se ignora y se usa producción.
+const NA_ENTORNOS = {
+  produccion: {
+    url: "https://exrbwctegkzxurzwihvh.supabase.co",
+    anon: "sb_publishable_bi7cWsc1qmhvlAE4tdNLbA_bUE-SWDu",
+    base: "https://afvelis.github.io/nitroacceso/"
+  },
+  staging: {
+    url: "https://adoqujnnnrlgmvwbnwbl.supabase.co",
+    anon: "sb_publishable_ptjJ7P0EVlsm_ijx-qOazg_3cMP8i_u",
+    // Base dinámica: los QR generados en staging apuntan al sitio donde se
+    // está probando, no a producción.
+    base: (typeof location !== "undefined" && location && location.origin) ? location.origin + "/" : ""
+  }
+};
+
+// Resolución PURA del entorno, en este orden: (a) blindaje *.github.io primero,
+// (b) override window.__NA_ENV__, (c) parámetro ?env= de la URL, (d) producción
+// por defecto. No depende del DOM (solo de sus argumentos) para poder probarse
+// sin navegador (Fase C). Devuelve "staging" o "produccion".
+function resolverEntorno(hostname, search, override) {
+  function normalizar(valor) {
+    if (typeof valor !== "string") return null;
+    const v = valor.trim().toLowerCase();
+    if (v === "staging") return "staging";
+    if (v === "produccion" || v === "prod") return "produccion";
+    return null;
+  }
+  function valorParametroEnv(search) {
+    if (typeof search !== "string" || !search) return null;
+    const m = search.match(/[?&]env=([^&]*)/);
+    if (!m) return null;
+    try { return decodeURIComponent(m[1]); } catch (e) { return m[1]; }
+  }
+  const esGithubPages = typeof hostname === "string" &&
+    (hostname.toLowerCase() === "afvelis.github.io" || /\.github\.io$/.test(hostname.toLowerCase()));
+  if (esGithubPages) {
+    const intento = normalizar(override) || normalizar(valorParametroEnv(search));
+    if (intento && intento !== "produccion") {
+      console.warn("NA: el host " + String(hostname).toLowerCase() + " es *.github.io: se IGNORA el override de entorno (" + intento + ") y se fuerza produccion por seguridad.");
+    }
+    return "produccion";
+  }
+  const porOverride = normalizar(override);
+  if (porOverride) return porOverride;
+  const porParametro = normalizar(valorParametroEnv(search));
+  if (porParametro) return porParametro;
+  return "produccion";
+}
+
+// Entorno activo de esta carga, con guardas para no romper si el script se
+// carga sin DOM/window (tests, node).
+const NA_ENTORNO = resolverEntorno(
+  (typeof location !== "undefined" && location && location.hostname) ? location.hostname : "",
+  (typeof location !== "undefined" && location && typeof location.search === "string") ? location.search : "",
+  (typeof window !== "undefined" && window && window.__NA_ENV__) ? window.__NA_ENV__ : undefined
+);
+const NA_CFG = NA_ENTORNOS[NA_ENTORNO];
+
+const SUPABASE_URL = NA_CFG.url;
+const SUPABASE_ANON = NA_CFG.anon;
+const BASE = NA_CFG.base;
+const NA_ES_STAGING = NA_ENTORNO === "staging";
+
+// Banner de entorno no-producción: banda fija abajo, sin tocar el layout de
+// ninguna página (ninguna página tiene que llamar nada: se inyecta sola).
+// Idempotente: si se ejecuta dos veces no duplica la banda (doble guarda:
+// marca interna del módulo y búsqueda por id en el DOM).
+var naBannerInyectado = false;
+function inyectarBannerEntorno() {
+  if (typeof document === "undefined") return;
+  if (!NA_ES_STAGING) return;
+  if (naBannerInyectado || document.getElementById("na-banner-entorno")) return;
+  if (!document.body) return;
+  const banda = document.createElement("div");
+  banda.id = "na-banner-entorno";
+  banda.textContent = "STAGING - datos ficticios (no es producción) - Supabase: " + NA_CFG.url.replace(/^https?:\/\//, "");
+  banda.style.position = "fixed";
+  banda.style.left = "0";
+  banda.style.right = "0";
+  banda.style.bottom = "0";
+  banda.style.width = "100%";
+  banda.style.height = "30px";
+  banda.style.lineHeight = "30px";
+  banda.style.backgroundColor = "#1a1a1a";
+  banda.style.color = "#ffb020";
+  banda.style.fontSize = "12px";
+  banda.style.fontWeight = "700";
+  banda.style.letterSpacing = "1px";
+  banda.style.textAlign = "center";
+  banda.style.fontFamily = "ui-monospace, Menlo, Consolas, monospace";
+  banda.style.zIndex = "2147483647";
+  banda.style.pointerEvents = "none";
+  banda.style.userSelect = "none";
+  document.body.appendChild(banda);
+  naBannerInyectado = true;
+}
+if (typeof document !== "undefined") {
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", inyectarBannerEntorno);
+  } else {
+    inyectarBannerEntorno();
+  }
+}
+
+// Un solo aviso de arranque: entorno activo y host de Supabase. NUNCA la clave.
+if (typeof console !== "undefined" && console.info) {
+  console.info("NA: entorno activo: " + NA_ENTORNO + " (Supabase: " + NA_CFG.url.replace(/^https?:\/\//, "") + ")");
+}
 
 // ===== P0-01 · Escape HTML central (única implementación del proyecto) =====
 // Escapa los 5 caracteres con significado en HTML. Usar SIEMPRE que un dato
@@ -16,7 +132,17 @@ function escaparHtml(t) {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
 }
-window.NA = { esc: escaparHtml, escaparHtml: escaparHtml };
+if (typeof window !== "undefined") {
+  window.NA = {
+    esc: escaparHtml,
+    escaparHtml: escaparHtml,
+    entorno: NA_ENTORNO,
+    esStaging: NA_ES_STAGING,
+    // Solo url y base del entorno activo: la clave NO se expone aquí.
+    config: { url: SUPABASE_URL, base: BASE },
+    resolverEntorno: resolverEntorno
+  };
+}
 
 // ===== P0-01 · Validación en profundidad para formularios públicos =====
 // Defensa adicional, NO sustituye al escape. Rechaza < y > (innecesarios en
@@ -121,8 +247,15 @@ function urlPuerta(param, valor) {
 // Se dibuja en un <canvas> y además se deja el resultado como <img> con una
 // URL data: (mismo tamaño de antes, 220x220). talento.html usa img.src para
 // "Copiar QR" (fetch + portapapeles), así que el <img> debe seguir existiendo.
-var QR_LIB_URL = new URL("vendor/qrcode-generator-1.4.4.js", document.currentScript ? document.currentScript.src : location.href).href;
-var QR_UTF8_URL = new URL("vendor/qrcode-generator-1.4.4-utf8.js", document.currentScript ? document.currentScript.src : location.href).href;
+var QR_LIB_URL = "";
+var QR_UTF8_URL = "";
+// Guarda: si el script se carga sin DOM (tests, node) no hay de dónde calcular
+// la URL de la librería; en navegador el comportamiento es idéntico al de antes.
+if (typeof document !== "undefined" && typeof location !== "undefined") {
+  const qrBaseScript = document.currentScript ? document.currentScript.src : location.href;
+  QR_LIB_URL = new URL("vendor/qrcode-generator-1.4.4.js", qrBaseScript).href;
+  QR_UTF8_URL = new URL("vendor/qrcode-generator-1.4.4-utf8.js", qrBaseScript).href;
+}
 var qrLibreriaEstado = { estado: "sin-cargar", promesa: null };
 var qrContador = 0;
 
