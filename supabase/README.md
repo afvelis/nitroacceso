@@ -4,8 +4,8 @@ Esta carpeta contiene el esquema del backend de NitroAccesos versionado en el re
 
 ## Contenido
 
-- `migrations/0001_esquema_inicial.sql` — esquema completo: 17 tablas, 82 funciones, 75 restricciones, 1 índice único parcial, RLS en todas las tablas, el event trigger `ensure_rls` y el mapa de permisos real (78 `grant execute` + 4 `revoke execute`).
-- `scripts/volcado-a-migracion.py` (en la raíz del repo) — genera `0001_esquema_inicial.sql` a partir del volcado de producción y **valida el orden de las claves foráneas** antes de escribir el archivo: cada `foreign key` debe ir después de la `primary key`/`unique` a la que apunta (si no, PostgreSQL falla con `42830`) y las funciones deben ir después de las tablas. Si la validación falla, el script aborta sin escribir nada.
+- `migrations/0001_esquema_inicial.sql` — esquema completo: 17 tablas, 82 funciones, 75 restricciones, 1 índice único parcial, RLS en todas las tablas, el event trigger `ensure_rls` y el mapa de permisos real de funciones: **82 `revoke execute ... from public`** (todas) + **78 `grant execute ... to anon`** (solo las públicas).
+- `scripts/volcado-a-migracion.py` (en la raíz del repo) — genera `0001_esquema_inicial.sql` a partir del volcado de producción y **valida el orden de las claves foráneas y el mapa de permisos** antes de escribir el archivo: cada `foreign key` debe ir después de la `primary key`/`unique` a la que apunta (si no, PostgreSQL falla con `42830`), las funciones deben ir después de las tablas, cada `grant execute ... to anon` debe tener antes su `revoke execute ... from public` y cada función creada debe tener su revoke de `public`. Si la validación falla, el script aborta con código de salida 1 y sin escribir nada.
 - `seed.sql` — datos ficticios mínimos para probar la app y los flujos de P1-04 (config, coordinadores, talento con listas y personas, stand con vendedores, cortesía tipo lista, aliado con asignación y concurso).
 
 ## Cómo aplicar la migración en un proyecto nuevo
@@ -29,6 +29,39 @@ El seed crea una fila de `config` con estos PINs, hasheados con bcrypt:
 - **Puerta:** `200000`
 
 **Estos PINs son SOLO de staging. JAMÁS se usan en producción.** Producción mantiene sus propios PINs rotados y nunca deben coincidir con estos.
+
+## Permisos de funciones: revoke de PUBLIC en todas, grant a `anon` solo en las públicas
+
+En PostgreSQL, `CREATE FUNCTION` concede `EXECUTE` a `PUBLIC` por defecto, y el rol `anon` hereda de `PUBLIC`. Por eso, quitarle el permiso a `anon` con `revoke ... from anon` **no cierra nada**: `PUBLIC` conserva el privilegio y `anon` sigue pudiendo ejecutar la función por herencia (detectado el 09/11/2026 al comparar staging contra producción: `f_sesion_rol` y `rls_auto_enable` eran ejecutables por `anon` en staging y en producción no). La migración 0001 lo resuelve así, para **cada una de las 82 funciones**:
+
+1. Siempre y primero: `revoke execute on function public.<fn>(<args>) from public;`
+2. Solo si la función es pública (el volcado registra su grant): `grant execute on function public.<fn>(<args>) to anon;`
+
+Las 4 funciones internas (`f_sesion_ok`, `f_sesion_rol`, `rls_auto_enable` y `f_codigo`) quedan **sin grant a `anon`**: tras el revoke de `PUBLIC`, solo los roles autorizados (propietario/superusuario y los que producción haya concedido expresamente) pueden ejecutarlas, que es exactamente el mapa de producción.
+
+## Reconstruir staging desde cero
+
+**PELIGRO: este procedimiento destruye TODO el contenido del proyecto donde se ejecute. JAMÁS se ejecuta en producción. Solo en el proyecto de staging, y solo si se acepta perder todos sus datos.**
+
+1. Abre el **SQL Editor del proyecto de staging** (verifica en la barra superior que el proyecto es el de staging, no el de producción).
+2. Ejecuta, en una sola pasada y como su propia transacción:
+
+   ```sql
+   drop schema public cascade;
+   create schema public;
+   grant usage on schema public to anon, authenticated;
+   ```
+
+   Esto borra todas las tablas, funciones y relaciones del esquema `public`. Después lo recrea vacío y devuelve el acceso básico a los roles de PostgREST (sin este `grant usage`, la API falla incluso con el esquema creado).
+3. Verifica que quedó vacío en el SQL Editor (una consulta a la vez): `select count(*) from pg_tables where schemaname = 'public';` debe devolver `0` y `select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public';` también debe devolver `0`.
+4. Pega el contenido completo de `migrations/0001_esquema_inicial.sql` y ejecútalo en **una sola pasada**.
+5. Pega el contenido completo de `seed.sql` y ejecútalo.
+6. Verifica el conteo final: `select count(*) from pg_tables where schemaname = 'public';` debe devolver `17`.
+
+## Historial de la migración 0001
+
+- La `0001_esquema_inicial.sql` se **regeneró el 09/11/2026** tras detectar el hueco de permisos descrito arriba (la versión anterior dejaba `EXECUTE` de `PUBLIC` intacto en las 82 funciones, así que `anon` podía ejecutar `f_sesion_rol` y `rls_auto_enable` en staging; producción nunca estuvo expuesta).
+- **Si alguien tiene un staging creado con la versión anterior de la 0001, debe resetearlo y reaplicar** con el procedimiento de la sección anterior: el esquema antiguo conserva los permisos equivocados y no se corrige solo.
 
 ## Advertencia importante
 

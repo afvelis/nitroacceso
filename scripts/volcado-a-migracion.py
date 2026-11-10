@@ -14,7 +14,11 @@ with a non-zero exit code if it fails:
     UNIQUE constraint on the referenced table with exactly those columns
     (PostgreSQL raises 42830 otherwise);
   - every ADD CONSTRAINT must come after its CREATE TABLE;
-  - every CREATE FUNCTION must come after every CREATE TABLE.
+  - every CREATE FUNCTION must come after every CREATE TABLE;
+  - every `revoke execute ... from public` must precede its matching
+    `grant execute ... to anon`;
+  - every created function must have its `revoke execute ... from public`
+    (PostgreSQL grants EXECUTE on new functions to PUBLIC by default).
 
 Stdlib only. Idempotent: re-running rewrites the output file.
 """
@@ -62,7 +66,7 @@ SQL_HEADER = """\
 --
 -- Contents: 17 tables, 82 functions, 75 constraints, 1 partial unique index,
 -- RLS enabled on every table, the `ensure_rls` event trigger and the real
--- permission map (78 GRANT EXECUTE + 4 REVOKE EXECUTE).
+-- permission map (82 REVOKE EXECUTE FROM PUBLIC + 78 GRANT EXECUTE TO ANON).
 --
 -- The whole file runs inside an explicit transaction (BEGIN ... COMMIT): if
 -- anything fails, the target database is left untouched, not half-built.
@@ -86,6 +90,30 @@ CREATE_TABLE_RE = re.compile(
 )
 CREATE_FUNCTION_RE = re.compile(
     r"create\s+(?:or\s+replace\s+)?function\s+(?:public\.)?(\w+)\s*\(", re.IGNORECASE
+)
+# Full signature (name + argument list) of a created function, used to match
+# it against the ord-80 revoke/grant statements. Argument lists in this dump
+# never contain nested parentheses, so a non-greedy match up to the first `)`
+# is sufficient.
+CREATE_FUNCTION_SIGNATURE_RE = re.compile(
+    r"create\s+(?:or\s+replace\s+)?function\s+(public\.\w+\s*\(.*?\))",
+    re.IGNORECASE | re.DOTALL,
+)
+EXECUTE_PRIVILEGE_RE = re.compile(
+    r"(grant|revoke)\s+execute\s+on\s+function\s+(public\.\w+\s*\(.*?\))\s+(?:to|from)\s+(\w+)",
+    re.IGNORECASE | re.DOTALL,
+)
+# Strips `default <token>` from a signature before matching. The token class
+# excludes `,` and `)` so a trailing `null::text)` is not eaten. Only valid
+# for token defaults without spaces (the dump only has `default null::text`).
+FUNCTION_DEFAULT_RE = re.compile(r"\s+default\s+[^\s,)]+", re.IGNORECASE)
+GRANT_ANON_RE = re.compile(
+    r"grant\s+execute\s+on\s+function\s+(public\.\w+\s*\(.*?\))\s+to\s+anon\b",
+    re.IGNORECASE | re.DOTALL,
+)
+REVOKE_PUBLIC_RE = re.compile(
+    r"revoke\s+execute\s+on\s+function\s+(public\.\w+\s*\(.*?\))\s+from\s+public\b",
+    re.IGNORECASE | re.DOTALL,
 )
 ALTER_TABLE_RE = re.compile(r"alter table\s+(?:only\s+)?(?:public\.)?(\w+)", re.IGNORECASE)
 ADD_CONSTRAINT_RE = re.compile(r"add\s+constraint\s+(\S+)\s+(.*)", re.IGNORECASE | re.DOTALL)
@@ -133,6 +161,53 @@ def constraint_subtype(stmt: str) -> int | None:
     return None
 
 
+def normalize_signature(raw: str) -> str:
+    """Normalize a function signature for grant/revoke matching.
+
+    Collapses whitespace, lowercases and strips argument DEFAULT clauses:
+    PostgreSQL accepts the signature without defaults in grant/revoke, so the
+    dump records `f_sesion_ok(p_token uuid, p_rol_requerido text)` while the
+    CREATE says `... p_rol_requerido text default null::text`. Defaults do
+    not distinguish overloads, so they carry no privilege meaning. This dump
+    only contains token defaults (`default null::text`, no spaces/parens).
+    """
+    sig = " ".join(raw.split()).lower()
+    return FUNCTION_DEFAULT_RE.sub("", sig)
+
+
+def expand_function_privileges(objeto: str, stmt: str) -> list[tuple[str, str]]:
+    """Turn one ord-80 dump row into the migration privilege statements.
+
+    PostgreSQL grants EXECUTE on every new function to PUBLIC by default, and
+    `anon` inherits from PUBLIC, so revoking from `anon` alone closes nothing.
+    The migration therefore ALWAYS emits `revoke execute ... from public` for
+    the function and, only when the dump records the grant, re-grants to
+    `anon`. Rows that revoke from `anon` describe internal functions and
+    produce no grant (and no redundant revoke from `anon`).
+    """
+    body = stmt[:-1] if stmt.rstrip().endswith(";") else stmt
+    m = EXECUTE_PRIVILEGE_RE.fullmatch(body.strip())
+    if not m:
+        raise ValueError(
+            f"permiso de funcion no interpretable para {objeto}: {flatten(stmt)}"
+        )
+    verb = m.group(1).lower()
+    signature = normalize_signature(m.group(2))
+    role = m.group(3).lower()
+    revoke_public = f"revoke execute on function {signature} from public;"
+    if verb == "grant" and role == "anon":
+        return [
+            (objeto, revoke_public),
+            (f"{objeto} (grant anon)", f"grant execute on function {signature} to anon;"),
+        ]
+    if verb == "revoke" and role == "anon":
+        return [(objeto, revoke_public)]
+    raise ValueError(
+        f"permiso inesperado en el volcado para {objeto}: {verb} execute sobre {role}; "
+        "solo se admiten grant/revoke execute sobre anon"
+    )
+
+
 def sort_key(row: dict) -> tuple[int, int, str]:
     """Final ordering: (ord, subtype, objeto).
 
@@ -161,8 +236,16 @@ def prepare(rows: list[dict]) -> tuple[list[tuple[str, str, str]], int]:
             excluded_count += 1
             continue
         stmt = normalize_ddl(row["ddl"])
-        if stmt:
-            kept.append((ord_val, objeto, stmt))
+        if not stmt:
+            continue
+        if ord_val == "80":
+            # Function privileges are rewritten: always revoke from PUBLIC
+            # first, then grant to anon only if the dump records it. The dump
+            # rows themselves (grant/revoke to/from anon) are never emitted
+            # verbatim: they left PUBLIC with EXECUTE, which is the hole.
+            kept.extend((ord_val, label, priv) for label, priv in expand_function_privileges(objeto, stmt))
+            continue
+        kept.append((ord_val, objeto, stmt))
     return kept, excluded_count
 
 
@@ -179,12 +262,17 @@ def validate(kept: list[tuple[str, str, str]]) -> list[str]:
       (a) every FOREIGN KEY references columns covered by an earlier PRIMARY
           KEY or UNIQUE constraint on the referenced table (42830 guard);
       (b) every ADD CONSTRAINT comes after the CREATE TABLE of its table;
-      (c) every CREATE FUNCTION comes after all CREATE TABLE statements.
+      (c) every CREATE FUNCTION comes after all CREATE TABLE statements;
+      (d) every `grant execute ... to anon` is preceded by a matching
+          `revoke execute ... from public` for the same function;
+      (e) every created function has its `revoke execute ... from public`.
 
     Returns (errors, counts): errors is a list of messages (empty = OK) and
     """
     errors: list[str] = []
     counts = Counter()
+    revoked_public: set[str] = set()
+    created_functions: set[str] = set()
 
     # Tables defined anywhere in the file: every one of them must exist before
     # the first function definition.
@@ -211,11 +299,34 @@ def validate(kept: list[tuple[str, str, str]]) -> list[str]:
         m = CREATE_FUNCTION_RE.search(flat)
         if m:
             counts["functions"] += 1
+            sig_m = CREATE_FUNCTION_SIGNATURE_RE.search(flat)
+            if sig_m:
+                created_functions.add(normalize_signature(sig_m.group(1)))
             missing = all_tables - created_tables
             if missing:
                 errors.append(
                     f"sentencia {index} ({objeto}): la funcion {m.group(1)} aparece antes de "
                     f"crear las tablas {', '.join(sorted(missing))}"
+                )
+            continue
+
+        # Function privilege statements (ord 80, already rewritten by
+        # expand_function_privileges): every revoke-from-public closes the
+        # PUBLIC default; grants to anon are only valid after their revoke.
+        m = REVOKE_PUBLIC_RE.search(flat)
+        if m:
+            counts["revoke_public"] += 1
+            revoked_public.add(normalize_signature(m.group(1)))
+            continue
+
+        m = GRANT_ANON_RE.search(flat)
+        if m:
+            counts["grant_anon"] += 1
+            signature = normalize_signature(m.group(1))
+            if signature not in revoked_public:
+                errors.append(
+                    f"sentencia {index} ({objeto}): grant execute to anon sobre {signature} "
+                    "sin un 'revoke execute ... from public' previo para esa funcion"
                 )
             continue
 
@@ -279,6 +390,15 @@ def validate(kept: list[tuple[str, str, str]]) -> list[str]:
         else:
             counts["checks"] += 1
 
+    # (e) every created function must have its revoke from PUBLIC: PostgreSQL
+    # grants EXECUTE on new functions to PUBLIC by default and anon inherits
+    # from PUBLIC, so a function without this revoke stays callable by anon.
+    for signature in sorted(created_functions - revoked_public):
+        errors.append(
+            f"la funcion {signature} no tiene un 'revoke execute ... from public' en la "
+            "migracion (PostgreSQL concede EXECUTE a PUBLIC por defecto y anon hereda)"
+        )
+
     return errors, counts
 
 
@@ -324,14 +444,19 @@ def main() -> int:
         print(f"ERROR: no rows found in {input_path}", file=sys.stderr)
         return 1
 
-    kept, excluded_count = prepare(rows)
+    try:
+        kept, excluded_count = prepare(rows)
+    except ValueError as exc:
+        print(f"VALIDACION FALLO: {exc}", file=sys.stderr)
+        print(f"VALIDACION FALLO: no se escribio {output_path}", file=sys.stderr)
+        return 1
 
     errors, validation_counts = validate(kept)
     if errors:
         for error in errors:
             print(f"VALIDACION FALLO: {error}", file=sys.stderr)
         print(
-            f"VALIDACION FALLO: {len(errors)} problema(s) de orden; NO se escribio {output_path}",
+            f"VALIDACION FALLO: {len(errors)} problema(s) de orden o permisos; NO se escribio {output_path}",
             file=sys.stderr,
         )
         return 1
@@ -344,7 +469,10 @@ def main() -> int:
         f"{validation_counts['constraints']} restricciones "
         f"({validation_counts['keys']} PK/UNIQUE, {validation_counts['checks']} CHECK, "
         f"{validation_counts['foreign_keys']} FOREIGN KEY), "
-        f"{validation_counts['functions']} funciones"
+        f"{validation_counts['functions']} funciones, "
+        "permisos de funcion: "
+        f"{validation_counts['revoke_public']} revoke execute from public, "
+        f"{validation_counts['grant_anon']} grant execute to anon"
     )
 
     counts = summarize(rows)

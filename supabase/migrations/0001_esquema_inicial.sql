@@ -6,7 +6,7 @@
 --
 -- Contents: 17 tables, 82 functions, 75 constraints, 1 partial unique index,
 -- RLS enabled on every table, the `ensure_rls` event trigger and the real
--- permission map (78 GRANT EXECUTE + 4 REVOKE EXECUTE).
+-- permission map (82 REVOKE EXECUTE FROM PUBLIC + 78 GRANT EXECUTE TO ANON).
 --
 -- The whole file runs inside an explicit transaction (BEGIN ... COMMIT): if
 -- anything fails, the target database is left untouched, not half-built.
@@ -4370,331 +4370,643 @@ create event trigger ensure_rls on ddl_command_end execute function rls_auto_ena
 
 
 -- f_admin_activar_coordinador
+revoke execute on function public.f_admin_activar_coordinador(p_token uuid, p_id uuid, p_activo boolean) from public;
+
+
+-- f_admin_activar_coordinador (grant anon)
 grant execute on function public.f_admin_activar_coordinador(p_token uuid, p_id uuid, p_activo boolean) to anon;
 
 
 -- f_admin_ampliar_cupones
+revoke execute on function public.f_admin_ampliar_cupones(p_token uuid, p_asignacion_id uuid, p_cupones_unico integer, p_cupones_dia1 integer, p_cupones_dia2 integer, p_motivo text, p_motivo_detalle text) from public;
+
+
+-- f_admin_ampliar_cupones (grant anon)
 grant execute on function public.f_admin_ampliar_cupones(p_token uuid, p_asignacion_id uuid, p_cupones_unico integer, p_cupones_dia1 integer, p_cupones_dia2 integer, p_motivo text, p_motivo_detalle text) to anon;
 
 
 -- f_admin_anular_aliado
+revoke execute on function public.f_admin_anular_aliado(p_token uuid, p_aliado_id uuid, p_razon text) from public;
+
+
+-- f_admin_anular_aliado (grant anon)
 grant execute on function public.f_admin_anular_aliado(p_token uuid, p_aliado_id uuid, p_razon text) to anon;
 
 
 -- f_admin_anular_asignacion
+revoke execute on function public.f_admin_anular_asignacion(p_token uuid, p_asignacion_id uuid, p_razon text) from public;
+
+
+-- f_admin_anular_asignacion (grant anon)
 grant execute on function public.f_admin_anular_asignacion(p_token uuid, p_asignacion_id uuid, p_razon text) to anon;
 
 
 -- f_admin_anular_cortesia
+revoke execute on function public.f_admin_anular_cortesia(p_token uuid, p_codigo_link text) from public;
+
+
+-- f_admin_anular_cortesia (grant anon)
 grant execute on function public.f_admin_anular_cortesia(p_token uuid, p_codigo_link text) to anon;
 
 
 -- f_admin_borrar_coordinador
+revoke execute on function public.f_admin_borrar_coordinador(p_token uuid, p_id uuid) from public;
+
+
+-- f_admin_borrar_coordinador (grant anon)
 grant execute on function public.f_admin_borrar_coordinador(p_token uuid, p_id uuid) to anon;
 
 
 -- f_admin_chequear_duplicados_aliado
+revoke execute on function public.f_admin_chequear_duplicados_aliado(p_token uuid, p_cedula text, p_correo text, p_telefono text) from public;
+
+
+-- f_admin_chequear_duplicados_aliado (grant anon)
 grant execute on function public.f_admin_chequear_duplicados_aliado(p_token uuid, p_cedula text, p_correo text, p_telefono text) to anon;
 
 
 -- f_admin_cortesia_agregar_dia
+revoke execute on function public.f_admin_cortesia_agregar_dia(p_token uuid, p_codigo_link text, p_dia integer) from public;
+
+
+-- f_admin_cortesia_agregar_dia (grant anon)
 grant execute on function public.f_admin_cortesia_agregar_dia(p_token uuid, p_codigo_link text, p_dia integer) to anon;
 
 
 -- f_admin_cortesia_agregar_persona
+revoke execute on function public.f_admin_cortesia_agregar_persona(p_token uuid, p_codigo_link text, p_dia integer, p_nombre text, p_apellido text, p_cedula text) from public;
+
+
+-- f_admin_cortesia_agregar_persona (grant anon)
 grant execute on function public.f_admin_cortesia_agregar_persona(p_token uuid, p_codigo_link text, p_dia integer, p_nombre text, p_apellido text, p_cedula text) to anon;
 
 
 -- f_admin_cortesia_editar_persona
+revoke execute on function public.f_admin_cortesia_editar_persona(p_token uuid, p_persona_id uuid, p_nombre text, p_apellido text, p_cedula text) from public;
+
+
+-- f_admin_cortesia_editar_persona (grant anon)
 grant execute on function public.f_admin_cortesia_editar_persona(p_token uuid, p_persona_id uuid, p_nombre text, p_apellido text, p_cedula text) to anon;
 
 
 -- f_admin_cortesia_quitar_dia
+revoke execute on function public.f_admin_cortesia_quitar_dia(p_token uuid, p_codigo_link text, p_dia integer) from public;
+
+
+-- f_admin_cortesia_quitar_dia (grant anon)
 grant execute on function public.f_admin_cortesia_quitar_dia(p_token uuid, p_codigo_link text, p_dia integer) to anon;
 
 
 -- f_admin_cortesia_quitar_persona
+revoke execute on function public.f_admin_cortesia_quitar_persona(p_token uuid, p_codigo_link text, p_dia integer, p_cedula text) from public;
+
+
+-- f_admin_cortesia_quitar_persona (grant anon)
 grant execute on function public.f_admin_cortesia_quitar_persona(p_token uuid, p_codigo_link text, p_dia integer, p_cedula text) to anon;
 
 
 -- f_admin_crear_aliado
+revoke execute on function public.f_admin_crear_aliado(p_token uuid, p_nombre_organizacion text, p_responsable text, p_cedula text, p_correo text, p_telefono text, p_pool_tipo text, p_cupones_unico integer, p_cupones_dia1 integer, p_cupones_dia2 integer, p_nota_duplicado text) from public;
+
+
+-- f_admin_crear_aliado (grant anon)
 grant execute on function public.f_admin_crear_aliado(p_token uuid, p_nombre_organizacion text, p_responsable text, p_cedula text, p_correo text, p_telefono text, p_pool_tipo text, p_cupones_unico integer, p_cupones_dia1 integer, p_cupones_dia2 integer, p_nota_duplicado text) to anon;
 
 
 -- f_admin_crear_asignacion
+revoke execute on function public.f_admin_crear_asignacion(p_token uuid, p_aliado_id uuid, p_pool_tipo text, p_cupones_unico integer, p_cupones_dia1 integer, p_cupones_dia2 integer) from public;
+
+
+-- f_admin_crear_asignacion (grant anon)
 grant execute on function public.f_admin_crear_asignacion(p_token uuid, p_aliado_id uuid, p_pool_tipo text, p_cupones_unico integer, p_cupones_dia1 integer, p_cupones_dia2 integer) to anon;
 
 
 -- f_admin_crear_coordinador
+revoke execute on function public.f_admin_crear_coordinador(p_token uuid, p_tipo text, p_nombre text, p_correo text) from public;
+
+
+-- f_admin_crear_coordinador (grant anon)
 grant execute on function public.f_admin_crear_coordinador(p_token uuid, p_tipo text, p_nombre text, p_correo text) to anon;
 
 
 -- f_admin_crear_cortesia_individual
+revoke execute on function public.f_admin_crear_cortesia_individual(p_token uuid, p_nombre text, p_apellido text, p_cedula text, p_razon text, p_causa text, p_dia1 boolean, p_dia2 boolean) from public;
+
+
+-- f_admin_crear_cortesia_individual (grant anon)
 grant execute on function public.f_admin_crear_cortesia_individual(p_token uuid, p_nombre text, p_apellido text, p_cedula text, p_razon text, p_causa text, p_dia1 boolean, p_dia2 boolean) to anon;
 
 
 -- f_admin_crear_cortesia_lista
+revoke execute on function public.f_admin_crear_cortesia_lista(p_token uuid, p_nombre_organizacion text, p_razon text, p_causa text, p_dia1 boolean, p_dia2 boolean, p_personas_dia1 jsonb, p_personas_dia2 jsonb) from public;
+
+
+-- f_admin_crear_cortesia_lista (grant anon)
 grant execute on function public.f_admin_crear_cortesia_lista(p_token uuid, p_nombre_organizacion text, p_razon text, p_causa text, p_dia1 boolean, p_dia2 boolean, p_personas_dia1 jsonb, p_personas_dia2 jsonb) to anon;
 
 
 -- f_admin_crear_cortesia_premiacion
+revoke execute on function public.f_admin_crear_cortesia_premiacion(p_token uuid, p_nombre text, p_apellido text, p_cedula text, p_concurso text, p_cupones_total integer, p_aliado text, p_dia1 boolean, p_dia2 boolean) from public;
+
+
+-- f_admin_crear_cortesia_premiacion (grant anon)
 grant execute on function public.f_admin_crear_cortesia_premiacion(p_token uuid, p_nombre text, p_apellido text, p_cedula text, p_concurso text, p_cupones_total integer, p_aliado text, p_dia1 boolean, p_dia2 boolean) to anon;
 
 
 -- f_admin_dashboard
+revoke execute on function public.f_admin_dashboard(p_token uuid) from public;
+
+
+-- f_admin_dashboard (grant anon)
 grant execute on function public.f_admin_dashboard(p_token uuid) to anon;
 
 
 -- f_admin_editar_coordinador
+revoke execute on function public.f_admin_editar_coordinador(p_token uuid, p_id uuid, p_nombre text, p_correo text) from public;
+
+
+-- f_admin_editar_coordinador (grant anon)
 grant execute on function public.f_admin_editar_coordinador(p_token uuid, p_id uuid, p_nombre text, p_correo text) to anon;
 
 
 -- f_admin_editar_cortesia
+revoke execute on function public.f_admin_editar_cortesia(p_token uuid, p_codigo_link text, p_razon text, p_causa text) from public;
+
+
+-- f_admin_editar_cortesia (grant anon)
 grant execute on function public.f_admin_editar_cortesia(p_token uuid, p_codigo_link text, p_razon text, p_causa text) to anon;
 
 
 -- f_admin_editar_cortesia_datos
+revoke execute on function public.f_admin_editar_cortesia_datos(p_token uuid, p_codigo_link text, p_nombre_organizacion text, p_nombre text, p_apellido text, p_cedula text) from public;
+
+
+-- f_admin_editar_cortesia_datos (grant anon)
 grant execute on function public.f_admin_editar_cortesia_datos(p_token uuid, p_codigo_link text, p_nombre_organizacion text, p_nombre text, p_apellido text, p_cedula text) to anon;
 
 
 -- f_admin_editar_cortesia_dias
+revoke execute on function public.f_admin_editar_cortesia_dias(p_token uuid, p_codigo_link text, p_dia1 boolean, p_dia2 boolean) from public;
+
+
+-- f_admin_editar_cortesia_dias (grant anon)
 grant execute on function public.f_admin_editar_cortesia_dias(p_token uuid, p_codigo_link text, p_dia1 boolean, p_dia2 boolean) to anon;
 
 
 -- f_admin_editar_cortesia_premiacion
+revoke execute on function public.f_admin_editar_cortesia_premiacion(p_token uuid, p_codigo_link text, p_nombre text, p_apellido text, p_cedula text, p_concurso text, p_cupones_total integer, p_aliado text) from public;
+
+
+-- f_admin_editar_cortesia_premiacion (grant anon)
 grant execute on function public.f_admin_editar_cortesia_premiacion(p_token uuid, p_codigo_link text, p_nombre text, p_apellido text, p_cedula text, p_concurso text, p_cupones_total integer, p_aliado text) to anon;
 
 
 -- f_admin_estado_dias
+revoke execute on function public.f_admin_estado_dias(p_token uuid) from public;
+
+
+-- f_admin_estado_dias (grant anon)
 grant execute on function public.f_admin_estado_dias(p_token uuid) to anon;
 
 
 -- f_admin_guardar_evento
+revoke execute on function public.f_admin_guardar_evento(p_token uuid, p_nombre text) from public;
+
+
+-- f_admin_guardar_evento (grant anon)
 grant execute on function public.f_admin_guardar_evento(p_token uuid, p_nombre text) to anon;
 
 
 -- f_admin_limpiar_todo
+revoke execute on function public.f_admin_limpiar_todo(p_token uuid) from public;
+
+
+-- f_admin_limpiar_todo (grant anon)
 grant execute on function public.f_admin_limpiar_todo(p_token uuid) to anon;
 
 
 -- f_admin_listar_aliados
+revoke execute on function public.f_admin_listar_aliados(p_token uuid) from public;
+
+
+-- f_admin_listar_aliados (grant anon)
 grant execute on function public.f_admin_listar_aliados(p_token uuid) to anon;
 
 
 -- f_admin_listar_coordinadores
+revoke execute on function public.f_admin_listar_coordinadores(p_token uuid) from public;
+
+
+-- f_admin_listar_coordinadores (grant anon)
 grant execute on function public.f_admin_listar_coordinadores(p_token uuid) to anon;
 
 
 -- f_admin_listar_cortesias
+revoke execute on function public.f_admin_listar_cortesias(p_token uuid) from public;
+
+
+-- f_admin_listar_cortesias (grant anon)
 grant execute on function public.f_admin_listar_cortesias(p_token uuid) to anon;
 
 
 -- f_admin_listar_eventos
+revoke execute on function public.f_admin_listar_eventos(p_token uuid) from public;
+
+
+-- f_admin_listar_eventos (grant anon)
 grant execute on function public.f_admin_listar_eventos(p_token uuid) to anon;
 
 
 -- f_admin_revocar_sesiones
+revoke execute on function public.f_admin_revocar_sesiones(p_token uuid) from public;
+
+
+-- f_admin_revocar_sesiones (grant anon)
 grant execute on function public.f_admin_revocar_sesiones(p_token uuid) to anon;
 
 
 -- f_admin_rotar_pin
+revoke execute on function public.f_admin_rotar_pin(p_token uuid, p_objetivo text, p_pin_actual text, p_pin_nuevo text) from public;
+
+
+-- f_admin_rotar_pin (grant anon)
 grant execute on function public.f_admin_rotar_pin(p_token uuid, p_objetivo text, p_pin_actual text, p_pin_nuevo text) to anon;
 
 
 -- f_admin_segmentacion
+revoke execute on function public.f_admin_segmentacion(p_token uuid) from public;
+
+
+-- f_admin_segmentacion (grant anon)
 grant execute on function public.f_admin_segmentacion(p_token uuid) to anon;
 
 
 -- f_admin_sesiones
+revoke execute on function public.f_admin_sesiones(p_token uuid) from public;
+
+
+-- f_admin_sesiones (grant anon)
 grant execute on function public.f_admin_sesiones(p_token uuid) to anon;
 
 
 -- f_admin_stats
+revoke execute on function public.f_admin_stats(p_token uuid) from public;
+
+
+-- f_admin_stats (grant anon)
 grant execute on function public.f_admin_stats(p_token uuid) to anon;
 
 
 -- f_admin_tiempos
+revoke execute on function public.f_admin_tiempos(p_token uuid) from public;
+
+
+-- f_admin_tiempos (grant anon)
 grant execute on function public.f_admin_tiempos(p_token uuid) to anon;
 
 
 -- f_admin_toggle_edicion
+revoke execute on function public.f_admin_toggle_edicion(p_token uuid, p_abierta boolean) from public;
+
+
+-- f_admin_toggle_edicion (grant anon)
 grant execute on function public.f_admin_toggle_edicion(p_token uuid, p_abierta boolean) to anon;
 
 
 -- f_admin_ver_concursos_aliado
+revoke execute on function public.f_admin_ver_concursos_aliado(p_token uuid, p_asignacion_id uuid) from public;
+
+
+-- f_admin_ver_concursos_aliado (grant anon)
 grant execute on function public.f_admin_ver_concursos_aliado(p_token uuid, p_asignacion_id uuid) to anon;
 
 
 -- f_admin_ver_cortesia
+revoke execute on function public.f_admin_ver_cortesia(p_token uuid, p_codigo_link text) from public;
+
+
+-- f_admin_ver_cortesia (grant anon)
 grant execute on function public.f_admin_ver_cortesia(p_token uuid, p_codigo_link text) to anon;
 
 
 -- f_admin_ver_evento
+revoke execute on function public.f_admin_ver_evento(p_token uuid, p_id uuid) from public;
+
+
+-- f_admin_ver_evento (grant anon)
 grant execute on function public.f_admin_ver_evento(p_token uuid, p_id uuid) to anon;
 
 
 -- f_aliado_asignar_ganador
+revoke execute on function public.f_aliado_asignar_ganador(p_codigo_link text, p_concurso_id uuid, p_nombre text, p_apellido text, p_cedula text, p_correo text, p_telefono text, p_cupones_total integer, p_dia1 boolean, p_dia2 boolean) from public;
+
+
+-- f_aliado_asignar_ganador (grant anon)
 grant execute on function public.f_aliado_asignar_ganador(p_codigo_link text, p_concurso_id uuid, p_nombre text, p_apellido text, p_cedula text, p_correo text, p_telefono text, p_cupones_total integer, p_dia1 boolean, p_dia2 boolean) to anon;
 
 
 -- f_aliado_crear_concurso
+revoke execute on function public.f_aliado_crear_concurso(p_codigo_link text, p_nombre text, p_descripcion text, p_fecha_concurso date, p_cupones_reservados integer) from public;
+
+
+-- f_aliado_crear_concurso (grant anon)
 grant execute on function public.f_aliado_crear_concurso(p_codigo_link text, p_nombre text, p_descripcion text, p_fecha_concurso date, p_cupones_reservados integer) to anon;
 
 
 -- f_aliado_editar_concurso
+revoke execute on function public.f_aliado_editar_concurso(p_codigo_link text, p_concurso_id uuid, p_nombre text, p_descripcion text, p_fecha_concurso date, p_cupones_reservados integer) from public;
+
+
+-- f_aliado_editar_concurso (grant anon)
 grant execute on function public.f_aliado_editar_concurso(p_codigo_link text, p_concurso_id uuid, p_nombre text, p_descripcion text, p_fecha_concurso date, p_cupones_reservados integer) to anon;
 
 
 -- f_aliado_eliminar_concurso
+revoke execute on function public.f_aliado_eliminar_concurso(p_codigo_link text, p_concurso_id uuid) from public;
+
+
+-- f_aliado_eliminar_concurso (grant anon)
 grant execute on function public.f_aliado_eliminar_concurso(p_codigo_link text, p_concurso_id uuid) to anon;
 
 
 -- f_aliado_marcar_enviado
+revoke execute on function public.f_aliado_marcar_enviado(p_codigo_link text, p_concurso_id uuid) from public;
+
+
+-- f_aliado_marcar_enviado (grant anon)
 grant execute on function public.f_aliado_marcar_enviado(p_codigo_link text, p_concurso_id uuid) to anon;
 
 
 -- f_aliado_ver
+revoke execute on function public.f_aliado_ver(p_codigo_link text) from public;
+
+
+-- f_aliado_ver (grant anon)
 grant execute on function public.f_aliado_ver(p_codigo_link text) to anon;
 
 
 -- f_codigo
-revoke execute on function public.f_codigo(p_prefijo text, p_largo integer) from anon;
+revoke execute on function public.f_codigo(p_prefijo text, p_largo integer) from public;
 
 
 -- f_coord_crear_stand
+revoke execute on function public.f_coord_crear_stand(p_codigo_coord text, p_numero text, p_cupo integer, p_tipo text, p_correo text) from public;
+
+
+-- f_coord_crear_stand (grant anon)
 grant execute on function public.f_coord_crear_stand(p_codigo_coord text, p_numero text, p_cupo integer, p_tipo text, p_correo text) to anon;
 
 
 -- f_coord_crear_talento
+revoke execute on function public.f_coord_crear_talento(p_codigo_coord text, p_nombre text, p_dia1 boolean, p_dia2 boolean, p_correo text) from public;
+
+
+-- f_coord_crear_talento (grant anon)
 grant execute on function public.f_coord_crear_talento(p_codigo_coord text, p_nombre text, p_dia1 boolean, p_dia2 boolean, p_correo text) to anon;
 
 
 -- f_coord_editar_stand
+revoke execute on function public.f_coord_editar_stand(p_codigo_coord text, p_codigo_link text, p_nombre text, p_numero text, p_cupo integer, p_tipo text) from public;
+
+
+-- f_coord_editar_stand (grant anon)
 grant execute on function public.f_coord_editar_stand(p_codigo_coord text, p_codigo_link text, p_nombre text, p_numero text, p_cupo integer, p_tipo text) to anon;
 
 
 -- f_coord_editar_talento
+revoke execute on function public.f_coord_editar_talento(p_codigo_coord text, p_codigo_link text, p_nombre text) from public;
+
+
+-- f_coord_editar_talento (grant anon)
 grant execute on function public.f_coord_editar_talento(p_codigo_coord text, p_codigo_link text, p_nombre text) to anon;
 
 
 -- f_coord_entrar
+revoke execute on function public.f_coord_entrar(p_codigo text) from public;
+
+
+-- f_coord_entrar (grant anon)
 grant execute on function public.f_coord_entrar(p_codigo text) to anon;
 
 
 -- f_coord_mis_links
+revoke execute on function public.f_coord_mis_links(p_codigo_coord text) from public;
+
+
+-- f_coord_mis_links (grant anon)
 grant execute on function public.f_coord_mis_links(p_codigo_coord text) to anon;
 
 
 -- f_cortesia_ver
+revoke execute on function public.f_cortesia_ver(p_codigo_link text) from public;
+
+
+-- f_cortesia_ver (grant anon)
 grant execute on function public.f_cortesia_ver(p_codigo_link text) to anon;
 
 
 -- f_link_stand_mi_qr
+revoke execute on function public.f_link_stand_mi_qr(p_codigo_link text, p_cedula text) from public;
+
+
+-- f_link_stand_mi_qr (grant anon)
 grant execute on function public.f_link_stand_mi_qr(p_codigo_link text, p_cedula text) to anon;
 
 
 -- f_link_stand_quitar_vendedor
+revoke execute on function public.f_link_stand_quitar_vendedor(p_codigo_link text, p_cedula text) from public;
+
+
+-- f_link_stand_quitar_vendedor (grant anon)
 grant execute on function public.f_link_stand_quitar_vendedor(p_codigo_link text, p_cedula text) to anon;
 
 
 -- f_link_stand_registrar
+revoke execute on function public.f_link_stand_registrar(p_codigo_link text, p_nombre text, p_apellido text, p_cedula text, p_vende text, p_empresa text) from public;
+
+
+-- f_link_stand_registrar (grant anon)
 grant execute on function public.f_link_stand_registrar(p_codigo_link text, p_nombre text, p_apellido text, p_cedula text, p_vende text, p_empresa text) to anon;
 
 
 -- f_link_stand_registrar_lote
+revoke execute on function public.f_link_stand_registrar_lote(p_codigo_link text, p_empresa text, p_vende text, p_personas jsonb) from public;
+
+
+-- f_link_stand_registrar_lote (grant anon)
 grant execute on function public.f_link_stand_registrar_lote(p_codigo_link text, p_empresa text, p_vende text, p_personas jsonb) to anon;
 
 
 -- f_link_stand_ver
+revoke execute on function public.f_link_stand_ver(p_codigo_link text) from public;
+
+
+-- f_link_stand_ver (grant anon)
 grant execute on function public.f_link_stand_ver(p_codigo_link text) to anon;
 
 
 -- f_link_talento_copiar
+revoke execute on function public.f_link_talento_copiar(p_codigo_link text, p_dia_origen integer, p_dia_destino integer) from public;
+
+
+-- f_link_talento_copiar (grant anon)
 grant execute on function public.f_link_talento_copiar(p_codigo_link text, p_dia_origen integer, p_dia_destino integer) to anon;
 
 
 -- f_link_talento_guardar
+revoke execute on function public.f_link_talento_guardar(p_codigo_link text, p_dia integer, p_personas jsonb) from public;
+
+
+-- f_link_talento_guardar (grant anon)
 grant execute on function public.f_link_talento_guardar(p_codigo_link text, p_dia integer, p_personas jsonb) to anon;
 
 
 -- f_link_talento_ver
+revoke execute on function public.f_link_talento_ver(p_codigo_link text) from public;
+
+
+-- f_link_talento_ver (grant anon)
 grant execute on function public.f_link_talento_ver(p_codigo_link text) to anon;
 
 
 -- f_login
+revoke execute on function public.f_login(p_pin text) from public;
+
+
+-- f_login (grant anon)
 grant execute on function public.f_login(p_pin text) to anon;
 
 
 -- f_logout
+revoke execute on function public.f_logout(p_token uuid) from public;
+
+
+-- f_logout (grant anon)
 grant execute on function public.f_logout(p_token uuid) to anon;
 
 
 -- f_puerta_canjear_premiacion
+revoke execute on function public.f_puerta_canjear_premiacion(p_token uuid, p_codigo_qr text, p_cupones_usados integer) from public;
+
+
+-- f_puerta_canjear_premiacion (grant anon)
 grant execute on function public.f_puerta_canjear_premiacion(p_token uuid, p_codigo_qr text, p_cupones_usados integer) to anon;
 
 
 -- f_puerta_cerrar_dia_y_activar_siguiente
+revoke execute on function public.f_puerta_cerrar_dia_y_activar_siguiente(p_token uuid) from public;
+
+
+-- f_puerta_cerrar_dia_y_activar_siguiente (grant anon)
 grant execute on function public.f_puerta_cerrar_dia_y_activar_siguiente(p_token uuid) to anon;
 
 
 -- f_puerta_cerrar_lista
+revoke execute on function public.f_puerta_cerrar_lista(p_token uuid, p_lista_id uuid, p_cerrada boolean) from public;
+
+
+-- f_puerta_cerrar_lista (grant anon)
 grant execute on function public.f_puerta_cerrar_lista(p_token uuid, p_lista_id uuid, p_cerrada boolean) to anon;
 
 
 -- f_puerta_cortesia_individual
+revoke execute on function public.f_puerta_cortesia_individual(p_token uuid, p_codigo_qr text) from public;
+
+
+-- f_puerta_cortesia_individual (grant anon)
 grant execute on function public.f_puerta_cortesia_individual(p_token uuid, p_codigo_qr text) to anon;
 
 
 -- f_puerta_cortesia_lista
+revoke execute on function public.f_puerta_cortesia_lista(p_token uuid, p_codigo_corto text) from public;
+
+
+-- f_puerta_cortesia_lista (grant anon)
 grant execute on function public.f_puerta_cortesia_lista(p_token uuid, p_codigo_corto text) to anon;
 
 
 -- f_puerta_estado
+revoke execute on function public.f_puerta_estado(p_token uuid) from public;
+
+
+-- f_puerta_estado (grant anon)
 grant execute on function public.f_puerta_estado(p_token uuid) to anon;
 
 
 -- f_puerta_lista
+revoke execute on function public.f_puerta_lista(p_token uuid, p_dia integer, p_buscar text) from public;
+
+
+-- f_puerta_lista (grant anon)
 grant execute on function public.f_puerta_lista(p_token uuid, p_dia integer, p_buscar text) to anon;
 
 
 -- f_puerta_marcar_cortesia
+revoke execute on function public.f_puerta_marcar_cortesia(p_token uuid, p_persona_id uuid, p_dia integer, p_estado text) from public;
+
+
+-- f_puerta_marcar_cortesia (grant anon)
 grant execute on function public.f_puerta_marcar_cortesia(p_token uuid, p_persona_id uuid, p_dia integer, p_estado text) to anon;
 
 
 -- f_puerta_marcar_persona
+revoke execute on function public.f_puerta_marcar_persona(p_token uuid, p_persona_id uuid, p_estado text) from public;
+
+
+-- f_puerta_marcar_persona (grant anon)
 grant execute on function public.f_puerta_marcar_persona(p_token uuid, p_persona_id uuid, p_estado text) to anon;
 
 
 -- f_puerta_marcar_vendedor
+revoke execute on function public.f_puerta_marcar_vendedor(p_token uuid, p_vendedor_id uuid, p_dia integer, p_estado text) from public;
+
+
+-- f_puerta_marcar_vendedor (grant anon)
 grant execute on function public.f_puerta_marcar_vendedor(p_token uuid, p_vendedor_id uuid, p_dia integer, p_estado text) to anon;
 
 
 -- f_puerta_personas_de_lista
+revoke execute on function public.f_puerta_personas_de_lista(p_token uuid, p_lista_id uuid) from public;
+
+
+-- f_puerta_personas_de_lista (grant anon)
 grant execute on function public.f_puerta_personas_de_lista(p_token uuid, p_lista_id uuid) to anon;
 
 
 -- f_puerta_premiacion_por_qr
+revoke execute on function public.f_puerta_premiacion_por_qr(p_token uuid, p_codigo_qr text) from public;
+
+
+-- f_puerta_premiacion_por_qr (grant anon)
 grant execute on function public.f_puerta_premiacion_por_qr(p_token uuid, p_codigo_qr text) to anon;
 
 
 -- f_puerta_vendedor_por_cedula
+revoke execute on function public.f_puerta_vendedor_por_cedula(p_token uuid, p_cedula text) from public;
+
+
+-- f_puerta_vendedor_por_cedula (grant anon)
 grant execute on function public.f_puerta_vendedor_por_cedula(p_token uuid, p_cedula text) to anon;
 
 
 -- f_puerta_vendedor_por_qr
+revoke execute on function public.f_puerta_vendedor_por_qr(p_token uuid, p_codigo_qr text) from public;
+
+
+-- f_puerta_vendedor_por_qr (grant anon)
 grant execute on function public.f_puerta_vendedor_por_qr(p_token uuid, p_codigo_qr text) to anon;
 
 
 -- f_sesion_ok
-revoke execute on function public.f_sesion_ok(p_token uuid, p_rol_requerido text) from anon;
+revoke execute on function public.f_sesion_ok(p_token uuid, p_rol_requerido text) from public;
 
 
 -- f_sesion_rol
-revoke execute on function public.f_sesion_rol(p_token uuid) from anon;
+revoke execute on function public.f_sesion_rol(p_token uuid) from public;
 
 
 -- rls_auto_enable
-revoke execute on function public.rls_auto_enable() from anon;
+revoke execute on function public.rls_auto_enable() from public;
 
 
 -- -----------------------------------------------------------------------------
