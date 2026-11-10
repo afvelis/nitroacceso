@@ -8,6 +8,9 @@
 -- RLS enabled on every table, the `ensure_rls` event trigger and the real
 -- permission map (78 GRANT EXECUTE + 4 REVOKE EXECUTE).
 --
+-- The whole file runs inside an explicit transaction (BEGIN ... COMMIT): if
+-- anything fails, the target database is left untouched, not half-built.
+--
 -- How to apply: run this file once, as a single pass, in the SQL Editor of the
 -- target project, against an EMPTY database (no tables, no functions).
 -- Never edit this file again: future schema changes go into new migrations
@@ -17,6 +20,9 @@
 -- Excluded 6 event triggers of Supabase/PostgREST infrastructure: they
 -- already exist in any new project and recreating them by hand would break this
 -- migration, so only the application-owned trigger `ensure_rls` is kept.
+
+
+begin;
 
 
 -- -----------------------------------------------------------------------------
@@ -118,10 +124,6 @@ create table if not exists public.vendedores (id uuid not null default gen_rando
 alter table aliado_ampliaciones add constraint aliado_ampliaciones_pkey PRIMARY KEY (id);
 
 
--- aliado_ampliaciones
-alter table aliado_ampliaciones add constraint aliado_ampliaciones_asignacion_id_fkey FOREIGN KEY (asignacion_id) REFERENCES aliado_asignaciones(id) ON DELETE CASCADE;
-
-
 -- aliado_asignaciones
 alter table aliado_asignaciones add constraint aliado_asignaciones_codigo_link_key UNIQUE (codigo_link);
 
@@ -130,36 +132,8 @@ alter table aliado_asignaciones add constraint aliado_asignaciones_codigo_link_k
 alter table aliado_asignaciones add constraint aliado_asignaciones_pkey PRIMARY KEY (id);
 
 
--- aliado_asignaciones
-alter table aliado_asignaciones add constraint aliado_asignaciones_estado_check CHECK ((estado = ANY (ARRAY['activa'::text, 'anulada'::text])));
-
-
--- aliado_asignaciones
-alter table aliado_asignaciones add constraint aliado_asignaciones_pool_tipo_check CHECK ((pool_tipo = ANY (ARRAY['unico'::text, 'por_dia'::text])));
-
-
--- aliado_asignaciones
-alter table aliado_asignaciones add constraint aliado_asignaciones_aliado_id_fkey FOREIGN KEY (aliado_id) REFERENCES aliados(id) ON DELETE CASCADE;
-
-
--- aliado_asignaciones
-alter table aliado_asignaciones add constraint aliado_asignaciones_check CHECK ((((pool_tipo = 'unico'::text) AND (cupones_unico IS NOT NULL) AND (cupones_unico >= 1)) OR ((pool_tipo = 'por_dia'::text) AND (cupones_dia1 IS NOT NULL) AND (cupones_dia1 >= 0) AND (cupones_dia2 IS NOT NULL) AND (cupones_dia2 >= 0) AND ((cupones_dia1 + cupones_dia2) >= 1))));
-
-
--- aliado_concursos
-alter table aliado_concursos add constraint aliado_concursos_estado_check CHECK ((estado = ANY (ARRAY['abierto'::text, 'cerrado'::text])));
-
-
 -- aliado_concursos
 alter table aliado_concursos add constraint aliado_concursos_pkey PRIMARY KEY (id);
-
-
--- aliado_concursos
-alter table aliado_concursos add constraint aliado_concursos_cupones_reservados_check CHECK ((cupones_reservados >= 1));
-
-
--- aliado_concursos
-alter table aliado_concursos add constraint aliado_concursos_asignacion_id_fkey FOREIGN KEY (asignacion_id) REFERENCES aliado_asignaciones(id) ON DELETE CASCADE;
 
 
 -- aliados
@@ -167,19 +141,7 @@ alter table aliados add constraint aliados_pkey PRIMARY KEY (id);
 
 
 -- config
-alter table config add constraint config_id_check CHECK ((id = 1));
-
-
--- config
 alter table config add constraint config_pkey PRIMARY KEY (id);
-
-
--- config
-alter table config add constraint config_dia_activo_check CHECK ((dia_activo = ANY (ARRAY[1, 2])));
-
-
--- coordinadores
-alter table coordinadores add constraint coordinadores_tipo_check CHECK ((tipo = ANY (ARRAY['talentos'::text, 'stands'::text])));
 
 
 -- coordinadores
@@ -195,35 +157,11 @@ alter table cortesia_listas add constraint cortesia_listas_cortesia_id_dia_key U
 
 
 -- cortesia_listas
-alter table cortesia_listas add constraint cortesia_listas_dia_check CHECK ((dia = ANY (ARRAY[1, 2])));
-
-
--- cortesia_listas
 alter table cortesia_listas add constraint cortesia_listas_pkey PRIMARY KEY (id);
 
 
 -- cortesia_listas
 alter table cortesia_listas add constraint cortesia_listas_codigo_corto_key UNIQUE (codigo_corto);
-
-
--- cortesia_listas
-alter table cortesia_listas add constraint cortesia_listas_cortesia_id_fkey FOREIGN KEY (cortesia_id) REFERENCES cortesias(id) ON DELETE CASCADE;
-
-
--- cortesia_personas
-alter table cortesia_personas add constraint cortesia_personas_estado_dia2_check CHECK ((estado_dia2 = ANY (ARRAY['pendiente'::text, 'autorizado'::text])));
-
-
--- cortesia_personas
-alter table cortesia_personas add constraint cortesia_personas_estado_dia1_check CHECK ((estado_dia1 = ANY (ARRAY['pendiente'::text, 'autorizado'::text])));
-
-
--- cortesia_personas
-alter table cortesia_personas add constraint cortesia_personas_lista_id_fkey FOREIGN KEY (lista_id) REFERENCES cortesia_listas(id) ON DELETE CASCADE;
-
-
--- cortesia_personas
-alter table cortesia_personas add constraint cortesia_personas_cortesia_id_fkey FOREIGN KEY (cortesia_id) REFERENCES cortesias(id) ON DELETE CASCADE;
 
 
 -- cortesia_personas
@@ -238,54 +176,6 @@ alter table cortesia_personas add constraint cortesia_personas_codigo_qr_key UNI
 alter table cortesia_personas add constraint cortesia_personas_pkey PRIMARY KEY (id);
 
 
--- cortesia_personas
-alter table cortesia_personas add constraint cortesia_personas_modo_chk CHECK ((((lista_id IS NOT NULL) AND (codigo_qr IS NULL)) OR ((lista_id IS NULL) AND (codigo_qr IS NOT NULL))));
-
-
--- cortesia_personas
-alter table cortesia_personas add constraint cortesia_personas_estado_check CHECK ((estado = ANY (ARRAY['pendiente'::text, 'autorizado'::text])));
-
-
--- cortesias
-alter table cortesias add constraint cortesias_aliado_id_fkey FOREIGN KEY (aliado_id) REFERENCES aliados(id) ON DELETE SET NULL;
-
-
--- cortesias
-alter table cortesias add constraint cortesias_concurso_id_fkey FOREIGN KEY (concurso_id) REFERENCES aliado_concursos(id) ON DELETE SET NULL;
-
-
--- cortesias
-alter table cortesias add constraint cortesias_premiacion_chk CHECK (((tipo <> 'premiacion'::text) OR ((concurso IS NOT NULL) AND (cupones_total IS NOT NULL) AND (cupones_total >= 1))));
-
-
--- cortesias
-alter table cortesias add constraint cortesias_tipo_check CHECK ((tipo = ANY (ARRAY['lista'::text, 'individual'::text, 'premiacion'::text])));
-
-
--- cortesias
-alter table cortesias add constraint cortesias_origen_check CHECK ((origen = ANY (ARRAY['admin'::text, 'aliado'::text])));
-
-
--- cortesias
-alter table cortesias add constraint cortesias_asignacion_id_fkey FOREIGN KEY (asignacion_id) REFERENCES aliado_asignaciones(id) ON DELETE SET NULL;
-
-
--- cortesias
-alter table cortesias add constraint cortesias_razon_check CHECK ((razon = ANY (ARRAY['prensa'::text, 'vinculo_familiar'::text, 'premio'::text, 'autoridad'::text, 'otros'::text])));
-
-
--- cortesias
-alter table cortesias add constraint cortesias_estado_check CHECK ((estado = ANY (ARRAY['activa'::text, 'anulada'::text])));
-
-
--- cortesias
-alter table cortesias add constraint cortesias_dia_chk CHECK ((dia1 OR dia2));
-
-
--- cortesias
-alter table cortesias add constraint cortesias_causa_chk CHECK (((razon <> 'otros'::text) OR ((causa IS NOT NULL) AND (causa <> ''::text))));
-
-
 -- cortesias
 alter table cortesias add constraint cortesias_pkey PRIMARY KEY (id);
 
@@ -296,18 +186,6 @@ alter table cortesias add constraint cortesias_codigo_link_key UNIQUE (codigo_li
 
 -- eventos
 alter table eventos add constraint eventos_pkey PRIMARY KEY (id);
-
-
--- listas
-alter table listas add constraint listas_talento_id_fkey FOREIGN KEY (talento_id) REFERENCES talentos(id) ON DELETE CASCADE;
-
-
--- listas
-alter table listas add constraint listas_dia_check CHECK ((dia = ANY (ARRAY[1, 2])));
-
-
--- listas
-alter table listas add constraint listas_estado_check CHECK ((estado = ANY (ARRAY['en_edicion'::text, 'en_puerta'::text, 'cerrada'::text])));
 
 
 -- listas
@@ -327,23 +205,11 @@ alter table login_intentos add constraint login_intentos_pkey PRIMARY KEY (id);
 
 
 -- personas
-alter table personas add constraint personas_lista_id_fkey FOREIGN KEY (lista_id) REFERENCES listas(id) ON DELETE CASCADE;
-
-
--- personas
-alter table personas add constraint personas_estado_check CHECK ((estado = ANY (ARRAY['pendiente'::text, 'autorizado'::text])));
-
-
--- personas
 alter table personas add constraint personas_pkey PRIMARY KEY (id);
 
 
 -- personas
 alter table personas add constraint personas_lista_id_cedula_key UNIQUE (lista_id, cedula);
-
-
--- sesiones
-alter table sesiones add constraint sesiones_rol_check CHECK ((rol = ANY (ARRAY['admin'::text, 'puerta'::text])));
 
 
 -- sesiones
@@ -362,22 +228,6 @@ alter table stands add constraint stands_codigo_link_key UNIQUE (codigo_link);
 alter table stands add constraint stands_pkey PRIMARY KEY (id);
 
 
--- stands
-alter table stands add constraint stands_tipo_check CHECK ((tipo = ANY (ARRAY['patrocinante'::text, 'pagado'::text])));
-
-
--- stands
-alter table stands add constraint stands_cupo_check CHECK ((cupo > 0));
-
-
--- stands
-alter table stands add constraint stands_coordinador_id_fkey FOREIGN KEY (coordinador_id) REFERENCES coordinadores(id);
-
-
--- talentos
-alter table talentos add constraint talentos_coordinador_id_fkey FOREIGN KEY (coordinador_id) REFERENCES coordinadores(id);
-
-
 -- talentos
 alter table talentos add constraint talentos_correo_link_key UNIQUE (correo_link);
 
@@ -388,10 +238,6 @@ alter table talentos add constraint talentos_codigo_link_key UNIQUE (codigo_link
 
 -- talentos
 alter table talentos add constraint talentos_pkey PRIMARY KEY (id);
-
-
--- vendedores
-alter table vendedores add constraint vendedores_estado_dia2_check CHECK ((estado_dia2 = ANY (ARRAY['pendiente'::text, 'autorizado'::text])));
 
 
 -- vendedores
@@ -406,12 +252,172 @@ alter table vendedores add constraint vendedores_codigo_qr_key UNIQUE (codigo_qr
 alter table vendedores add constraint vendedores_stand_id_cedula_key UNIQUE (stand_id, cedula);
 
 
+-- aliado_asignaciones
+alter table aliado_asignaciones add constraint aliado_asignaciones_estado_check CHECK ((estado = ANY (ARRAY['activa'::text, 'anulada'::text])));
+
+
+-- aliado_asignaciones
+alter table aliado_asignaciones add constraint aliado_asignaciones_pool_tipo_check CHECK ((pool_tipo = ANY (ARRAY['unico'::text, 'por_dia'::text])));
+
+
+-- aliado_asignaciones
+alter table aliado_asignaciones add constraint aliado_asignaciones_check CHECK ((((pool_tipo = 'unico'::text) AND (cupones_unico IS NOT NULL) AND (cupones_unico >= 1)) OR ((pool_tipo = 'por_dia'::text) AND (cupones_dia1 IS NOT NULL) AND (cupones_dia1 >= 0) AND (cupones_dia2 IS NOT NULL) AND (cupones_dia2 >= 0) AND ((cupones_dia1 + cupones_dia2) >= 1))));
+
+
+-- aliado_concursos
+alter table aliado_concursos add constraint aliado_concursos_estado_check CHECK ((estado = ANY (ARRAY['abierto'::text, 'cerrado'::text])));
+
+
+-- aliado_concursos
+alter table aliado_concursos add constraint aliado_concursos_cupones_reservados_check CHECK ((cupones_reservados >= 1));
+
+
+-- config
+alter table config add constraint config_id_check CHECK ((id = 1));
+
+
+-- config
+alter table config add constraint config_dia_activo_check CHECK ((dia_activo = ANY (ARRAY[1, 2])));
+
+
+-- coordinadores
+alter table coordinadores add constraint coordinadores_tipo_check CHECK ((tipo = ANY (ARRAY['talentos'::text, 'stands'::text])));
+
+
+-- cortesia_listas
+alter table cortesia_listas add constraint cortesia_listas_dia_check CHECK ((dia = ANY (ARRAY[1, 2])));
+
+
+-- cortesia_personas
+alter table cortesia_personas add constraint cortesia_personas_estado_dia2_check CHECK ((estado_dia2 = ANY (ARRAY['pendiente'::text, 'autorizado'::text])));
+
+
+-- cortesia_personas
+alter table cortesia_personas add constraint cortesia_personas_estado_dia1_check CHECK ((estado_dia1 = ANY (ARRAY['pendiente'::text, 'autorizado'::text])));
+
+
+-- cortesia_personas
+alter table cortesia_personas add constraint cortesia_personas_modo_chk CHECK ((((lista_id IS NOT NULL) AND (codigo_qr IS NULL)) OR ((lista_id IS NULL) AND (codigo_qr IS NOT NULL))));
+
+
+-- cortesia_personas
+alter table cortesia_personas add constraint cortesia_personas_estado_check CHECK ((estado = ANY (ARRAY['pendiente'::text, 'autorizado'::text])));
+
+
+-- cortesias
+alter table cortesias add constraint cortesias_premiacion_chk CHECK (((tipo <> 'premiacion'::text) OR ((concurso IS NOT NULL) AND (cupones_total IS NOT NULL) AND (cupones_total >= 1))));
+
+
+-- cortesias
+alter table cortesias add constraint cortesias_tipo_check CHECK ((tipo = ANY (ARRAY['lista'::text, 'individual'::text, 'premiacion'::text])));
+
+
+-- cortesias
+alter table cortesias add constraint cortesias_origen_check CHECK ((origen = ANY (ARRAY['admin'::text, 'aliado'::text])));
+
+
+-- cortesias
+alter table cortesias add constraint cortesias_razon_check CHECK ((razon = ANY (ARRAY['prensa'::text, 'vinculo_familiar'::text, 'premio'::text, 'autoridad'::text, 'otros'::text])));
+
+
+-- cortesias
+alter table cortesias add constraint cortesias_estado_check CHECK ((estado = ANY (ARRAY['activa'::text, 'anulada'::text])));
+
+
+-- cortesias
+alter table cortesias add constraint cortesias_dia_chk CHECK ((dia1 OR dia2));
+
+
+-- cortesias
+alter table cortesias add constraint cortesias_causa_chk CHECK (((razon <> 'otros'::text) OR ((causa IS NOT NULL) AND (causa <> ''::text))));
+
+
+-- listas
+alter table listas add constraint listas_dia_check CHECK ((dia = ANY (ARRAY[1, 2])));
+
+
+-- listas
+alter table listas add constraint listas_estado_check CHECK ((estado = ANY (ARRAY['en_edicion'::text, 'en_puerta'::text, 'cerrada'::text])));
+
+
+-- personas
+alter table personas add constraint personas_estado_check CHECK ((estado = ANY (ARRAY['pendiente'::text, 'autorizado'::text])));
+
+
+-- sesiones
+alter table sesiones add constraint sesiones_rol_check CHECK ((rol = ANY (ARRAY['admin'::text, 'puerta'::text])));
+
+
+-- stands
+alter table stands add constraint stands_tipo_check CHECK ((tipo = ANY (ARRAY['patrocinante'::text, 'pagado'::text])));
+
+
+-- stands
+alter table stands add constraint stands_cupo_check CHECK ((cupo > 0));
+
+
 -- vendedores
-alter table vendedores add constraint vendedores_stand_id_fkey FOREIGN KEY (stand_id) REFERENCES stands(id) ON DELETE CASCADE;
+alter table vendedores add constraint vendedores_estado_dia2_check CHECK ((estado_dia2 = ANY (ARRAY['pendiente'::text, 'autorizado'::text])));
 
 
 -- vendedores
 alter table vendedores add constraint vendedores_estado_dia1_check CHECK ((estado_dia1 = ANY (ARRAY['pendiente'::text, 'autorizado'::text])));
+
+
+-- aliado_ampliaciones
+alter table aliado_ampliaciones add constraint aliado_ampliaciones_asignacion_id_fkey FOREIGN KEY (asignacion_id) REFERENCES aliado_asignaciones(id) ON DELETE CASCADE;
+
+
+-- aliado_asignaciones
+alter table aliado_asignaciones add constraint aliado_asignaciones_aliado_id_fkey FOREIGN KEY (aliado_id) REFERENCES aliados(id) ON DELETE CASCADE;
+
+
+-- aliado_concursos
+alter table aliado_concursos add constraint aliado_concursos_asignacion_id_fkey FOREIGN KEY (asignacion_id) REFERENCES aliado_asignaciones(id) ON DELETE CASCADE;
+
+
+-- cortesia_listas
+alter table cortesia_listas add constraint cortesia_listas_cortesia_id_fkey FOREIGN KEY (cortesia_id) REFERENCES cortesias(id) ON DELETE CASCADE;
+
+
+-- cortesia_personas
+alter table cortesia_personas add constraint cortesia_personas_lista_id_fkey FOREIGN KEY (lista_id) REFERENCES cortesia_listas(id) ON DELETE CASCADE;
+
+
+-- cortesia_personas
+alter table cortesia_personas add constraint cortesia_personas_cortesia_id_fkey FOREIGN KEY (cortesia_id) REFERENCES cortesias(id) ON DELETE CASCADE;
+
+
+-- cortesias
+alter table cortesias add constraint cortesias_aliado_id_fkey FOREIGN KEY (aliado_id) REFERENCES aliados(id) ON DELETE SET NULL;
+
+
+-- cortesias
+alter table cortesias add constraint cortesias_concurso_id_fkey FOREIGN KEY (concurso_id) REFERENCES aliado_concursos(id) ON DELETE SET NULL;
+
+
+-- cortesias
+alter table cortesias add constraint cortesias_asignacion_id_fkey FOREIGN KEY (asignacion_id) REFERENCES aliado_asignaciones(id) ON DELETE SET NULL;
+
+
+-- listas
+alter table listas add constraint listas_talento_id_fkey FOREIGN KEY (talento_id) REFERENCES talentos(id) ON DELETE CASCADE;
+
+
+-- personas
+alter table personas add constraint personas_lista_id_fkey FOREIGN KEY (lista_id) REFERENCES listas(id) ON DELETE CASCADE;
+
+
+-- stands
+alter table stands add constraint stands_coordinador_id_fkey FOREIGN KEY (coordinador_id) REFERENCES coordinadores(id);
+
+
+-- talentos
+alter table talentos add constraint talentos_coordinador_id_fkey FOREIGN KEY (coordinador_id) REFERENCES coordinadores(id);
+
+
+-- vendedores
+alter table vendedores add constraint vendedores_stand_id_fkey FOREIGN KEY (stand_id) REFERENCES stands(id) ON DELETE CASCADE;
 
 
 -- -----------------------------------------------------------------------------
@@ -4698,4 +4704,7 @@ revoke execute on function public.rls_auto_enable() from anon;
 
 -- grants-tablas
 revoke all on all tables in schema public from anon, authenticated;
+
+
+commit;
 
