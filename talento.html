@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://exrbwctegkzxurzwihvh.supabase.co; font-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'; style-src 'self' 'sha256-chCcO55HK32jTLGKw4YtTN6UWS+J3XW7shmqDwmTEjs='">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://exrbwctegkzxurzwihvh.supabase.co; font-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'; style-src 'self' 'sha256-G3dyj1EVmTkHt04blEcp9i/+kR+x4sBjssHWSM8YlPw='">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -52,6 +52,17 @@ th{background:#0d1526;color:var(--suave);}
 .qrbox img{width:220px;height:220px;background:#fff;padding:8px;border-radius:10px;}
 .qrbox .fila{justify-content:center;}
 .panelOpcion{margin-top:12px;padding:14px;border:1px dashed var(--acento2);border-radius:12px;background:#0d1526;}
+.copiarLista{display:flex;flex-direction:column;gap:6px;margin:10px 0;max-height:300px;overflow:auto;}
+.copiarPersona{display:flex;gap:10px;align-items:flex-start;cursor:pointer;padding:6px 8px;border:1px solid var(--borde);border-radius:10px;}
+.copiarPersona input{width:auto;flex:none;margin-top:3px;}
+.copiarContador{color:var(--acento2);font-weight:700;}
+:focus-visible{outline:2px solid var(--acento2);outline-offset:2px;}
+.modal-fondo{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px}
+.modal-caja{background:var(--tarjeta);border:1px solid var(--borde);border-radius:16px;padding:22px;max-width:520px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,.5)}
+.modal-titulo{font-size:18px;font-weight:700;color:var(--acento);margin-bottom:12px}
+.modal-mensaje{color:var(--texto);white-space:pre-wrap;line-height:1.55;margin-bottom:18px}
+.modal-acciones{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.modal-acciones .btn{padding:10px 18px;font-size:16px}
 .barraFinal{position:fixed;left:0;right:0;bottom:0;background:rgba(13,21,38,.96);border-top:1px solid var(--borde);padding:12px 16px;display:flex;justify-content:center;z-index:50;}
 .barraFinal .btn{width:100%;max-width:520px;font-size:18px;}
 </style>

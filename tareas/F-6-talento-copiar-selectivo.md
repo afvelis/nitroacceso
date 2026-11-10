@@ -2,7 +2,7 @@
 id: "F-6"
 titulo: "Copiar del Día 1 al Día 2: selectivo, repetible y siempre disponible"
 prioridad: "P1"
-estado: "pendiente"
+estado: "en_progreso"
 area: "frontend"
 depende_de: []
 archivos:
@@ -71,4 +71,13 @@ Probar en staging (local con `scripts/dev-server.py`, ver P1-04) los siete crite
 
 ## Notas de implementación
 
-(vacío por ahora)
+Implementado (rama `agente/2026-11-11-f6-copiar-selectivo`, pendiente de PR y de prueba en staging):
+
+- **SQL (`docs/sql/f_link_talento_copiar.sql`, reescrito):** se conserva intacta la función actual de 3 argumentos (`boolean`, versión F-1 copiada tal cual de `supabase/migrations/0001_esquema_inicial.sql`) como compatibilidad para las páginas ya desplegadas, y se AÑADE por **SOBRECARGA** una función nueva de 4 argumentos: `public.f_link_talento_copiar(p_codigo_link text, p_dia_origen integer, p_dia_destino integer, p_persona_ids uuid[] default null) RETURNS jsonb`.
+- **Por qué sobrecarga y no reemplazo:** la función de 3 argumentos la siguen llamando las páginas antiguas hasta que se despliegue el frontend nuevo; reemplazarla las rompería. Postgres distingue las dos firmas sin conflicto, no hay ningún `DROP` y la reversión es trivial (`drop function` solo de la firma de 4 argumentos, documentado en la cabecera del SQL).
+- **Comportamiento de la nueva:** valida link (existencia + `links_anulados`), edición abierta, origen (en edición o cerrada) y destino (obligatoriamente `en_edicion`); si `p_persona_ids` es NULL o vacío copia TODAS las del origen, si trae ids copia solo esas; omite duplicados comparando la cédula normalizada `upper(regexp_replace(cedula, '[^0-9A-Za-z]', '', 'g'))`; copia las mismas columnas que hoy (nombre, apellido, cedula, cargo) y `estado` queda en `pendiente` por default de la tabla. Devuelve `jsonb_build_object('ok', copiadas, omitidas, motivo)` y es idempotente (segunda pasada: copiadas=0, omitidas=total). Incluye `revoke`/`grant` a `anon` igual que las demás funciones del volcado.
+- **Nota de coherencia (adaptación honesta):** la instrucción mencionaba `SET search_path TO 'pg_catalog'`, pero todas las funciones del volcado usan `SET search_path TO 'public', 'pg_temp'`; se usó esa, para ser coherente con el resto del archivo.
+- **UI (`js/talento.js`, `talento.html`):** barra de acciones SIEMPRE visible en la tarjeta del Día 2 editable con Día 1 con personas, en el orden «Copiar del Dia 1» (principal) · «Agregar participante» · «Guardar lista del Dia N». Eliminados el requisito «destino vacío» y el flag de sessionStorage `na_norep_`. Panel de selección con una casilla por persona (nombre, apellido, cédula y cargo), todas marcadas por defecto, «Seleccionar todas» / «Ninguna», contador «N de M seleccionadas», «Copiar seleccionados» / «Cancelar» (si no hay marcadas: modal propio y el panel no se cierra). La copia llama a la RPC de 4 argumentos con los ids marcados y traduce el resultado o el motivo (`edicion_cerrada`, `destino_no_editable`, `link_invalido`) a mensajes claros. «Empezar de cero» quedó como acción secundaria al final de la tarjeta del Día 2 con confirmación en modal propio; también se sustituyó el `confirm()` nativo de `guardarDia()` por el mismo modal. Se implementaron `modalAviso`/`modalConfirmar` en talento.js (mismo patrón visual que admin.js: fondo, tarjeta, botones) y las clases CSS correspondientes en talento.html, con el hash CSP del `<style>` recalculado y verificado (el anterior era `sha256-chCcO55...js=`, el nuevo `sha256-G3dyj1EV...Pw=`). El fallback manual (agregar a mano y guardar) sigue intacto, igual que QR, tarea cumplida, WhatsApp y correo.
+- **QUIÉN EJECUTA EL SQL:** el usuario, NUNCA el agente. Primero en el SQL Editor de **staging** (con la consulta PRE de verificación del propio archivo antes, y las dos consultas POST después: deben quedar exactamente las dos sobrecargas, la de 3 retornando `boolean` y la de 4 retornando `jsonb`), y solo tras validar los criterios de aceptación en staging, en **producción**.
+- **FALTA:** la prueba completa en el entorno de pruebas (CA1 a CA7) contra staging con la RPC de 4 argumentos ya aplicada; mientras tanto no desplegar el frontend nuevo a producción (la UI nueva ya solo llama a la sobrecarga de 4 argumentos).
+- **SQL a ejecutar (resumido):** el archivo completo `docs/sql/f_link_talento_copiar.sql` (copiar y pegar entero en el SQL Editor). No requiere nada más: incluye la función de compatibilidad, la sobrecarga nueva, los grants y las consultas de verificación PRE/POST.

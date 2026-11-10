@@ -49,6 +49,56 @@ async function copiarImagen(url){
   await navigator.clipboard.write([new ClipboardItem({ [blob.type || 'image/png']: blob })]);
 }
 
+// ===== Modales propios (regla v2.1: prohibido alert/confirm/prompt nativos) =====
+// Motivo P0-03: los dialogos nativos se pueden suprimir y la respuesta nunca
+// llega. Este modal propio es HTML y siempre se ve. Mismo patron visual que el
+// resto de la app: fondo oscuro, tarjeta y botones.
+function modalAviso(mensaje, titulo){
+  titulo = titulo || 'Aviso';
+  return new Promise(function(resolve){
+    var fondo = document.createElement('div');
+    fondo.className = 'modal-fondo';
+    fondo.setAttribute('role', 'dialog');
+    fondo.setAttribute('aria-modal', 'true');
+    fondo.innerHTML =
+      '<div class="modal-caja">' +
+        '<div class="modal-titulo">' + esc(titulo) + '</div>' +
+        '<div class="modal-mensaje">' + esc(mensaje) + '</div>' +
+        '<div class="modal-acciones"><button class="btn" data-modal-ok>Aceptar</button></div>' +
+      '</div>';
+    document.body.appendChild(fondo);
+    var cerrar = function(){ fondo.remove(); resolve(true); };
+    fondo.querySelector('[data-modal-ok]').addEventListener('click', cerrar);
+    fondo.addEventListener('click', function(e){ if (e.target === fondo) cerrar(); });
+    fondo.querySelector('[data-modal-ok]').focus();
+  });
+}
+
+function modalConfirmar(mensaje, titulo){
+  titulo = titulo || 'Confirmar';
+  return new Promise(function(resolve){
+    var fondo = document.createElement('div');
+    fondo.className = 'modal-fondo';
+    fondo.setAttribute('role', 'dialog');
+    fondo.setAttribute('aria-modal', 'true');
+    fondo.innerHTML =
+      '<div class="modal-caja">' +
+        '<div class="modal-titulo">' + esc(titulo) + '</div>' +
+        '<div class="modal-mensaje">' + esc(mensaje) + '</div>' +
+        '<div class="modal-acciones">' +
+          '<button class="btn btn-gris" data-modal-cancelar>Cancelar</button>' +
+          '<button class="btn" data-modal-aceptar>Aceptar</button>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(fondo);
+    var cerrar = function(resultado){ fondo.remove(); resolve(resultado); };
+    fondo.querySelector('[data-modal-cancelar]').addEventListener('click', function(){ cerrar(false); });
+    fondo.querySelector('[data-modal-aceptar]').addEventListener('click', function(){ cerrar(true); });
+    fondo.addEventListener('click', function(e){ if (e.target === fondo) cerrar(false); });
+    fondo.querySelector('[data-modal-aceptar]').focus();
+  });
+}
+
 var DATA = null;
 var CODIGO = null;
 
@@ -89,11 +139,11 @@ function nombreTalento(){
 }
 
 function dia1ConPersonas(){
-  return (DATA.listas || []).some(function(l){ return l.dia === 1 && (l.personas || []).length > 0; });
+  return listaDia1() !== null;
 }
-function personasDia1(){
+function listaDia1(){
   var l = (DATA.listas || []).filter(function(x){ return x.dia === 1; })[0];
-  return l ? (l.personas || []).length : 0;
+  return (l && (l.personas || []).length > 0) ? l : null;
 }
 
 function render(){
@@ -131,16 +181,16 @@ function cardLista(l){
     rows.id = 'rows-' + l.dia;
     (l.personas || []).forEach(function(p){ rows.appendChild(filaPersona(p)); });
     sec.appendChild(rows);
+    // F-6: barra de acciones SIEMPRE visible mientras la lista sea editable.
+    // En el Dia 2, si el Dia 1 tiene personas, la copia es la accion principal;
+    // el fallback manual (agregar a mano y guardar) nunca desaparece.
     var fila = document.createElement('div');
     fila.className = 'fila';
+    if (l.dia === 2 && dia1ConPersonas()) {
+      fila.appendChild(boton('Copiar del Dia 1', '', function(){ mostrarPanelCopiar(sec, rows, l); }));
+    }
     fila.appendChild(boton('Agregar participante', 'btn-gris', function(){
-      var yaTienePanel = sec.querySelector('.panelOpcion');
-      if (l.dia === 2 && (l.personas || []).length === 0 && dia1ConPersonas()
-          && !sessionStorage.getItem('na_norep_' + CODIGO) && !rows.children.length && !yaTienePanel) {
-        mostrarOpcionDia2(sec, rows, l);
-      } else {
-        rows.appendChild(filaPersona(null));
-      }
+      rows.appendChild(filaPersona(null));
     }));
     fila.appendChild(boton('Guardar lista del Dia ' + l.dia, '', function(){ guardarDia(l, rows); }));
     sec.appendChild(fila);
@@ -160,6 +210,15 @@ function cardLista(l){
     notaQr2.className = 'suave';
     notaQr2.textContent = 'El QR de esta lista aparecera aqui cuando guardes al menos un participante con todos sus datos.';
     sec.appendChild(notaQr2);
+  }
+  // F-6: "Empezar de cero" (antes "Lista nueva desde cero", solo Dia 2) pasa a
+  // accion secundaria al final de la tarjeta, con confirmacion en modal propio.
+  if (editable && l.dia === 2) {
+    sec.appendChild(boton('Empezar de cero', 'btn-gris', async function(){
+      if (!(await modalConfirmar('Esto quitara de la pantalla las personas ya cargadas en la lista del Dia ' + l.dia + '. No se borra nada de la base hasta que pulses "Guardar lista del Dia ' + l.dia + '". Continuar?', 'Empezar de cero'))) return;
+      rows.innerHTML = '';
+      rows.appendChild(filaPersona(null));
+    }));
   }
   return sec;
 }
@@ -184,36 +243,126 @@ function construirCajaQR(l){
   return qr;
 }
 
-function mostrarOpcionDia2(sec, rows, l){
+// F-6: panel de seleccion de la copia Dia 1 -> Dia 2. Una casilla por persona
+// del Dia 1 (todas marcadas por defecto). La copia SUMA: la RPC omite quien ya
+// este en el destino con la misma cedula (normalizada) y no borra nada.
+function mostrarPanelCopiar(sec, rows, l){
+  if (sec.querySelector('.panelOpcion')) return; // ya hay un panel abierto
+  var origen = listaDia1();
+  if (!origen) return;
   var panel = document.createElement('div');
   panel.className = 'panelOpcion';
   var txt = document.createElement('p');
   txt.className = 'suave';
-  txt.textContent = 'Ya tienes una lista guardada del Dia 1 con ' + personasDia1() + ' participante(s). Que prefieres hacer con el Dia 2?';
+  txt.textContent = 'Marca las personas del Dia 1 que quieres copiar a la lista del Dia ' + l.dia + '. Las que ya esten con la misma cedula no se duplican: solo se suman las nuevas.';
   panel.appendChild(txt);
-  var fila = document.createElement('div');
-  fila.className = 'fila';
-  fila.appendChild(boton('Repetir y editar la del Dia 1', '', async function(){
-    console.info('[talento] copiar Dia 1 -> Dia 2: inicio');
-    try {
-      var ok = await llamar('f_link_talento_copiar', {
-        p_codigo_link: CODIGO, p_dia_origen: 1, p_dia_destino: 2
-      });
-      if (ok === true) { await cargar(); return; }
-      console.warn('[talento] copiar Dia 1 -> Dia 2: la RPC devolvio', ok);
-      pinta($('msgGlobal'), 'No se pudo copiar al Dia 2. Revisa que la edicion este abierta, que el Dia 1 tenga integrantes y que el Dia 2 siga vacio.', false);
-    } catch (e) {
-      console.error('[talento] copiar Dia 1 -> Dia 2: error', e);
-      pinta($('msgGlobal'), 'No se pudo conectar: ' + e.message, false);
+
+  var grupos = document.createElement('div');
+  grupos.className = 'copiarLista';
+  var casillas = [];
+  (origen.personas || []).forEach(function(p){
+    var eti = document.createElement('label');
+    eti.className = 'copiarPersona';
+    var cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = true;
+    cb.value = p.persona_id;
+    eti.appendChild(cb);
+    var span = document.createElement('span');
+    span.textContent = (p.nombre || '') + ' ' + (p.apellido || '') + ' — Cedula: ' + (p.cedula || '') + (p.cargo ? ' — Cargo: ' + p.cargo : '');
+    eti.appendChild(span);
+    cb.addEventListener('change', actualizaContador);
+    casillas.push(cb);
+    grupos.appendChild(eti);
+  });
+  panel.appendChild(grupos);
+
+  var contador = document.createElement('p');
+  var spanContador = document.createElement('span');
+  spanContador.className = 'copiarContador';
+  contador.appendChild(spanContador);
+  panel.appendChild(contador);
+
+  function marcadas(){
+    return casillas.filter(function(c){ return c.checked; });
+  }
+  function actualizaContador(){
+    spanContador.textContent = marcadas().length + ' de ' + casillas.length + ' seleccionadas';
+  }
+  actualizaContador();
+
+  var filaSel = document.createElement('div');
+  filaSel.className = 'fila';
+  filaSel.appendChild(boton('Seleccionar todas', 'btn-gris', function(){
+    casillas.forEach(function(c){ c.checked = true; });
+    actualizaContador();
+  }));
+  filaSel.appendChild(boton('Ninguna', 'btn-gris', function(){
+    casillas.forEach(function(c){ c.checked = false; });
+    actualizaContador();
+  }));
+  panel.appendChild(filaSel);
+
+  var filaAcciones = document.createElement('div');
+  filaAcciones.className = 'fila';
+  var copiando = false; // evita doble envio mientras la RPC esta en vuelo
+  var btnCopiar = boton('Copiar seleccionados', '', async function(){
+    if (copiando) return;
+    var ids = marcadas().map(function(c){ return c.value; });
+    if (!ids.length) {
+      await modalAviso('Selecciona al menos una persona.', 'Falta la seleccion');
+      return;
     }
-  }));
-  fila.appendChild(boton('Lista nueva desde cero', 'btn-azul', function(){
-    sessionStorage.setItem('na_norep_' + CODIGO, '1');
-    panel.remove();
-    rows.appendChild(filaPersona(null));
-  }));
-  fila.appendChild(boton('Cancelar', 'btn-gris', function(){ panel.remove(); }));
-  panel.appendChild(fila);
+    copiando = true;
+    btnCopiar.disabled = true;
+    console.info('[talento] copiar selectivo Dia 1 -> Dia ' + l.dia + ': inicio, ' + ids.length + ' seleccionada(s)');
+    try {
+      var r = await llamar('f_link_talento_copiar', {
+        p_codigo_link: CODIGO,
+        p_dia_origen: 1,
+        p_dia_destino: l.dia,
+        p_persona_ids: ids
+      });
+      if (r && r.ok === true) {
+        panel.remove();
+        var msg;
+        if (r.copiadas > 0) {
+          msg = r.copiadas + ' persona(s) copiada(s).' + (r.omitidas > 0 ? ' ' + r.omitidas + ' ya estaban en la lista.' : '');
+        } else if (r.omitidas > 0) {
+          msg = 'No hay personas nuevas que copiar: ya estaban todas en la lista.';
+        } else {
+          msg = 'No hay personas nuevas que copiar.';
+        }
+        avisoMsg('msgGlobal', msg, true);
+        await modalAviso(msg, 'Copia al Dia ' + l.dia);
+        if (r.copiadas > 0) await cargar();
+        return;
+      }
+      panel.remove();
+      var motivo = (r && r.motivo) ? String(r.motivo) : '';
+      var txtMotivo;
+      if (motivo === 'edicion_cerrada') {
+        txtMotivo = 'No se pudo copiar: el administrador cerro la edicion. Mientras tu lista no pase a puerta puedes agregar participantes a mano y guardar.';
+      } else if (motivo === 'destino_no_editable') {
+        txtMotivo = 'No se pudo copiar: la lista del Dia ' + l.dia + ' ya no esta en edicion.';
+      } else if (motivo === 'link_invalido') {
+        txtMotivo = 'No se pudo copiar: el link ya no es valido o fue revocado. Pidele uno nuevo a tu coordinador.';
+      } else {
+        txtMotivo = 'No se pudo copiar al Dia ' + l.dia + '. Puedes agregar participantes a mano y guardar.';
+      }
+      avisoMsg('msgGlobal', txtMotivo, false);
+      await modalAviso(txtMotivo, 'No se pudo copiar');
+    } catch (e) {
+      console.error('[talento] copiar selectivo Dia 1 -> Dia ' + l.dia + ': error', e);
+      copiando = false;
+      btnCopiar.disabled = false;
+      await modalAviso('No se pudo conectar con la base de datos: ' + e.message, 'Error de conexion');
+    }
+  }
+  );
+  filaAcciones.appendChild(btnCopiar);
+  filaAcciones.appendChild(boton('Cancelar', 'btn-gris', function(){ panel.remove(); }));
+  panel.appendChild(filaAcciones);
   sec.insertBefore(panel, rows);
 }
 
@@ -350,7 +499,7 @@ async function guardarDia(l, rows){
     arr.push(p);
   }
   if (!arr.length) {
-    if (!confirm('Esto dejara VACIA la lista del Dia ' + l.dia + '. Continuar?')) return;
+    if (!(await modalConfirmar('Esto dejara VACIA la lista del Dia ' + l.dia + '. Continuar?', 'Guardar lista vacia'))) return;
   }
   try {
     var ok = await llamar('f_link_talento_guardar', {
