@@ -92,7 +92,7 @@ create table if not exists public.listas (id uuid not null default gen_random_uu
 
 
 -- login_intentos
-create table if not exists public.login_intentos (id bigint not null, ip text not null default 'desconocida'::text, dispositivo text, exito boolean not null, creada_at timestamp with time zone not null default now());
+create table if not exists public.login_intentos (id bigint GENERATED ALWAYS AS IDENTITY, ip text not null default 'desconocida'::text, dispositivo text, exito boolean not null, creada_at timestamp with time zone not null default now());
 
 
 -- personas

@@ -18,7 +18,13 @@ with a non-zero exit code if it fails:
   - every `revoke execute ... from public` must precede its matching
     `grant execute ... to anon`;
   - every created function must have its `revoke execute ... from public`
-    (PostgreSQL grants EXECUTE on new functions to PUBLIC by default).
+    (PostgreSQL grants EXECUTE on new functions to PUBLIC by default);
+  - every GENERATED ... AS IDENTITY column must be emitted as
+    `<type> GENERATED <ALWAYS|BY DEFAULT> AS IDENTITY` with no explicit
+    `not null`, no `default` and no `nextval` (identity implies both).
+    This is a post-condition over the generated text driven by the
+    independent EXPECTED_IDENTITY map (plus whatever the dump's `identidad`
+    column declares), so an empty emission map cannot silence it.
 
 Stdlib only. Idempotent: re-running rewrites the output file.
 """
@@ -123,6 +129,53 @@ FOREIGN_KEY_RE = re.compile(
 )
 KEY_CONSTRAINT_RE = re.compile(r"(primary\s+key|unique)\s*\(([^)]*)\)", re.IGNORECASE)
 
+# ---------------------------------------------------------------------------
+# GENERATED ... AS IDENTITY support
+# ---------------------------------------------------------------------------
+# PostgreSQL implements identity columns via pg_attribute.attidentity, NOT via
+# column_default: a dump query that only reads pg_get_expr(adbin, ...) records
+# the column as plain `<type> not null`, and the generated migration then
+# fails on the first insert with "null value in column id violates not-null
+# constraint" (real incident of 2026-11-09: f_login broke in staging because
+# login_intentos.id was created without its automatic value).
+#
+# Priority when resolving identity columns from the dump CSV:
+#   (a) the `identidad` column written by docs/sql/extraer-esquema.sql, with
+#       entries `tabla.columna=a` (ALWAYS) or `tabla.columna=d` (BY DEFAULT);
+#       several entries are separated by `;`;
+#   (b) the documented fallback map below.
+#
+# The fallback map exists because volcado-produccion-2026-11-09.csv was
+# extracted BEFORE the dump query captured attidentity, so it has no usable
+# `identidad` column. The user verified in production
+# (information_schema.columns, is_identity / identity_generation) that
+# login_intentos.id with identity_generation ALWAYS is the ONLY identity
+# column of the whole schema. NEVER model identity with sequences or
+# nextval(): the production DDL uses GENERATED ... AS IDENTITY.
+IDENTITY_COLUMNS: dict[tuple[str, str], str] = {
+    ("login_intentos", "id"): "ALWAYS",
+}
+
+# POST-CONDITION, deliberately independent from IDENTITY_COLUMNS and from the
+# CSV's `identidad` column. There are two sources on purpose:
+#   - emission (IDENTITY_COLUMNS / CSV `identidad`) decides what the generated
+#     DDL looks like;
+#   - expectation (this map) decides what the generated DDL MUST look like,
+#     and only validate() reads it.
+# Because validate() never consults the emission sources, emptying
+# IDENTITY_COLUMNS or feeding a CSV without an `identidad` column cannot
+# silence the check: the generated migration is still required to carry
+# `login_intentos.id` as `GENERATED ALWAYS AS IDENTITY` (no `default`, no
+# `nextval`, no explicit `not null`), otherwise the script aborts without
+# writing. This is the guard for the 2026-11-09 incident where the dumped
+# `id bigint not null` slipped through with exit 0.
+EXPECTED_IDENTITY: dict[tuple[str, str], str] = {
+    ("login_intentos", "id"): "ALWAYS",
+}
+
+IDENTITY_ENTRY_RE = re.compile(r"(\w+)\.(\w+)=(a|d)$", re.IGNORECASE)
+IDENTITY_MODES = {"a": "ALWAYS", "d": "BY DEFAULT"}
+
 
 def normalize_ddl(raw: str) -> str:
     """Strip surrounding whitespace and guarantee a single trailing semicolon."""
@@ -223,7 +276,9 @@ def sort_key(row: dict) -> tuple[int, int, str]:
     return (int(row["ord"]), subtype, row["objeto"])
 
 
-def prepare(rows: list[dict]) -> tuple[list[tuple[str, str, str]], int]:
+def prepare(
+    rows: list[dict], identity_map: dict[tuple[str, str], str]
+) -> tuple[list[tuple[str, str, str]], int]:
     """Sort, filter and normalize the dump rows into (kept, excluded_count)."""
     rows = sorted(rows, key=sort_key)
 
@@ -238,6 +293,8 @@ def prepare(rows: list[dict]) -> tuple[list[tuple[str, str, str]], int]:
         stmt = normalize_ddl(row["ddl"])
         if not stmt:
             continue
+        if ord_val == "10":
+            stmt = rewrite_identity_columns(stmt, identity_map)
         if ord_val == "80":
             # Function privileges are rewritten: always revoke from PUBLIC
             # first, then grant to anon only if the dump records it. The dump
@@ -255,7 +312,107 @@ def split_columns(raw: str | None) -> tuple[str, ...]:
     return tuple(col.strip().lower() for col in raw.split(",") if col.strip())
 
 
-def validate(kept: list[tuple[str, str, str]]) -> list[str]:
+def split_top_level(text: str, sep: str = ",") -> list[str]:
+    """Split on `sep` only outside parentheses and single-quoted strings."""
+    parts: list[str] = []
+    current: list[str] = []
+    depth = 0
+    in_quote = False
+    for ch in text:
+        if in_quote:
+            if ch == "'":
+                in_quote = False
+        elif ch == "'":
+            in_quote = True
+        elif ch == "(":
+            depth += 1
+        elif ch == ")":
+            depth -= 1
+        elif ch == sep and depth == 0:
+            parts.append("".join(current))
+            current = []
+            continue
+        current.append(ch)
+    if current:
+        parts.append("".join(current))
+    return parts
+
+
+def load_identity_columns(rows: list[dict]) -> tuple[dict[tuple[str, str], str], str]:
+    """Resolve which (table, column) pairs are GENERATED ... AS IDENTITY.
+
+    Priority: (a) the dump's `identidad` column when it carries at least one
+    parseable entry; (b) otherwise the documented IDENTITY_COLUMNS fallback
+    map. Returns (map, source-label) where source-label says which via won.
+    """
+    entries: dict[tuple[str, str], str] = {}
+    for row in rows:
+        raw = (row.get("identidad") or "").strip()
+        if not raw:
+            continue
+        for entry in raw.split(";"):
+            entry = entry.strip()
+            if not entry:
+                continue
+            m = IDENTITY_ENTRY_RE.match(entry)
+            if not m:
+                raise ValueError(f"entrada de identidad no interpretable: {entry!r}")
+            table = m.group(1).lower()
+            column = m.group(2).lower()
+            entries[(table, column)] = IDENTITY_MODES[m.group(3).lower()]
+    if entries:
+        return entries, "columna identidad del CSV"
+    return dict(IDENTITY_COLUMNS), "mapa de respaldo IDENTITY_COLUMNS"
+
+
+def rewrite_identity_columns(ddl: str, identity_map: dict[tuple[str, str], str]) -> str:
+    """Rewrite the identity columns of a `create table` statement.
+
+    A dumped identity column looks like `<name> <type> not null` (it has no
+    default: the automatic value lives in attidentity, not column_default).
+    This emits it as `<name> <type> GENERATED <mode> AS IDENTITY`, dropping
+    the explicit `not null` and any `default` (identity implies both). Tables
+    without identity columns pass through untouched.
+    """
+    m = CREATE_TABLE_RE.search(ddl)
+    if not m:
+        return ddl
+    table = m.group(1).lower()
+    cols = {col: mode for (tbl, col), mode in identity_map.items() if tbl == table}
+    if not cols:
+        return ddl
+    body_start = m.end()
+    body_end = ddl.rfind(")")
+    if body_end < body_start:
+        raise ValueError(f"create table de {table} sin cuerpo interpretable")
+    parts = split_top_level(ddl[body_start:body_end])
+    rebuilt: list[str] = []
+    for part in parts:
+        tokens = part.strip().split()
+        if tokens and tokens[0].lower() in cols:
+            mode = cols[tokens[0].lower()]
+            # Keep the part's original leading whitespace so the rebuilt
+            # statement keeps the dump's spacing (e.g. no space after "(").
+            lead = part[: len(part) - len(part.lstrip())]
+            # Type tokens run until the not-null marker or a default clause;
+            # a `generated` token (already-rewritten input) ends them too.
+            end = len(tokens)
+            for i in range(1, len(tokens)):
+                if re.fullmatch(r"not|default|generated", tokens[i], re.IGNORECASE):
+                    end = i
+                    break
+            col_type = " ".join(tokens[1:end])
+            if not col_type:
+                raise ValueError(
+                    f"columna identity {table}.{tokens[0]} sin tipo interpretable en: {part.strip()}"
+                )
+            rebuilt.append(f"{lead}{tokens[0]} {col_type} GENERATED {mode} AS IDENTITY")
+        else:
+            rebuilt.append(part)
+    return ddl[:body_start] + ",".join(rebuilt) + ddl[body_end:]
+
+
+def validate(kept: list[tuple[str, str, str]], expected_identity: dict[tuple[str, str], str] | None = None) -> list[str]:
     """Validate statement ordering; return (errors, counts), errors empty = OK.
 
     Checks, in statement order:
@@ -265,7 +422,9 @@ def validate(kept: list[tuple[str, str, str]]) -> list[str]:
       (c) every CREATE FUNCTION comes after all CREATE TABLE statements;
       (d) every `grant execute ... to anon` is preceded by a matching
           `revoke execute ... from public` for the same function;
-      (e) every created function has its `revoke execute ... from public`.
+      (e) every created function has its `revoke execute ... from public`;
+      (f) every identity column is emitted as `GENERATED <mode> AS IDENTITY`
+          with no explicit `not null` and no `default` in its definition.
 
     Returns (errors, counts): errors is a list of messages (empty = OK) and
     """
@@ -273,6 +432,8 @@ def validate(kept: list[tuple[str, str, str]]) -> list[str]:
     counts = Counter()
     revoked_public: set[str] = set()
     created_functions: set[str] = set()
+    expected_identity = expected_identity or {}
+    table_defs: dict[str, str] = {}
 
     # Tables defined anywhere in the file: every one of them must exist before
     # the first function definition.
@@ -293,6 +454,7 @@ def validate(kept: list[tuple[str, str, str]]) -> list[str]:
         m = CREATE_TABLE_RE.search(flat)
         if m:
             created_tables.add(m.group(1).lower())
+            table_defs[m.group(1).lower()] = flat
             counts["tables"] += 1
             continue
 
@@ -399,6 +561,54 @@ def validate(kept: list[tuple[str, str, str]]) -> list[str]:
             "migracion (PostgreSQL concede EXECUTE a PUBLIC por defecto y anon hereda)"
         )
 
+    # (f) identity columns must survive as GENERATED ... AS IDENTITY with no
+    # explicit not-null, no default and no nextval, otherwise the first INSERT
+    # without id fails with "null value in column id violates not-null
+    # constraint" (the f_login staging incident of 2026-11-09). This is a
+    # post-condition over the generated text, driven by EXPECTED_IDENTITY (and
+    # extended with whatever the dump's `identidad` column declares): it does
+    # NOT read the emission sources (IDENTITY_COLUMNS / CSV), so an empty
+    # emission map can never silence this check.
+    for (table, column), mode in sorted(expected_identity.items()):
+        ddl = table_defs.get(table)
+        if ddl is None:
+            errors.append(
+                f"la columna identity {table}.{column} no tiene create table en la migracion"
+            )
+            continue
+        m = CREATE_TABLE_RE.search(ddl)
+        body = ddl[m.end():ddl.rfind(")")]
+        coldef = next(
+            (
+                part.strip()
+                for part in split_top_level(body)
+                if part.strip().split() and part.strip().split()[0].lower() == column
+            ),
+            None,
+        )
+        if coldef is None:
+            errors.append(
+                f"la columna identity {table}.{column} no aparece en el create table de {table}"
+            )
+            continue
+        upper = coldef.upper()
+        if "GENERATED" not in upper or "AS IDENTITY" not in upper or mode.upper() not in upper:
+            errors.append(
+                f"la columna identity {table}.{column} no se emite como GENERATED {mode} AS IDENTITY "
+                f"(definicion: {coldef})"
+            )
+        if "DEFAULT" in upper or "NEXTVAL" in upper:
+            errors.append(
+                f"la columna identity {table}.{column} no debe llevar default ni nextval "
+                f"(definicion: {coldef})"
+            )
+        if "NOT NULL" in upper:
+            errors.append(
+                f"la columna identity {table}.{column} no debe llevar not null explicito "
+                "(GENERATED ... AS IDENTITY ya lo implica) "
+                f"(definicion: {coldef})"
+            )
+
     return errors, counts
 
 
@@ -445,13 +655,31 @@ def main() -> int:
         return 1
 
     try:
-        kept, excluded_count = prepare(rows)
+        identity_map, identity_source = load_identity_columns(rows)
+    except ValueError as exc:
+        print(f"VALIDACION FALLO: {exc}", file=sys.stderr)
+        print(f"VALIDACION FALLO: no se escribio {output_path}", file=sys.stderr)
+        return 1
+    print(
+        f"Identity: {len(identity_map)} columna(s) GENERATED ... AS IDENTITY "
+        f"[{identity_source}]"
+    )
+    # Post-condition map for validate(): EXPECTED_IDENTITY first (independent
+    # of the emission sources), extended with any additional (table, column)
+    # the dump's `identidad` column declares. Known production columns keep
+    # their EXPECTED mode even if a faulty CSV declared a different one.
+    expected_identity = dict(EXPECTED_IDENTITY)
+    for key, mode in identity_map.items():
+        expected_identity.setdefault(key, mode)
+
+    try:
+        kept, excluded_count = prepare(rows, identity_map)
     except ValueError as exc:
         print(f"VALIDACION FALLO: {exc}", file=sys.stderr)
         print(f"VALIDACION FALLO: no se escribio {output_path}", file=sys.stderr)
         return 1
 
-    errors, validation_counts = validate(kept)
+    errors, validation_counts = validate(kept, expected_identity)
     if errors:
         for error in errors:
             print(f"VALIDACION FALLO: {error}", file=sys.stderr)
