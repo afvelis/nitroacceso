@@ -5,6 +5,7 @@ Esta carpeta contiene el esquema del backend de NitroAccesos versionado en el re
 ## Contenido
 
 - `migrations/0001_esquema_inicial.sql` — esquema completo: 17 tablas, 82 funciones, 75 restricciones, 1 índice único parcial, RLS en todas las tablas, el event trigger `ensure_rls` y el mapa de permisos real (78 `grant execute` + 4 `revoke execute`).
+- `scripts/volcado-a-migracion.py` (en la raíz del repo) — genera `0001_esquema_inicial.sql` a partir del volcado de producción y **valida el orden de las claves foráneas** antes de escribir el archivo: cada `foreign key` debe ir después de la `primary key`/`unique` a la que apunta (si no, PostgreSQL falla con `42830`) y las funciones deben ir después de las tablas. Si la validación falla, el script aborta sin escribir nada.
 - `seed.sql` — datos ficticios mínimos para probar la app y los flujos de P1-04 (config, coordinadores, talento con listas y personas, stand con vendedores, cortesía tipo lista, aliado con asignación y concurso).
 
 ## Cómo aplicar la migración en un proyecto nuevo
@@ -12,7 +13,8 @@ Esta carpeta contiene el esquema del backend de NitroAccesos versionado en el re
 1. Crea el proyecto Supabase (nuevo y **vacío**: sin tablas ni funciones).
 2. Abre el **SQL Editor** del proyecto destino.
 3. Pega el contenido completo de `migrations/0001_esquema_inicial.sql` y ejecútalo en **una sola pasada**.
-4. Verifica que no haya errores y, de querer, revisa el conteo de objetos con consultas a los catálogos.
+4. El SQL va envuelto en una **transacción explícita** (`begin;` ... `commit;`): si algo falla a mitad del archivo, no deja el proyecto a medias — se revierte todo y la base queda intacta.
+5. Verifica que no haya errores y, de querer, revisa el conteo de objetos con consultas a los catálogos.
 
 ## Cómo cargar el seed
 
