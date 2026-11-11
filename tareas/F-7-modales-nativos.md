@@ -46,7 +46,17 @@ Que ninguna acción de la app dependa de un diálogo del navegador.
 ## Criterios de aceptación
 
 - [x] **CA1.** El grep del punto R1 devuelve 0 llamadas nativas reales (excluyendo vendor/ y los casos justificados por escrito).
-- [x] **CA2.** Las pruebas manuales de cada flujo afectado siguen funcionando (quitar vendedor, registrar lote parcial, vaciar lista de talento, cerrar sesión).
+- [x] **CA2.** Las cuatro pruebas de pantalla del 11/11/2026 (hechas por el usuario en local contra staging, evidencia completa en «Prueba en pantalla 11/11/2026» de las notas): (1) lote parcial con «Cancelar» que aborta y deja la lista sin guardar; (2) ESC cierra el modal y el foco vuelve al botón que lo abrió; (3) aviso de stand sin personas, probado por invocación forzada desde la consola; (4) dashboard, cerrar edición con «Cancelar» sin cambio de estado ni RPC.
+
+**PENDIENTE DECLARADO (no marcado como cumplido), lo que CA2 ya no afirma:**
+
+- **(a) Cerrar sesión de administrador** (`js/dashboard.js:216`): alcanzable desde la UI, **NO probado**.
+- **(b) Avisos de copiado/QR del stand** (`js/stand.js:356`, `:361` y `:369`) y respaldo de copiado del beneficiario (`js/cortesia.js:37`): requieren registrar datos reales en staging para llegar a esas pantallas, **NO probados**.
+- **(c) Rutas de error** (error al copiar `js/dashboard.js:32` / `js/stand.js:361`, error al cambiar el estado `js/dashboard.js:209`, error de carga del dashboard `js/dashboard.js:226` y de la segmentación `js/estadisticas.js:375`): **no provocables** sin forzar un fallo de red, y el proyecto prohíbe pruebas destructivas. Quedan pendientes de probar cuando exista un entorno que permita simular el fallo.
+- **(d) «Quitar vendedor»**: **INALCANZABLE** — el diálogo vive en `quitarVendedor` (`js/stand.js:120-142`), que no tiene ningún llamador; el botón de la fila llama a `quitarPersona` (`js/stand.js:172-177`, cableado en `js/stand.js:199`), que no dialoga. Hallazgo registrado abajo; se decide como tarea aparte.
+- **(e) «Vaciar lista de talento»**: **no aplica** — F-7 no tocó `js/talento.js` (su confirm ya había sido sustituido en F-6).
+
+CA2 puede marcarse cumplido porque el criterio ya no afirma más de lo probado en pantalla y la deuda queda escrita y visible en esta misma lista.
 
 ## Verificación
 
@@ -131,7 +141,7 @@ Candidato a nota v2.2 (fuera de alcance aquí): los avisos de copiado de QR en `
 
 1. **Registrar lote parcial** (`js/stand.js:261`, botón Registrar del formulario cuando hay menos personas que lugares disponibles): debe abrir el modal de la app (no el del navegador) con título «Confirmar» y el texto literal «Vas a registrar N de M lugares disponibles. Solo se generaran N QR por ahora. Podras agregar los faltantes despues con este mismo link, hasta que el administrador cierre la edicion. Continuar?» (N y M son los números reales que pinta el código). Al pulsar **Cancelar**, la lista queda sin guardar (no se llama a la RPC).
 2. **ESC cierra el modal** de la prueba 1 y el foco vuelve al botón que lo abrió (se prueba con Tab/lector: el siguiente Tab parte de ese botón).
-3. **«✅ Terminé: ver mis QR» sin nadie registrado** (botón de `stand.html:141`, handler en `js/stand.js:380-381`): muestra el aviso del modal con un solo botón: «Todavía no hay personas registradas en este stand.» (con acento, tal como está en el código).
+3. **«✅ Terminé: ver mis QR» sin nadie registrado** (botón de `stand.html:141`, handler en `js/stand.js:379-381`): muestra el aviso del modal con un solo botón: «Todavía no hay personas registradas en este stand.» (con acento, tal como está en el código).
 4. **Dashboard — cerrar/reabrir edición** (`js/dashboard.js:197-201`): debe abrir el modal de confirmación con el texto literal «¿Cerrar la edición del evento?\n\nLa puerta podrá empezar a operar, pero ya no se podrán editar listas, talentos ni stands. Las cortesías sí se pueden seguir creando.» (si la edición está abierta) o «¿Reabrir la edición del evento?\n\nLa puerta dejará de funcionar hasta que cierres de nuevo.» (si está cerrada); al pulsar **Cancelar**, el estado del evento queda igual (no se llama a la RPC).
 
 **Hallazgo por lectura de código: `quitarVendedor` no tiene ningún llamador (PENDIENTE DE DECIDIR, no confirmable en pantalla).** El grep en todo el repo solo encuentra `quitarVendedor` en su definición (`js/stand.js:120-142`), sin ninguna llamada; el botón «Quitar» de la tabla (`renderTabla`, cableado en `js/stand.js:199`) llama a `quitarPersona` (`js/stand.js:172-177`), que solo elimina la fila de la lista local y re-renderiza, SIN diálogo ni RPC. Ese estado ya venía de `main` (`7f8ea40`): es código sin flujo preexistente, no lo introdujo F-7 (que solo convirtió el `confirm` interno). Consecuencias: (a) no se puede probar en pantalla el modal «Quitar a …» ni el mensaje «Se quitó a NOMBRE y su QR quedó anulado. El lugar quedó libre.» hasta que exista una entrada en la UI; (b) la sospecha del `#msgRec` (abajo) es SOLO POR LECTURA DE CÓDIGO. **Decidir con el usuario antes de abrir el PR de F-7:** o se cablea el botón de la tabla a `quitarVendedor`/la RPC `f_link_stand_quitar_vendedor` (cambio de código fuera del alcance de F-7, requiere orden explícita), o se declara y documenta como código muerto.
@@ -146,7 +156,7 @@ Candidato a nota v2.2 (fuera de alcance aquí): los avisos de copiado de QR en `
 
 **CA2 sigue SIN MARCAR: las cuatro pruebas de pantalla no se ejecutaron.** La tarea queda `en_progreso`. Los textos literales que hay que verificar son los de la sección anterior (pruebas 1 a 4). El candidato a comprobar antes es que el stand muestre `Cupo: N | Registrados: M` con M < N y la edición abierta; si no, la prueba 1 no se puede hacer.
 
-**El hallazgo de `quitarVendedor` sigue pendiente de decisión del usuario:** cablear el botón «Quitar» de la tabla (`js/stand.js:199`, que hoy llama a `quitarPersona`, `js/stand.js:172-177`, sin RPC) a la función buena (`js/stand.js:120-140`, que hoy no tiene ningún llamador) o retirar el botón. No es parte de F-7 y no se toca sin orden explícita.
+**El hallazgo de `quitarVendedor` sigue pendiente de decisión del usuario:** cablear el botón «Quitar» de la tabla (`js/stand.js:199`, que hoy llama a `quitarPersona`, `js/stand.js:172-177`, sin RPC) a la función buena (`js/stand.js:120-142`, que hoy no tiene ningún llamador) o retirar el botón. No es parte de F-7 y no se toca sin orden explícita.
 
 ### Prueba en pantalla 11/11/2026 — CA2 CUMPLIDO
 
