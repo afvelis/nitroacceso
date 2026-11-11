@@ -125,7 +125,7 @@ Por qué `js/admin.js` y `js/puerta.js` NO cuentan: ambos redirigen `window.aler
 
 Misma pregunta literal, misma decisión, mismo orden de flujo. Cada `confirm('...')` pasó a `await NA.confirmar('...')` y cada `alert('...')` a `NA.avisar('...')` con el string intacto (incluidos los `\n\n` y los emojis). Solo se convirtió en `async` el listener de `btnSalir` en `js/dashboard.js` (antes sincrónico); su único llamador es `addEventListener`, sin dependencia sincrónica del retorno.
 
-### 5. Pendiente (CA2)
+### 5. Prueba en pantalla de CA2 — plan original, superado
 
 La prueba manual en navegador de los flujos afectados la hace el usuario en staging: quitar vendedor, registrar lote parcial, avisos de QR/copiado y stand vacío (cap. 04), cerrar sesión admin (cap. 01), cerrar/reabrir edición y errores de carga (cap. 02), respaldo de copiado del beneficiario (cap. 05), error de segmentación (cap. 08). «Mientras eso no ocurra, la tarea sigue `en_progreso` y CA2 sin marcar» era el plan de la fase de implementación, SUPERADO por el CA2 acotado y el PENDIENTE DECLARADO (líneas 51-59): la verdad de hoy es que la tarea quedó `hecho` con las cuatro pruebas del 11/11 y la deuda declarada en el bloque «PENDIENTE DECLARADO».
 
