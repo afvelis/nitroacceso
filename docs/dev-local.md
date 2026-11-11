@@ -9,7 +9,7 @@
 
 `scripts/dev-server.py` es el servidor local de desarrollo de NitroSystem: sirve el repo **tal cual está en disco** y permite probar la app contra **staging** sin tocar el CSP publicado.
 
-Es la única forma correcta de probar en local. No hace falta Docker, ni Node, ni WSL: solo Python, que ya viene con Windows (`py`).
+Es la única forma correcta de probar en local. No hace falta Docker, ni Node, ni WSL: solo **Python 3**. En Windows se lanza con `py` (y, si no existe, con `python`).
 
 ## 2 · Cómo arrancarlo (Windows, equipo del usuario)
 
@@ -33,7 +33,7 @@ Después abrir en el navegador: **`http://127.0.0.1:8000/index.html`**
 - Solo acepta dos argumentos: `--puerto` (por defecto **8000**) y `--ip` (por defecto **127.0.0.1**). **No existe `--env`**: el entorno lo fuerza el servidor por diseño.
 - Escucha en **loopback** y rechaza cualquier otra IP terminando con un error y código de salida distinto de 0 (`--ip 0.0.0.0` está prohibido por diseño).
 - En cada respuesta HTTP **retira la etiqueta `<meta http-equiv="Content-Security-Policy">` solo en la respuesta** (la quita por expresión regular, incluida si viene en mayúsculas). El HTML en disco y el CSP de GitHub Pages quedan intactos, ni una coma.
-- Inyecta `<script>window.__NA_ENV__ = "staging";</script>` **inmediatamente antes de la etiqueta que carga `config.js`**, para que se resuelva el entorno al cargar. Si no encuentra esa etiqueta, lo dice y falla en lugar de servir la página a ciegas.
+- Inyecta `<script>window.__NA_ENV__ = "staging";</script>` **inmediatamente antes de la etiqueta que carga `config.js`**, para que se resuelva el entorno al cargar. Si no encuentra esa etiqueta, **no inyecta y lo avisa en el log**: esa página se quedaría en producción, así que hay que hacerlo caso.
 - Añade las cabeceras `X-NA-Dev-Server: local-sin-csp` y `Cache-Control: no-store, no-cache, must-revalidate` a cada respuesta.
 - **No escribe nada en disco.**
 
