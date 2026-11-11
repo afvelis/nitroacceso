@@ -2,7 +2,7 @@
 id: "F-7"
 titulo: "Sustituir los diálogos nativos por los modales de la app (regla v2.1)"
 prioridad: "P1"
-estado: "en_progreso"
+estado: "hecho"
 area: "frontend"
 depende_de: []
 archivos:
@@ -46,7 +46,7 @@ Que ninguna acción de la app dependa de un diálogo del navegador.
 ## Criterios de aceptación
 
 - [x] **CA1.** El grep del punto R1 devuelve 0 llamadas nativas reales (excluyendo vendor/ y los casos justificados por escrito).
-- [ ] **CA2.** Las pruebas manuales de cada flujo afectado siguen funcionando (quitar vendedor, registrar lote parcial, vaciar lista de talento, cerrar sesión).
+- [x] **CA2.** Las pruebas manuales de cada flujo afectado siguen funcionando (quitar vendedor, registrar lote parcial, vaciar lista de talento, cerrar sesión).
 
 ## Verificación
 
@@ -147,3 +147,14 @@ Candidato a nota v2.2 (fuera de alcance aquí): los avisos de copiado de QR en `
 **CA2 sigue SIN MARCAR: las cuatro pruebas de pantalla no se ejecutaron.** La tarea queda `en_progreso`. Los textos literales que hay que verificar son los de la sección anterior (pruebas 1 a 4). El candidato a comprobar antes es que el stand muestre `Cupo: N | Registrados: M` con M < N y la edición abierta; si no, la prueba 1 no se puede hacer.
 
 **El hallazgo de `quitarVendedor` sigue pendiente de decisión del usuario:** cablear el botón «Quitar» de la tabla (`js/stand.js:199`, que hoy llama a `quitarPersona`, `js/stand.js:172-177`, sin RPC) a la función buena (`js/stand.js:120-140`, que hoy no tiene ningún llamador) o retirar el botón. No es parte de F-7 y no se toca sin orden explícita.
+
+### Prueba en pantalla 11/11/2026 — CA2 CUMPLIDO
+
+Las cuatro pruebas las ejecutó el usuario el 11/11/2026 en local contra staging (dev-server + `?env=staging`, ver `docs/dev-local.md`), que es el método oficial cuando Pages no tiene todavía la rama. La tarea queda `hecho`.
+
+1. **Lote parcial con Cancelar que aborta (PRIORIZADA, alcanzable por la UI).** Stand `STD-DEMO01`, cupo 4, registrados 2, 1 persona en la lista (`Prueba / F7 / 20009999`), edición abierta. Al pulsar el botón `Registrar y generar los QR` (`stand.html:113`) salió el modal propio de la app, título «Confirmar», texto literal: «Vas a registrar 1 de 2 lugares disponibles. Solo se generaran 1 QR por ahora. Podras agregar los faltantes despues con este mismo link, hasta que el administrador cierre la edicion. Continuar?». Se pulsó **Cancelar**: tras F5 la cabecera seguía «Cupo: 4 | Registrados: 2 | Quedan: 2» y la tabla solo tenía Vendedor Uno/Vendedor Dos — **la RPC `f_link_stand_registrar_lote` NO se llamó** (aborta como antes del cambio, R4).
+2. **ESC cierra el modal y devuelve el foco.** Con el modal de la prueba 1 abierto: ESC lo cerró dejando la página activa y sin mensaje alguno; después, SIN tocar el ratón, **Enter volvió a abrir el modal** — prueba de que el foco regresó al botón que lo abrió (comportamiento diseñado en `js/modales.js`).
+3. **Aviso de stand sin personas — NO es alcanzable con el ratón; se probó por INVOCACIÓN FORZADA desde la consola.** Por qué: `js/stand.js:117` oculta `#barraFija` (donde vive el botón `✅ Terminé: ver mis QR`, `stand.html:141`) justo cuando `datosStand.vendedores.length === 0`, mientras el aviso de `js/stand.js:381` exige justo lo contrario. La ruta descrita por la interfaz no existe: la prueba 3 del estado anterior describía una situación inalcanzable, no un fallo de F-7. Invocación forzada usada: `datosStand.vendedores.length = 0; document.getElementById('btnTermine').click();` Resultado: modal propio, título «Aviso», texto «Todavía no hay personas registradas en este stand.» (con tilde), UN solo botón «Aceptar». Tras Aceptar y F5 la base siguió intacta (Registrados: 2).
+4. **Dashboard — confirmación de cerrar edición con Cancelar.** Edición abierta, píldora `Evento abierto (editando)`, botón `🔒 Cerrar edición`. Al pulsarlo salió el modal propio, título «Confirmar», con DOS párrafos: «¿Cerrar la edición del evento?» + salto + «La puerta podrá empezar a operar, pero ya no se podrán editar listas, talentos ni stands. Las cortesías sí se pueden seguir creando.», botones Cancelar/Aceptar. Se pulsó **Cancelar**: la píldora y el botón quedaron igual y NO hubo recarga (la RPC no se llamó).
+
+**Hallazgo confirmado en esta sesión: el botón «Quitar» del stand no hace RPC ni diálogo.** `quitarPersona` (`js/stand.js:172`) solo hace `splice` en la lista local y re-renderiza: sin RPC, sin diálogo, sin anular QR. El botón «Quitar» de la tabla lo llama (`js/stand.js:199`), mientras que la función buena `quitarVendedor` (`js/stand.js:120`), que sí abriría el confirm y llamaría a la RPC, no tiene ningún llamador. Consecuencia real el día del evento: el QR de una persona «quitada» en pantalla seguiría funcionando en la puerta. **No se arregla aquí:** es tarea aparte que hay que decidir con el usuario (cablear el botón a `quitarVendedor`/`f_link_stand_quitar_vendedor` o retirar el botón).
