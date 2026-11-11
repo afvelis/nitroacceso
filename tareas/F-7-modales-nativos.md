@@ -50,9 +50,9 @@ Que ninguna acción de la app dependa de un diálogo del navegador.
 
 **PENDIENTE DECLARADO (no marcado como cumplido), lo que CA2 ya no afirma:**
 
-- **(a) Cerrar sesión de administrador** (`js/dashboard.js:216`): alcanzable desde la UI, **NO probado**.
+- **(a) Cerrar sesión de administrador** (`js/dashboard.js:216`): alcanzable desde la UI, **NO probado**: quedó fuera de las cuatro pruebas priorizadas del 11/11 (las de `ESTADO.md` §4) y no hay impedimento técnico — probarlo cierra la sesión y obliga a reentrar con el PIN de administrador.
 - **(b) Avisos de copiado/QR del stand** (`js/stand.js:356`, `:361` y `:369`) y respaldo de copiado del beneficiario (`js/cortesia.js:37`): requieren registrar datos reales en staging para llegar a esas pantallas, **NO probados**.
-- **(c) Rutas de error** (error al copiar `js/dashboard.js:32` / `js/stand.js:361`, error al cambiar el estado `js/dashboard.js:209`, error de carga del dashboard `js/dashboard.js:226` y de la segmentación `js/estadisticas.js:375`): **no provocables** sin forzar un fallo de red, y el proyecto prohíbe pruebas destructivas. Quedan pendientes de probar cuando exista un entorno que permita simular el fallo.
+- **(c) Rutas de error** (error al copiar `js/dashboard.js:32` / `js/stand.js:361`, error al cambiar el estado `js/dashboard.js:209`, error de carga del dashboard `js/dashboard.js:226` y de la segmentación `js/estadisticas.js:375`): **no provocables** sin forzar un fallo de red o un estado imposible. La regla real de `AGENTS.md` no lo prohibe directamente: prohibe las pruebas destructivas, de fuerza bruta y de carga contra PRODUCCIÓN (staging es el entorno de pruebas). El motivo se mantiene: forzar un fallo artificial no es una prueba legítima en staging. Quedan pendientes de probar cuando exista un entorno que permita simular el fallo.
 - **(d) «Quitar vendedor»**: **INALCANZABLE** — el diálogo vive en `quitarVendedor` (`js/stand.js:120-142`), que no tiene ningún llamador; el botón de la fila llama a `quitarPersona` (`js/stand.js:172-177`, cableado en `js/stand.js:199`), que no dialoga. Hallazgo registrado abajo; se decide como tarea aparte.
 - **(e) «Vaciar lista de talento»**: **no aplica** — F-7 no tocó `js/talento.js` (su confirm ya había sido sustituido en F-6).
 
@@ -66,7 +66,7 @@ Grep reproducible contra la raíz del repo (excluyendo `vendor/`), por ejemplo:
 grep -rn --include='*.js' -E '(^|[^.\w])(alert|confirm|prompt)\(' . --exclude-dir=vendor
 ```
 
-y revisión manual de cada resultado: si el archivo redirige `window.alert` a su propio modal, no cuenta como violación; si sale nativo, sí. Después, prueba manual de cada flujo afectado en staging.
+y revisión manual de cada resultado: si el archivo redirige `window.alert` a su propio modal, no cuenta como violación; si sale nativo, sí. Después, prueba manual de cada flujo afectado en staging — esta es la receta ideal del diseño original, no el alcance ejecutado hoy (lo probado el 11/11 son las cuatro pruebas de CA2 y la deuda queda en el «PENDIENTE DECLARADO»).
 
 ## Fuera de alcance
 
@@ -75,7 +75,7 @@ y revisión manual de cada resultado: si el archivo redirige `window.alert` a su
 
 ## Notas de implementación
 
-**Fases A y B hechas (F-7 queda `en_progreso` hasta la prueba manual del usuario). Implementado el 11/11/2026 en la rama `agente/2026-11-11-f7-modales-nativos`.**
+**Fases A y B hechas (PLAN de la fase de implementación: entonces se contemplaba dejar F-7 en `en_progreso` hasta la prueba manual del usuario — plan SUPERADO por el CA2 acotado y el PENDIENTE DECLARADO de arriba, líneas 51-59). Implementado el 11/11/2026 en la rama `agente/2026-11-11-f7-modales-nativos`.**
 
 ### 1. Inventario real de llamadas nativas (R1), con grep reproducible
 
@@ -127,7 +127,7 @@ Misma pregunta literal, misma decisión, mismo orden de flujo. Cada `confirm('..
 
 ### 5. Pendiente (CA2)
 
-La prueba manual en navegador de los flujos afectados la hace el usuario en staging: quitar vendedor, registrar lote parcial, avisos de QR/copiado y stand vacío (cap. 04), cerrar sesión admin (cap. 01), cerrar/reabrir edición y errores de carga (cap. 02), respaldo de copiado del beneficiario (cap. 05), error de segmentación (cap. 08). Mientras eso no ocurra, la tarea sigue `en_progreso` y CA2 sin marcar.
+La prueba manual en navegador de los flujos afectados la hace el usuario en staging: quitar vendedor, registrar lote parcial, avisos de QR/copiado y stand vacío (cap. 04), cerrar sesión admin (cap. 01), cerrar/reabrir edición y errores de carga (cap. 02), respaldo de copiado del beneficiario (cap. 05), error de segmentación (cap. 08). «Mientras eso no ocurra, la tarea sigue `en_progreso` y CA2 sin marcar» era el plan de la fase de implementación, SUPERADO por el CA2 acotado y el PENDIENTE DECLARADO (líneas 51-59): la verdad de hoy es que la tarea quedó `hecho` con las cuatro pruebas del 11/11 y la deuda declarada en el bloque «PENDIENTE DECLARADO».
 
 Candidato a nota v2.2 (fuera de alcance aquí): los avisos de copiado de QR en `js/stand.js` y el fallback de `js/cortesia.js:37` son solo avisos informativos; la norma v2.2 pediría verlos junto al botón pulsado. No se cambió el diseño de las pantallas en F-7: solo el medio del diálogo.
 
