@@ -49,6 +49,7 @@
       borderRadius: '8px',
       border: '1px solid #cbd5e1',
       background: '#f8fafc',
+      color: '#111',
       cursor: 'pointer',
       font: 'inherit'
     },
@@ -123,16 +124,40 @@
     fondo.appendChild(caja);
 
     // Escape y clic en el fondo = misma decisión que Cancelar.
+    // Tab queda atrapado dentro de la caja: ciclo entre sus elementos
+    // enfocables (Tab en el último vuelve al primero; Shift+Tab en el
+    // primero salta al último), igual que hace el diálogo nativo al
+    // bloquear la página de fondo.
+    function enfocables() {
+      return caja.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+    }
     function alTeclado(ev) {
       if (ev.key === 'Escape') {
         ev.preventDefault();
         cerrar(cancelar);
+        return;
+      }
+      if (ev.key === 'Tab') {
+        var lista = enfocables();
+        if (!lista.length) { ev.preventDefault(); return; }
+        var activo = document.activeElement;
+        var dentro = caja.contains(activo);
+        if (ev.shiftKey) {
+          if (!dentro || activo === lista[0]) {
+            ev.preventDefault();
+            lista[lista.length - 1].focus();
+          }
+        } else {
+          if (!dentro || activo === lista[lista.length - 1]) {
+            ev.preventDefault();
+            lista[0].focus();
+          }
+        }
       }
     }
     fondo.addEventListener('mousedown', function (ev) {
       if (ev.target === fondo) cerrar(cancelar);
     });
-    document.addEventListener('keydown', alTeclado, true);
 
     function cerrar(valor) {
       fondo.remove();
@@ -143,6 +168,10 @@
     }
 
     document.body.appendChild(fondo);
+    // El listener de teclado se registra DESPUÉS de pintar el modal: si
+    // appendChild lanzara, el catch de abrirSiguiente resolvería sin dejar
+    // un listener colgado en document.
+    document.addEventListener('keydown', alTeclado, true);
     if (btnPrincipal) btnPrincipal.focus();
   }
 

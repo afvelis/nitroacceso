@@ -120,7 +120,3 @@ Misma pregunta literal, misma decisión, mismo orden de flujo. Cada `confirm('..
 La prueba manual en navegador de los flujos afectados la hace el usuario en staging: quitar vendedor, registrar lote parcial, avisos de QR/copiado y stand vacío (cap. 04), cerrar sesión admin (cap. 01), cerrar/reabrir edición y errores de carga (cap. 02), respaldo de copiado del beneficiario (cap. 05), error de segmentación (cap. 08). Mientras eso no ocurra, la tarea sigue `en_progreso` y CA2 sin marcar.
 
 Candidato a nota v2.2 (fuera de alcance aquí): los avisos de copiado de QR en `js/stand.js` y el fallback de `js/cortesia.js:37` son solo avisos informativos; la norma v2.2 pediría verlos junto al botón pulsado. No se cambió el diseño de las pantallas en F-7: solo el medio del diálogo.
-
-## Notas de implementación
-
-(vacío por ahora)

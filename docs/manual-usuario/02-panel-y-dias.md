@@ -72,7 +72,7 @@ La tarjeta **"🔔 Alertas"** te avisa si algo necesita atención:
 
 3. Al aceptar, el evento vuelve a "abierto" y la puerta queda frenada hasta que cierres de nuevo.
 
-Tanto estas confirmaciones como los avisos de error de esta pantalla (por ejemplo **"Error al cambiar el estado..."** o **"No se pudo cargar el dashboard. Verifica tu sesión."**) aparecen en una **ventana de la propia NitroSystem** (con los botones **"Aceptar"** y **"Cancelar"**), no en un diálogo del navegador; el texto y la decisión son los mismos de antes.
+Tanto estas confirmaciones como los avisos de error de esta pantalla (por ejemplo **"Error al cambiar el estado..."** o **"No se pudo cargar el dashboard. Verifica tu sesión."**) aparecen en una **ventana de la propia NitroSystem** (las confirmaciones con los botones **"Aceptar"** y **"Cancelar"**; los avisos de error, solo con **"Aceptar"**), no en un diálogo del navegador; el texto y la decisión son los mismos de antes.
 
 **7. Accesos rápidos**
 
