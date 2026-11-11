@@ -60,7 +60,7 @@ Debe terminar con `RESULTADO: ... 0 FALLAS`. Si sale alguna `[FALLA]` que mencio
     cd C:\Users\afvel\nitroacceso
     py scripts\dev-server.py
 
-Debe imprimir el recuadro de `====` y la línea `Sirviendo la raiz del repo: C:\Users\afvel\nitroacceso`, y después **la ventana se queda colgada sin devolver el símbolo del sistema**. Eso significa que está escuchando: **no la cierres**. Esa ventana no se usa para nada más.
+Debe imprimir el recuadro de `====` y la línea `Sirviendo la raíz del repo: C:\Users\afvel\nitroacceso`, y después **la ventana se queda colgada sin devolver el símbolo del sistema**. Eso significa que está escuchando: **no la cierres**. Esa ventana no se usa para nada más.
 
 **Qué hacer según el síntoma:**
 
