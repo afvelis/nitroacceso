@@ -12,8 +12,24 @@ function pinta(el, texto, ok){
   el.classList.add(ok ? 'texto-ok' : 'texto-aviso');
 }
 function avisoMsg(id, texto, ok){ pinta($(id), texto, ok); }
+// F-6 (defecto de la prueba real): el aviso de guardar/copiar/vaciar se pinta en
+// un parrafo PROPIO de cada lista (dentro de la barra de acciones pegajosa),
+// no en msgGlobal (que esta arriba de todo y el usuario no lo ve cuando esta
+// mirando la tarjeta del Dia 2). msgGlobal se reserva para los errores de
+// carga de la pagina; no se elimina.
+function idMsgLista(dia){ return 'msgLista' + dia; }
+function avisoLista(l, texto, ok){
+  var el = $(idMsgLista(l.dia));
+  if (!el) { avisoMsg('msgGlobal', texto, ok); return; } // respaldo por si la tarjeta no existe
+  if (texto === '') { el.textContent = ''; el.hidden = true; return; }
+  pinta(el, texto, ok);
+  el.hidden = false;
+}
 function boton(texto, clase, fn){
   var b = document.createElement('button');
+  // Defensa: tipo explicito, para que ningun boton dispare un submit si algun
+  // dia queda anidado dentro de un <form>.
+  b.type = 'button';
   b.className = 'btn ' + clase;
   b.textContent = texto;
   b.onclick = fn;
@@ -21,6 +37,13 @@ function boton(texto, clase, fn){
 }
 function param(name){
   return new URLSearchParams(location.search).get(name);
+}
+// F-6 (defecto 3 de la prueba real): normaliza la cedula igual que la RPC
+// f_link_talento_copiar en SQL: quita todo lo que no sea letra o numero y pasa
+// a mayusculas (upper(regexp_replace(cedula, '[^0-9A-Za-z]', '', 'g'))). Asi la
+// pantalla decide quien ya esta en la lista con el mismo criterio que la base.
+function cedulaNormalizada(valor){
+  return String(valor == null ? '' : valor).replace(/[^0-9A-Za-z]/g, '').toUpperCase();
 }
 function urlWA(texto){ return 'https://wa.me/?text=' + encodeURIComponent(texto); }
 function urlMail(asunto, texto){ return 'mailto:?subject=' + encodeURIComponent(asunto) + '&body=' + encodeURIComponent(texto); }
@@ -47,6 +70,56 @@ async function copiarImagen(url){
   var blob = await r.blob();
   if (!window.ClipboardItem) throw new Error('sin ClipboardItem');
   await navigator.clipboard.write([new ClipboardItem({ [blob.type || 'image/png']: blob })]);
+}
+
+// ===== Modales propios (regla v2.1: prohibido alert/confirm/prompt nativos) =====
+// Motivo P0-03: los dialogos nativos se pueden suprimir y la respuesta nunca
+// llega. Este modal propio es HTML y siempre se ve. Mismo patron visual que el
+// resto de la app: fondo oscuro, tarjeta y botones.
+function modalAviso(mensaje, titulo){
+  titulo = titulo || 'Aviso';
+  return new Promise(function(resolve){
+    var fondo = document.createElement('div');
+    fondo.className = 'modal-fondo';
+    fondo.setAttribute('role', 'dialog');
+    fondo.setAttribute('aria-modal', 'true');
+    fondo.innerHTML =
+      '<div class="modal-caja">' +
+        '<div class="modal-titulo">' + esc(titulo) + '</div>' +
+        '<div class="modal-mensaje">' + esc(mensaje) + '</div>' +
+        '<div class="modal-acciones"><button class="btn" data-modal-ok>Aceptar</button></div>' +
+      '</div>';
+    document.body.appendChild(fondo);
+    var cerrar = function(){ fondo.remove(); resolve(true); };
+    fondo.querySelector('[data-modal-ok]').addEventListener('click', cerrar);
+    fondo.addEventListener('click', function(e){ if (e.target === fondo) cerrar(); });
+    fondo.querySelector('[data-modal-ok]').focus();
+  });
+}
+
+function modalConfirmar(mensaje, titulo){
+  titulo = titulo || 'Confirmar';
+  return new Promise(function(resolve){
+    var fondo = document.createElement('div');
+    fondo.className = 'modal-fondo';
+    fondo.setAttribute('role', 'dialog');
+    fondo.setAttribute('aria-modal', 'true');
+    fondo.innerHTML =
+      '<div class="modal-caja">' +
+        '<div class="modal-titulo">' + esc(titulo) + '</div>' +
+        '<div class="modal-mensaje">' + esc(mensaje) + '</div>' +
+        '<div class="modal-acciones">' +
+          '<button class="btn btn-gris" data-modal-cancelar>Cancelar</button>' +
+          '<button class="btn" data-modal-aceptar>Aceptar</button>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(fondo);
+    var cerrar = function(resultado){ fondo.remove(); resolve(resultado); };
+    fondo.querySelector('[data-modal-cancelar]').addEventListener('click', function(){ cerrar(false); });
+    fondo.querySelector('[data-modal-aceptar]').addEventListener('click', function(){ cerrar(true); });
+    fondo.addEventListener('click', function(e){ if (e.target === fondo) cerrar(false); });
+    fondo.querySelector('[data-modal-aceptar]').focus();
+  });
 }
 
 var DATA = null;
@@ -89,11 +162,11 @@ function nombreTalento(){
 }
 
 function dia1ConPersonas(){
-  return (DATA.listas || []).some(function(l){ return l.dia === 1 && (l.personas || []).length > 0; });
+  return listaDia1() !== null;
 }
-function personasDia1(){
+function listaDia1(){
   var l = (DATA.listas || []).filter(function(x){ return x.dia === 1; })[0];
-  return l ? (l.personas || []).length : 0;
+  return (l && (l.personas || []).length > 0) ? l : null;
 }
 
 function render(){
@@ -130,20 +203,40 @@ function cardLista(l){
     var rows = document.createElement('div');
     rows.id = 'rows-' + l.dia;
     (l.personas || []).forEach(function(p){ rows.appendChild(filaPersona(p)); });
-    sec.appendChild(rows);
+    // F-6: barra de acciones SIEMPRE visible mientras la lista sea editable.
+    // En el Dia 2, si el Dia 1 tiene personas, la copia es la accion principal;
+    // el fallback manual (agregar a mano y guardar) nunca desaparece.
+    // F-6 (defectos 4 y 5 de la prueba en pantalla): UNA sola barra de acciones
+    // con los 4 botones compactos en fila (clase barraAcciones). "Vaciar" vive
+    // AQUI y no al final de la tarjeta, donde parecia parte del QR.
+    // F-6 (defecto reportado al usarlo): la barra va ARRIBA (justo tras el
+    // titulo/estado y la nota de edicion, ANTES de las filas): al crecer la lista quedaba al
+    // fondo y "Vaciar" se perdia sin hacer scroll. Con position:sticky (CSS)
+    // sigue a la vista con 3 o con 30 personas. Dia 1 cerrado no la pinta:
+    // entra por este bloque solo si editable.
     var fila = document.createElement('div');
-    fila.className = 'fila';
+    fila.className = 'barraAcciones';
+    if (l.dia === 2 && dia1ConPersonas()) {
+      fila.appendChild(boton('Copiar del Dia 1', '', function(){ mostrarPanelCopiar(sec, rows, l); }));
+    }
     fila.appendChild(boton('Agregar participante', 'btn-gris', function(){
-      var yaTienePanel = sec.querySelector('.panelOpcion');
-      if (l.dia === 2 && (l.personas || []).length === 0 && dia1ConPersonas()
-          && !sessionStorage.getItem('na_norep_' + CODIGO) && !rows.children.length && !yaTienePanel) {
-        mostrarOpcionDia2(sec, rows, l);
-      } else {
-        rows.appendChild(filaPersona(null));
-      }
+      rows.appendChild(filaPersona(null));
     }));
     fila.appendChild(boton('Guardar lista del Dia ' + l.dia, '', function(){ guardarDia(l, rows); }));
+    if (l.dia === 2) fila.appendChild(botonVaciarLista(l, rows));
+    // F-6 (defecto de la prueba real): parrafo PROPIO de mensajes de la lista,
+    // dentro de la barra de acciones: como la barra es sticky, el aviso de
+    // guardar/copiar/vaciar se ve JUNTO AL BOTON que se pulso, sin hacer
+    // scroll, y se vuelve a pintar despues de la recarga de la base (render()
+    // reconstruye el DOM, por eso los mensajes de resultado se pintan tras
+    // cargar(), igual que se documento en botonVaciarLista).
+    var msgLista = document.createElement('p');
+    msgLista.id = idMsgLista(l.dia);
+    msgLista.className = 'msgLista'; // sin la clase suave: el color lo ponen texto-ok / texto-aviso
+    msgLista.hidden = true;
+    fila.appendChild(msgLista);
     sec.appendChild(fila);
+    sec.appendChild(rows);
   } else {
     var nota = document.createElement('p');
     nota.className = 'suave';
@@ -162,6 +255,58 @@ function cardLista(l){
     sec.appendChild(notaQr2);
   }
   return sec;
+}
+
+// F-6 (defecto 1 de la prueba real): "Empezar de cero" solo limpiaba el DOM y
+// la base seguia con las personas, con lo cual la copia decia "ya estaban
+// todas". Ahora es "Vaciar la lista del Dia N" y PERSISTE el vaciado
+// reutilizando la RPC de guardado (DELETE + INSERT; con p_personas: [] deja
+// la lista vacia en la base). Sin dialogos nativos: modal propio.
+// F-6 (defecto 4): el boton vive en la barra de acciones de la lista, no al
+// final de la tarjeta (la columna de antes); la logica, los textos y el modal
+// de confirmacion quedan intactos.
+function botonVaciarLista(l, rows){
+  var btnVaciar = boton('Vaciar la lista del Dia ' + l.dia, 'btn-aviso', async function(){
+    // N real: personas GUARDADAS en la base (l.personas), no filas visibles.
+    var guardadas = (l.personas || []).length;
+    if (!guardadas) {
+      await modalAviso('La lista del Dia ' + l.dia + ' ya esta vacia.', 'Nada que vaciar');
+      return;
+    }
+    var pregunta = (guardadas === 1
+      ? 'Se borrara 1 persona guardada en la lista del Dia ' + l.dia + '. Esta accion no se puede deshacer.'
+      : 'Se borraran ' + guardadas + ' personas guardadas en la lista del Dia ' + l.dia + '. Esta accion no se puede deshacer.');
+    if (!(await modalConfirmar(pregunta, 'Vaciar la lista del Dia ' + l.dia))) return;
+    btnVaciar.disabled = true;
+    rows.innerHTML = ''; // limpieza inmediata en pantalla; si el guardado falla, cargar() repone la base
+    var txtFinal = '';
+    var okFinal = true;
+    try {
+      var okVaciar = await llamar('f_link_talento_guardar', {
+        p_codigo_link: CODIGO, p_dia: l.dia, p_personas: []
+      });
+      if (okVaciar === true) {
+        txtFinal = 'Lista del Dia ' + l.dia + ' vaciada.';
+      } else {
+        await modalAviso('No se pudo vaciar la lista del Dia ' + l.dia + '. Se vuelve a mostrar lo que hay guardado en la base.', 'No se pudo vaciar');
+        txtFinal = 'No se pudo vaciar la lista del Dia ' + l.dia + '.';
+        okFinal = false;
+      }
+    } catch (e) {
+      console.error('[talento] vaciar Dia ' + l.dia + ': error', e);
+      await modalAviso('No se pudo vaciar la lista del Dia ' + l.dia + ': ' + e.message + '. Se vuelve a mostrar lo que hay guardado en la base.', 'Error de conexion');
+      txtFinal = 'No se pudo vaciar la lista del Dia ' + l.dia + ': ' + e.message;
+      okFinal = false;
+    }
+    // Recarga SIEMPRE desde la base: si el guardado fallo, la pantalla no se
+    // queda diciendo que esta vacia cuando no lo esta.
+    await cargar();
+    // El aviso va DESPUES de cargar() y en el parrafo PROPIO de la lista
+    // (idMsgLista), porque render() limpia los mensajes durante la recarga;
+    // igual que en guardarDia y en la copia.
+    avisoLista(l, txtFinal, okFinal);
+  });
+  return btnVaciar;
 }
 
 function construirCajaQR(l){
@@ -184,36 +329,177 @@ function construirCajaQR(l){
   return qr;
 }
 
-function mostrarOpcionDia2(sec, rows, l){
+// F-6 (defecto 2 de la prueba real): mensaje honesto y con concordancia
+// singular/plural para los cuatro casos posibles del resultado de la copia.
+function textoResultadoCopiar(copiadas, omitidas){
+  copiadas = copiadas || 0;
+  omitidas = omitidas || 0;
+  if (copiadas > 0) {
+    var msg = (copiadas === 1) ? '1 persona copiada.' : copiadas + ' personas copiadas.';
+    if (omitidas > 0) {
+      msg += ' ' + ((omitidas === 1) ? '1 ya estaba en la lista.' : omitidas + ' ya estaban en la lista.');
+    }
+    return msg;
+  }
+  if (omitidas > 0) {
+    return (omitidas === 1)
+      ? 'No hay personas nuevas que copiar: la 1 seleccionada ya estaba en la lista.'
+      : 'No hay personas nuevas que copiar: las ' + omitidas + ' seleccionadas ya estaban en la lista.';
+  }
+  return 'No se copio ninguna persona: no habia nada que copiar.';
+}
+
+// F-6: panel de seleccion de la copia Dia 1 -> Dia 2. Una casilla por persona
+// del Dia 1 (todas marcadas por defecto). La copia SUMA: la RPC omite quien ya
+// este en el destino con la misma cedula (normalizada) y no borra nada.
+function mostrarPanelCopiar(sec, rows, l){
+  if (sec.querySelector('.panelOpcion')) return; // ya hay un panel abierto
+  var origen = listaDia1();
+  if (!origen) return;
+  // F-6 (defecto 3 de la prueba real): detectar quien ya esta en el destino
+  // comparando la cedula normalizada igual que la RPC. Quien ya esta aparece
+  // con la etiqueta "ya en la lista", desmarcado y deshabilitado: copiarlo no
+  // haria nada.
+  var enDestino = {};
+  (l.personas || []).forEach(function(p){
+    var c = cedulaNormalizada(p.cedula);
+    if (c) enDestino[c] = true;
+  });
+  var personasOrigen = origen.personas || [];
+  var yaEnLista = personasOrigen.filter(function(p){ return enDestino[cedulaNormalizada(p.cedula)]; }).length;
   var panel = document.createElement('div');
   panel.className = 'panelOpcion';
   var txt = document.createElement('p');
   txt.className = 'suave';
-  txt.textContent = 'Ya tienes una lista guardada del Dia 1 con ' + personasDia1() + ' participante(s). Que prefieres hacer con el Dia 2?';
   panel.appendChild(txt);
-  var fila = document.createElement('div');
-  fila.className = 'fila';
-  fila.appendChild(boton('Repetir y editar la del Dia 1', '', async function(){
-    console.info('[talento] copiar Dia 1 -> Dia 2: inicio');
-    try {
-      var ok = await llamar('f_link_talento_copiar', {
-        p_codigo_link: CODIGO, p_dia_origen: 1, p_dia_destino: 2
-      });
-      if (ok === true) { await cargar(); return; }
-      console.warn('[talento] copiar Dia 1 -> Dia 2: la RPC devolvio', ok);
-      pinta($('msgGlobal'), 'No se pudo copiar al Dia 2. Revisa que la edicion este abierta, que el Dia 1 tenga integrantes y que el Dia 2 siga vacio.', false);
-    } catch (e) {
-      console.error('[talento] copiar Dia 1 -> Dia 2: error', e);
-      pinta($('msgGlobal'), 'No se pudo conectar: ' + e.message, false);
+  if (yaEnLista === personasOrigen.length) {
+    // Defecto 3: si TODAS ya estan, no hay nada seleccionable: se informa y el
+    // panel solo ofrece Cancelar.
+    txt.textContent = 'Todas las personas del Dia 1 ya estan en la lista del Dia ' + l.dia + '.';
+    var filaSalir = document.createElement('div');
+    filaSalir.className = 'fila';
+    filaSalir.appendChild(boton('Cancelar', 'btn-gris', function(){ panel.remove(); }));
+    panel.appendChild(filaSalir);
+    sec.insertBefore(panel, rows);
+    return;
+  }
+  txt.textContent = 'Marca las personas del Dia 1 que quieres copiar a la lista del Dia ' + l.dia + '. Las que ya esten con la misma cedula no se duplican: solo se suman las nuevas.';
+
+  var grupos = document.createElement('div');
+  grupos.className = 'copiarLista';
+  var casillas = [];
+  personasOrigen.forEach(function(p){
+    var eti = document.createElement('label');
+    eti.className = 'copiarPersona';
+    var cb = document.createElement('input');
+    cb.type = 'checkbox';
+    var dup = !!enDestino[cedulaNormalizada(p.cedula)];
+    cb.checked = !dup;
+    cb.disabled = dup;
+    cb.value = p.persona_id;
+    eti.appendChild(cb);
+    var span = document.createElement('span');
+    span.textContent = (p.nombre || '') + ' ' + (p.apellido || '') + ' — Cedula: ' + (p.cedula || '') + (p.cargo ? ' — Cargo: ' + p.cargo : '');
+    eti.appendChild(span);
+    if (dup) {
+      var marca = document.createElement('span');
+      marca.className = 'texto-aviso'; // clase ya existente: no toca el style ni el hash CSP
+      marca.textContent = ' — ya en la lista';
+      eti.appendChild(marca);
     }
+    cb.addEventListener('change', actualizaContador);
+    casillas.push(cb);
+    grupos.appendChild(eti);
+  });
+  panel.appendChild(grupos);
+
+  var contador = document.createElement('p');
+  var spanContador = document.createElement('span');
+  spanContador.className = 'copiarContador';
+  contador.appendChild(spanContador);
+  panel.appendChild(contador);
+
+  function marcadas(){
+    return casillas.filter(function(c){ return c.checked; });
+  }
+  function actualizaContador(){
+    // Defecto 3: el contador refleja solo las seleccionables (las deshabilitadas
+    // por ya estar en la lista no cuentan en el denominador) y avisa cuantas
+    // del origen ya estaban en la lista.
+    spanContador.textContent = marcadas().length + ' de ' + (casillas.length - yaEnLista) + ' seleccionadas'
+      + (yaEnLista > 0 ? ' (' + yaEnLista + ' ya en la lista)' : '');
+  }
+  actualizaContador();
+
+  var filaSel = document.createElement('div');
+  filaSel.className = 'fila';
+  filaSel.appendChild(boton('Seleccionar todas', 'btn-gris', function(){
+    casillas.forEach(function(c){ if (!c.disabled) c.checked = true; });
+    actualizaContador();
   }));
-  fila.appendChild(boton('Lista nueva desde cero', 'btn-azul', function(){
-    sessionStorage.setItem('na_norep_' + CODIGO, '1');
-    panel.remove();
-    rows.appendChild(filaPersona(null));
+  filaSel.appendChild(boton('Ninguna', 'btn-gris', function(){
+    casillas.forEach(function(c){ if (!c.disabled) c.checked = false; });
+    actualizaContador();
   }));
-  fila.appendChild(boton('Cancelar', 'btn-gris', function(){ panel.remove(); }));
-  panel.appendChild(fila);
+  panel.appendChild(filaSel);
+
+  var filaAcciones = document.createElement('div');
+  filaAcciones.className = 'fila';
+  var copiando = false; // evita doble envio mientras la RPC esta en vuelo
+  var btnCopiar = boton('Copiar seleccionados', '', async function(){
+    if (copiando) return;
+    var ids = marcadas().map(function(c){ return c.value; });
+    if (!ids.length) {
+      await modalAviso('Selecciona al menos una persona.', 'Falta la seleccion');
+      return;
+    }
+    copiando = true;
+    btnCopiar.disabled = true;
+    console.info('[talento] copiar selectivo Dia 1 -> Dia ' + l.dia + ': inicio, ' + ids.length + ' seleccionada(s)');
+    try {
+      var r = await llamar('f_link_talento_copiar', {
+        p_codigo_link: CODIGO,
+        p_dia_origen: 1,
+        p_dia_destino: l.dia,
+        p_persona_ids: ids
+      });
+      if (r && r.ok === true) {
+        panel.remove();
+        var msg = textoResultadoCopiar(r.copiadas, r.omitidas);
+        // El aviso va DESPUES de cargar() y en el parrafo PROPIO de la lista
+        // (idMsgLista, junto a la barra que tiene el boton Copiar), igual que
+        // en guardarDia y botonVaciarLista: render() limpia los mensajes
+        // durante la recarga, asi que si se pinta antes el usuario no ve nada.
+        await modalAviso(msg, 'Copia al Dia ' + l.dia);
+        if (r.copiadas > 0) await cargar();
+        avisoLista(l, msg, true);
+        return;
+      }
+      panel.remove();
+      var motivo = (r && r.motivo) ? String(r.motivo) : '';
+      var txtMotivo;
+      if (motivo === 'edicion_cerrada') {
+        txtMotivo = 'No se pudo copiar: el administrador cerro la edicion. Mientras tu lista no pase a puerta puedes agregar participantes a mano y guardar.';
+      } else if (motivo === 'destino_no_editable') {
+        txtMotivo = 'No se pudo copiar: la lista del Dia ' + l.dia + ' ya no esta en edicion.';
+      } else if (motivo === 'link_invalido') {
+        txtMotivo = 'No se pudo copiar: el link ya no es valido o fue revocado. Pidele uno nuevo a tu coordinador.';
+      } else {
+        txtMotivo = 'No se pudo copiar al Dia ' + l.dia + '. Puedes agregar participantes a mano y guardar.';
+      }
+      avisoLista(l, txtMotivo, false);
+      await modalAviso(txtMotivo, 'No se pudo copiar');
+    } catch (e) {
+      console.error('[talento] copiar selectivo Dia 1 -> Dia ' + l.dia + ': error', e);
+      copiando = false;
+      btnCopiar.disabled = false;
+      await modalAviso('No se pudo conectar con la base de datos: ' + e.message, 'Error de conexion');
+    }
+  }
+  );
+  filaAcciones.appendChild(btnCopiar);
+  filaAcciones.appendChild(boton('Cancelar', 'btn-gris', function(){ panel.remove(); }));
+  panel.appendChild(filaAcciones);
   sec.insertBefore(panel, rows);
 }
 
@@ -283,20 +569,48 @@ function mostrarFinal(){
   window.scrollTo(0, 0);
 }
 
+// Contador de ids de avisos de campo a nivel de MODULO (no por fila): si
+// viviera dentro de filaPersona se reiniciaria en cada fila y habria ids
+// repetidos en el documento, con lo cual aria-describedby resolveria siempre
+// al primer elemento con ese id y un lector de pantalla anunciaria el error
+// de la fila 1 en las filas siguientes. Contando aqui, los ids siguen siendo
+// unicos aunque el usuario agregue y quite filas durante toda la sesion.
+var contadorAvisosCampo = 0;
 function filaPersona(p){
   var div = document.createElement('div');
   div.className = 'filaPersona';
   var campos = [
     ['nombre', 'Nombre'],
     ['apellido', 'Apellido'],
-    ['cedula', 'Cedula'],
+    // F-6 (defecto de la prueba real): la regla de negocio es cedula SOLO numeros,
+    // sin prefijos (cedulaValida en config.js no se toca). El ejemplo del campo lo
+    // refleja para que el usuario no escriba V-12345678 y el guardado falle.
+    ['cedula', 'Cedula (Ej.: 12345678)'],
     ['cargo', 'Cargo']
   ];
+  // Norma v2.2 (11/11/2026): validacion EN VIVO. Cada campo valida mientras se
+  // escribe (evento input; el pegado dispara input tambien, y se agrega el
+  // listener de paste por claridad) y senala el error EN EL PROPIO campo:
+  // borde rojo + texto breve debajo + aria-invalid. Usa las reglas de config.js
+  // (cedulaValida, textoPersonaValido) para no duplicar reglas.
   campos.forEach(function(c){
+    var wrap = document.createElement('div');
+    wrap.className = 'wCampo';
     var inp = document.createElement('input');
     inp.placeholder = c[1];
     inp.value = (p && p[c[0]]) ? p[c[0]] : '';
-    div.appendChild(inp);
+    var avisoCampo = document.createElement('span');
+    avisoCampo.className = 'errorCampo';
+    avisoCampo.hidden = true;
+    contadorAvisosCampo++;
+    avisoCampo.id = 'errCampo' + contadorAvisosCampo; // unico en todo el documento (contador de modulo)
+    inp.setAttribute('aria-describedby', avisoCampo.id);
+    var validar = function(){ marcarCampo(inp, errorDeCampo(c[0], inp.value, false)); };
+    inp.addEventListener('input', validar);
+    inp.addEventListener('paste', function(){ window.setTimeout(validar, 0); });
+    wrap.appendChild(inp);
+    wrap.appendChild(avisoCampo);
+    div.appendChild(wrap);
   });
   var b = boton('Quitar', 'btn-rojo', function(){ div.remove(); });
   div.appendChild(b);
@@ -319,9 +633,59 @@ function tablaPersonas(rows){
   return t;
 }
 
+// ===== Norma v2.2: validacion en el campo, errores de accion con modal =====
+// F-6 (11/11/2026): en la prueba real el guardado "no hacia nada" porque el
+// error de cedula salia en la cabecera de la pagina, fuera de la vista.
+// Dos respuestas: (1) cada campo se valida MIENTRAS se escribe y marca el
+// error en el propio campo; (2) cuando el guardado no puede completarse por
+// validacion, ademas del aviso de la tarjeta se abre el modal propio (norma
+// v2.1: nunca alert/confirm/prompt nativos).
+
+// Reglas de campo en UN solo lugar, apoyadas en config.js (no se toca):
+// - cedula: cedulaValida (solo digitos, puntos, espacios y guiones, 4 a 20).
+// - nombre / apellido / cargo: textoPersonaValido (maximo 60, sin < ni >).
+// Devuelve '' si el valor pasa; si no, el texto breve para el campo.
+// requerido=true lo usa el guardado (marca los campos vacios); en vivo los
+// campos vacios quedan neutros: el aviso de obligatorio aparece al guardar.
+// El validador NO se relaja (solo numeros, sin prefijos V-): decision de
+// negocio del 11/11/2026 para reducir friccion en puerta.
+function errorDeCampo(campo, valor, requerido){
+  var v = String(valor == null ? '' : valor).trim();
+  if (!v) return requerido ? 'Este campo es obligatorio.' : '';
+  if (campo === 'cedula') {
+    if (!cedulaValida(v)) return 'Solo numeros, sin la V ni puntos dobles, minimo 4 digitos.';
+  } else if (!textoPersonaValido(v, 60)) {
+    return 'Maximo 60 caracteres, sin < ni >.';
+  }
+  return '';
+}
+
+// Marca o limpia el estado invalido de un input: clase CSS (borde rojo),
+// aria-invalid para lectores de pantalla y el texto breve justo debajo
+// (span.errorCampo dentro del mismo wCampo). El aviso desaparece en cuanto
+// el valor vuelve a ser valido.
+function marcarCampo(input, texto){
+  var mal = !!texto;
+  if (mal) {
+    input.classList.add('campoInvalido');
+    input.setAttribute('aria-invalid', 'true');
+  } else {
+    input.classList.remove('campoInvalido');
+    input.removeAttribute('aria-invalid');
+  }
+  if (input.nextElementSibling && input.nextElementSibling.className === 'errorCampo') {
+    input.nextElementSibling.textContent = texto || '';
+    input.nextElementSibling.hidden = !mal;
+  }
+}
+
 async function guardarDia(l, rows){
   var filas = rows.querySelectorAll('.filaPersona');
   var arr = [];
+  // Norma v2.2: se recolectan TODAS las filas con problemas (no se corta en la
+  // primera) para decirselo al usuario de una vez en el modal y en el aviso de
+  // la tarjeta, y se marcan los campos fallidos EN SU PROPIO sitio.
+  var problemas = [];
   for (var i = 0; i < filas.length; i++) {
     var inputs = filas[i].querySelectorAll('input');
     var p = {
@@ -331,44 +695,67 @@ async function guardarDia(l, rows){
       cargo: inputs[3].value.trim()
     };
     if (!p.nombre && !p.apellido && !p.cedula && !p.cargo) continue;
-    if (!p.nombre || !p.apellido || !p.cedula || !p.cargo) {
-      avisoMsg('msgGlobal', 'Hay una fila con campos vacios en la lista del Dia ' + l.dia + '. Completa esa fila o pulsale Quitar.', false);
-      return;
+    var definicion = [
+      ['nombre', p.nombre, 'Nombre'],
+      ['apellido', p.apellido, 'Apellido'],
+      ['cedula', p.cedula, 'Cedula'],
+      ['cargo', p.cargo, 'Cargo']
+    ];
+    var malos = [];
+    for (var j = 0; j < definicion.length; j++) {
+      var msg = errorDeCampo(definicion[j][0], definicion[j][1], true);
+      marcarCampo(inputs[j], msg);
+      if (msg) malos.push(definicion[j][2]);
     }
-    if (!textoPersonaValido(p.nombre) || !textoPersonaValido(p.apellido)) {
-      avisoMsg('msgGlobal', 'Hay un nombre o apellido no valido (maximo 60 caracteres, sin < ni >) en la lista del Dia ' + l.dia + '.', false);
-      return;
-    }
-    if (!cedulaValida(p.cedula)) {
-      avisoMsg('msgGlobal', 'Hay una cedula no valida (solo numeros, 4 a 20 caracteres) en la lista del Dia ' + l.dia + '.', false);
-      return;
-    }
-    if (!textoPersonaValido(p.cargo, 60)) {
-      avisoMsg('msgGlobal', 'Hay un cargo no valido (sin < ni >) en la lista del Dia ' + l.dia + '.', false);
-      return;
+    if (malos.length) {
+      problemas.push({ fila: i + 1, campos: malos });
+      continue;
     }
     arr.push(p);
   }
-  if (!arr.length) {
-    if (!confirm('Esto dejara VACIA la lista del Dia ' + l.dia + '. Continuar?')) return;
+  if (problemas.length) {
+    var detalle = problemas.map(function(x){
+      return 'Fila ' + x.fila + ': ' + x.campos.join(', ');
+    }).join(' | ');
+    var txtProblemas = 'No se pudo guardar la lista del Dia ' + l.dia + ': '
+      + problemas.length + ((problemas.length === 1) ? ' fila tiene problemas. ' : ' filas tienen problemas. ')
+      + detalle + '. Corrigelos aqui mismo y vuelve a Guardar.';
+    avisoLista(l, txtProblemas, false);
+    await modalAviso(txtProblemas, 'Corrige los campos marcados');
+    return;
   }
+  if (!arr.length) {
+    if (!(await modalConfirmar('Esto dejara VACIA la lista del Dia ' + l.dia + '. Continuar?', 'Guardar lista vacia'))) return;
+  }
+  // Respeta el patron de botonVaciarLista: los cuatro mensajes de RESULTADO
+  // (exito, RPC falsa, duplicado, error de red) se pintan DESPUES de cargar(),
+  // porque render() limpia los mensajes durante la recarga y si se pinta antes
+  // el usuario no ve nada (defecto reportado: el guardado si ocurria en la base,
+  // solo faltaba la confirmacion visible). Y se pintan en el parrafo PROPIO de
+  // la lista (junto al boton Guardar), no en msgGlobal.
+  var txtFinal = '';
+  var okFinal = false;
   try {
     var ok = await llamar('f_link_talento_guardar', {
       p_codigo_link: CODIGO, p_dia: l.dia, p_personas: arr
     });
     if (ok === true) {
-      avisoMsg('msgGlobal', 'Lista del Dia ' + l.dia + ' guardada.', true);
-      await cargar();
-      return;
+      txtFinal = 'Lista del Dia ' + l.dia + ' guardada.';
+      okFinal = true;
+    } else {
+      txtFinal = 'No se pudo guardar la lista. Revisa que la edicion este abierta y que ningun campo quede vacio.';
     }
-    avisoMsg('msgGlobal', 'No se pudo guardar la lista. Revisa que la edicion este abierta y que ningun campo quede vacio.', false);
   } catch (e) {
     if (String(e.message).indexOf('duplicate') >= 0 || String(e.message).indexOf('unique') >= 0) {
-      avisoMsg('msgGlobal', 'Hay cedulas repetidas dentro de la lista del Dia ' + l.dia + '. Cada participante debe tener una cedula distinta.', false);
-      return;
+      txtFinal = 'Hay cedulas repetidas dentro de la lista del Dia ' + l.dia + '. Cada participante debe tener una cedula distinta.';
+    } else {
+      txtFinal = 'No se pudo conectar: ' + e.message;
     }
-    avisoMsg('msgGlobal', 'No se pudo conectar: ' + e.message, false);
   }
+  // Recarga SIEMPRE desde la base: si el guardado fallo, la pantalla no se
+  // queda mostrando filas que no estan guardadas.
+  await cargar();
+  avisoLista(l, txtFinal, okFinal);
 }
 
 $('btnTermine').onclick = mostrarFinal;

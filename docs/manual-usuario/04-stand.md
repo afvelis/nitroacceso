@@ -40,7 +40,7 @@ En la tarjeta **"Datos del negocio"** escribe **"Empresa *"** y **"Qué vende *"
 
 **4. Agregar personas a la lista de espera**
 
-1. En "Agregar persona autorizada" escribe **Nombre**, **Apellido** y **Cédula** (ej.: V-12345678).
+1. En "Agregar persona autorizada" escribe **Nombre**, **Apellido** y **Cédula** (**solo numeros**, Ej.: `12345678`, sin la V ni puntos).
 2. Pulsa **"Agregar a la lista"**. La persona aparece en la tabla.
 3. Para corregir una fila pulsa **"Modificar"** (el botón cambia a **"Guardar modificacion"** y aparece **"Cancelar modificacion"**); para sacarla pulsa **"Quitar"**.
 4. Si te equivocas de persona completa, retírala de la tabla: todavía no tiene QR, así que no pierde nada.

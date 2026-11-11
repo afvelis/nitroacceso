@@ -47,9 +47,9 @@ insert into public.listas (talento_id, dia, estado, codigo_corto) values
 on conflict (codigo_corto) do nothing;
 
 insert into public.personas (lista_id, nombre, apellido, cedula, cargo, estado) values
-  ((select id from public.listas where codigo_corto = 'LST-DEMO01-D1'), 'Nombre Uno',  'Apellido Uno',  'V-10000001', 'Invitado', 'pendiente'),
-  ((select id from public.listas where codigo_corto = 'LST-DEMO01-D1'), 'Nombre Dos',  'Apellido Dos',  'V-10000002', 'Invitado', 'pendiente'),
-  ((select id from public.listas where codigo_corto = 'LST-DEMO01-D1'), 'Nombre Tres', 'Apellido Tres', 'V-10000003', 'Invitado', 'pendiente')
+  ((select id from public.listas where codigo_corto = 'LST-DEMO01-D1'), 'Nombre Uno',  'Apellido Uno',  '10000001', 'Invitado', 'pendiente'),
+  ((select id from public.listas where codigo_corto = 'LST-DEMO01-D1'), 'Nombre Dos',  'Apellido Dos',  '10000002', 'Invitado', 'pendiente'),
+  ((select id from public.listas where codigo_corto = 'LST-DEMO01-D1'), 'Nombre Tres', 'Apellido Tres', '10000003', 'Invitado', 'pendiente')
 on conflict (lista_id, cedula) do nothing;
 
 -- -----------------------------------------------------------------------------
@@ -64,8 +64,8 @@ values
 on conflict (codigo_link) do nothing;
 
 insert into public.vendedores (stand_id, nombre, apellido, cedula, vende, empresa, codigo_qr) values
-  ((select id from public.stands where codigo_link = 'STD-DEMO01'), 'Vendedor Uno', 'Apellido Uno', 'V-20000001', 'Productos demo', 'Empresa Demo', 'V-DEMO01'),
-  ((select id from public.stands where codigo_link = 'STD-DEMO01'), 'Vendedor Dos', 'Apellido Dos', 'V-20000002', 'Productos demo', 'Empresa Demo', 'V-DEMO02')
+  ((select id from public.stands where codigo_link = 'STD-DEMO01'), 'Vendedor Uno', 'Apellido Uno', '20000001', 'Productos demo', 'Empresa Demo', 'V-DEMO01'),
+  ((select id from public.stands where codigo_link = 'STD-DEMO01'), 'Vendedor Dos', 'Apellido Dos', '20000002', 'Productos demo', 'Empresa Demo', 'V-DEMO02')
 on conflict (codigo_qr) do nothing;
 
 -- -----------------------------------------------------------------------------
@@ -86,10 +86,10 @@ insert into public.cortesia_personas
 values
   ((select id from public.cortesias where codigo_link = 'COR-DEMO01'),
    (select id from public.cortesia_listas where codigo_corto = 'COR-DEMO01-D1'),
-   'Cortesia Uno', 'Apellido Uno', 'V-30000001', 'pendiente'),
+   'Cortesia Uno', 'Apellido Uno', '30000001', 'pendiente'),
   ((select id from public.cortesias where codigo_link = 'COR-DEMO01'),
    (select id from public.cortesia_listas where codigo_corto = 'COR-DEMO01-D1'),
-   'Cortesia Dos', 'Apellido Dos', 'V-30000002', 'pendiente')
+   'Cortesia Dos', 'Apellido Dos', '30000002', 'pendiente')
 on conflict (lista_id, cedula) do nothing;
 
 -- -----------------------------------------------------------------------------
