@@ -6,7 +6,8 @@ QUE HACE
   Imprime el estado real del repositorio leyendo git y los archivos del repo:
   rama actual, HEAD, origin/main, si la rama contiene a main, si la copia
   local esta al dia con origin/<rama> (commits por detras o sin empujar),
-  arbol limpio, archivos obligatorios, coherencia del ID de staging en la documentacion,
+  arbol limpio, archivos obligatorios (entre ellos la receta de arranque
+  docs/arranque-de-sesion.md), coherencia del ID de staging en la documentacion,
   rutas muertas en documentos, parametros de URL documentados (incluida la
   tabla de la seccion 9 de docs/dev-local.md, verificada contra el codigo),
   PR de la rama (solo si hay red) y pendientes de prueba de la tarea F-7.
@@ -64,6 +65,7 @@ ARCHIVOS_OBLIGATORIOS = [
     "supabase/migrations/0001_esquema_inicial.sql",
     "docs/manual-usuario/00-indice.md",
     "docs/dev-local.md",
+    "docs/arranque-de-sesion.md",
     ".github/workflows/keep-supabase-alive.yml",
 ]
 PARAMETROS_ESPERADOS = {
@@ -691,6 +693,7 @@ def main():
     print("  py scripts\\verificar-arranque.py")
     print("Su salida es la fuente de verdad sobre rama, SHA, arbol limpio y PR.")
     print("No confies en los SHA ni en los contadores escritos en ESTADO.md: caducan.")
+    print("Receta de arranque: docs/arranque-de-sesion.md")
     print("=" * 64)
 
     return 0 if falla_n == 0 else 1

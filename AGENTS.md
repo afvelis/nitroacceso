@@ -57,6 +57,7 @@ Sin código nuevo. Entregar:
 2. Actualización de los campos `estado:` de las `tareas/` tocadas, con evidencia en sus "Notas de implementación".
 3. Anexo de decisiones nuevas a `DECISIONES.md` (si las hubo).
 4. Indicar al usuario qué archivos debe commitear (docs y código juntos) y esperar el verde de Actions antes de probar (M-26).
+5. La receta de arranque del agente siguiente: el bloque «PROMPT DE RELEVO» copiado de la salida de `py scripts\verificar-arranque.py` (nunca redactado de memoria) y la referencia a `docs/arranque-de-sesion.md`.
 
 ### Regla de escritura en el repo (para agentes con acceso)
 
