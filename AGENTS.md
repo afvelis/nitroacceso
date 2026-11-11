@@ -110,3 +110,22 @@ Acuerdo del 11/11/2026, nacido de una prueba real en pantalla: la cedula mal esc
 - Los campos validan al escribir y senalan el error en el propio campo (borde/realce + `aria-invalid` + texto breve bajo el campo), antes de enviar.
 - Un error de accion que impide continuar se comunica tambien con modal, no solo con texto.
 - Esta norma aplica a toda pantalla nueva y a toda modificacion de pantallas existentes.
+
+## Protocolo de interaccion con el usuario (aprobado 11/11/2026)
+
+Norma para cualquier IA que asista al proyecto. Dos formatos de respuesta, y solo dos:
+
+1. **Cuando trabajas y no necesitas nada:** empiezas con `RESUMEN:` (qué se hizo y qué se verificó) y cierras con `SEGUIMOS CON:` (qué viene ahora).
+2. **Cuando necesitas algo del usuario:** escribes `TERMINE MI PROCESO, NECESITO DE TI:` seguido de UNA SOLA accion.
+
+- **Una accion a la vez.** Nunca dos pasos juntos ni "haz esto y despues aquello". Se espera el resultado, se verifica, y solo entonces se da el siguiente.
+- **Toda instruccion lleva su PRUEBA DEL OBJETIVO:** qué debe ver el usuario, dato a dato (texto exacto, valor esperado, tabla de interpretacion si hay varias salidas posibles). No se asume nada.
+- **Toda instruccion de SQL o de GitHub dice el proyecto/archivo/ruta exactos.** En SQL se recuerda confirmar el proyecto antes de ejecutar.
+- **El resultado del usuario dispara la verificacion:** comprueba por ti mismo (salida literal, consulta de conteo, API, estado de Actions) y solo entonces dices "correcto". Un "Success" no es una verificacion.
+- **Cada cambio lleva su INFORME:** qué se cambió y por qué. El usuario quiere entender, no obedecer.
+- **Si algo no encaja: DETENERSE y avisar en espanol llano.** No reconstruir en silencio ni suponer.
+- **Los errores se dicen sin adornos:** la causa concreta y la correccion. Nada de justificaciones largas.
+- **Las capturas de pantalla NO son canal de verificacion:** la verificacion es por texto y por datos.
+- **Antes de proponer un arreglo, la causa debe estar confirmada con evidencia** (codigo citado o dato de la base). Nada de parches a ciegas.
+- **Cada cambio que altere botones, mensajes o pasos de una pantalla actualiza su capitulo de `docs/manual-usuario/` en el MISMO PR.**
+- **Nunca fusionas PRs, nunca commiteas a `main` y nunca borras ramas sin orden explicita. El SQL lo ejecuta siempre el usuario.**

@@ -102,4 +102,6 @@ Tener un entorno de staging separado, el esquema versionado, pruebas automatizad
     - O4 · F-1 POR PANTALLA: se vació el Dia 2 (confirmación nativa «Esto dejará VACÍA la lista del Dia 2»), y al pulsar «Agregar participante» apareció el panel «Ya tienes una lista guardada del Dia 1 con 3 participante(s)...» y «Repetir y editar la del Dia 1» copió las 3 personas. Primera validación de F-1 por interfaz (el clic real que quedaba pendiente desde F-1).
     - Durante O4 se detectaron dos problemas de diseño que se registran como tareas: [F-6](F-6-talento-copiar-selectivo.md) (copiar selectivo, repetible y siempre visible) y [F-7](F-7-modales-nativos.md) (sustituir los diálogos nativos por los modales de la app, regla v2.1).
 
+- (t) **Fase B DESPLEGADA y probada en pantalla (2026-11-11, Sesión 20):** la prueba punta a punta con datos ficticios (login, panel, talento, F-1, stand, QR, cierre de edición, puerta, doble escaneo, cierre de sesión) corrió contra staging via `scripts/dev-server.py` (CSP retirado solo en la respuesta, entorno forzado; el CSP del repo y de Pages intacto). La Fase B quedó desplegada: entornos + dev-server + banner + blindaje. **Falta la Fase C:** tests E2E, CI y README raíz. La tarea sigue `en_progreso`.
+
 > Pendiente.

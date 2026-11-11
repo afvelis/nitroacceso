@@ -2,7 +2,7 @@
 id: "F-6"
 titulo: "Copiar del Día 1 al Día 2: selectivo, repetible y siempre disponible"
 prioridad: "P1"
-estado: "en_progreso"
+estado: "hecho"
 area: "frontend"
 depende_de: []
 archivos:
@@ -134,3 +134,21 @@ Al probar el guardado real, el usuario obtuvo «Hay una cedula no valida (solo n
 7. **Norma escrita.** `AGENTS.md`: seccion nueva «## Norma de mensajes y validacion (v2.2)» al final. `DECISIONES.md`: entrada del 11/11/2026 (append-only) con el origen real (el guardado «no hacia nada» porque el error salia en la cabecera, fuera de la vista; el seed y el ejemplo del campo usaban prefijos V- que el validador rechaza) y la nota de que el validador NO se relajo.
 8. **Manual de usuario actualizado (en esta rama, ojo).** `docs/manual-usuario/03-talento.md` y `04-stand.md` viven en la rama `agente/2026-11-10-manual-usuario`, pendiente de fusion en main; este PR los incorpora (solo esos dos archivos, por orden del supervisor) para que el manual no quede desactualizado con F-6. 03: reescrito el paso de copia (la limitacion «solo si el Dia 2 esta vacio» ya no existe; ahora es el panel de seleccion con casillas, contador y etiqueta «— ya en la lista»), barra de 4 acciones arriba y pegajosa, «Vaciar la lista del Dia N» borra de verdad y pide confirmacion, avisos junto al boton y en ventana propia, validacion en vivo de campos, regla «Cedula: solo numeros, sin la V ni puntos», errores comunes alineados con los textos reales de la pantalla y marca final «Probado en el entorno de pruebas el 11/11/2026». 04: solo el ejemplo de cedula del paso 4 paso de «V-12345678» a solo numeros; su marca se queda en 10/11/2026 (no se reprobo hoy).
 9. **Correccion de revision (P1 + P2, 11/11/2026).** P1 (bloqueante): el contador de ids de `aria-describedby` vivia DENTRO de `filaPersona` y se reiniciaba en cada fila, asi que con N filas habia ids `errCampo1..errCampo4` repelidos en el documento y un lector de pantalla anunciaba el error de la fila 1 en las filas siguientes. Movido a nivel de MODULO: los ids siguen creciendo durante toda la sesion y siguen siendo unicos aunque el usuario agregue y quite filas (cada input apunta a SU span). `aria-invalid` y el texto visual no cambiaron. P2: linea en blanco antes de `## Norma de mensajes y validacion (v2.2)` en `DECISIONES.md` (estilo del resto de secciones) y la cita del manual `03-talento.md` ahora refleja la concordancia real del codigo («1 fila tiene problemas» / «X filas tienen problemas», igual que `js/talento.js`). El CSS no se volvio a tocar: el hash CSP sigue siendo `sha256-Ut0uE4/ZR3+TtR7OzL07xMlHyELWb0YuD9rKnYeHvOc=` y coincide (re-verificado).
+
+### Cierre de la tarea (11/11/2026): los siete criterios de aceptacion cumplidos y comprobados en pantalla contra staging
+
+Tras aplicar la sobrecarga de 4 argumentos en staging y probar la pantalla completa en local con `scripts/dev-server.py` (con staging), los SIETE criterios de aceptacion quedaron verificados en pantalla, dato a dato:
+
+- **CA1 ✅** Con el Dia 1 cerrado con 3 personas y el Dia 2 vacio, «Copiar del Dia 1» se ve SIN pulsar nada mas — y tambien se ve con la lista del Dia 2 ya LLENA (la barra unica de 4 acciones es siempre visible y pegajosa, arriba de la tarjeta).
+- **CA2 ✅** Copiar las 3 → el Dia 2 queda con 3 personas.
+- **CA3 ✅** Volver a pulsar y copiar de nuevo → «No hay personas nuevas que copiar: las 3 seleccionadas ya estaban en la lista», sin duplicar filas en la base (verificado tambien por consulta de conteo).
+- **CA4 ✅** Desmarcar una persona y copiar → se copian solo las marcadas.
+- **CA5 ✅** Copiar sobre un Dia 2 ya empezado a mano → las nuevas se SUMAN y las que estaban se conservan; las ya presentes se muestran con la etiqueta « — ya en la lista», casilla deshabilitada y contador «N de M seleccionadas (K ya en la lista)».
+- **CA6 ✅** Ningun `alert`/`confirm`/`prompt` nativo en todo el flujo: solo `modalAviso`/`modalConfirmar` propios (regla v2.1).
+- **CA7 ✅** La RPC rechaza con mensaje claro si la edicion esta cerrada (`edicion_cerrada` → modal propio + aviso junto al boton).
+
+Ademas de los siete, quedaron comprobados en pantalla los arreglos de los defectos documentados arriba: **validacion en vivo por campo** (borde rojo + `aria-invalid` + texto bajo el campo, sin tocar `config.js`), **avisos junto al boton** (parrafo propio dentro de la barra pegajosa, que sobrevive a la recarga), el **vaciado que persiste tras F5** (con recarga desde la base si el guardado falla), y los cuatro mensajes de resultado de copia con concordancia singular/plural.
+
+**SQL aplicado por el usuario en staging y en PRODUCCION:** `docs/sql/f_link_talento_copiar.sql` completo en el SQL Editor de ambos proyectos; verificado en ambos por consulta de catalogo: quedan EXACTAMENTE las dos sobrecargas, la de 3 argumentos retornando `boolean` y la nueva de 4 retornando `jsonb`. Las cedulas de PRODUCCION no se tocaron (no se ejecuto ningun UPDATE de normalizacion fuera de staging).
+
+**Despliegue:** el frontend nuevo quedo fusionado a `main` via **PR #12** con GitHub Pages en verde (run 265, success). La tarea queda `estado: hecho`.
