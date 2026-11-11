@@ -76,7 +76,7 @@ En staging:
 
 ### Fases
 
-- **Fase A — Respaldo:** `pg_get_functiondef` de las 54 funciones que tocan sesiones, congeladas en `docs/Supabase Snippet Untitled query.csv` (93,442 B, commit `fe6f3ac`). Es la póliza de reversión de todo el SQL de esta tarea (renombrar en una pasada de higiene futura).
+- **Fase A — Respaldo:** `pg_get_functiondef` de las 54 funciones que tocan sesiones, congeladas en `docs/sql/definiciones-funciones-2026-10-respaldo.csv` (renombrado desde el volcado original de las 54 definiciones; 93,442 B, commit `fe6f3ac`). Es la póliza de reversión de todo el SQL de esta tarea (el renombrado de higiene quedó hecho con ese nombre).
 - **Fase B — Esquema:** pgcrypto a `extensions`; `sesiones` +5 columnas (`token_hash`, `device_label`, `expira_at`, `revocado_at`, `ultimo_uso_at`) + índice único `sesiones_token_hash_uidx`; tabla `login_intentos`; REVOKES; `alter default privileges` para que las tablas nuevas nazcan cerradas.
 - **Fase C — Núcleo:** guardián `f_sesion_ok(p_token, rol)` (hash+revocación+expiración+rol, anota `ultimo_uso_at`), `f_sesion_rol` re-hecha por hash, `f_login` con rate limit 5/15 min por IP y registro de intentos, purga de sesiones viejas. 13 helper-users endurecidas gratis. **Prueba del rate limit hecha en vivo con el cubo `desconocida`** (5 fallas reales → el 6º intento revienta). Nota técnica: `encode()` es del núcleo de Postgres — no se califica como `extensions.encode`; `digest`/`crypt`/`gen_salt` sí.
 - **Fase D — Reescritura de las 39 inline en 4 lotes** (10 admin lectura, 13 admin cortesías, 5 admin aliados, 11 puerta): 8 plpgsql de puerta + 28 de admin al guardián; las 3 `LANGUAGE sql` de puerta (`lista`, `vendedor_por_cedula`, `vendedor_por_qr`) llevan hash inline (son `STABLE`, no pueden llamar al guardián). Verificación por conteo tras cada lote (10 → 23 → 28 → 36) y **0 chequeos residuales** al final. Humo "APP OK" en dashboard, estadísticas, cortesías y puerta (marcado en vivo: 4 personas, 2 autorizados).
@@ -100,7 +100,7 @@ Expiración 8 h · rate limit 5 fallas/15 min por IP (bloquea incluso con PIN co
 - **`puerta.html`:** distinguir "sesión revocada/expirada" de "no encontrado" en las búsquedas (hoy ambas responden vacío con mensaje genérico de no-encontrado).
 - **`f_admin_limpiar_todo`:** no reinicia `dia1_cerrado`/`dia2_cerrado` (pre-existente a P0-03) — el próximo evento arrancaría con los días "cerrados" del anterior. Decisión del usuario pendiente antes del próximo evento.
 - **P1-04 (staging):** prueba viva de expiración de token y del auto-bloqueo con temporizador.
-- Renombrar `docs/Supabase Snippet Untitled query.csv` → `respaldo-funciones-pre-p003.csv` (higiene, no urgente).
+- **HECHO (higiene de sesiones anteriores):** el volcado de las 54 definiciones de funciones se buscaba como `docs/Supabase Snippet Untitled query.csv`; quedo renombrado como `docs/sql/definiciones-funciones-2026-10-respaldo.csv`. No queda nada pendiente de este lado.
 
 ### SQL aplicado (todo ejecutado por el usuario en el SQL Editor de Supabase, proyecto nitrotalentos)
 

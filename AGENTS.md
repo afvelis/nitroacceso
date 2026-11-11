@@ -170,3 +170,11 @@ El cierre de sesion NO es un resumen de cortesia: es el unico medio por el que e
 **EL RELEVO INCLUYE EL PROMPT:** quien cierra entrega tambien el prompt de arranque del sucesor, con el SHA real y la rama dentro, y diciendole que lea `AGENTS.md` primero. No se confia a la memoria de nadie.
 
 Un cierre que mas tarde resulta falso es un fallo grave del agente que lo escribio, no del sucesor.
+
+## Verificación de arranque obligatoria (aprobada 11/11/2026)
+
+- Antes de tocar nada, el primer comando de toda sesion es `py scripts\verificar-arranque.py` (en Linux, `python3 scripts/verificar-arranque.py`). Su salida es la UNICA fuente de verdad sobre: rama de trabajo, SHA de HEAD, SHA de main, si la rama contiene main, si el arbol esta limpio, si existe PR y si los datos de referencia del repo son coherentes.
+- Ningun documento afirma el estado vigente SIN FECHA NI SHA DE MEDICION. Todo dato volatil que se escriba (rama, SHA de main, SHA de la rama, si contiene main, estado del PR) va acompanado de la fecha y del SHA en que se midio, y el script sigue siendo la autoridad: si discrepan, manda el script. El resto de los documentos guarda solo lo que no caduca: nombres de rama, rutas, identificadores, textos de los mensajes y decisiones. Esto NO deroga el «Protocolo de cierre y relevo», que sigue exigiendo dejar escritos el estado del PR y los cuatro datos de navegacion: lo que anade es que vayan medidos y fechados, no recordados.
+- Si un documento y el script discrepan, manda el script y se corrige el documento en la misma sesion.
+- El prompt de arranque del agente siguiente se COPIA de la seccion «PROMPT DE RELEVO» que imprime el script al final. No se redacta de memoria: se copia. Un prompt escrito a mano ya metio un parametro de URL equivocado (`?e=` en vez de `?s=`) y una referencia de proyecto con una letra cambiada.
+- Los datos de referencia tienen fuentes escritas separadas: los parametros de URL de cada pagina, en la seccion 9 de `docs/dev-local.md`; los IDs de proyecto, en `config.js`; los codigos de demo, en `supabase/seed.sql`.

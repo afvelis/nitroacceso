@@ -107,3 +107,21 @@ NA: entorno activo: staging
 ## 8 · Por qué existe este documento
 
 Este documento nace de una sesión en la que el arranque del servidor se perdió por no estar escrito en el repo: hubo que volver a deducirlo desde cero, paso a paso, en plena prueba. Queda escrito para que nadie lo tenga que deducir otra vez.
+
+## 9 · Datos de referencia (fuente canónica de los parámetros de URL)
+
+Los IDs de proyecto se leen de `config.js`; los códigos de demo, de `supabase/seed.sql`; esta tabla es la fuente canónica de los parámetros de URL (ARQUITECTURA.md §2 y §7 también los citan, y el script exige que sigan ahí) y el script de arranque (`scripts/verificar-arranque.py`) la comprueba.
+
+| Página | Parámetro de URL | Donde se lee en el código |
+| --- | --- | --- |
+| `stand.html` | `?s=` | `js/stand.js:2` |
+| `cortesia.html` | `?c=` | `js/cortesia.js:3` |
+| `coord.html` | `?c=` | `js/coord.js:355` |
+| `aliado.html` | `?a=` | `js/aliado.js:2` |
+| `aliados-concursos.html` | `?asig=` | `js/aliados-concursos.js:209` |
+| `talento.html` | `?t=` (lector generico) | `js/talento.js:39` |
+| `puerta.html` | `?lista=`, `?v=`, `?cl=`, `?ci=` | `js/puerta.js:374-377` y `js/puerta.js:1028-1032` |
+| Cualquier página que cargue `config.js` (13 de las 14; todas menos `acceso-denegado.html`) | `?env=` (`staging`, `produccion`, `prod`) | `config.js:41-43` |
+| `acceso-denegado.html` | ninguno | página estática, no carga `config.js` |
+
+**Aviso:** los parámetros `?cl=` y `?ci=` de `puerta.html` existen en el código y no están documentados en ningún capítulo del manual; queda pendiente documentarlos (no se tocan en esta tarea).
