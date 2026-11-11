@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://exrbwctegkzxurzwihvh.supabase.co; font-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'; style-src 'self' 'sha256-G3dyj1EVmTkHt04blEcp9i/+kR+x4sBjssHWSM8YlPw='">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://exrbwctegkzxurzwihvh.supabase.co; font-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'; style-src 'self' 'sha256-nL55ANtsxtR6Sr+Rts8pX0Xsk5Sshw7Uxk9aU3rdCAQ='">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -37,6 +37,12 @@ input{width:100%;padding:12px;border-radius:10px;border:1px solid var(--borde);b
 .btn-gris{background:#2a3648;color:var(--texto);}
 .btn-rojo{background:linear-gradient(135deg,#e05252,#c73e3e);color:#fff;}
 .btn-azul{background:linear-gradient(135deg,var(--acento2),#147acc);color:#fff;}
+/* F-6: barra de acciones unica de cada lista: los 4 botones compactos en una
+   sola fila (en pantalla estrecha bajan a dos lineas con flex-wrap, sin
+   desbordar). "Vaciar" usa btn-aviso: tono de aviso suave, mismo tamano. */
+.barraAcciones{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:12px;}
+.barraAcciones .btn{padding:6px 10px;font-size:13px;line-height:1.4;white-space:nowrap;border-radius:10px;}
+.btn-aviso{background:#4a3a10;color:var(--aviso);}
 .fila{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;}
 .suave{color:var(--suave);}
 .badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:17px;margin-left:8px;vertical-align:middle;}

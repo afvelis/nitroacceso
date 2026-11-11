@@ -191,8 +191,11 @@ function cardLista(l){
     // F-6: barra de acciones SIEMPRE visible mientras la lista sea editable.
     // En el Dia 2, si el Dia 1 tiene personas, la copia es la accion principal;
     // el fallback manual (agregar a mano y guardar) nunca desaparece.
+    // F-6 (defectos 4 y 5 de la prueba en pantalla): UNA sola barra de acciones
+    // con los 4 botones compactos en fila (clase barraAcciones). "Vaciar" vive
+    // AQUI y no al final de la tarjeta, donde parecia parte del QR.
     var fila = document.createElement('div');
-    fila.className = 'fila';
+    fila.className = 'barraAcciones';
     if (l.dia === 2 && dia1ConPersonas()) {
       fila.appendChild(boton('Copiar del Dia 1', '', function(){ mostrarPanelCopiar(sec, rows, l); }));
     }
@@ -200,6 +203,7 @@ function cardLista(l){
       rows.appendChild(filaPersona(null));
     }));
     fila.appendChild(boton('Guardar lista del Dia ' + l.dia, '', function(){ guardarDia(l, rows); }));
+    if (l.dia === 2) fila.appendChild(botonVaciarLista(l, rows));
     sec.appendChild(fila);
   } else {
     var nota = document.createElement('p');
@@ -218,54 +222,58 @@ function cardLista(l){
     notaQr2.textContent = 'El QR de esta lista aparecera aqui cuando guardes al menos un participante con todos sus datos.';
     sec.appendChild(notaQr2);
   }
-  // F-6 (defecto 1 de la prueba real): "Empezar de cero" solo limpiaba el DOM y
-  // la base seguia con las personas, con lo cual la copia decia "ya estaban
-  // todas". Ahora es "Vaciar la lista del Dia N" y PERSISTE el vaciado
-  // reutilizando la RPC de guardado (DELETE + INSERT; con p_personas: [] deja
-  // la lista vacia en la base). Sin dialogos nativos: modal propio.
-  if (editable && l.dia === 2) {
-    var btnVaciar = boton('Vaciar la lista del Dia ' + l.dia, 'btn-gris', async function(){
-      // N real: personas GUARDADAS en la base (l.personas), no filas visibles.
-      var guardadas = (l.personas || []).length;
-      if (!guardadas) {
-        await modalAviso('La lista del Dia ' + l.dia + ' ya esta vacia.', 'Nada que vaciar');
-        return;
-      }
-      var pregunta = (guardadas === 1
-        ? 'Se borrara 1 persona guardada en la lista del Dia ' + l.dia + '. Esta accion no se puede deshacer.'
-        : 'Se borraran ' + guardadas + ' personas guardadas en la lista del Dia ' + l.dia + '. Esta accion no se puede deshacer.');
-      if (!(await modalConfirmar(pregunta, 'Vaciar la lista del Dia ' + l.dia))) return;
-      btnVaciar.disabled = true;
-      rows.innerHTML = ''; // limpieza inmediata en pantalla; si el guardado falla, cargar() repone la base
-      var txtFinal = '';
-      var okFinal = true;
-      try {
-        var okVaciar = await llamar('f_link_talento_guardar', {
-          p_codigo_link: CODIGO, p_dia: l.dia, p_personas: []
-        });
-        if (okVaciar === true) {
-          txtFinal = 'Lista del Dia ' + l.dia + ' vaciada.';
-        } else {
-          await modalAviso('No se pudo vaciar la lista del Dia ' + l.dia + '. Se vuelve a mostrar lo que hay guardado en la base.', 'No se pudo vaciar');
-          txtFinal = 'No se pudo vaciar la lista del Dia ' + l.dia + '.';
-          okFinal = false;
-        }
-      } catch (e) {
-        console.error('[talento] vaciar Dia ' + l.dia + ': error', e);
-        await modalAviso('No se pudo vaciar la lista del Dia ' + l.dia + ': ' + e.message + '. Se vuelve a mostrar lo que hay guardado en la base.', 'Error de conexion');
-        txtFinal = 'No se pudo vaciar la lista del Dia ' + l.dia + ': ' + e.message;
+  return sec;
+}
+
+// F-6 (defecto 1 de la prueba real): "Empezar de cero" solo limpiaba el DOM y
+// la base seguia con las personas, con lo cual la copia decia "ya estaban
+// todas". Ahora es "Vaciar la lista del Dia N" y PERSISTE el vaciado
+// reutilizando la RPC de guardado (DELETE + INSERT; con p_personas: [] deja
+// la lista vacia en la base). Sin dialogos nativos: modal propio.
+// F-6 (defecto 4): el boton vive en la barra de acciones de la lista, no al
+// final de la tarjeta (la columna de antes); la logica, los textos y el modal
+// de confirmacion quedan intactos.
+function botonVaciarLista(l, rows){
+  var btnVaciar = boton('Vaciar la lista del Dia ' + l.dia, 'btn-aviso', async function(){
+    // N real: personas GUARDADAS en la base (l.personas), no filas visibles.
+    var guardadas = (l.personas || []).length;
+    if (!guardadas) {
+      await modalAviso('La lista del Dia ' + l.dia + ' ya esta vacia.', 'Nada que vaciar');
+      return;
+    }
+    var pregunta = (guardadas === 1
+      ? 'Se borrara 1 persona guardada en la lista del Dia ' + l.dia + '. Esta accion no se puede deshacer.'
+      : 'Se borraran ' + guardadas + ' personas guardadas en la lista del Dia ' + l.dia + '. Esta accion no se puede deshacer.');
+    if (!(await modalConfirmar(pregunta, 'Vaciar la lista del Dia ' + l.dia))) return;
+    btnVaciar.disabled = true;
+    rows.innerHTML = ''; // limpieza inmediata en pantalla; si el guardado falla, cargar() repone la base
+    var txtFinal = '';
+    var okFinal = true;
+    try {
+      var okVaciar = await llamar('f_link_talento_guardar', {
+        p_codigo_link: CODIGO, p_dia: l.dia, p_personas: []
+      });
+      if (okVaciar === true) {
+        txtFinal = 'Lista del Dia ' + l.dia + ' vaciada.';
+      } else {
+        await modalAviso('No se pudo vaciar la lista del Dia ' + l.dia + '. Se vuelve a mostrar lo que hay guardado en la base.', 'No se pudo vaciar');
+        txtFinal = 'No se pudo vaciar la lista del Dia ' + l.dia + '.';
         okFinal = false;
       }
-      // Recarga SIEMPRE desde la base: si el guardado fallo, la pantalla no se
-      // queda diciendo que esta vacia cuando no lo esta.
-      await cargar();
-      // El aviso va DESPUES de cargar(): render() limpia msgGlobal, asi que si
-      // se pinta antes, el texto desaparece en cuanto llega la recarga.
-      avisoMsg('msgGlobal', txtFinal, okFinal);
-    });
-    sec.appendChild(btnVaciar);
-  }
-  return sec;
+    } catch (e) {
+      console.error('[talento] vaciar Dia ' + l.dia + ': error', e);
+      await modalAviso('No se pudo vaciar la lista del Dia ' + l.dia + ': ' + e.message + '. Se vuelve a mostrar lo que hay guardado en la base.', 'Error de conexion');
+      txtFinal = 'No se pudo vaciar la lista del Dia ' + l.dia + ': ' + e.message;
+      okFinal = false;
+    }
+    // Recarga SIEMPRE desde la base: si el guardado fallo, la pantalla no se
+    // queda diciendo que esta vacia cuando no lo esta.
+    await cargar();
+    // El aviso va DESPUES de cargar(): render() limpia msgGlobal, asi que si
+    // se pinta antes, el texto desaparece en cuanto llega la recarga.
+    avisoMsg('msgGlobal', txtFinal, okFinal);
+  });
+  return btnVaciar;
 }
 
 function construirCajaQR(l){
