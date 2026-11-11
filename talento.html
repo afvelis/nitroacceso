@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://exrbwctegkzxurzwihvh.supabase.co; font-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'; style-src 'self' 'sha256-nL55ANtsxtR6Sr+Rts8pX0Xsk5Sshw7Uxk9aU3rdCAQ='">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://exrbwctegkzxurzwihvh.supabase.co; font-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'; style-src 'self' 'sha256-8XkEgSW4ndS87mdjzp3P1d1iCqlMEgUskCpA7RK6zEY='">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -40,7 +40,13 @@ input{width:100%;padding:12px;border-radius:10px;border:1px solid var(--borde);b
 /* F-6: barra de acciones unica de cada lista: los 4 botones compactos en una
    sola fila (en pantalla estrecha bajan a dos lineas con flex-wrap, sin
    desbordar). "Vaciar" usa btn-aviso: tono de aviso suave, mismo tamano. */
-.barraAcciones{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:12px;}
+/* F-6 (defecto reportado): la barra va ARRIBA de las filas y es sticky
+   (position:sticky; top:0; z-index:5) para seguir visible al hacer scroll
+   con la lista llena. Fondo solido del color de la tarjeta (--tarjeta) para
+   que las filas no se vean por debajo al pasar bajo la barra; el padding
+   forma parte de la caja con fondo (sin margin-top, que dejaria una franja
+   transparente arriba al quedarse pegada). */
+.barraAcciones{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;gap:6px;align-items:center;background:var(--tarjeta);padding:12px 0 8px;}
 .barraAcciones .btn{padding:6px 10px;font-size:13px;line-height:1.4;white-space:nowrap;border-radius:10px;}
 .btn-aviso{background:#4a3a10;color:var(--aviso);}
 .fila{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;}

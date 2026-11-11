@@ -187,13 +187,17 @@ function cardLista(l){
     var rows = document.createElement('div');
     rows.id = 'rows-' + l.dia;
     (l.personas || []).forEach(function(p){ rows.appendChild(filaPersona(p)); });
-    sec.appendChild(rows);
     // F-6: barra de acciones SIEMPRE visible mientras la lista sea editable.
     // En el Dia 2, si el Dia 1 tiene personas, la copia es la accion principal;
     // el fallback manual (agregar a mano y guardar) nunca desaparece.
     // F-6 (defectos 4 y 5 de la prueba en pantalla): UNA sola barra de acciones
     // con los 4 botones compactos en fila (clase barraAcciones). "Vaciar" vive
     // AQUI y no al final de la tarjeta, donde parecia parte del QR.
+    // F-6 (defecto reportado al usarlo): la barra va ARRIBA (justo tras el
+    // titulo/estado y la nota de edicion, ANTES de las filas): al crecer la lista quedaba al
+    // fondo y "Vaciar" se perdia sin hacer scroll. Con position:sticky (CSS)
+    // sigue a la vista con 3 o con 30 personas. Dia 1 cerrado no la pinta:
+    // entra por este bloque solo si editable.
     var fila = document.createElement('div');
     fila.className = 'barraAcciones';
     if (l.dia === 2 && dia1ConPersonas()) {
@@ -205,6 +209,7 @@ function cardLista(l){
     fila.appendChild(boton('Guardar lista del Dia ' + l.dia, '', function(){ guardarDia(l, rows); }));
     if (l.dia === 2) fila.appendChild(botonVaciarLista(l, rows));
     sec.appendChild(fila);
+    sec.appendChild(rows);
   } else {
     var nota = document.createElement('p');
     nota.className = 'suave';
