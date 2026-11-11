@@ -14,6 +14,9 @@ function pinta(el, texto, ok){
 function avisoMsg(id, texto, ok){ pinta($(id), texto, ok); }
 function boton(texto, clase, fn){
   var b = document.createElement('button');
+  // Defensa: tipo explicito, para que ningun boton dispare un submit si algun
+  // dia queda anidado dentro de un <form>.
+  b.type = 'button';
   b.className = 'btn ' + clase;
   b.textContent = texto;
   b.onclick = fn;
@@ -438,9 +441,12 @@ function mostrarPanelCopiar(sec, rows, l){
       if (r && r.ok === true) {
         panel.remove();
         var msg = textoResultadoCopiar(r.copiadas, r.omitidas);
-        avisoMsg('msgGlobal', msg, true);
+        // El aviso de msgGlobal va DESPUES de cargar(): render() limpia msgGlobal,
+        // igual que en botonVaciarLista; si se pinta antes, desaparece con la
+        // recarga y el usuario no ve nada (defecto reportado en la prueba real).
         await modalAviso(msg, 'Copia al Dia ' + l.dia);
         if (r.copiadas > 0) await cargar();
+        avisoMsg('msgGlobal', msg, true);
         return;
       }
       panel.remove();
@@ -606,23 +612,34 @@ async function guardarDia(l, rows){
   if (!arr.length) {
     if (!(await modalConfirmar('Esto dejara VACIA la lista del Dia ' + l.dia + '. Continuar?', 'Guardar lista vacia'))) return;
   }
+  // Respeta el patron de botonVaciarLista: los cuatro mensajes de RESULTADO
+  // (exito, RPC falsa, duplicado, error de red) se pintan DESPUES de cargar(),
+  // porque render() limpia msgGlobal durante la recarga y si se pinta antes el
+  // usuario no ve nada (defecto reportado: el guardado si ocurria en la base,
+  // solo faltaba la confirmacion visible).
+  var txtFinal = '';
+  var okFinal = false;
   try {
     var ok = await llamar('f_link_talento_guardar', {
       p_codigo_link: CODIGO, p_dia: l.dia, p_personas: arr
     });
     if (ok === true) {
-      avisoMsg('msgGlobal', 'Lista del Dia ' + l.dia + ' guardada.', true);
-      await cargar();
-      return;
+      txtFinal = 'Lista del Dia ' + l.dia + ' guardada.';
+      okFinal = true;
+    } else {
+      txtFinal = 'No se pudo guardar la lista. Revisa que la edicion este abierta y que ningun campo quede vacio.';
     }
-    avisoMsg('msgGlobal', 'No se pudo guardar la lista. Revisa que la edicion este abierta y que ningun campo quede vacio.', false);
   } catch (e) {
     if (String(e.message).indexOf('duplicate') >= 0 || String(e.message).indexOf('unique') >= 0) {
-      avisoMsg('msgGlobal', 'Hay cedulas repetidas dentro de la lista del Dia ' + l.dia + '. Cada participante debe tener una cedula distinta.', false);
-      return;
+      txtFinal = 'Hay cedulas repetidas dentro de la lista del Dia ' + l.dia + '. Cada participante debe tener una cedula distinta.';
+    } else {
+      txtFinal = 'No se pudo conectar: ' + e.message;
     }
-    avisoMsg('msgGlobal', 'No se pudo conectar: ' + e.message, false);
   }
+  // Recarga SIEMPRE desde la base: si el guardado fallo, la pantalla no se
+  // queda mostrando filas que no estan guardadas.
+  await cargar();
+  avisoMsg('msgGlobal', txtFinal, okFinal);
 }
 
 $('btnTermine').onclick = mostrarFinal;
