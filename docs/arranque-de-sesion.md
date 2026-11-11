@@ -15,6 +15,8 @@
 
 El agente **no** se arranca en el `cmd` de Windows. Esa ventana es la copia de trabajo y el navegador de pruebas; el agente vive donde se conversa.
 
+**Ojo con la carpeta:** si abres el `cmd` en otra carpeta (por ejemplo `C:\Users\afvel`, un nivel por encima del repo), los comandos de la columna de la derecha fallarán con `can't open file`. Usa los bloques de la sección 4.1, que llevan el `cd` dentro.
+
 ## 2 · La receta (tres pasos, siempre igual)
 
 1. **Abre el agente nuevo** en el mismo sitio desde donde hablas habitualmente, en el proyecto nitroacceso.
@@ -41,6 +43,35 @@ En modo chat gratuito este apartado no aplica: el verificador lo ejecutas tú y 
 - [ ] `git pull` sin errores.
 - [ ] `py scripts\verificar-arranque.py` termina con `0 FALLAS`.
 - [ ] Si vas a probar en el navegador: `py scripts\dev-server.py` arrancado y la URL `http://127.0.0.1:8000/...` con el parámetro correcto (ver `docs/dev-local.md` §9).
+
+### 4.1 · Comandos listos para copiar
+
+**Cada bloque lleva el `cd` dentro.** Si copias solo la segunda línea, Python buscará el archivo en la carpeta equivocada y fallará con `can't open file '...\scripts\dev-server.py'`.
+
+**Verificador** (siempre el primero):
+
+    cd C:\Users\afvel\nitroacceso
+    py scripts\verificar-arranque.py
+
+Debe terminar con `RESULTADO: ... 0 FALLAS`. Si sale alguna `[FALLA]` que mencione `git pull`, ejecuta `git pull` y repite.
+
+**Servidor de pruebas**:
+
+    cd C:\Users\afvel\nitroacceso
+    py scripts\dev-server.py
+
+Debe imprimir el recuadro de `====` y la línea `Sirviendo la raiz del repo: C:\Users\afvel\nitroacceso`, y después **la ventana se queda colgada sin devolver el símbolo del sistema**. Eso significa que está escuchando: **no la cierres**. Esa ventana no se usa para nada más.
+
+**Qué hacer según el síntoma:**
+
+| Síntoma en la ventana | Causa | Arreglo |
+| --- | --- | --- |
+| `can't open file 'C:\Users\afvel\scripts\dev-server.py'` | Se ejecutó desde `C:\Users\afvel`, un nivel por encima del repo | Repetir el bloque COMPLETO, incluido el `cd` |
+| `OSError: [WinError 10048]` u `Only one usage of each socket address` | El puerto 8000 lo tiene otra ventana | Cerrar esa otra ventana, o `py scripts\dev-server.py --puerto 8001` y abrir la URL con `:8001` |
+| `'py' no se reconoce como un comando` | Falta el lanzador `py` | Probar con `python scripts\verificar-arranque.py` |
+| Vuelve al símbolo del sistema sin mensajes | El servidor no llegó a escuchar | Copiar TODO lo que imprime la ventana, no solo el final |
+
+Las URLs que se abren en el navegador, con su parámetro exacto, están en `docs/dev-local.md` sección 9. **El servidor no las imprime: él solo sirve.**
 
 ## 5 · Al cerrar la sesión
 
