@@ -29,7 +29,7 @@ async function copiarTexto(texto, btn){
       btn.textContent = '¡Copiado!';
       setTimeout(() => { btn.textContent = original; }, 1500);
     }catch(e2){
-      alert('No se pudo copiar: ' + texto);
+      await NA.avisar('No se pudo copiar: ' + texto);
     }
     document.body.removeChild(ta);
   }
@@ -197,7 +197,7 @@ btnToggleEdicion.addEventListener('click', async () => {
     ? '¿Cerrar la edición del evento?\n\nLa puerta podrá empezar a operar, pero ya no se podrán editar listas, talentos ni stands. Las cortesías sí se pueden seguir creando.'
     : '¿Reabrir la edición del evento?\n\nLa puerta dejará de funcionar hasta que cierres de nuevo.';
   
-  if(!confirm(mensaje)) return;
+  if(!(await NA.confirmar(mensaje))) return;
   
   btnToggleEdicion.disabled = true;
   btnToggleEdicion.textContent = 'Cambiando estado...';
@@ -206,14 +206,14 @@ btnToggleEdicion.addEventListener('click', async () => {
     await llamar('f_admin_toggle_edicion', { p_token: token, p_abierta: !estadoActual });
     location.reload();
   }catch(e){
-    alert('Error al cambiar el estado: ' + (e.message || e));
+    await NA.avisar('Error al cambiar el estado: ' + (e.message || e));
     btnToggleEdicion.disabled = false;
     btnToggleEdicion.textContent = datosDashboard?.evento?.edicion_abierta ? '🔒 Cerrar edición' : '🔓 Reabrir edición';
   }
 });
 
-btnSalir.addEventListener('click', () => {
-  if(confirm('¿Cerrar sesión de administrador?')){
+btnSalir.addEventListener('click', async () => {
+  if(await NA.confirmar('¿Cerrar sesión de administrador?')){
     borrarSesion();
     location.href = 'index.html';
   }
@@ -223,7 +223,7 @@ btnSalir.addEventListener('click', () => {
   try{
     const datos = await llamar('f_admin_dashboard', { p_token: token });
     if(!datos){
-      alert('No se pudo cargar el dashboard. Verifica tu sesión.');
+      await NA.avisar('No se pudo cargar el dashboard. Verifica tu sesión.');
       borrarSesion();
       location.href = 'index.html';
       return;

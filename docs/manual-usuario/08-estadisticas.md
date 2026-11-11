@@ -44,7 +44,7 @@ Las estadísticas en pantalla se pierden al limpiar el sistema para el próximo 
 
 ## Errores comunes
 
-- **"No se pudo cargar la segmentación. Verifica tu sesión."**: tu sesión expiró; vuelve a entrar con tu PIN.
+- **"No se pudo cargar la segmentación. Verifica tu sesión."**: tu sesión expiró; vuelve a entrar con tu PIN. Este aviso aparece en una **ventana de la propia NitroSystem** (con el botón **"Aceptar"**), no en un diálogo del navegador; el texto y la decisión son los mismos de antes.
 - **Los números no cuadran con lo que vi en la puerta**: consulta los datos al final del día o del evento; en vivo cambian constantemente.
 - **Cargué estadísticas y salieron vacías**: el evento aún no tiene operaciones registradas en esa categoría.
 

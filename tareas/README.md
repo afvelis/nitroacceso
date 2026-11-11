@@ -65,7 +65,7 @@ Usa [PLANTILLA.md](PLANTILLA.md) para crear tareas nuevas. No renombres los IDs 
 | [P1-01](P1-01-integridad-escaneos-cupones.md) | Escaneos atómicos, cupones y cédulas duplicadas | P1 | pendiente | P0-02 |
 | [P1-02](P1-02-roles-estado-puerta.md) | Rol supervisor y revalidación de estado en puerta | P1 | pendiente | P0-02 |
 | [P1-03](P1-03-auditoria-privacidad.md) | Auditoría de acciones y privacidad de datos | P1 | pendiente | P0-02 |
-| [P1-04](P1-04-staging-migraciones-tests.md) | Staging, migraciones, tests y CI | P1 | pendiente | P0-02 |
+| [P1-04](P1-04-staging-migraciones-tests.md) | Staging, migraciones, tests y CI | P1 | **en_progreso** (Fases A y B hechas; falta la Fase C) | P0-02 |
 | [P2-01](P2-01-offline-pwa.md) | Modo offline y cola de escaneos para el día del evento | P2 | pendiente | P0-04 |
 | [P2-02](P2-02-refactor-accesibilidad.md) | Refactor a módulos compartidos y accesibilidad | P2 | pendiente | P1-04 |
 | [P2-03](P2-03-observabilidad-runbook.md) | Observabilidad y runbook de incidentes | P2 | pendiente | P1-03 |

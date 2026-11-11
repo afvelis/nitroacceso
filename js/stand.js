@@ -121,7 +121,7 @@ async function quitarVendedor(v) {
   const msg = document.getElementById('msgRec');
   msg.style.color = 'var(--suave)';
   msg.textContent = '';
-  const seguro = confirm('Quitar a ' + v.nombre + ' ' + v.apellido + ' del stand? Su QR quedara anulado de inmediato y su lugar quedara libre para otra persona. Esta accion no se puede deshacer.');
+  const seguro = await NA.confirmar('Quitar a ' + v.nombre + ' ' + v.apellido + ' del stand? Su QR quedara anulado de inmediato y su lugar quedara libre para otra persona. Esta accion no se puede deshacer.');
   if (!seguro) return;
   try {
     const r = await llamar('f_link_stand_quitar_vendedor', { p_codigo_link: codigoLink, p_cedula: v.cedula });
@@ -258,7 +258,7 @@ document.getElementById('btnRegistrar').onclick = async function(){
 
   const quedan = lugaresRestantes();
   if (personas.length < quedan) {
-    const seguir = confirm('Vas a registrar ' + personas.length + ' de ' + quedan + ' lugares disponibles. Solo se generaran ' + personas.length + ' QR por ahora. Podras agregar los faltantes despues con este mismo link, hasta que el administrador cierre la edicion. Continuar?');
+    const seguir = await NA.confirmar('Vas a registrar ' + personas.length + ' de ' + quedan + ' lugares disponibles. Solo se generaran ' + personas.length + ' QR por ahora. Podras agregar los faltantes despues con este mismo link, hasta que el administrador cierre la edicion. Continuar?');
     if (!seguir) return;
   }
 
@@ -353,12 +353,12 @@ function mostrarResultados(soloLectura) {
           const data = await fetch(img.src);
           const blob = await data.blob();
           await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
-          alert('✅ Imagen del QR de ' + per.nombre + ' copiada.');
+          await NA.avisar('✅ Imagen del QR de ' + per.nombre + ' copiada.');
           return;
         } catch (e) {}
       }
       await navigator.clipboard.writeText(textoRespaldo);
-      alert('⚠️ No se pudo copiar la imagen. Copiamos el texto con código y link como respaldo.');
+      await NA.avisar('⚠️ No se pudo copiar la imagen. Copiamos el texto con código y link como respaldo.');
     };
     botones[1].onclick = function(){
       window.open(urlWA(textoRespaldo), '_blank');
@@ -366,7 +366,7 @@ function mostrarResultados(soloLectura) {
     botones[2].onclick = function(){
       window.location.href = urlMail('Mi QR para NitroSystem', textoRespaldo);
       navigator.clipboard.writeText(textoRespaldo).catch(()=>{});
-      setTimeout(() => alert('Si no abrió tu app de correo, el texto ya está copiado en tu portapapeles como respaldo.'), 500);
+      setTimeout(() => { NA.avisar('Si no abrió tu app de correo, el texto ya está copiado en tu portapapeles como respaldo.'); }, 500);
     };
     cont.appendChild(card);
   });
@@ -378,7 +378,7 @@ function mostrarResultados(soloLectura) {
 
 document.getElementById('btnTermine').onclick = function(){
   if (!datosStand || !datosStand.vendedores.length) {
-    alert('Todavía no hay personas registradas en este stand.');
+    NA.avisar('Todavía no hay personas registradas en este stand.');
     return;
   }
   loteActual = { personas: personasDelStand() };
