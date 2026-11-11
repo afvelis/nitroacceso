@@ -51,7 +51,13 @@
       background: '#f8fafc',
       color: '#111',
       cursor: 'pointer',
-      font: 'inherit'
+      font: 'inherit',
+      // Neutraliza las reglas .btn de alguna página (stand.html los estira a
+      // todo el ancho y los apila con margen): el modal los quiere normales.
+      display: 'inline-block',
+      width: 'auto',
+      margin: '0',
+      textAlign: 'center'
     },
     botonPrincipal: {
       background: '#0f172a',
