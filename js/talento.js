@@ -12,6 +12,19 @@ function pinta(el, texto, ok){
   el.classList.add(ok ? 'texto-ok' : 'texto-aviso');
 }
 function avisoMsg(id, texto, ok){ pinta($(id), texto, ok); }
+// F-6 (defecto de la prueba real): el aviso de guardar/copiar/vaciar se pinta en
+// un parrafo PROPIO de cada lista (dentro de la barra de acciones pegajosa),
+// no en msgGlobal (que esta arriba de todo y el usuario no lo ve cuando esta
+// mirando la tarjeta del Dia 2). msgGlobal se reserva para los errores de
+// carga de la pagina; no se elimina.
+function idMsgLista(dia){ return 'msgLista' + dia; }
+function avisoLista(l, texto, ok){
+  var el = $(idMsgLista(l.dia));
+  if (!el) { avisoMsg('msgGlobal', texto, ok); return; } // respaldo por si la tarjeta no existe
+  if (texto === '') { el.textContent = ''; el.hidden = true; return; }
+  pinta(el, texto, ok);
+  el.hidden = false;
+}
 function boton(texto, clase, fn){
   var b = document.createElement('button');
   // Defensa: tipo explicito, para que ningun boton dispare un submit si algun
@@ -211,6 +224,17 @@ function cardLista(l){
     }));
     fila.appendChild(boton('Guardar lista del Dia ' + l.dia, '', function(){ guardarDia(l, rows); }));
     if (l.dia === 2) fila.appendChild(botonVaciarLista(l, rows));
+    // F-6 (defecto de la prueba real): parrafo PROPIO de mensajes de la lista,
+    // dentro de la barra de acciones: como la barra es sticky, el aviso de
+    // guardar/copiar/vaciar se ve JUNTO AL BOTON que se pulso, sin hacer
+    // scroll, y se vuelve a pintar despues de la recarga de la base (render()
+    // reconstruye el DOM, por eso los mensajes de resultado se pintan tras
+    // cargar(), igual que se documento en botonVaciarLista).
+    var msgLista = document.createElement('p');
+    msgLista.id = idMsgLista(l.dia);
+    msgLista.className = 'msgLista'; // sin la clase suave: el color lo ponen texto-ok / texto-aviso
+    msgLista.hidden = true;
+    fila.appendChild(msgLista);
     sec.appendChild(fila);
     sec.appendChild(rows);
   } else {
@@ -277,9 +301,10 @@ function botonVaciarLista(l, rows){
     // Recarga SIEMPRE desde la base: si el guardado fallo, la pantalla no se
     // queda diciendo que esta vacia cuando no lo esta.
     await cargar();
-    // El aviso va DESPUES de cargar(): render() limpia msgGlobal, asi que si
-    // se pinta antes, el texto desaparece en cuanto llega la recarga.
-    avisoMsg('msgGlobal', txtFinal, okFinal);
+    // El aviso va DESPUES de cargar() y en el parrafo PROPIO de la lista
+    // (idMsgLista), porque render() limpia los mensajes durante la recarga;
+    // igual que en guardarDia y en la copia.
+    avisoLista(l, txtFinal, okFinal);
   });
   return btnVaciar;
 }
@@ -441,12 +466,13 @@ function mostrarPanelCopiar(sec, rows, l){
       if (r && r.ok === true) {
         panel.remove();
         var msg = textoResultadoCopiar(r.copiadas, r.omitidas);
-        // El aviso de msgGlobal va DESPUES de cargar(): render() limpia msgGlobal,
-        // igual que en botonVaciarLista; si se pinta antes, desaparece con la
-        // recarga y el usuario no ve nada (defecto reportado en la prueba real).
+        // El aviso va DESPUES de cargar() y en el parrafo PROPIO de la lista
+        // (idMsgLista, junto a la barra que tiene el boton Copiar), igual que
+        // en guardarDia y botonVaciarLista: render() limpia los mensajes
+        // durante la recarga, asi que si se pinta antes el usuario no ve nada.
         await modalAviso(msg, 'Copia al Dia ' + l.dia);
         if (r.copiadas > 0) await cargar();
-        avisoMsg('msgGlobal', msg, true);
+        avisoLista(l, msg, true);
         return;
       }
       panel.remove();
@@ -461,7 +487,7 @@ function mostrarPanelCopiar(sec, rows, l){
       } else {
         txtMotivo = 'No se pudo copiar al Dia ' + l.dia + '. Puedes agregar participantes a mano y guardar.';
       }
-      avisoMsg('msgGlobal', txtMotivo, false);
+      avisoLista(l, txtMotivo, false);
       await modalAviso(txtMotivo, 'No se pudo copiar');
     } catch (e) {
       console.error('[talento] copiar selectivo Dia 1 -> Dia ' + l.dia + ': error', e);
@@ -549,7 +575,10 @@ function filaPersona(p){
   var campos = [
     ['nombre', 'Nombre'],
     ['apellido', 'Apellido'],
-    ['cedula', 'Cedula'],
+    // F-6 (defecto de la prueba real): la regla de negocio es cedula SOLO numeros,
+    // sin prefijos (cedulaValida en config.js no se toca). El ejemplo del campo lo
+    // refleja para que el usuario no escriba V-12345678 y el guardado falle.
+    ['cedula', 'Cedula (Ej.: 12345678)'],
     ['cargo', 'Cargo']
   ];
   campos.forEach(function(c){
@@ -592,19 +621,19 @@ async function guardarDia(l, rows){
     };
     if (!p.nombre && !p.apellido && !p.cedula && !p.cargo) continue;
     if (!p.nombre || !p.apellido || !p.cedula || !p.cargo) {
-      avisoMsg('msgGlobal', 'Hay una fila con campos vacios en la lista del Dia ' + l.dia + '. Completa esa fila o pulsale Quitar.', false);
+      avisoLista(l, 'Hay una fila con campos vacios en la lista del Dia ' + l.dia + '. Completa esa fila o pulsale Quitar.', false);
       return;
     }
     if (!textoPersonaValido(p.nombre) || !textoPersonaValido(p.apellido)) {
-      avisoMsg('msgGlobal', 'Hay un nombre o apellido no valido (maximo 60 caracteres, sin < ni >) en la lista del Dia ' + l.dia + '.', false);
+      avisoLista(l, 'Hay un nombre o apellido no valido (maximo 60 caracteres, sin < ni >) en la lista del Dia ' + l.dia + '.', false);
       return;
     }
     if (!cedulaValida(p.cedula)) {
-      avisoMsg('msgGlobal', 'Hay una cedula no valida (solo numeros, 4 a 20 caracteres) en la lista del Dia ' + l.dia + '.', false);
+      avisoLista(l, 'Hay una cedula no valida (solo numeros, 4 a 20 caracteres) en la lista del Dia ' + l.dia + '.', false);
       return;
     }
     if (!textoPersonaValido(p.cargo, 60)) {
-      avisoMsg('msgGlobal', 'Hay un cargo no valido (sin < ni >) en la lista del Dia ' + l.dia + '.', false);
+      avisoLista(l, 'Hay un cargo no valido (sin < ni >) en la lista del Dia ' + l.dia + '.', false);
       return;
     }
     arr.push(p);
@@ -614,9 +643,10 @@ async function guardarDia(l, rows){
   }
   // Respeta el patron de botonVaciarLista: los cuatro mensajes de RESULTADO
   // (exito, RPC falsa, duplicado, error de red) se pintan DESPUES de cargar(),
-  // porque render() limpia msgGlobal durante la recarga y si se pinta antes el
-  // usuario no ve nada (defecto reportado: el guardado si ocurria en la base,
-  // solo faltaba la confirmacion visible).
+  // porque render() limpia los mensajes durante la recarga y si se pinta antes
+  // el usuario no ve nada (defecto reportado: el guardado si ocurria en la base,
+  // solo faltaba la confirmacion visible). Y se pintan en el parrafo PROPIO de
+  // la lista (junto al boton Guardar), no en msgGlobal.
   var txtFinal = '';
   var okFinal = false;
   try {
@@ -639,7 +669,7 @@ async function guardarDia(l, rows){
   // Recarga SIEMPRE desde la base: si el guardado fallo, la pantalla no se
   // queda mostrando filas que no estan guardadas.
   await cargar();
-  avisoMsg('msgGlobal', txtFinal, okFinal);
+  avisoLista(l, txtFinal, okFinal);
 }
 
 $('btnTermine').onclick = mostrarFinal;

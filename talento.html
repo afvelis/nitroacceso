@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://exrbwctegkzxurzwihvh.supabase.co; font-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'; style-src 'self' 'sha256-8XkEgSW4ndS87mdjzp3P1d1iCqlMEgUskCpA7RK6zEY='">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://exrbwctegkzxurzwihvh.supabase.co; font-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'; style-src 'self' 'sha256-hd1VbuxAh/HlE+pVKk6Dug8IKgUMOP1+ZZkhkk8w36k='">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -48,6 +48,11 @@ input{width:100%;padding:12px;border-radius:10px;border:1px solid var(--borde);b
    transparente arriba al quedarse pegada). */
 .barraAcciones{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;gap:6px;align-items:center;background:var(--tarjeta);padding:12px 0 8px;}
 .barraAcciones .btn{padding:6px 10px;font-size:13px;line-height:1.4;white-space:nowrap;border-radius:10px;}
+/* F-6 (defecto de sitio): parrafo de mensajes de la lista (guardar/copiar/vaciar),
+   DENTRO de la barra de acciones pegajosa: con width:100% baja a su propia fila
+   de la barra, justo debajo de los botones, y al ser sticky se ve sin hacer
+   scroll aunque la lista sea larga. El color lo ponen texto-ok / texto-aviso. */
+.msgLista{width:100%;margin:0;font-size:14px;}
 .btn-aviso{background:#4a3a10;color:var(--aviso);}
 .fila{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;}
 .suave{color:var(--suave);}
