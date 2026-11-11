@@ -54,7 +54,7 @@ En la tarjeta **"Datos del negocio"** escribe **"Empresa *"** y **"Qué vende *"
 
 3. Si estás de acuerdo, acepta.
 
-La confirmación de registro parcial y la de quitar a alguien del stand (ambas con **"Aceptar"** y **"Cancelar"**) y los avisos de copiado/QR de esta página (solo **"Aceptar"**) aparecen en una **ventana de la propia NitroSystem**, no en un diálogo del navegador; el texto y la decisión son los mismos de antes.
+La confirmación de registro parcial (con **"Aceptar"** y **"Cancelar"**) y los avisos de copiado/QR de esta página (solo **"Aceptar"**) aparecen en una **ventana de la propia NitroSystem**, no en un diálogo del navegador; el texto y la decisión son los mismos de antes.
 
 4. Aparece la pantalla **"✅ Registro completado: estos son los brazaletes del stand."** con un brazalete por persona: nombre, stand, el sello **"Válido Día 1 y Día 2"**, el QR y los datos (Cédula, Empresa, Qué vende).
 5. Comparte cada brazalete con sus botones: **"📋 Copiar QR"**, **"💬 WhatsApp"**, **"✉️ Correo"**.
