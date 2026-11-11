@@ -50,7 +50,8 @@ Al iniciar cualquier sesión, se verifica en este orden. Cada punto dice quién 
 3. **tareas/** — AGENTE: lee los `estado:` del backlog. CHAT GRATUITO: el usuario abre `tareas/` y reporta los estados (o pega la tabla del README).
 4. **Keep-alive** — AGENTE: revisa la última ejecución en Actions. CHAT GRATUITO: el usuario mira Actions y reporta si la última ejecución está en verde.
 5. **Backend Supabase** — SIEMPRE el usuario (en ambos modos), SOLO si la sesión va a tocar RPC o esquema: ejecuta la Consulta A o D (funciones/ACL) y la B (tablas/columnas) del SQL Editor y pega los resultados. Los resultados vigentes quedan copiados en ARQUITECTURA.md y en `docs/seguridad-supabase.md`.
-6. **Excepción crítica**: si cualquier cosa no encaja (archivo que el manifiesto dice que existe y no está, contradicción entre ESTADO y repo, paso que no cuadra), DETENER y avisar en español llano. No reconstruir en silencio.
+6. **Cierre y relevo** — el cierre de sesión y el relevo al siguiente agente siguen el "Protocolo de cierre y relevo" de `AGENTS.md` (aprobado 11/11/2026); ningún criterio de aceptación se marca cumplido sin su prueba ejecutada.
+7. **Excepción crítica**: si cualquier cosa no encaja (archivo que el manifiesto dice que existe y no está, contradicción entre ESTADO y repo, paso que no cuadra), DETENER y avisar en español llano. No reconstruir en silencio.
 
 **Estado de la verificación vigente (11/11/2026, cierre de la Sesión 21):**
 
