@@ -569,6 +569,13 @@ function mostrarFinal(){
   window.scrollTo(0, 0);
 }
 
+// Contador de ids de avisos de campo a nivel de MODULO (no por fila): si
+// viviera dentro de filaPersona se reiniciaria en cada fila y habria ids
+// repetidos en el documento, con lo cual aria-describedby resolveria siempre
+// al primer elemento con ese id y un lector de pantalla anunciaria el error
+// de la fila 1 en las filas siguientes. Contando aqui, los ids siguen siendo
+// unicos aunque el usuario agregue y quite filas durante toda la sesion.
+var contadorAvisosCampo = 0;
 function filaPersona(p){
   var div = document.createElement('div');
   div.className = 'filaPersona';
@@ -581,11 +588,29 @@ function filaPersona(p){
     ['cedula', 'Cedula (Ej.: 12345678)'],
     ['cargo', 'Cargo']
   ];
+  // Norma v2.2 (11/11/2026): validacion EN VIVO. Cada campo valida mientras se
+  // escribe (evento input; el pegado dispara input tambien, y se agrega el
+  // listener de paste por claridad) y senala el error EN EL PROPIO campo:
+  // borde rojo + texto breve debajo + aria-invalid. Usa las reglas de config.js
+  // (cedulaValida, textoPersonaValido) para no duplicar reglas.
   campos.forEach(function(c){
+    var wrap = document.createElement('div');
+    wrap.className = 'wCampo';
     var inp = document.createElement('input');
     inp.placeholder = c[1];
     inp.value = (p && p[c[0]]) ? p[c[0]] : '';
-    div.appendChild(inp);
+    var avisoCampo = document.createElement('span');
+    avisoCampo.className = 'errorCampo';
+    avisoCampo.hidden = true;
+    contadorAvisosCampo++;
+    avisoCampo.id = 'errCampo' + contadorAvisosCampo; // unico en todo el documento (contador de modulo)
+    inp.setAttribute('aria-describedby', avisoCampo.id);
+    var validar = function(){ marcarCampo(inp, errorDeCampo(c[0], inp.value, false)); };
+    inp.addEventListener('input', validar);
+    inp.addEventListener('paste', function(){ window.setTimeout(validar, 0); });
+    wrap.appendChild(inp);
+    wrap.appendChild(avisoCampo);
+    div.appendChild(wrap);
   });
   var b = boton('Quitar', 'btn-rojo', function(){ div.remove(); });
   div.appendChild(b);
@@ -608,9 +633,59 @@ function tablaPersonas(rows){
   return t;
 }
 
+// ===== Norma v2.2: validacion en el campo, errores de accion con modal =====
+// F-6 (11/11/2026): en la prueba real el guardado "no hacia nada" porque el
+// error de cedula salia en la cabecera de la pagina, fuera de la vista.
+// Dos respuestas: (1) cada campo se valida MIENTRAS se escribe y marca el
+// error en el propio campo; (2) cuando el guardado no puede completarse por
+// validacion, ademas del aviso de la tarjeta se abre el modal propio (norma
+// v2.1: nunca alert/confirm/prompt nativos).
+
+// Reglas de campo en UN solo lugar, apoyadas en config.js (no se toca):
+// - cedula: cedulaValida (solo digitos, puntos, espacios y guiones, 4 a 20).
+// - nombre / apellido / cargo: textoPersonaValido (maximo 60, sin < ni >).
+// Devuelve '' si el valor pasa; si no, el texto breve para el campo.
+// requerido=true lo usa el guardado (marca los campos vacios); en vivo los
+// campos vacios quedan neutros: el aviso de obligatorio aparece al guardar.
+// El validador NO se relaja (solo numeros, sin prefijos V-): decision de
+// negocio del 11/11/2026 para reducir friccion en puerta.
+function errorDeCampo(campo, valor, requerido){
+  var v = String(valor == null ? '' : valor).trim();
+  if (!v) return requerido ? 'Este campo es obligatorio.' : '';
+  if (campo === 'cedula') {
+    if (!cedulaValida(v)) return 'Solo numeros, sin la V ni puntos dobles, minimo 4 digitos.';
+  } else if (!textoPersonaValido(v, 60)) {
+    return 'Maximo 60 caracteres, sin < ni >.';
+  }
+  return '';
+}
+
+// Marca o limpia el estado invalido de un input: clase CSS (borde rojo),
+// aria-invalid para lectores de pantalla y el texto breve justo debajo
+// (span.errorCampo dentro del mismo wCampo). El aviso desaparece en cuanto
+// el valor vuelve a ser valido.
+function marcarCampo(input, texto){
+  var mal = !!texto;
+  if (mal) {
+    input.classList.add('campoInvalido');
+    input.setAttribute('aria-invalid', 'true');
+  } else {
+    input.classList.remove('campoInvalido');
+    input.removeAttribute('aria-invalid');
+  }
+  if (input.nextElementSibling && input.nextElementSibling.className === 'errorCampo') {
+    input.nextElementSibling.textContent = texto || '';
+    input.nextElementSibling.hidden = !mal;
+  }
+}
+
 async function guardarDia(l, rows){
   var filas = rows.querySelectorAll('.filaPersona');
   var arr = [];
+  // Norma v2.2: se recolectan TODAS las filas con problemas (no se corta en la
+  // primera) para decirselo al usuario de una vez en el modal y en el aviso de
+  // la tarjeta, y se marcan los campos fallidos EN SU PROPIO sitio.
+  var problemas = [];
   for (var i = 0; i < filas.length; i++) {
     var inputs = filas[i].querySelectorAll('input');
     var p = {
@@ -620,23 +695,34 @@ async function guardarDia(l, rows){
       cargo: inputs[3].value.trim()
     };
     if (!p.nombre && !p.apellido && !p.cedula && !p.cargo) continue;
-    if (!p.nombre || !p.apellido || !p.cedula || !p.cargo) {
-      avisoLista(l, 'Hay una fila con campos vacios en la lista del Dia ' + l.dia + '. Completa esa fila o pulsale Quitar.', false);
-      return;
+    var definicion = [
+      ['nombre', p.nombre, 'Nombre'],
+      ['apellido', p.apellido, 'Apellido'],
+      ['cedula', p.cedula, 'Cedula'],
+      ['cargo', p.cargo, 'Cargo']
+    ];
+    var malos = [];
+    for (var j = 0; j < definicion.length; j++) {
+      var msg = errorDeCampo(definicion[j][0], definicion[j][1], true);
+      marcarCampo(inputs[j], msg);
+      if (msg) malos.push(definicion[j][2]);
     }
-    if (!textoPersonaValido(p.nombre) || !textoPersonaValido(p.apellido)) {
-      avisoLista(l, 'Hay un nombre o apellido no valido (maximo 60 caracteres, sin < ni >) en la lista del Dia ' + l.dia + '.', false);
-      return;
-    }
-    if (!cedulaValida(p.cedula)) {
-      avisoLista(l, 'Hay una cedula no valida (solo numeros, 4 a 20 caracteres) en la lista del Dia ' + l.dia + '.', false);
-      return;
-    }
-    if (!textoPersonaValido(p.cargo, 60)) {
-      avisoLista(l, 'Hay un cargo no valido (sin < ni >) en la lista del Dia ' + l.dia + '.', false);
-      return;
+    if (malos.length) {
+      problemas.push({ fila: i + 1, campos: malos });
+      continue;
     }
     arr.push(p);
+  }
+  if (problemas.length) {
+    var detalle = problemas.map(function(x){
+      return 'Fila ' + x.fila + ': ' + x.campos.join(', ');
+    }).join(' | ');
+    var txtProblemas = 'No se pudo guardar la lista del Dia ' + l.dia + ': '
+      + problemas.length + ((problemas.length === 1) ? ' fila tiene problemas. ' : ' filas tienen problemas. ')
+      + detalle + '. Corrigelos aqui mismo y vuelve a Guardar.';
+    avisoLista(l, txtProblemas, false);
+    await modalAviso(txtProblemas, 'Corrige los campos marcados');
+    return;
   }
   if (!arr.length) {
     if (!(await modalConfirmar('Esto dejara VACIA la lista del Dia ' + l.dia + '. Continuar?', 'Guardar lista vacia'))) return;

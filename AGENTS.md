@@ -99,3 +99,14 @@ Acuerdo permanente del usuario, construido sesión tras sesión. Vale para cualq
 ### Formato de cada paso
 
 1. Verificación del paso anterior → "Correcto" · 2. INFORME (qué + por qué) · 3. UNA instrucción con valores exactos · 4. PRUEBA DEL OBJETIVO dato a dato · 5. Reporte del usuario → vuelve a 1.
+
+## Norma de mensajes y validacion (v2.2)
+
+Acuerdo del 11/11/2026, nacido de una prueba real en pantalla: la cedula mal escrita solo avisaba en la cabecera de la pagina, fuera de la vista, y el guardado "no hacia nada" para el usuario. Vale para toda pantalla nueva y toda modificacion de pantallas existentes.
+
+- Ninguna accion puede comunicar su resultado UNICAMENTE en un contenedor global alejado del boton pulsado. Un mensaje que el usuario no ve es un mensaje que no existe.
+- Las alertas y confirmaciones usan el modal propio de la app (regla v2.1). Nunca `alert`/`confirm`/`prompt` nativos.
+- El resultado de una accion concreta se muestra DENTRO de la tarjeta de esa accion, junto al boton, y sobrevive a la recarga (pintar siempre despues de recargar la base).
+- Los campos validan al escribir y senalan el error en el propio campo (borde/realce + `aria-invalid` + texto breve bajo el campo), antes de enviar.
+- Un error de accion que impide continuar se comunica tambien con modal, no solo con texto.
+- Esta norma aplica a toda pantalla nueva y a toda modificacion de pantallas existentes.
