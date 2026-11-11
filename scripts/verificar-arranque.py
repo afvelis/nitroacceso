@@ -4,8 +4,9 @@ verificar-arranque.py — La verdad del repo nitroacceso, medida en el momento.
 
 QUE HACE
   Imprime el estado real del repositorio leyendo git y los archivos del repo:
-  rama actual, HEAD, origin/main, si la rama contiene a main, arbol limpio,
-  archivos obligatorios, coherencia del ID de staging en la documentacion,
+  rama actual, HEAD, origin/main, si la rama contiene a main, si la copia
+  local esta al dia con origin/<rama> (commits por detras o sin empujar),
+  arbol limpio, archivos obligatorios, coherencia del ID de staging en la documentacion,
   rutas muertas en documentos, parametros de URL documentados (incluida la
   tabla de la seccion 9 de docs/dev-local.md, verificada contra el codigo),
   PR de la rama (solo si hay red) y pendientes de prueba de la tarea F-7.
@@ -284,6 +285,56 @@ def main():
         marca("FALLA", "contiene main",
               "no verificable sin origin/main; ejecuta: git fetch origin --prune")
         contiene_main_ok = False
+
+    # f2. actualizado con origin (la propia rama remota) -------------------
+    # Detecta el caso mas frecuente de "no esta actualizado": la copia local
+    # va por detras de SU PROPIA rama remota (otro empujo y aqui no se hizo
+    # git pull). Nunca dar OK si la comprobacion no se pudo completar.
+    actualizada_txt = "no verificable (sin origin/" + rama + ")"
+    if rama == "(desconocida)" or rama == "HEAD":
+        marca("AVISO", "actualizado con origin",
+              "no verificable: rama desconocida o detached HEAD")
+    else:
+        nombre_remoto = "origin/" + rama
+        codigo, out_or, _ = git(raiz, "rev-parse", "--verify", "--quiet",
+                                nombre_remoto)
+        if codigo != 0 or not out_or:
+            marca("AVISO", "actualizado con origin",
+                  "la rama no existe en origin (nunca se ha empujado)")
+        else:
+            codigo_f, out_f, err_f = git(raiz, "rev-list", "--count",
+                                         "HEAD.." + nombre_remoto)
+            codigo_s, out_s, err_s = git(raiz, "rev-list", "--count",
+                                         nombre_remoto + "..HEAD")
+            if codigo_f != 0 or codigo_s != 0:
+                motivo = (err_f if codigo_f != 0 else err_s) or "sin detalle"
+                marca("AVISO", "actualizado con origin",
+                      "git rev-list fallo: " + motivo)
+            elif not (out_f.isdigit() and out_s.isdigit()):
+                marca("AVISO", "actualizado con origin",
+                      "git rev-list devolvio una salida no numerica")
+            else:
+                faltan = int(out_f)
+                sobran = int(out_s)
+                if faltan > 0:
+                    plural = "" if faltan == 1 else "s"
+                    marca("FALLA", "actualizado con origin",
+                          "tu copia esta " + str(faltan) + " commit" + plural +
+                          " por detras de " + nombre_remoto +
+                          "; ejecuta: git pull")
+                    actualizada_txt = ("no (" + str(faltan) + " commit" +
+                                       plural + " de retraso respecto a " +
+                                       nombre_remoto + ")")
+                elif sobran > 0:
+                    plural = "" if sobran == 1 else "s"
+                    marca("AVISO", "actualizado con origin",
+                          str(sobran) + " commit" + plural +
+                          " locales sin empujar (git push)")
+                    actualizada_txt = "si (al dia con " + nombre_remoto + ")"
+                else:
+                    marca("OK", "actualizado con origin",
+                          "al dia con " + nombre_remoto)
+                    actualizada_txt = "si (al dia con " + nombre_remoto + ")"
 
     # g. commits propios sobre main ----------------------------------------
     if sha_main:
@@ -634,6 +685,7 @@ def main():
     print("  HEAD de la rama : " + sha_head)
     print("  HEAD de main    : " + (sha_main if sha_main else "(n/d)"))
     print("  contiene main   : " + contiene_txt)
+    print("  actualizada     : " + actualizada_txt)
     print("")
     print("Primera accion obligatoria:")
     print("  py scripts\\verificar-arranque.py")
