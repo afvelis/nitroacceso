@@ -75,7 +75,7 @@ Usa [PLANTILLA.md](PLANTILLA.md) para crear tareas nuevas. No renombres los IDs 
 | [F-4](F-4-qr-talento-codigo-corto.md) | Mostrar el código corto en el QR del talento | P2 | pendiente | — |
 | [F-5](F-5-puerta-parametros-tras-login.md) | Conservar los parámetros ?lista=/?v= tras el login de puerta.html | P2 | pendiente | — |
 | [F-6](F-6-talento-copiar-selectivo.md) | Copiar del Día 1 al Día 2 selectivo, repetible y siempre visible | P1 | **hecho** (11/11/2026) | — |
-| [F-7](F-7-modales-nativos.md) | Sustituir los diálogos nativos por los modales de la app (regla v2.1) | P1 | **hecho** (11/11/2026) | — |
+| [F-7](F-7-modales-nativos.md) | Sustituir los diálogos nativos por los modales de la app (regla v2.1) | P1 | **hecho** (11/11/2026, PR #14) | — |
 | [M-33](M-33-vista-anulada-aliado.md) | Humanizar la vista «anulada» del aliado | P2 | pendiente | — |
 | [M-34](M-34-fecha-creacion-tarjeta-admin.md) | Mostrar la fecha de creación en la tarjeta del aliado (aliados.html) | P2 | pendiente | — |
 | [M-35](M-35-nombres-premios-anulados.md) | Mostrar nombres de premios anulados (requiere cambio de RPC) | P2 | pendiente | — |
