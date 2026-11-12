@@ -53,6 +53,9 @@ En la tarjeta **"Datos del negocio"** escribe **"Empresa *"** y **"Qué vende *"
    > Vas a registrar N de Z lugares disponibles. Solo se generaran N QR por ahora. Podras agregar los faltantes despues con este mismo link, hasta que el administrador cierre la edicion. Continuar?
 
 3. Si estás de acuerdo, acepta.
+
+La confirmación de registro parcial (con **"Aceptar"** y **"Cancelar"**) y los avisos de copiado/QR de esta página (solo **"Aceptar"**) aparecen en una **ventana de la propia NitroSystem**, no en un diálogo del navegador; el texto y la decisión son los mismos de antes.
+
 4. Aparece la pantalla **"✅ Registro completado: estos son los brazaletes del stand."** con un brazalete por persona: nombre, stand, el sello **"Válido Día 1 y Día 2"**, el QR y los datos (Cédula, Empresa, Qué vende).
 5. Comparte cada brazalete con sus botones: **"📋 Copiar QR"**, **"💬 WhatsApp"**, **"✉️ Correo"**.
 6. Pulsa **"Cerrar"** para volver a la pantalla de registro y agregar más personas (el botón **"✅ Terminé: ver mis QR"** siempre te devuelve a los brazaletes).
@@ -94,4 +97,4 @@ El link sigue sirviendo para ver los QR: la página muestra **"Las inscripciones
 - **No confundas la lista de espera con los registrados**: el número que importa para saber cuántos QR hay es "Registrados", y los QR se ven con "✅ Terminé: ver mis QR".
 - **No edites la URL del link** ni la compartas con otra empresa: cada link pertenece a un stand con su correo de contacto.
 
-*Probado en el entorno de pruebas el 10/11/2026.*
+*Pendiente de probar en el entorno de pruebas.*

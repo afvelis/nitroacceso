@@ -34,7 +34,7 @@ async function copiarTexto(texto, btn){
       btn.textContent = '¡Copiado!';
       setTimeout(() => { btn.textContent = original; }, 2000);
     }catch(e2){
-      alert('No se pudo copiar automático. Copia manual: ' + texto);
+      await NA.avisar('No se pudo copiar automático. Copia manual: ' + texto);
     }
     document.body.removeChild(ta);
   }

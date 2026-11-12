@@ -38,6 +38,8 @@ Los demás roles NO usan esta pantalla: coordinadores, representantes de talento
 2. El sistema pide confirmación: pulsa **"Aceptar"** en el aviso **"¿Cerrar sesión de administrador?"**.
 3. Vuelves a la pantalla de PIN.
 
+La confirmación aparece en una **ventana de la propia NitroSystem** (con los botones **"Aceptar"** y **"Cancelar"**), no en un diálogo del navegador; el texto y la decisión son los mismos de antes.
+
 **Para salir de la puerta:**
 
 1. En el panel de control de acceso, pulsa **"🚪 Cerrar sesión"**.
@@ -75,4 +77,4 @@ En la pantalla de gestión completa del administrador y en la puerta, si la pant
 - **No dejes tu sesión abierta en una computadora compartida**: pulsa "Salir" o "Cerrar sesión" antes de entregar el equipo, o cuenta con el cierre automático.
 - **No uses el mismo navegador abierta en dos pestañas para dos roles**: cada pestaña comparte la misma sesión; cierra una antes de abrir la otra.
 
-*Probado en el entorno de pruebas el 10/11/2026.*
+*Pendiente de probar en el entorno de pruebas.*

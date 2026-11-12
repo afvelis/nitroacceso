@@ -57,6 +57,7 @@ Sin código nuevo. Entregar:
 2. Actualización de los campos `estado:` de las `tareas/` tocadas, con evidencia en sus "Notas de implementación".
 3. Anexo de decisiones nuevas a `DECISIONES.md` (si las hubo).
 4. Indicar al usuario qué archivos debe commitear (docs y código juntos) y esperar el verde de Actions antes de probar (M-26).
+5. La receta de arranque del agente siguiente: el bloque «PROMPT DE RELEVO» copiado de la salida de `py scripts\verificar-arranque.py` (nunca redactado de memoria) y la referencia a `docs/arranque-de-sesion.md`.
 
 ### Regla de escritura en el repo (para agentes con acceso)
 
@@ -129,3 +130,52 @@ Norma para cualquier IA que asista al proyecto. Dos formatos de respuesta, y sol
 - **Antes de proponer un arreglo, la causa debe estar confirmada con evidencia** (codigo citado o dato de la base). Nada de parches a ciegas.
 - **Cada cambio que altere botones, mensajes o pasos de una pantalla actualiza su capitulo de `docs/manual-usuario/` en el MISMO PR.**
 - **Nunca fusionas PRs, nunca commiteas a `main` y nunca borras ramas sin orden explicita. El SQL lo ejecuta siempre el usuario.**
+
+## Un solo escritor por repo (regla dura, aprobada 11/11/2026)
+
+En este proyecto SOLO puede haber un proceso escribiendo a la vez. No es una recomendacion de rendimiento: es una regla de correccion.
+
+Lo que paso cuando se incumplio (11/11/2026): para ir mas rapido se lanzaron varios subagentes en paralelo sobre el mismo repo. Uno, al que se le habia asignado otra tarea, modifico `supabase/migrations/0001_esquema_inicial.sql` metiendo un `create sequence` y un `nextval` que no correspondian. Otro informo que staging estaba restaurado cuando no lo estaba. Los dos errores se detectaron solo porque alguien los reviso a mano; pudieron llegar a `main`.
+
+Reglas derivadas del incidente:
+
+- Un solo subagente escritor por repo y por rama. Si hay que escribir dos cosas distintas, se hacen en serie, nunca en paralelo.
+- Los subagentes que solo LEEN (explorar, revisar, auditar) si pueden ir en paralelo: no escriben nada.
+- Toda prueba que no necesite escribir va con el directorio de trabajo en `/tmp`, nunca contra el repo de trabajo.
+- Antes de lanzar trabajo en paralelo, te preguntas si alguno va a escribir en el repo. Si la respuesta es si, se serializa.
+- Si aparece un cambio en el repo que no recuerdas haber hecho, NO lo asumes, NO lo commiteas y NO lo descartas en silencio: lo revisas con `git diff` y avisas. Un cambio inexplicado es un incidente.
+- Cuando el cambio es delicado, el verificador no puede ser el mismo que el escritor.
+
+## Protocolo de cierre y relevo (aprobado 11/11/2026)
+
+El cierre de sesion NO es un resumen de cortesia: es el unico medio por el que el siguiente agente sabe donde esta. Si el relevo queda mal, el sucesor adivina, y lo que se adivina se rompe.
+
+**DONDE se escribe:** en la MISMA rama donde vive el trabajo. Nunca en un PR aparte y nunca en `main`. Dos ramas tocando el mismo documento es un conflicto garantizado (paso el 11/11/2026 con dos capitulos del manual). Si hay trabajo en dos ramas, se cierra en la que vaya a fusionarse ultima.
+
+**ANTES de escribir el cierre:** compruebas que no hay otro proceso trabajando en la misma rama (`git status` y `git log` recientes deben ser coherentes con lo que recuerdas haber hecho).
+
+**QUE es obligatorio dejar escrito:**
+
+- `ESTADO.md`: version +1, fecha, y CUATRO datos de navegacion: nombre exacto de la rama de trabajo, SHA de `main`, SHA de la rama, y si la rama contiene `main`, verificado con `git merge-base --is-ancestor` (no por intuicion ni por `git diff`).
+- `ESTADO.md`: estado del PR: abierto, fusionado o INEXISTENTE. Se escribe, no se deja que el sucesor lo averigue consultando la API.
+- `ESTADO.md`: que esta VERIFICADO y que esta PENDIENTE, con las pruebas pendientes numeradas y sus textos literales.
+- `ESTADO.md`: el siguiente paso, numerado y en orden.
+- `DECISIONES.md`: solo decisiones y lecciones, append-only, nunca reescribiendo lo anterior.
+- `tareas/`: los estados reales y las notas con la evidencia citada por ruta:linea.
+- El capitulo del manual de usuario afectado, con su marca probado/pendiente corregida, en el mismo PR.
+
+**REGLA QUE IMPIDE DECLARAR VICTORIA SIN PRUEBAS:** ningun criterio de aceptacion se marca cumplido si depende de una prueba en pantalla que no se ejecuto. Se escribe PENDIENTE aunque el codigo este escrito y parezca perfecto. Un criterio marcado sin evidencia es peor que un criterio sin marcar.
+
+**VERIFICACION antes de decir "sesion cerrada":** `git status` vacio, HEAD igual al origin de la rama, lista exacta de archivos cambiados, ningun archivo inesperado, ninguna rama creada sin querer.
+
+**EL RELEVO INCLUYE EL PROMPT:** quien cierra entrega tambien el prompt de arranque del sucesor, con el SHA real y la rama dentro, y diciendole que lea `AGENTS.md` primero. No se confia a la memoria de nadie.
+
+Un cierre que mas tarde resulta falso es un fallo grave del agente que lo escribio, no del sucesor.
+
+## Verificación de arranque obligatoria (aprobada 11/11/2026)
+
+- Antes de tocar nada, el primer comando de toda sesion es `py scripts\verificar-arranque.py` (en Linux, `python3 scripts/verificar-arranque.py`). Su salida es la UNICA fuente de verdad sobre: rama de trabajo, SHA de HEAD, SHA de main, si la rama contiene main, si el arbol esta limpio, si existe PR y si los datos de referencia del repo son coherentes.
+- Ningun documento afirma el estado vigente SIN FECHA NI SHA DE MEDICION. Todo dato volatil que se escriba (rama, SHA de main, SHA de la rama, si contiene main, estado del PR) va acompanado de la fecha y del SHA en que se midio, y el script sigue siendo la autoridad: si discrepan, manda el script. El resto de los documentos guarda solo lo que no caduca: nombres de rama, rutas, identificadores, textos de los mensajes y decisiones. Esto NO deroga el «Protocolo de cierre y relevo», que sigue exigiendo dejar escritos el estado del PR y los cuatro datos de navegacion: lo que anade es que vayan medidos y fechados, no recordados.
+- Si un documento y el script discrepan, manda el script y se corrige el documento en la misma sesion.
+- El prompt de arranque del agente siguiente se COPIA de la seccion «PROMPT DE RELEVO» que imprime el script al final. No se redacta de memoria: se copia. Un prompt escrito a mano ya metio un parametro de URL equivocado (`?e=` en vez de `?s=`) y una referencia de proyecto con una letra cambiada.
+- Los datos de referencia tienen fuentes escritas separadas: los parametros de URL de cada pagina, en la seccion 9 de `docs/dev-local.md`; los IDs de proyecto, en `config.js`; los codigos de demo, en `supabase/seed.sql`.

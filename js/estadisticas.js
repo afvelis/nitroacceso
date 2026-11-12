@@ -372,7 +372,7 @@ function renderizar(d){
   try{
     const d = await llamar('f_admin_segmentacion', { p_token: token });
     if(!d){
-      alert('No se pudo cargar la segmentación. Verifica tu sesión.');
+      await NA.avisar('No se pudo cargar la segmentación. Verifica tu sesión.');
       borrarSesion();
       location.href = 'index.html';
       return;

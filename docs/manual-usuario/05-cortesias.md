@@ -54,7 +54,7 @@ La tabla **"📜 Histórico de cortesías"** muestra todas las creadas, con busc
 
 **5. Lo que ve el beneficiario**
 
-El link abre el **"Pase de cortesía"** con: beneficiario, razón, días válidos, modalidad y los **QR del Día 1 / Día 2** (en listas, un QR por día con la cuenta de personas: "N/M han entrado"). Abajo, **"📤 Compartir este pase"**. Si el pase fue anulado, verá **"⛔ Cortesía anulada"**; si ya se usó por completo, **"⛔ Entrada ya consumida"**; y cuando los dos días del evento cerraron, la pantalla de cierre **"¡El evento ha culminado!"**.
+El link abre el **"Pase de cortesía"** con: beneficiario, razón, días válidos, modalidad y los **QR del Día 1 / Día 2** (en listas, un QR por día con la cuenta de personas: "N/M han entrado"). Abajo, **"📤 Compartir este pase"**. Si el pase fue anulado, verá **"⛔ Cortesía anulada"**; si ya se usó por completo, **"⛔ Entrada ya consumida"**; y cuando los dos días del evento cerraron, la pantalla de cierre **"¡El evento ha culminado!"**. Si el copiado automático falla, el aviso de respaldo ("No se pudo copiar automático. Copia manual: ...") aparece en una **ventana de la propia NitroSystem** (con el botón **"Aceptar"**), no en un diálogo del navegador; el texto y la decisión son los mismos de antes.
 
 ## Que debes ver
 

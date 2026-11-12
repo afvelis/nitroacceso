@@ -3,7 +3,7 @@
 > Fuente de verdad del modelo de sesiones, logins y PINs. Congelado al cierre de la Sesión 15 (29/10/2026).
 > Complementa a `seguridad-supabase.md` (P0-02, permisos) — este documento cubre P0-03 (sesiones, rate limit, PINs).
 > Regla permanente: antes de reescribir cualquier RPC de sesión, leer su definición vigente con `pg_get_functiondef`.
-> Respaldo del mundo anterior (pre-P0-03): `docs/Supabase Snippet Untitled query.csv` (54 definiciones, commit `fe6f3ac`).
+> Respaldo del mundo anterior (pre-P0-03): `docs/sql/definiciones-funciones-2026-10-respaldo.csv` (renombrado desde el volcado original de las 54 definiciones, commit `fe6f3ac`).
 
 ---
 
@@ -94,4 +94,4 @@ where pronamespace = 'public'::regnamespace and prosrc ilike '%token = p_token%'
 
 ## 10 · Reversión
 
-El mundo pre-P0-03 (54 funciones con token en claro, sin rate limit) está congelado en `docs/Supabase Snippet Untitled query.csv` (commit `fe6f3ac`). Revertir implica restaurar esas definiciones, re-agregar la columna `token` y la PK original — **no recomendado**: la reversión solo tiene sentido como último recurso documentado.
+El mundo pre-P0-03 (54 funciones con token en claro, sin rate limit) está congelado en `docs/sql/definiciones-funciones-2026-10-respaldo.csv` (renombrado desde el volcado original de las 54 definiciones, commit `fe6f3ac`). Revertir implica restaurar esas definiciones, re-agregar la columna `token` y la PK original — **no recomendado**: la reversión solo tiene sentido como último recurso documentado.
