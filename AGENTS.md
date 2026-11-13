@@ -179,3 +179,12 @@ Un cierre que mas tarde resulta falso es un fallo grave del agente que lo escrib
 - Si un documento y el script discrepan, manda el script y se corrige el documento en la misma sesion.
 - El prompt de arranque del agente siguiente se COPIA de la seccion «PROMPT DE RELEVO» que imprime el script al final. No se redacta de memoria: se copia. Un prompt escrito a mano ya metio un parametro de URL equivocado (`?e=` en vez de `?s=`) y una referencia de proyecto con una letra cambiada.
 - Los datos de referencia tienen fuentes escritas separadas: los parametros de URL de cada pagina, en la seccion 9 de `docs/dev-local.md`; los IDs de proyecto, en `config.js`; los codigos de demo, en `supabase/seed.sql`.
+
+## Anexo aprobado — Cierre sin datos rancios (12/11/2026)
+
+Nacido de un fallo real: el cierre de la Sesión 24 escribió en `ESTADO.md` v14 el SHA de `main` y el estado del PR justo antes de fusionarlo, y dejó dos afirmaciones que ya sabía falsas. La sesión siguiente arrancó creyendo que había errores de alcance desconocido, y el usuario gastó su primera sesión en averiguar qué pasaba.
+
+- Un dato que el propio commit de cierre va a cambiar se escribe **medido, con fecha y SHA de medición**, y acompañado de «caduca con el siguiente commit». Nunca se afirma algo que se sabe falso.
+- Ningún cierre se declara terminado sin haber ejecutado `scripts/verificar-arranque.py` y copiado su sección «PROMPT DE RELEVO». Si el script y el documento discrepan, se corrige el documento en esa misma sesión.
+- Al cerrar se revisan expresamente las frases que tienen forma de hecho: SHA de `main`, SHA de la rama, si la rama contiene `main`, y estado del PR (abierto / fusionado / inexistente). Cada una debe poder medirse en el momento de leerla.
+- Si al arrancar aparecen datos que no encajan, la culpa es del cierre anterior, no del sucesor: se corrige, se anota en `DECISIONES.md` y se sigue.
