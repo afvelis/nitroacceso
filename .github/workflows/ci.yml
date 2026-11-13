@@ -1,0 +1,34 @@
+# CI de nitroacceso
+#
+# Los tests hablan por RPC con el proyecto de STAGING (candado del helper
+# tests/helpers.mjs: abortan si la URL no es staging o si el host es *.github.io).
+# NO hacen falta secretos de Actions: la URL y la clave publicable de staging
+# se leen del propio config.js del repo, que ya las trae (son publicables por
+# diseño, igual que en la app). Nunca se imprimen en los logs.
+#
+# Sin npm install: el proyecto no tiene package.json ni dependencias; los tests
+# son Node puro (node:test + fetch). Sin cache de node por no haber lockfile.
+# Se listan los *.test.mjs en vez de pasar el directorio: asi el patron funciona
+# igual en Node 20 y Node 24 y NO ejecuta tests/negativos-login.manual.mjs, que
+# gasta cuota del limitador de f_login (5 fallos por IP cada 15 minutos).
+
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Tests por RPC contra staging
+        run: node --test tests/*.test.mjs
