@@ -10,7 +10,7 @@ Método portable para que ninguna sesión de trabajo (agente con acceso al repo,
 
 El problema es simple y recurrente: una sesión nueva no sabe dónde está el proyecto. Llega, lee documentos que afirman cosas (un SHA, un estado de PR, un recuento de líneas), y no tiene forma de comprobarlas. Lo que no puede comprobar, lo adivina. Lo adivinado se apoya en lo siguiente adivinado, y el error se propaga hasta que alguien lo detecta a mano, tarde. Hoy ocurrió aquí: un cierre dejó dos afirmaciones que ya sabía falsas y la sesión siguiente gastó su primer tramo averiguándolo.
 
-Este método resuelve eso: define dónde vive el estado (la bitácora), qué datos se miden con una máquina y qué datos nunca se escriben a mano, cómo se cierra una sesión para que la siguiente arrancue sin adivinar, y cómo un verificador automático contradice al documento cuando lo documento miente — avisando, nunca bloqueando. Incluye las plantillas y el verificador, listos para copiar a otro proyecto.
+Este método resuelve eso: define dónde vive el estado (la bitácora), qué datos se miden con una máquina y qué datos nunca se escriben a mano, cómo se cierra una sesión para que la siguiente arrancue sin adivinar, y cómo un verificador automático contradice al documento cuando el documento miente — avisando, nunca bloqueando. Incluye las plantillas y el verificador, listos para copiar a otro proyecto.
 
 No resuelve todo: no sustituye a los tests (un test que pasa no prueba que la función sea correcta), no arregla código roto (el método dice cómo evidenciar el fallo, no cómo ocultarlo), y no decide prioridades (eso lo decide el usuario o el responsable del proyecto; la bitácora solo registra la decisión).
 
@@ -21,13 +21,13 @@ Estas siete reglas valen para cualquier proyecto y cualquier asistente. Cada una
 1. **Una sola fuente de verdad por dato.** Si dos archivos pueden afirmar lo mismo, uno manda y el otro remite (dice «ver X», no repite X).
    *Por qué:* dos fuentes que afirman lo mismo son, en el primer desacuerdo, cero fuentes.
 
-2. **Ningún dato volátil se escribe a mano sin marcador.** Ramas, SHAs, contadores, estados de PR: los mide una máquina (elevarlos con un script) o no se escriben.
+2. **Ningún dato volátil se escribe a mano sin marcador.** Ramas, SHAs y contadores los mide el verificador con un script; los estados de PR, que aporta una medición fechada del panel del anfitrión o de su API; si nadie lo miró, se escribe «sin medir» y no se afirma nada.
    *Por qué:* lo que se escribe de memoria no se puede distinguir de lo que se recuerda mal.
 
 3. **Un dato que el propio commit de cierre cambia se escribe medido, fechado y marcado como caducable.** Nunca se afirma lo que ya se sabe falso.
    *Por qué:* escribir «PR: inexistente» sabiendo que el commit lo va a crear es mentirle al relevo con la mejor intención.
 
-4. **Un chequeo de documentación nunca bloquea.** Avisa, no falla: un documento viejo no puede impedir arrancar.
+4. **Un chequeo de documentación nunca bloquea.** Avisa, no falla: un documento viejo no puede impedir arrancar. FALLA se reserva a la integridad del montaje (raíz git y archivos declarados obligatorios); un documento desactualizado o contradictorio es siempre AVISO.
    *Por qué:* si el chequeo bloquea, la presión de arrancar lo convierte en ruido que se ignora o en trámite que se salta.
 
 5. **Ningún criterio se marca cumplido sin su prueba ejecutada.** Sin prueba, se escribe PENDIENTE, aunque el código esté escrito y parezca perfecto.
@@ -46,8 +46,8 @@ Cinco archivos sostienen el método. Cada dato vive en uno solo de ellos.
 | Archivo | Papel | Cuándo cambia |
 |---|---|---|
 | `AGENTS.md` (o equivalente) | Reglas del proyecto y de trato | Casi nunca; cambia por decisión explícita |
-| `ESTADO.md` (bitácora) | Estado volátil: dónde está el proyecto | Cada sesión; es el único volátil |
-| `ARQUITECTURA.md` | Esquema, RPCs, manifiesto de archivos | Solo si cambia el esquema |
+| `ESTADO.md` (bitácora, o equivalente) | Estado volátil: dónde está el proyecto | Cada sesión; es el único volátil |
+| `ARQUITECTURA.md` | Esquema de datos, interfaz del backend, manifiesto de archivos | Solo si cambia el esquema |
 | `DECISIONES.md` | Los porqués; append-only | Cuando se toma una decisión nueva |
 | `tareas/` | Backlog accionable con `estado:` | Con cada tarea tocada |
 
@@ -59,7 +59,7 @@ La regla de oro, aparte porque es la que más se olvida: **si el verificador y u
 
 ### 3.1 Arranque
 
-- Primer comando: el verificador (`python3 scripts/verificar_bitacora.py` o el equivalente del proyecto). Su salida es la única fuente de verdad sobre rama, SHAs, árbol y PR.
+- Primer comando: el verificador (`python3 scripts/verificar_bitacora.py` o el equivalente del proyecto). Su salida es la única fuente de verdad sobre rama, SHAs, árbol y marcador. El estado del PR no lo da el script: lo aporta quien lo mire en el anfitrión, con fecha; si nadie lo miró, se escribe «sin medir».
 - Leer las reglas (`AGENTS.md`) y la bitácora (`ESTADO.md`).
 - Comprobar que lo que dicen cuadra con el repo: si un documento afirma algo y el repo dice otra cosa, manda el verificador (regla de oro del capítulo 2).
 - Si algo no cuadra y el verificador no lo explica: **DETENERSE y avisar en español llano.** No reconstruir en silencio, no asumir, no desechar. Un documento y la realidad deben reconciliarse mirando ambos, no borrando uno.
@@ -90,10 +90,10 @@ Tres clases de verificación, cada una con lo que exige.
 
 ### 3.4 Cierre
 
-El cierre es una fase de escritura, no de cortesía. Lo que hay que dejar escrito —el detalle de cómo, en el capítulo 4:
+El cierre es una fase de escritura, no de cortesía. Lo que hay que dejar escrito (el detalle de la bitácora, en el capítulo 4):
 
 - La bitácora nueva versión (+1) con los cuatro datos de navegación medidos y fechados.
-- El estado del PR: abierto, fusionado o inexistente. Medido, no recordado.
+- El estado del PR: abierto, fusionado o inexistente. Medido, no recordado. Si se ignoran los pendientes de medirlo, se escribe «sin medir» con la fecha.
 - Qué está VERIFICADO y qué PENDIENTE, con las pruebas pendientes numeradas y su texto literal.
 - El siguiente paso, numerado y en orden.
 - Anexo de decisiones nuevas (si las hubo), en la misma rama del trabajo, nunca en `main`.
@@ -102,7 +102,7 @@ El cierre es una fase de escritura, no de cortesía. Lo que hay que dejar escrit
 
 ### 3.5 Relevo
 
-- El prompt de relevo se copia de la sección que imprime el verificador al final de su ejecución. Incluye rama, SHA de HEAD, SHA de la base, si la rama contiene la base, y estado del PR.
+- El prompt de relevo se copia de la sección que imprime el verificador al final de su ejecución. Incluye rama, SHA de HEAD, SHA de la base, si la rama contiene la base, y el estado del PR, únicamente si alguien lo midió (con fecha); si no, el relevo dice expresamente que no se midió.
 - Se dice también qué está PENDIENTE y con qué texto exacto: «prueba 2 pendiente: ejecutar X y esperar Y», no «falta probar algo del formulario».
 - La advertencia va dentro del prompt: los SHAs del documento caducan con el siguiente commit; no se citan de memoria, se vuelven a medir.
 
@@ -114,7 +114,7 @@ El cierre escribe un documento: la bitácora nueva versión. Contiene, en este o
 
 1. **Versión y fecha.** Versión anterior +1. Fecha de la medición en la que se apoya lo escrito.
 2. **Cuatro datos de navegación, medidos y fechados:** la rama de trabajo; el SHA de la rama (HEAD); el SHA de la base; y si la rama contiene la base, verificado con `git merge-base --is-ancestor`, no por intuición ni por `git diff`. Cada uno con la fecha y el SHA en que se midió.
-3. **Estado del PR:** abierto, fusionado o inexistente. Medido en el momento de escribir, no recordado del momento de empezar.
+3. **Estado del PR:** abierto, fusionado o inexistente. Se mide en el anfitrión (panel o API) y se anota con fecha; si no se midió, se escribe «sin medir». Nunca se afirma de memoria.
 4. **Lo que está VERIFICADO** (con la evidencia: salida literal, comando, ruta) **y lo que está PENDIENTE** (pruebas numeradas, con el texto exacto de la prueba y lo que debe verse). Ningún criterio depende de una prueba que no se ejecutó: si no se ejecutó, va como PENDIENTE aunque el código parezca perfecto.
 5. **El siguiente paso, numerado y en orden.** Uno, no una lista de seis: el relevo hace una cosa a la vez.
 6. **Los SHAs caducan.** Cualquier dato volátil que el propio commit de cierre vaya a cambiar se escribe con la fecha y SHA de medición y la nota «caduca con el siguiente commit». Nunca se afirma lo que ya se sabe falso (invariante 3): si el cierre crea el PR, no escribe «PR: inexistente».
@@ -191,7 +191,7 @@ Cortar y pegar en `ESTADO.md` del proyecto nuevo, y rellenar. Sin nada de este p
 
 ## 7 · Plantilla de prompt de relevo
 
-Lo que la sesión siguiente necesita, en un bloque. Se copia de la salida del verificador; esta plantilla es el esqueleto para proyectos donde aún no hay verificador.
+Lo que la sesión siguiente necesita, en un bloque. Se copia de la salida del verificador. Esta plantilla muestra la forma de ese bloque; el prompt real siempre viene del verificador, y su propia primera acción obligatoria es volver a ejecutarlo.
 
 ```text
 Eres la sesión de relevo de este proyecto. Lee AGENTS.md primero: las
@@ -239,7 +239,7 @@ Cuatro hechos del mismo día, fehacientes. Cada regla anterior existe por alguno
 - **(a) El cierre dejó dos afirmaciones falsas.** El cierre de la Sesión 24 escribió en la bitácora v14 el SHA de `main` y el estado del PR («inexistente») justo antes de crear el PR. Lo supo porque iba a crearlo, y lo escribió igual. La sesión siguiente arrancó creyendo que había errores de alcance desconocido, y el usuario gastó su primera sesión de trabajo averiguando que no había nada. → Muta en: invariantes 2 y 3, y el capítulo 4 entero.
 - **(b) El primer chequeo exigía igualdad.** El primer verificador del marcador comparaba el SHA del marcador con el `main` real por igualdad. Como cada fusión mueve a `main`, el aviso iba a saltar en todas las sesiones: ruido garantizado. Se detectó al cerrar esa misma sesión y se corrigió al criterio de pertenencia a la historia. → Muta en: capítulo 5.
 - **(c) El volcado «literal» traía una línea inventada.** Un subagente entregó un volcado presentado como literal de un archivo, con un recuento de líneas que no existía en el archivo real. El escritor no lo aceptó: detuvo el paso y pidió decisión en vez de inventar el contenido. → Muta en: la celda del anti-patrón del capítulo 8 (`wc`, `grep`, `git show`) y el invariante 6.
-- **(d) Dos avisos para el mismo caso, uno falso.** Un fallo de despacho hacía que una comprobación fallida emitiera dos avisos, y el segundo tenía un diagnóstico equivocado (decía «apunta a otra rama» cuando el SHA directamente no existía). Se corrigió con una cadena `if/elif/else` exclusiva: un caso, exactamente un mensaje. → Muta en: capítulo 5 y la exige equivalente del Anexo B.
+- **(d) Dos avisos para el mismo caso, uno falso.** Un fallo de despacho hacía que una comprobación fallida emitiera dos avisos, y el segundo tenía un diagnóstico equivocado (decía «apunta a otra rama» cuando el SHA directamente no existía). Se corrigió con una cadena `if/elif/else` exclusiva: un caso, exactamente un mensaje. → Muta en: capítulo 5 y la cadena `if/elif/else` equivalente del Anexo B.
 
 Cada una de estas reglas existe porque algo de esto ocurrió; ninguna es teórica.
 
@@ -257,6 +257,7 @@ HEAD contiene la base, arbol limpio, archivos obligatorios y el marcador
 "<clave> = <sha>" de la bitacora, validado por pertenencia a la historia
 de la base y nunca por igualdad: cada fusion mueve la base y la igualdad
 produciria un aviso garantizado en cada sesion.
+No mide el estado del PR: eso lo aporta quien lo mire en el anfitrion.
 
 Se copia tal cual a otros proyectos como scripts/verificar_bitacora.py.
 La configuracion entera son las cuatro constantes de abajo. Si la
@@ -329,7 +330,12 @@ def ejecutar():
         "rama": "?", "head": "?", "base": "?", "contiene": "no se pudo demostrar",
         "arbol": "?", "marcador": "sin datos",
     }
-    raiz = encontrar_raiz(os.getcwd())
+    try:
+        cwd = os.getcwd()
+    except Exception:
+        emitir("FALLA", "no se pudo leer el directorio actual")
+        return (2, datos)
+    raiz = encontrar_raiz(cwd)
     if raiz is None:
         emitir("FALLA", "no se encontro la raiz del repositorio (no hay .git aqui arriba)")
         return (2, datos)
@@ -469,6 +475,7 @@ def imprimir_relevo(datos):
         "- contiene la base  : %s" % datos["contiene"],
         "- arbol             : %s" % datos["arbol"],
         "- marcador          : %s" % datos["marcador"],
+        "- estado del PR     : no lo mide este script (lo aporta quien cierre, medido y fechado)",
         "=" * 72,
     ]
     sys.stdout.write("\n".join(lineas) + "\n")
@@ -493,8 +500,10 @@ if __name__ == "__main__":
 
 1. Crea los cinco archivos del capítulo 2 (`AGENTS.md`, `ESTADO.md`, `ARQUITECTURA.md`, `DECISIONES.md`, `tareas/`) aunque estén casi vacíos: la estructura es la mitad del hábito.
 2. Pega la plantilla de bitácora del capítulo 6 en `ESTADO.md` y rellénala con lo que sepa hoy (nada está bien; «sin datos» es honesto, lo inventado no).
-3. Copia el script del Anexo B a `scripts/verificar_bitacora.py` y rellena sus cuatro constantes: `RAMA_BASE`, `BITACORA`, `CLAVE_MARCADOR`, `ARCHIVOS_OBLIGATORIOS` (deja la lista vacía si aún no tienes archivos que exigir).
-4. Añade el marcador a la bitácora con el SHA real de la base: `git rev-parse origin/<base>` y pégalo en el comentario.
-5. Ejecuta `python3 scripts/verificar_bitacora.py` y comprueba que da `0 FALLAS`. Si hay algún FALLA, arréglalo antes de empezar a trabajar; si hay un AVISO, léelo y decide: para eso avisa.
-6. Prueba los casos negativos (marcador con `deadbee`, y sin marcador): el verificador debe avisar y no fallar. Un verificador probado solo en el caso bueno está medio probado (3.3 (a)).
-7. **Nota:** si el proyecto no usa git, este método no aplica tal cual. Lo trasladable sin git es la disciplina de versiones, criterios con evidencia y cierre con relevo; el verificador se convierte en una lista de comprobaciones manuales que la sesión nueva ejecuta a mano.
+3. Antes de copiar el verificador, crea la carpeta destino: `mkdir -p scripts`.
+4. Y asegúrate de que el repo tiene remoto de la base: `git remote add origin <url>` (o clona directamente desde él). Sin `origin/<base>` el marcador no se puede validar y las pruebas negativas no probarían nada: sin remoto el método se puede usar, pero el marcador queda sin validar (AVISO, nunca FALLA).
+5. Copia el script del Anexo B a `scripts/verificar_bitacora.py` y rellena sus cuatro constantes: `RAMA_BASE`, `BITACORA`, `CLAVE_MARCADOR`, `ARCHIVOS_OBLIGATORIOS` (deja la lista vacía si aún no tienes archivos que exigir).
+6. Añade el marcador a la bitácora con el SHA real de la base: `git rev-parse origin/<base>` y pégalo en el comentario.
+7. Ejecuta `python3 scripts/verificar_bitacora.py` y comprueba que da `0 FALLAS`. Si hay algún FALLA, arréglalo antes de empezar a trabajar; si hay un AVISO, léelo y decide: para eso avisa.
+8. Prueba los casos negativos (marcador con `deadbee`, y sin marcador): el verificador debe avisar y no fallar. Un verificador probado solo en el caso bueno está medio probado (3.3 (a)).
+9. **Nota:** si el proyecto no usa git, este método no aplica tal cual. Lo trasladable sin git es la disciplina de versiones, criterios con evidencia y cierre con relevo; el verificador se convierte en una lista de comprobaciones manuales que la sesión nueva ejecuta a mano.
