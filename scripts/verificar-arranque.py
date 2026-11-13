@@ -505,19 +505,20 @@ def main():
         if not sha_referencia:
             marca("AVISO", "sha de main en documentos",
                   "no verificable: ni origin/main ni main existen")
-        # El criterio es de pertenencia a la historia, no de igualdad:
-        # cada merge mueve main y exigir igualdad haria saltar el aviso
-        # siempre, volviendolo ruido. Un SHA de otra rama o inventado
-        # es lo que se caza con cat-file -e y merge-base --is-ancestor.
-        codigo_e, _, _ = git(raiz, "cat-file", "-e", marcador + "^{commit}")
-        codigo_anc, _, _ = git(raiz, "merge-base", "--is-ancestor",
-                               marcador, sha_referencia)
-        if codigo_e != 0:
+        elif git(raiz, "cat-file", "-t", marcador)[1].strip() != "commit":
+            # -t exige el tipo exacto: cat-file -e <sha>^{commit} pela un
+            # tag anotado y lo haria pasar por commit. Un blob, tree, tag,
+            # un sha vacio o inexistente cae aqui.
             marca("AVISO", "sha de main en documentos",
                   "el sha " + marcador + " del marcador main-medido "
-                  "no existe en este repositorio: dato inventado "
-                  "o repo distinto")
-        elif codigo_anc == 0:
+                  "no es un commit de este repositorio: dato inventado, "
+                  "tag o repo distinto")
+        elif git(raiz, "merge-base", "--is-ancestor", marcador,
+                 sha_referencia)[0] == 0:
+            # merge-base --is-ancestor devuelve 0 = si es ancestro,
+            # 1 = no lo es, 128 = error de git (repo corrupto, ref
+            # invalida). El 128 cae en el AVISO de abajo a proposito:
+            # "no se puede demostrar" nunca debe imprimir OK.
             _, out_cont, _ = git(raiz, "rev-list", "--count",
                                  marcador + ".." + sha_referencia)
             try:
