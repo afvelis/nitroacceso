@@ -1,5 +1,5 @@
 // escaneo.test.mjs - tests del flujo de puerta por RPC contra staging (P1-04, Fase C via A).
-// Corren con: node --test tests/  (sin instalar nada; Node >= 18 trae fetch).
+// Corren con: node --test tests/*.test.mjs  (sin instalar nada; Node >= 18 trae fetch).
 //
 // NOTA sobre los datos de demo: son FINITOS (el seed crea V-DEMO01 y V-DEMO02,
 // y nada los regenera). Por eso el test de doble escaneo lee el estado actual

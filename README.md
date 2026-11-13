@@ -13,7 +13,7 @@ Control de acceso por QR para el evento NITROSYSTEM. Frontend estatico (HTML/CSS
 | `js/` | Logica de cada pantalla (un modulo por pagina). |
 | `vendor/` | Librerias de terceros versionadas a mano (generador de QR local). |
 | `supabase/` | Esquema versionado: `migrations/0001_esquema_inicial.sql`, `seed.sql` (datos de demo de staging) y `README.md` con el procedimiento de reset/aplicacion. |
-| `scripts/` | Herramientas locales en Python (sin dependencias): servidor de desarrollo, verificacion de arranque de sesion. |
+| `scripts/` | Herramientas locales en Python (sin dependencias): servidor de desarrollo, verificacion de arranque de sesion, conversion del volcado DDL de produccion (CSV) a la migracion inicial versionada con validacion del orden de sentencias (`volcado-a-migracion.py`). |
 | `tests/` | Tests por RPC contra staging (Node puro, `node --test`). |
 | `docs/` | Documentacion: manual de usuario, desarrollo local, seguridad, metodo/bitacora. |
 | `tareas/` | Backlog accionable del proyecto. |

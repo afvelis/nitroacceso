@@ -72,18 +72,21 @@ export function leerEntornoStaging() {
 
   let host = "";
   try {
-    host = new URL(url).hostname;
+    host = new URL(url).hostname.toLowerCase();
   } catch (e) {
     throw new Error("La url de staging en config.js no es una URL valida.");
   }
 
   // Referencia del proyecto de staging. Si config.js cambia de proyecto de
   // staging, este candado debe actualizarse a mano junto con config.js.
-  const REF_STAGING = "adoqujnnnrlgmvwbnwbl";
-  if (!url.includes(REF_STAGING)) {
+  // Se compara por IGUALDAD de hostname exacto, nunca por inclusion en la
+  // URL: una URL de otro proyecto que solo CONTENGA la referencia en el
+  // path o la query no pasa el candado.
+  const HOST_STAGING = "adoqujnnnrlgmvwbnwbl.supabase.co";
+  if (host !== HOST_STAGING) {
     throw new Error(
-      "ABORTADO: la url de staging de config.js no es el proyecto de staging esperado (" +
-      REF_STAGING + "). Los tests SOLO corren contra staging, nunca contra produccion."
+      "ABORTADO: la url de staging de config.js no apunta al host exacto del proyecto de staging esperado (" +
+      HOST_STAGING + "). Los tests SOLO corren contra staging, nunca contra produccion."
     );
   }
   if (/\.github\.io$/i.test(host) || host === "afvelis.github.io") {
