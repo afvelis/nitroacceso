@@ -203,7 +203,7 @@ Estado medido por git (no de memoria: caduca con el siguiente commit):
 - Base (<rama-base>): <sha>
 - ¿La rama contiene la base?: <sí / no / no se pudo demostrar>
 - Árbol limpio: <sí / qué archivos>
-- Estado del PR: <abierto / fusionado / inexistente>
+- Estado del PR (no lo mide git): <abierto / fusionado / inexistente — medido con fecha en el anfitrión; o «sin medir»>
 
 Primera acción obligatoria: ejecutar el verificador
 (python3 scripts/verificar_bitacora.py) y trabajar solo con los SHAs
