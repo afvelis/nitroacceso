@@ -8,7 +8,9 @@ QUE HACE
   local esta al dia con origin/<rama> (commits por detras o sin empujar),
   arbol limpio, archivos obligatorios (entre ellos la receta de arranque
   docs/arranque-de-sesion.md), coherencia del ID de staging en la documentacion,
-  rutas muertas en documentos, parametros de URL documentados (incluida la
+  rutas muertas en documentos, el marcador 'main-medido' de ESTADO.md
+  (comparado con el main real: AVISA si envejece, nunca FALLA), parametros
+  de URL documentados (incluida la
   tabla de la seccion 9 de docs/dev-local.md, verificada contra el codigo),
   PR de la rama (solo si hay red) y pendientes de prueba de la tarea F-7.
   Al final imprime un bloque "PROMPT DE RELEVO" con datos reales, listo para
@@ -475,6 +477,39 @@ def main():
     if not fallas_ruta and not avisos_ruta:
         marca("OK", "rutas muertas en documentos",
               "0 apariciones de la ruta muerta")
+
+    # j2. marcador 'main-medido' de ESTADO.md ------------------------------
+    # ESTADO.md ya no afirma el SHA de main: lo lleva un comentario HTML
+    # ('main-medido = <sha>') que este script compara con el main REAL.
+    # Desajuste o marcador ausente es AVISO, nunca FALLA: un documento
+    # desactualizado no empeora el estado del repositorio.
+    texto_estado = leer_archivo(raiz, "ESTADO.md")
+    m_marcador = (re.search(r"main-medido\s*=\s*([0-9a-fA-F]{7,40})",
+                            texto_estado) if texto_estado else None)
+    if not m_marcador:
+        marca("AVISO", "sha de main en documentos",
+              "falta el marcador main-medido en ESTADO.md")
+    else:
+        marcador = m_marcador.group(1).lower()
+        if sha_main:
+            sha_referencia = sha_main
+        else:
+            # Mismo criterio que el script usa para origin/main: si no
+            # existe, se cae a la ref local main; no se inventan refs.
+            _, out_m, _ = git(raiz, "rev-parse", "--verify", "--quiet", "main")
+            sha_referencia = out_m if out_m else ""
+        if not sha_referencia:
+            marca("AVISO", "sha de main en documentos",
+                  "no verificable: ni origin/main ni main existen")
+        elif sha_referencia.startswith(marcador):
+            marca("OK", "sha de main en documentos",
+                  "ESTADO.md declara main en " + marcador + " y coincide")
+        else:
+            marca("AVISO", "sha de main en documentos",
+                  "ESTADO.md declara main en " + marcador +
+                  " y el real es " + sha_referencia[:40] +
+                  ": actualiza el marcador main-medido o quita el dato; "
+                  "un dato rancio no se deja callado")
 
     # k. parametros de url documentados ------------------------------------
     avisos_params = []
