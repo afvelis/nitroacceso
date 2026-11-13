@@ -9,7 +9,9 @@ QUE HACE
   arbol limpio, archivos obligatorios (entre ellos la receta de arranque
   docs/arranque-de-sesion.md), coherencia del ID de staging en la documentacion,
   rutas muertas en documentos, el marcador 'main-medido' de ESTADO.md
-  (comparado con el main real: AVISA si envejece, nunca FALLA), parametros
+  (validado por pertenencia a la historia de main: un SHA inventado o
+  de otra rama AVISA, un marcador viejo pero verdadero es OK; nunca
+  FALLA), parametros
   de URL documentados (incluida la
   tabla de la seccion 9 de docs/dev-local.md, verificada contra el codigo),
   PR de la rama (solo si hay red) y pendientes de prueba de la tarea F-7.
@@ -480,9 +482,11 @@ def main():
 
     # j2. marcador 'main-medido' de ESTADO.md ------------------------------
     # ESTADO.md ya no afirma el SHA de main: lo lleva un comentario HTML
-    # ('main-medido = <sha>') que este script compara con el main REAL.
-    # Desajuste o marcador ausente es AVISO, nunca FALLA: un documento
-    # desactualizado no empeora el estado del repositorio.
+    # ('main-medido = <sha>') que este script valida contra el main REAL
+    # por pertenencia a la historia (merge-base --is-ancestor), no por
+    # igualdad: un marcador viejo pero verdadero es OK, un SHA inventado
+    # o de otra rama es AVISO. Marcador ausente es AVISO, nunca FALLA: un
+    # documento desactualizado no empeora el estado del repositorio.
     texto_estado = leer_archivo(raiz, "ESTADO.md")
     m_marcador = (re.search(r"main-medido\s*=\s*([0-9a-fA-F]{7,40})",
                             texto_estado) if texto_estado else None)
@@ -501,15 +505,34 @@ def main():
         if not sha_referencia:
             marca("AVISO", "sha de main en documentos",
                   "no verificable: ni origin/main ni main existen")
-        elif sha_referencia.startswith(marcador):
+        # El criterio es de pertenencia a la historia, no de igualdad:
+        # cada merge mueve main y exigir igualdad haria saltar el aviso
+        # siempre, volviendolo ruido. Un SHA de otra rama o inventado
+        # es lo que se caza con cat-file -e y merge-base --is-ancestor.
+        codigo_e, _, _ = git(raiz, "cat-file", "-e", marcador + "^{commit}")
+        codigo_anc, _, _ = git(raiz, "merge-base", "--is-ancestor",
+                               marcador, sha_referencia)
+        if codigo_e != 0:
+            marca("AVISO", "sha de main en documentos",
+                  "el sha " + marcador + " del marcador main-medido "
+                  "no existe en este repositorio: dato inventado "
+                  "o repo distinto")
+        elif codigo_anc == 0:
+            _, out_cont, _ = git(raiz, "rev-list", "--count",
+                                 marcador + ".." + sha_referencia)
+            try:
+                n = str(int(out_cont))
+            except (ValueError, TypeError):
+                n = "?"
             marca("OK", "sha de main en documentos",
-                  "ESTADO.md declara main en " + marcador + " y coincide")
+                  "ESTADO.md declara main en " + marcador +
+                  ": commit real dentro de la historia de main (" + n
+                  + " commits por detras)")
         else:
             marca("AVISO", "sha de main en documentos",
-                  "ESTADO.md declara main en " + marcador +
-                  " y el real es " + sha_referencia[:40] +
-                  ": actualiza el marcador main-medido o quita el dato; "
-                  "un dato rancio no se deja callado")
+                  "el sha " + marcador + " del marcador main-medido "
+                  "NO esta en la historia de main (" + sha_referencia[:40]
+                  + "): apunta a otra rama o a un commit ajeno")
 
     # k. parametros de url documentados ------------------------------------
     avisos_params = []
