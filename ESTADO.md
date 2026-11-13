@@ -1,7 +1,7 @@
 # ESTADO.md — NitroSystem (control de acceso)
 
 Versión del archivo: **15** · Última actualización: **12/11/2026** · Higiene de datos rancios (v15): datos de navegación medidos con el verificador, PR #15 declarado fusionado, y **cómo se trabaja aquí** (dos copias, el paralelo de pruebas, la cinta amarilla y el verde de Pages) escrito, no supuesto
-<!-- verificador:main-medido = fd1e6f6 · 12/11/2026 -->
+<!-- verificador:main-medido = f6d4003 · 12/11/2026 -->
 
 > Este archivo SOLO lleva el ESTADO del proyecto. Las reglas de trabajo viven en `AGENTS.md` (+ sus anexos: continuidad v3 y estilo de trato). La arquitectura técnica vive en `ARQUITECTURA.md`. Los "por qués" viven en `DECISIONES.md`. Las tareas ejecutables viven en `tareas/`. Si este archivo contradice a `AGENTS.md`, manda `AGENTS.md`. Si contradice al repo, manda el repo.
 
