@@ -39,7 +39,7 @@ Cada tarea usa este frontmatter:
 ---
 id: "P0-01"
 titulo: "Descripción corta"
-prioridad: "P0"          # P0 crítico, P1 alto, P2 mejora
+prioridad: "P0"          # P0 crítico, P1 alto, P2 mejora, P3 cosmético
 estado: "pendiente"      # pendiente | en_progreso | bloqueado | hecho | descartado
 area: "seguridad"        # seguridad | integridad | operacion | frontend | datos
 depende_de: []           # IDs de otras tareas
