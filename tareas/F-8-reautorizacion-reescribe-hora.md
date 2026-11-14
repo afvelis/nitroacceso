@@ -103,8 +103,8 @@ Que la reautorización de un vendedor ya autorizado preserve la hora de la prime
 - Pruebas ejecutadas: `node --check tests/escaneo.test.mjs` pasó (sintaxis). La suite real corrió contra staging en el cierre del 14/11/2026: ROJO 6/8 antes de la `0003`, VERDE 8/8 después (ver bloque «Cierre (14/11/2026)» al final).
 - El segundo escaneo NO queda registrado en la base: la migración solo PRESERVA la hora original, no añade columnas ni rastro del reintento. Eso corresponde a P1-03 (auditoría).
 - La cláusula "fila `autorizado` con hora NULL se rellena una sola vez" del criterio 2 NO tiene test automatizado por RPC: ninguna RPC de la app deja una fila `autorizado` con hora NULL (solo el paso a `pendiente` la borra con `null`). Por eso se verifica a mano con el SQL del paso manual de §Verificación, y así lo dice el propio criterio.
-- A la fecha del bloque «Cierre (14/11/2026)» de abajo: la `0003` está APLICADA EN STAGING (la aplicó el usuario) y NO en producción.
-- La `0002` (F-9) tampoco está en producción, así que al aplicar producción debe aplicarse la `0003` SOLA (o las dos en ese orden: ambas son idempotentes, `CREATE OR REPLACE`).
+- A la fecha del bloque «Cierre (14/11/2026)» de abajo: la `0003` está APLICADA EN STAGING Y EN PRODUCCIÓN (ambas las aplicó el usuario el 14/11/2026; la de producción queda trazada en «Cierre en PRODUCCIÓN (14/11/2026)» al final del cierre).
+- La `0002` (F-9) nunca llegó a aplicarse en producción por separado: el 14/11/2026 se aplicó la `0003` SOLA (es acumulativa y ambas son idempotentes, `CREATE OR REPLACE`), y con ella producción quedó arreglada para F-8 y F-9.
 - El paso 1 de «Pasos» lo cerró el usuario con `pg_get_functiondef` antes de aplicar la `0003` (definición idéntica a la `0002` del repo). Los cuatro criterios de aceptación quedaron marcados el 14/11/2026 con las pruebas del bloque de cierre y la nota del §Verificación.
 
 ### Cierre (14/11/2026)
@@ -113,4 +113,12 @@ Que la reautorización de un vendedor ya autorizado preserve la hora de la prime
 - Suite en verde contra staging: antes de la `0003`, `node --test tests/*.test.mjs` → `tests 8 · pass 6 · fail 2`, EXIT 1 ("doble escaneo" y "dia 2 legitimo" fallaban con `AssertionError` de hora reescrita: horas del día 1 `.457564` y `.767022`, distintas → defecto demostrado). Después: `tests 8 · pass 8 · fail 0`, EXIT 0, con la hora del día 1 `2026-11-14T16:45:31.767022+00:00` idéntica antes y después de repetir, y la aserción nueva del día 2 pasando.
 - Consulta booleana en staging tras aplicar: `f8_dia1=true`, `f8_dia2=true`, `conserva_f9=true`, `desautorizar_ok=true`, `largo_definicion=1091`.
 - Conteo de solo lectura en PRODUCCIÓN (14/11/2026): `dia1_autorizado_sin_hora=0`, `dia2_autorizado_sin_hora=0`, `dia1_autorizados=15`, `dia2_autorizados=2`, `total_vendedores=84`. Este conteo cierra el criterio (b): el caso «autorizado con hora NULL» NO existe en los datos reales y la rama `is not null` queda como defensa. (Hallazgo anexo: `docs/sql/volcado-produccion-2026-11-09.csv` es un volcado de ESQUEMA/DDL — columnas `ord,objeto,ddl` —, nunca sirvió para contar filas.)
-- **La `0003` NO está aplicada en PRODUCCIÓN. Producción sigue con la función vieja (sin validar `p_dia` y reescribiendo la hora). Aplicarla requiere orden explícita del usuario. Cuando se aplique, debe aplicarse la `0003` SOLA: es acumulativa e incluye la `0002`, que no debe aplicarse por separado.**
+- La `0003` quedó APLICADA EN PRODUCCIÓN el 14/11/2026, tras orden explícita del usuario (ver «Cierre en PRODUCCIÓN» justo abajo). Se aplicó SOLA, porque es acumulativa e incluye la `0002`, que no debe aplicarse por separado.
+
+#### Cierre en PRODUCCIÓN (14/11/2026)
+
+- El usuario aplicó la `0003` en PRODUCCIÓN el 14/11/2026, después de leer la definición real con `pg_get_functiondef('f_puerta_marcar_vendedor')`: esa definición era la VIEJA de la `0001` (sin el `if p_dia not in (1,2)`, con `marcado_dia1_at = case when p_estado = 'autorizado' then now() else null end`) y coincidía línea a línea con la `0001` del repo — sin deriva.
+- Verificación por booleanos tras aplicar (el «Success. No rows returned» NO se tomó como prueba): `f8_dia1=true`, `f8_dia2=true`, `f9_valida_p_dia=true`, `desautorizar_ok=true`, `anon_puede_ejecutar=true`, `largo_definicion=1091`.
+- `largo_definicion=1091` es EXACTAMENTE el mismo valor que dio staging tras aplicar la misma migración → el cuerpo de la función es idéntico en staging y en producción.
+- No se modificó ni una fila de `vendedores`; no se consumió ninguna entrada; no se creó ni borró ningún vendedor de prueba. NO se hizo prueba de humo con datos reales: la primera prueba real será el primer escaneo del evento.
+- Hallazgo registrado el mismo día: en producción, con la función vieja, un `p_dia` fuera de rango NO se rechazaba — caía en el `else` y **marcaba el día 2**. Estaba latente porque la puerta solo envía 1 o 2; la `0003` lo cierra de paso al incluir la validación de `p_dia` de F-9.
