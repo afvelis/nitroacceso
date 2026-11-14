@@ -65,7 +65,7 @@ Usa [PLANTILLA.md](PLANTILLA.md) para crear tareas nuevas. No renombres los IDs 
 | [P1-01](P1-01-integridad-escaneos-cupones.md) | Escaneos atómicos, cupones y cédulas duplicadas | P1 | pendiente | P0-02 |
 | [P1-02](P1-02-roles-estado-puerta.md) | Rol supervisor y revalidación de estado en puerta | P1 | pendiente | P0-02 |
 | [P1-03](P1-03-auditoria-privacidad.md) | Auditoría de acciones y privacidad de datos | P1 | pendiente | P0-02 |
-| [P1-04](P1-04-staging-migraciones-tests.md) | Staging, migraciones, tests y CI | P1 | **en_progreso** (Fases A, B y C-vía-A hechas, PR #20; falta la vía B) | P0-02 |
+| [P1-04](P1-04-staging-migraciones-tests.md) | Staging, migraciones, tests y CI | P1 | **en_progreso** (Fases A, B y C-vía-A hechas, PR #20; vía B probada en pantalla 14/11, nota (x); quedan tests E2E automatizados y lint, decisión del usuario) | P0-02 |
 | [P2-01](P2-01-offline-pwa.md) | Modo offline y cola de escaneos para el día del evento | P2 | pendiente | P0-04 |
 | [P2-02](P2-02-refactor-accesibilidad.md) | Refactor a módulos compartidos y accesibilidad | P2 | pendiente | P1-04 |
 | [P2-03](P2-03-observabilidad-runbook.md) | Observabilidad y runbook de incidentes | P2 | pendiente | P1-03 |
@@ -78,6 +78,8 @@ Usa [PLANTILLA.md](PLANTILLA.md) para crear tareas nuevas. No renombres los IDs 
 | [F-7](F-7-modales-nativos.md) | Sustituir los diálogos nativos por los modales de la app (regla v2.1) | P1 | **hecho** (11/11/2026, PR #14) | — |
 | [F-8](F-8-reautorizacion-reescribe-hora.md) | La reautorización en puerta reescribe `marcado_dia1_at` y no deja rastro del doble escaneo | P2 | pendiente | — |
 | [F-9](F-9-dia-fuera-de-rango.md) | `f_puerta_marcar_vendedor` no valida `p_dia`: un valor fuera de rango autoriza otro día | P1 | pendiente | — |
+| [F-10](F-10-contador-disponibles-no-resta-lista.md) | El contador «Disponibles» del stand no resta la lista de espera | P2 | pendiente | — |
+| [F-11](F-11-doble-punto-hora-puerta.md) | Doble punto final en la hora de «ENTRADA YA CONSUMADA» en puerta | P3 | pendiente | — |
 | [M-33](M-33-vista-anulada-aliado.md) | Humanizar la vista «anulada» del aliado | P2 | pendiente | — |
 | [M-34](M-34-fecha-creacion-tarjeta-admin.md) | Mostrar la fecha de creación en la tarjeta del aliado (aliados.html) | P2 | pendiente | — |
 | [M-35](M-35-nombres-premios-anulados.md) | Mostrar nombres de premios anulados (requiere cambio de RPC) | P2 | pendiente | — |
@@ -97,7 +99,7 @@ Usa [PLANTILLA.md](PLANTILLA.md) para crear tareas nuevas. No renombres los IDs 
 6. **P1-01** y **P1-02**: integridad y separación de roles en puerta.
 7. **P1-03** y **P1-04**: auditoría, privacidad y base para probar con seguridad.
 8. **P2**: confiabilidad, mantenibilidad y operación.
-9. Las tareas **F-1…F-5** (hallazgos de la prueba en vivo del 28/10/2026) y **M-33…M-38** (ideas de producto) están fuera del orden de seguridad: se toman una a la vez cuando el usuario lo decida. F-1 quedó HECHA el 09/11/2026 (causa raíz en la RPC `f_link_talento_copiar`, arreglada en la base por el usuario y verificada con transacción y ROLLBACK) y F-7 quedó fusionada (PR #14). Al 12/11 ya no quedaba ninguna P1 de las tareas F; el cierre de la Sesión 26 (13/11) añadió **F-9 (P1)** y **F-8 (P2)**, hallazgos del servidor que exigen `pg_get_functiondef` y orden explícita del usuario antes de tocar la RPC. **M-37** es el siguiente gran paso aprobado por el usuario: multi-evento (hasta 3 simultáneos), se inicia tras cerrar la deuda y con staging (P1-04) — **NO se arranca sin staging**.
+9. Las tareas **F-1…F-5** (hallazgos de la prueba en vivo del 28/10/2026) y **M-33…M-38** (ideas de producto) están fuera del orden de seguridad: se toman una a la vez cuando el usuario lo decida. F-1 quedó HECHA el 09/11/2026 (causa raíz en la RPC `f_link_talento_copiar`, arreglada en la base por el usuario y verificada con transacción y ROLLBACK) y F-7 quedó fusionada (PR #14). Al 12/11 ya no quedaba ninguna P1 de las tareas F; el cierre de la Sesión 26 (13/11) añadió **F-9 (P1)** y **F-8 (P2)**, hallazgos del servidor que exigen `pg_get_functiondef` y orden explícita del usuario antes de tocar la RPC, y el cierre de la Sesión 27 (14/11) añadió **F-10 (P2)** y **F-11 (P3)**, hallazgos de la prueba en navegador de la vía B de P1-04. **M-37** es el siguiente gran paso aprobado por el usuario: multi-evento (hasta 3 simultáneos), se inicia tras cerrar la deuda y con staging (P1-04) — **NO se arranca sin staging**.
 
 ---
 
