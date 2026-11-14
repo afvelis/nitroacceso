@@ -2,7 +2,7 @@
 id: "F-9"
 titulo: "f_puerta_marcar_vendedor no valida p_dia: un valor fuera de rango autoriza otro dia"
 prioridad: "P1"
-estado: "en_progreso"
+estado: "hecho"
 area: "seguridad"
 depende_de: []
 archivos:
@@ -38,7 +38,7 @@ Todo el SQL lo ejecuta el usuario; esta tarea no cambia nada del servidor sin su
 
 - [x] Con `p_dia` fuera de `(1, 2)`, `f_puerta_marcar_vendedor` rechaza (excepción o `false`) y NO modifica ningún día (ni el 1 ni el 2). (probado 14/11/2026: suite 7/7 contra staging, caso «dia invalido»; ver Notas)
 - [x] Existe un test automatizado que lo demuestra en la suite (`tests/escaneo.test.mjs`) y pasa contra staging. (probado 14/11/2026: suite 7/7 contra staging, caso «dia invalido»; ver Notas)
-- [ ] No se introdujeron regresiones en el flujo del evento (día 1 y día 2 legítimos siguen autorizando igual). (pendiente: el día 1 lo cubre «doble escaneo» y el día 2 lo cubre el test nuevo «dia 2 legitimo», añadido el 14/11/2026; se marca cuando la suite pase en verde con ese caso)
+- [x] No se introdujeron regresiones en el flujo del evento (día 1 y día 2 legítimos siguen autorizando igual). (probado 14/11/2026: suite 8/8 contra staging; día 1 por «doble escaneo», día 2 legítimo por «dia 2 legitimo»)
 
 ## Verificación
 
@@ -67,5 +67,6 @@ Todo el SQL lo ejecuta el usuario; esta tarea no cambia nada del servidor sin su
 - El USUARIO aplicó `supabase/migrations/0002_f9_valida_p_dia.sql` en staging (`adoqujnnnrlgmvwbnwbl`) el 14/11/2026. El «Success» del SQL Editor NO se tomó como prueba: se corrió la suite real.
 - Evidencia real de la corrección: `node --test tests/*.test.mjs` contra staging → **7 passed, 0 failed**. Antes de aplicar la migración, el mismo caso «dia invalido» fallaba con `AssertionError: la RPC debe devolver false... true !== false` (`tests/escaneo.test.mjs:134`) — prueba de que el test detecta el defecto de verdad, no que «no explota».
 - Test nuevo «dia 2 legitimo: p_dia = 2 autoriza y desautoriza el dia 2 sin tocar el dia 1» en `tests/escaneo.test.mjs`, justo después de «dia invalido»): ejercita el camino legítimo completo del día 2 — estado previo capturado, marcar `pendiente` y relectura, marcar `autorizado` y relectura con `marcado_dia2_at` con valor — y afirma en cada relectura que `estado_dia1` queda invariable. Cubre el criterio 3 de F-9 (que la validación de `p_dia` no haya roto los días legítimos), con referencia a `0002_f9_valida_p_dia.sql:37` y a `f_puerta_marcar_cortesia` (`0001_esquema_inicial.sql:3970`) como precedente del patrón. El test deja `estado_dia2` de V-DEMO02 en `"autorizado"` (documentado en el propio test).
-- Corrida real de esta sesión (14/11/2026, agente, contra staging): `node --test tests/*.test.mjs` → `tests 8 · pass 8 · fail 0`, con el caso «dia 2 legitimo» pasando (log: `dia 2 legitimo: estado_dia1 previo = autorizado / estado_dia2 previo = autorizado`). El criterio 3 SIGUE sin marcar por decisión de la tarea: se marca cuando el USUARIO/asistente responsable lo valide con su propia corrida en verde.
-- PENDIENTE 2: aplicar `0002_f9_valida_p_dia.sql` en PRODUCCIÓN — fuera de esta tarea hasta orden explícita del USUARIO.
+- Corrida real de esta sesión (14/11/2026, agente, contra staging): `node --test tests/*.test.mjs` → `tests 8 · pass 8 · fail 0`, con el caso «dia 2 legitimo» pasando (log: `dia 2 legitimo: estado_dia1 previo = autorizado / estado_dia2 previo = autorizado`). El criterio 3 quedó marcado el 14/11/2026: la suite ya corrió con el test nuevo «dia 2 legitimo» y dio **8 passed / 0 failed** contra staging.
+- **Lección de secuencia (14/11/2026):** el test nuevo se subió antes de aplicar el SQL y el CI del PR se puso en rojo con `6 passed / 1 failed`. NO era un fallo del código: staging seguía con la función vieja. El orden correcto es SQL en staging → suite verde → CI verde → fusionar. Queda escrito en DECISIONES.md.
+- **PENDIENTE REAL: aplicar `0002_f9_valida_p_dia.sql` en PRODUCCIÓN.** No se ha hecho y no se hará sin orden explícita del usuario. Producción sigue con la función sin validar `p_dia`. Hasta entonces esta tarea está arreglada en staging, no en producción; se dice tal cual.

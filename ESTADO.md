@@ -1,6 +1,6 @@
 # ESTADO.md — NitroSystem (control de acceso)
 
-Versión del archivo: **18** · Última actualización: **14/11/2026** · Vía B de P1-04 probada en navegador real (Sesión 27) y arreglo H-5 en `js/stand.js` (`Finalizar sesión`); tareas nuevas F-10 y F-11 · corrección al arrancar la Sesión 28: el PR #22 estaba fusionado y los datos de navegación se remiden
+Versión del archivo: **19** · Última actualización: **14/11/2026** · Vía B de P1-04 probada en navegador real (Sesión 27) y arreglo H-5 en `js/stand.js` (`Finalizar sesión`); tareas nuevas F-10 y F-11 · corrección al arrancar la Sesión 28: el PR #22 estaba fusionado y los datos de navegación se remiden · F-9 cerrada con la suite en verde (8/8) contra staging
 <!-- verificador:main-medido = d963e123eaea1a57b4b98c6432083a148afd0054 · 2026-11-14 -->
 
 > Este archivo SOLO lleva el ESTADO del proyecto. Las reglas de trabajo viven en `AGENTS.md` (+ sus anexos: continuidad v3 y estilo de trato). La arquitectura técnica vive en `ARQUITECTURA.md`. Los "por qués" viven en `DECISIONES.md`. Las tareas ejecutables viven en `tareas/`. Si este archivo contradice a `AGENTS.md`, manda `AGENTS.md`. Si contradice al repo, manda el repo.
@@ -154,12 +154,12 @@ Al iniciar cualquier sesión, se verifica en este orden. Cada punto dice quién 
    3. ✅ HECHO 13/11/2026 (Sesión 26): **Fase C vía A de P1-04** (PR #20: tests por RPC contra staging, CI y README raíz).
    4. ✅ HECHO 14/11/2026 (Sesión 27): **vía B de P1-04 probada en navegador real contra staging** — el flujo completo de registro, la puerta y el doble escaneo (evidencia completa en §1);
 5. **Sesión 28, en orden:**
-   1. ✅ HECHO 14/11/2026: el PR #22 se fusionó (`main` en `d963e12`); el cierre de la Sesión 27 lo dejó escrito como abierto y se corrigió al arrancar la Sesión 28.
-   2. ✅ HECHO 14/11/2026: datos de navegación remididos con el verificador (rama, SHA de `main`, estado del PR) y `ESTADO.md` v18.
-   3. 🔄 EN CURSO: **F-9** (`f_puerta_marcar_vendedor` no valida `p_dia`) en la rama `agente/2026-11-14-f9-valida-p-dia`. Requiere `pg_get_functiondef` ejecutado por el usuario antes de escribir la RPC, y la corrección va en una migración NUEVA (`0002_...`), nunca editando la `0001` (lo prohíbe `supabase/README.md`).
-   4. Después: F-8 (EN SERIE con F-9, toca la misma RPC), y F-10 / F-11 cuando se quiera.
-   5. Decisión pendiente del usuario — el botón «Quitar» del stand (detalle en §2 de este documento).
-   6. P1-01, P1-02, P1-03 y M-37.
+   1. ✅ HECHO 14/11/2026: PR #22 fusionado y datos de navegación corregidos.
+   2. ✅ HECHO 14/11/2026: **protocolo de relevo sin fricción** en `AGENTS.md` (arranque en 3 pasos; fuera los datos volátiles de este archivo).
+   3. ✅ HECHO 14/11/2026: **F-9**, migración `0002` aplicada en staging, suite 8/8.
+   4. SIGUIENTE: **aplicar `0002_f9_valida_p_dia.sql` en PRODUCCIÓN** cuando el usuario lo ordene (hoy producción sigue sin validar `p_dia`).
+   5. SIGUIENTE: **F-8** (`f_puerta_marcar_vendedor` reescribe `marcado_dia1_at`), en serie, misma RPC, ya desbloqueada.
+   6. Después: F-10 / F-11 (interfaz, no tocan base) y la decisión del botón «Quitar» del stand.
 6. **Verificación de arranque:** el primer comando de toda sesión es `py scripts\verificar-arranque.py`; su salida manda sobre este documento. La receta completa para el usuario —qué ventana, qué se pega y qué se le exige al agente nuevo— vive en `docs/arranque-de-sesion.md`. **Nota de staging para demos (13/11/2026):** cada corrida de la suite deja `V-DEMO02` con `estado_dia1` y `estado_dia2` en `autorizado` (vendedor consumido por el test de doble escaneo); **`V-DEMO01` queda limpio para demos manuales**.
 7. **Nota PINs:** desde P0-03, los PINs de admin y puerta son de **6 dígitos** y están rotados (el usuario los custodia en papel). El de staging para pruebas es admin `100000` y puerta `200000`. Si se pierden los de producción: rotar desde el panel exige el PIN admin vigente; si se pierde el de admin, la recuperación es por base (nuevo hash bcrypt generado por el asistente → el usuario ejecuta).
 
