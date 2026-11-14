@@ -138,3 +138,56 @@ test("dia invalido: p_dia fuera de rango no autoriza ningun dia", async () => {
   assert.equal(despues.estado_dia2, antes.estado_dia2,
     "un p_dia invalido no debe cambiar el estado del dia 2");
 });
+
+// Caso nuevo (14/11/2026): cubre el criterio 3 de F-9, que la validacion de
+// p_dia introducida por supabase/migrations/0002_f9_valida_p_dia.sql:37 no
+// haya roto los dias legítimos. Precedente del patron (rechazar el p_dia
+// invalido ANTES del UPDATE): f_puerta_marcar_cortesia, en
+// 0001_esquema_inicial.sql:3970. Hasta ahora la suite solo ejercitaba el
+// dia 1 (doble escaneo) y un p_dia invalido (dia invalido): el dia 2
+// legitimo no tenia prueba.
+test("dia 2 legitimo: p_dia = 2 autoriza y desautoriza el dia 2 sin tocar el dia 1", async () => {
+  // NOTA sobre el estado final: este test deja estado_dia2 de V-DEMO02 en
+  // "autorizado" (su segundo marcado). Si empezo en otro valor (p. ej.
+  // "pendiente"), NO lo restaura: se documenta aqui y no se anade logica
+  // extra de restauracion, igual que hace el doble escaneo con el dia 1.
+  const token = await tokenPuerta();
+  const antes = await verVendedor(token, VENDEDOR_CONSUMIDO);
+  assert.notEqual(antes, null, "V-DEMO02 deberia existir en el seed de staging");
+  const dia1Previo = antes.estado_dia1;
+  const dia2Previo = antes.estado_dia2;
+  console.log("dia 2 legitimo: estado_dia1 previo = " + dia1Previo
+    + " / estado_dia2 previo = " + dia2Previo);
+
+  // Paso 1: marcar el dia 2 como pendiente (desautorizar).
+  const pendiente = await rpc("f_puerta_marcar_vendedor", {
+    p_token: token,
+    p_vendedor_id: antes.vendedor_id,
+    p_dia: 2,
+    p_estado: "pendiente"
+  });
+  assert.equal(pendiente.ok, true, "la marca del dia 2 (pendiente) no debe dar error HTTP");
+  assert.equal(pendiente.datos, true, "la marca del dia 2 (pendiente) debe encontrar la fila y devolver true");
+  const trasPendiente = await verVendedor(token, VENDEDOR_CONSUMIDO);
+  assert.equal(trasPendiente.estado_dia2, "pendiente",
+    "tras marcar el dia 2, estado_dia2 debe ser pendiente");
+  assert.equal(trasPendiente.estado_dia1, dia1Previo,
+    "marcar el dia 2 no debe tocar el dia 1");
+
+  // Paso 2: marcar el dia 2 como autorizado (camino legitimo del evento).
+  const autorizado = await rpc("f_puerta_marcar_vendedor", {
+    p_token: token,
+    p_vendedor_id: antes.vendedor_id,
+    p_dia: 2,
+    p_estado: "autorizado"
+  });
+  assert.equal(autorizado.ok, true, "la marca del dia 2 (autorizado) no debe dar error HTTP");
+  assert.equal(autorizado.datos, true, "la marca del dia 2 (autorizado) debe encontrar la fila y devolver true");
+  const trasAutorizado = await verVendedor(token, VENDEDOR_CONSUMIDO);
+  assert.equal(trasAutorizado.estado_dia2, "autorizado",
+    "tras autorizar el dia 2, estado_dia2 debe ser autorizado");
+  assert.equal(trasAutorizado.estado_dia1, dia1Previo,
+    "autorizar el dia 2 no debe tocar el dia 1");
+  assert.ok(trasAutorizado.marcado_dia2_at,
+    "autorizar el dia 2 debe dejar marcado_dia2_at con valor");
+});
