@@ -43,21 +43,10 @@ Este proyecto se trabaja con IA pública gratuita, donde el usuario pega los arc
 - Durante la sesión el asistente mantiene el contexto en la conversación (su "caché") y lo vuelca a los archivos SOLO en el cierre. Si nota que la sesión lleva mucho rato o el contexto pesa, propone consolidar y cerrar (regla heredada de la v2.4).
 
 ### Arranque de sesión
-
-1. Lee `ESTADO.md` y `tareas/README.md` (en modo agente) o verifica que el usuario te los pegó (modo chat gratuito).
-2. Ejecuta la verificación de arranque descrita en ESTADO.md §2 (repo, commits recientes, estados de tareas, keep-alive; SQL solo si se tocará el esquema, y lo ejecuta el usuario).
-3. Si algo no encaja entre ESTADO.md, el repo y la base: DETENTE y avisa en español llano. No reconstruyas en silencio.
-4. Trabaja UNA tarea o paso a la vez; espera confirmación del usuario antes de continuar.
+Ver «Protocolo de relevo sin fricción» más abajo en este archivo. Los pasos y las prohibiciones viven ahí, en un solo sitio.
 
 ### Cierre de sesión (el usuario escribe "CERRAR SESIÓN" o "handoff")
-
-Sin código nuevo. Entregar:
-
-1. `ESTADO.md` completo y actualizado (subir su número de versión y fecha), en un solo bloque copiable.
-2. Actualización de los campos `estado:` de las `tareas/` tocadas, con evidencia en sus "Notas de implementación".
-3. Anexo de decisiones nuevas a `DECISIONES.md` (si las hubo).
-4. Indicar al usuario qué archivos debe commitear (docs y código juntos) y esperar el verde de Actions antes de probar (M-26).
-5. La receta de arranque del agente siguiente: el bloque «PROMPT DE RELEVO» copiado de la salida de `py scripts\verificar-arranque.py` (nunca redactado de memoria) y la referencia a `docs/arranque-de-sesion.md`.
+Ver «Protocolo de relevo sin fricción» más abajo en este archivo. Los pasos y las prohibiciones viven ahí, en un solo sitio.
 
 ### Regla de escritura en el repo (para agentes con acceso)
 
@@ -146,46 +135,33 @@ Reglas derivadas del incidente:
 - Si aparece un cambio en el repo que no recuerdas haber hecho, NO lo asumes, NO lo commiteas y NO lo descartas en silencio: lo revisas con `git diff` y avisas. Un cambio inexplicado es un incidente.
 - Cuando el cambio es delicado, el verificador no puede ser el mismo que el escritor.
 
-## Protocolo de cierre y relevo (aprobado 11/11/2026)
+## Protocolo de relevo sin fricción (aprobado 14/11/2026; sustituye a «Protocolo de cierre y relevo», «Verificación de arranque obligatoria» y «Cierre sin datos rancios»)
 
-El cierre de sesion NO es un resumen de cortesia: es el unico medio por el que el siguiente agente sabe donde esta. Si el relevo queda mal, el sucesor adivina, y lo que se adivina se rompe.
+Nació de un fallo medido el 14/11/2026: una sesión completa se gastó corrigiendo datos de navegación rancios, auditando commits solo documentales y sustituyendo dos jueces caídos, antes de escribir una línea de la app. El diagnóstico es de diseño, no de disciplina: **los documentos guardaban datos que git ya sabe**, así que caducaban solos y la sesión siguiente venía a barrerlos.
 
-**DONDE se escribe:** en la MISMA rama donde vive el trabajo. Nunca en un PR aparte y nunca en `main`. Dos ramas tocando el mismo documento es un conflicto garantizado (paso el 11/11/2026 con dos capitulos del manual). Si hay trabajo en dos ramas, se cierra en la que vaya a fusionarse ultima.
+REGLA MADRE: **los documentos guardan solo lo que no caduca.** Reglas, decisiones, estados de tareas, rutas, identificadores y textos de mensajes. Lo que git responde —rama, SHA, commits de retraso, árbol limpio, estado del PR— NUNCA se escribe a mano: se consulta con `scripts/verificar-arranque.py`, que es la única autoridad.
 
-**ANTES de escribir el cierre:** compruebas que no hay otro proceso trabajando en la misma rama (`git status` y `git log` recientes deben ser coherentes con lo que recuerdas haber hecho).
+### Al arrancar: tres pasos y nada más
 
-**QUE es obligatorio dejar escrito:**
+1. `python3 scripts/verificar-arranque.py` (Windows: `py scripts\verificar-arranque.py`).
+2. Leer SOLO la sección «Siguiente paso» de `ESTADO.md` y elegir UNA tarea `pendiente` de `tareas/` cuya `depende_de` esté resuelta.
+3. Ponerla `en_progreso` y trabajar.
 
-- `ESTADO.md`: version +1, fecha, y CUATRO datos de navegacion: nombre exacto de la rama de trabajo, SHA de `main`, SHA de la rama, y si la rama contiene `main`, verificado con `git merge-base --is-ancestor` (no por intuicion ni por `git diff`).
-- `ESTADO.md`: estado del PR: abierto, fusionado o INEXISTENTE. Se escribe, no se deja que el sucesor lo averigue consultando la API.
-- `ESTADO.md`: que esta VERIFICADO y que esta PENDIENTE, con las pruebas pendientes numeradas y sus textos literales.
-- `ESTADO.md`: el siguiente paso, numerado y en orden.
-- `DECISIONES.md`: solo decisiones y lecciones, append-only, nunca reescribiendo lo anterior.
-- `tareas/`: los estados reales y las notas con la evidencia citada por ruta:linea.
-- El capitulo del manual de usuario afectado, con su marca probado/pendiente corregida, en el mismo PR.
+Prohibido al arrancar: corregir SHAs o ramas en documentos, abrir o fusionar PRs de sesiones anteriores, re-medir datos de navegación, auditar el cierre precedente. Si el verificador da **FALLA**, se reporta y se arregla SOLO ese fallo. Si da **AVISO**, se ignora y se trabaja: los avisos no bloquean.
 
-**REGLA QUE IMPIDE DECLARAR VICTORIA SIN PRUEBAS:** ningun criterio de aceptacion se marca cumplido si depende de una prueba en pantalla que no se ejecuto. Se escribe PENDIENTE aunque el codigo este escrito y parezca perfecto. Un criterio marcado sin evidencia es peor que un criterio sin marcar.
+### Al cerrar
 
-**VERIFICACION antes de decir "sesion cerrada":** `git status` vacio, HEAD igual al origin de la rama, lista exacta de archivos cambiados, ningun archivo inesperado, ninguna rama creada sin querer.
+1. `git status` vacío y HEAD igual al remoto de la rama.
+2. Escribir, EN LA MISMA RAMA: los estados reales de `tareas/` con su evidencia `ruta:línea`, las decisiones nuevas en `DECISIONES.md` (append-only) y el siguiente paso en `ESTADO.md`.
+3. `ESTADO.md`: subir la versión, actualizar la fecha, reescribir la sección «Siguiente paso» y nada más. **No se escriben ramas, SHAs ni estado de PR.**
+4. Ejecutar `scripts/verificar-arranque.py` y copiar de su salida el bloque «PROMPT DE RELEVO». Ese bloque es el prompt de la sesión siguiente: no se redacta de memoria.
+5. Ningún criterio de aceptación se marca cumplido sin su prueba ejecutada. Si falta la prueba, se escribe PENDIENTE.
 
-**EL RELEVO INCLUYE EL PROMPT:** quien cierra entrega tambien el prompt de arranque del sucesor, con el SHA real y la rama dentro, y diciendole que lea `AGENTS.md` primero. No se confia a la memoria de nadie.
+### Lo que ya NO se hace (corte de ceremonia)
 
-Un cierre que mas tarde resulta falso es un fallo grave del agente que lo escribio, no del sucesor.
+- **No se manda un commit solo documental a un juez.** Bastan el verificador y `git diff --stat`.
+- **No se audita el cierre anterior al arrancar.** Si algo no encaja, manda el script y se sigue trabajando.
+- **Los jueces van acotados por escrito**: alcance cerrado, sin `find`/`ls` recursivos, tope de turnos. Un juez que expira o pide herramientas que no tiene NO es un veredicto: se sustituye y se anota cuál se usó.
+- **Una sesión que no toca la app es una sesión fallida.**
 
-## Verificación de arranque obligatoria (aprobada 11/11/2026)
-
-- Antes de tocar nada, el primer comando de toda sesion es `py scripts\verificar-arranque.py` (en Linux, `python3 scripts/verificar-arranque.py`). Su salida es la UNICA fuente de verdad sobre: rama de trabajo, SHA de HEAD, SHA de main, si la rama contiene main, si el arbol esta limpio, si existe PR y si los datos de referencia del repo son coherentes.
-- Ningun documento afirma el estado vigente SIN FECHA NI SHA DE MEDICION. Todo dato volatil que se escriba (rama, SHA de main, SHA de la rama, si contiene main, estado del PR) va acompanado de la fecha y del SHA en que se midio, y el script sigue siendo la autoridad: si discrepan, manda el script. El resto de los documentos guarda solo lo que no caduca: nombres de rama, rutas, identificadores, textos de los mensajes y decisiones. Esto NO deroga el «Protocolo de cierre y relevo», que sigue exigiendo dejar escritos el estado del PR y los cuatro datos de navegacion: lo que anade es que vayan medidos y fechados, no recordados.
-- Si un documento y el script discrepan, manda el script y se corrige el documento en la misma sesion.
-- El prompt de arranque del agente siguiente se COPIA de la seccion «PROMPT DE RELEVO» que imprime el script al final. No se redacta de memoria: se copia. Un prompt escrito a mano ya metio un parametro de URL equivocado (`?e=` en vez de `?s=`) y una referencia de proyecto con una letra cambiada.
-- Los datos de referencia tienen fuentes escritas separadas: los parametros de URL de cada pagina, en la seccion 9 de `docs/dev-local.md`; los IDs de proyecto, en `config.js`; los codigos de demo, en `supabase/seed.sql`.
-
-## Anexo aprobado — Cierre sin datos rancios (12/11/2026)
-
-Nacido de un fallo real: el cierre de la Sesión 24 escribió en `ESTADO.md` v14 el SHA de `main` y el estado del PR justo antes de fusionarlo, y dejó dos afirmaciones que ya sabía falsas. La sesión siguiente arrancó creyendo que había errores de alcance desconocido, y el usuario gastó su primera sesión en averiguar qué pasaba.
-
-- Un dato que el propio commit de cierre va a cambiar se escribe **medido, con fecha y SHA de medición**, y acompañado de «caduca con el siguiente commit». Nunca se afirma algo que se sabe falso.
-- Ningún cierre se declara terminado sin haber ejecutado `scripts/verificar-arranque.py` y copiado su sección «PROMPT DE RELEVO». Si el script y el documento discrepan, se corrige el documento en esa misma sesión.
-- Al cerrar se revisan expresamente las frases que tienen forma de hecho: SHA de `main`, SHA de la rama, si la rama contiene `main`, y estado del PR (abierto / fusionado / inexistente). Cada una debe poder medirse en el momento de leerla.
-- Si al arrancar aparecen datos que no encajan, la culpa es del cierre anterior, no del sucesor: se corrige, se anota en `DECISIONES.md` y se sigue.
-- Un dato volátil puede sustituirse por una **remisión verificable**: el marcador `<!-- verificador:main-medido = <sha> · <fecha> -->` de `ESTADO.md` lo compara el propio verificador con el `main` real. El criterio es de **pertenencia a la historia**, no de igualdad: un marcador viejo pero verdadero da OK (si no, cada fusión pondría el aviso en rojo y el aviso se volvería ruido), mientras que un SHA inventado o de otra rama da AVISO. Al cerrar se actualiza con el `main` medido, para que el dato no pierda frescura, pero su falta de frescura no bloquea ni avisa.
+Siguen vigentes sin cambios: un solo escritor por repo, nunca commit a `main` ni fusión de PRs por el agente, todo el SQL lo ejecuta el usuario, `pg_get_functiondef` antes de reescribir cualquier RPC, archivos finales y completos, una instrucción a la vez con su prueba del objetivo, y la jerarquía `AGENTS.md` > `ESTADO.md` > repo > memoria.
