@@ -2,11 +2,11 @@
 id: "F-9"
 titulo: "f_puerta_marcar_vendedor no valida p_dia: un valor fuera de rango autoriza otro dia"
 prioridad: "P1"
-estado: "pendiente"
+estado: "en_progreso"
 area: "seguridad"
 depende_de: []
 archivos:
-  - "supabase/migrations/0001_esquema_inicial.sql"
+  - "supabase/migrations/0002_f9_valida_p_dia.sql (nueva; la 0001 es línea base y no se edita)"
   - "tests/escaneo.test.mjs"
 ---
 
@@ -54,7 +54,7 @@ Todo el SQL lo ejecuta el usuario; esta tarea no cambia nada del servidor sin su
 
 > El agente completa esta sección al terminar o bloquearse.
 
-- Qué cambió:
-- Archivos tocados:
-- Pruebas ejecutadas:
-- Riesgos o pendientes:
+- Qué cambió: (en curso) corrección de datos rancios al arrancar la Sesión 28 y apertura de la rama `agente/2026-11-14-f9-valida-p-dia`. La RPC todavía NO se ha tocado.
+- Archivos tocados: `ESTADO.md`, `DECISIONES.md`, `tareas/README.md`, `tareas/F-9-dia-fuera-de-rango.md`.
+- Pruebas ejecutadas: `scripts/verificar-arranque.py` al arrancar: 16 OK / 1 AVISO / 0 FALLAS (el aviso son 2 menciones históricas de una ruta antigua).
+- Riesgos o pendientes: falta `pg_get_functiondef('f_puerta_marcar_vendedor')` ejecutado por el usuario para escribir sobre la definición real. El bug está confirmado en el repo (`supabase/migrations/0001_esquema_inicial.sql:4052-4075`: solo valida sesión y `p_estado`, no `p_dia`) y el volcado de producción del 09/11 (`docs/sql/volcado-produccion-2026-11-09.csv:3565`) es idéntico salvo el `;` final. Patrón correcto ya usado en `f_puerta_marcar_cortesia` (`0001_esquema_inicial.sql:3970`): `IF p_dia NOT IN (1,2) THEN RETURN FALSE; END IF;`. PENDIENTE declarado: no se marca ningún criterio de aceptación como cumplido.
