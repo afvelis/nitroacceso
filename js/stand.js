@@ -397,6 +397,7 @@ document.getElementById('btnFinalizar').onclick = function(){
   limpiarInputs();
   document.getElementById('inEmpresa').value = '';
   document.getElementById('inVende').value = '';
+  document.getElementById('inCedulaRec').value = '';
   ['msgRec','msgPersona','msgError','msgReg'].forEach(function(id){
     const el = document.getElementById(id);
     if (el) el.textContent = '';
