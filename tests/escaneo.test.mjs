@@ -59,14 +59,15 @@ test("token invalido: no devuelve datos de nadie (prueba de seguridad)", async (
 });
 
 test("doble escaneo: autorizar, repetir y comprobar el estado", async () => {
-  // VERIFICADO contra staging y contra el SQL de la migracion 0001:
-  // f_puerta_marcar_vendedor hace `update ...; return found;` y `found` vale
-  // true si el UPDATE coincidio con la fila, aunque los valores no cambien.
-  // Por eso una llamada repetida sobre un vendedor ya autorizado tambien
-  // devuelve true: las aserciones de este test son de ESTADO, no del booleano
-  // de vuelta. Ademas se comprueba marcado_dia1_at: el UPDATE reescribe la
-  // hora en cada llamada; si cambia, se imprime como HALLAZGO (la puerta
-  // reescribiria la hora de entrada en un doble escaneo) sin arreglarlo aqui.
+  // CONTRATO NUEVO (migracion supabase/migrations/0003_f8_preserva_hora_reautorizacion.sql):
+  // f_puerta_marcar_vendedor PRESERVA marcado_dia1_at cuando el vendedor ya
+  // esta autorizado y ya tiene hora: la reautorizacion NO reescribe la hora de
+  // la primera entrada. El retorno sigue siendo boolean y devuelve true en el
+  // reintento, como EXITO IDEMPOTENTE; false queda reservado a rechazos reales
+  // (rol, p_estado, p_dia, fila inexistente), asi la puerta no muestra
+  // "No se pudo autorizar." en un escaneo que no rompio nada.
+  // Hasta que la 0003 este aplicada en staging, este test es ROJO por
+  // diseno: la funcion vieja reescribia la hora en cada llamada.
   const token = await tokenPuerta();
   const antes = await verVendedor(token, VENDEDOR_CONSUMIDO);
   assert.notEqual(antes, null, "V-DEMO02 deberia existir en el seed de staging");
@@ -91,19 +92,23 @@ test("doble escaneo: autorizar, repetir y comprobar el estado", async () => {
   const trasPrimera = await verVendedor(token, VENDEDOR_CONSUMIDO);
   assert.equal(trasPrimera.estado_dia1, "autorizado", "tras autorizar, el estado debe ser autorizado");
 
-  // REPETICION identica: no debe dar error y el estado debe seguir autorizado.
+  // REPETICION identica: no debe dar error, debe devolver true (exito
+  // idempotente) y el estado debe seguir autorizado.
   const repetida = await marcarAutorizado();
   assert.equal(repetida.ok, true, "la autorizacion repetida no debe dar error HTTP");
+  assert.equal(repetida.datos, true,
+    "la reautorizacion devuelve true como exito idempotente: un false aqui dispararia el error falso de la puerta");
   const trasRepetida = await verVendedor(token, VENDEDOR_CONSUMIDO);
 
-  // HALLAZGO potencial: comparar la hora de la marca antes y despues de repetir.
+  // La hora de entrada se PRESERVA: repetir no la reescribe.
   const marca1 = trasPrimera.marcado_dia1_at;
   const marca2 = trasRepetida.marcado_dia1_at;
   console.log("doble escaneo: marcado_dia1_at tras 1a autorizacion = " + marca1);
   console.log("doble escaneo: marcado_dia1_at tras repeticion     = " + marca2);
-  if (marca1 !== marca2) {
-    console.log("HALLAZGO: la autorizacion repetida REESCRIBE marcado_dia1_at: el doble escaneo reescribe la hora de entrada y no deja rastro de que ya estaba autorizado.");
-  }
+  assert.equal(marca2, marca1,
+    "el doble escaneo REESCRIBE marcado_dia1_at: la hora de entrada queda clavada en la segunda autorizacion y se pierde la primera, sin dejar rastro del reintento (mira supabase/migrations/0003_f8_preserva_hora_reautorizacion.sql)");
+  assert.notEqual(marca1, null,
+    "marcado_dia1_at debe tener valor tras autorizar: la primera entrada debe quedar con hora registrada en la base");
 
   // Asercion final: repetir no desautoriza y no deja el registro en otro estado.
   assert.equal(trasRepetida.estado_dia1, "autorizado",
@@ -146,6 +151,10 @@ test("dia invalido: p_dia fuera de rango no autoriza ningun dia", async () => {
 // 0001_esquema_inicial.sql:3970. Hasta ahora la suite solo ejercitaba el
 // dia 1 (doble escaneo) y un p_dia invalido (dia invalido): el dia 2
 // legitimo no tenia prueba.
+// Ampliado (14/11/2026, F-8): ademas cubre la REAUTORIZACION del dia 2
+// (contrato nuevo de supabase/migrations/0003_f8_preserva_hora_reautorizacion.sql):
+// repetir la marca de 'autorizado' sobre el dia 2 PRESERVA marcado_dia2_at
+// y devuelve true como exito idempotente, igual que el doble escaneo del dia 1.
 test("dia 2 legitimo: p_dia = 2 autoriza y desautoriza el dia 2 sin tocar el dia 1", async () => {
   // NOTA sobre el estado final: este test deja estado_dia2 de V-DEMO02 en
   // "autorizado" (su segundo marcado). Si empezo en otro valor (p. ej.
@@ -190,4 +199,30 @@ test("dia 2 legitimo: p_dia = 2 autoriza y desautoriza el dia 2 sin tocar el dia
     "autorizar el dia 2 no debe tocar el dia 1");
   assert.ok(trasAutorizado.marcado_dia2_at,
     "autorizar el dia 2 debe dejar marcado_dia2_at con valor");
+
+  // Paso 3 (F-8): REAUTORIZACION del dia 2. La misma llamada repetida debe
+  // devolver true (exito idempotente) y PRESERVAR marcado_dia2_at: la hora de
+  // la primera entrada del dia 2 no se reescribe. Contrato de
+  // supabase/migrations/0003_f8_preserva_hora_reautorizacion.sql. Con la
+  // funcion vieja (solo 0002 aplicada) este paso es ROJO por diseno: la
+  // llamada reescribia marcado_dia2_at con now() en cada pase.
+  const marca2Primera = trasAutorizado.marcado_dia2_at;
+  const repetidaDia2 = await rpc("f_puerta_marcar_vendedor", {
+    p_token: token,
+    p_vendedor_id: antes.vendedor_id,
+    p_dia: 2,
+    p_estado: "autorizado"
+  });
+  assert.equal(repetidaDia2.ok, true, "la reautorizacion del dia 2 no debe dar error HTTP");
+  assert.equal(repetidaDia2.datos, true,
+    "la reautorizacion del dia 2 devuelve true como exito idempotente: un false aqui dispararia el error falso de la puerta");
+  const trasRepetidaDia2 = await verVendedor(token, VENDEDOR_CONSUMIDO);
+  assert.equal(trasRepetidaDia2.estado_dia2, "autorizado",
+    "tras la reautorizacion del dia 2, estado_dia2 debe seguir autorizado");
+  assert.equal(trasRepetidaDia2.marcado_dia2_at, marca2Primera,
+    "la reautorizacion del dia 2 REESCRIBE marcado_dia2_at: se pierde la hora de la primera entrada del dia 2, igual que pasaba con el dia 1 antes del arreglo (mira supabase/migrations/0003_f8_preserva_hora_reautorizacion.sql)");
+  assert.notEqual(marca2Primera, null,
+    "marcado_dia2_at debe tener valor tras autorizar el dia 2: la primera entrada del dia 2 debe quedar con hora registrada en la base");
+  assert.equal(trasRepetidaDia2.estado_dia1, dia1Previo,
+    "la reautorizacion del dia 2 no debe tocar el dia 1");
 });
