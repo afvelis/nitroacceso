@@ -66,7 +66,7 @@ En la tarjeta **"¿Ya te registraste?"**, escribe la cédula de la persona y pul
 
 **7. Cerrar la sesión en un equipo prestado**
 
-Pulsa **"🚪 Finalizar sesión"**: la pantalla se limpia y muestra el aviso "Sesión finalizada en este equipo...". Tus QR guardados siguen siendo válidos.
+Pulsa **"🚪 Finalizar sesión"**: la pantalla se limpia y muestra el aviso "Sesión finalizada en este equipo...". Tus QR guardados siguen siendo válidos. Este botón solo aparece mientras la edición está abierta: con la edición cerrada el link es de solo consulta y no muestra ese botón (se cierra la pestaña).
 
 **8. Cuando la edición ya está cerrada**
 

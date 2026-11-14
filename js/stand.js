@@ -397,12 +397,18 @@ document.getElementById('btnFinalizar').onclick = function(){
   limpiarInputs();
   document.getElementById('inEmpresa').value = '';
   document.getElementById('inVende').value = '';
+  document.getElementById('inCedulaRec').value = '';
   ['msgRec','msgPersona','msgError','msgReg'].forEach(function(id){
     const el = document.getElementById(id);
     if (el) el.textContent = '';
   });
-  renderStand();
+  document.getElementById('infoStand').style.display = 'none';
+  document.getElementById('avisoCerrado').style.display = 'none';
+  document.getElementById('formLote').style.display = 'none';
+  document.getElementById('recuperarQR').style.display = 'none';
   document.getElementById('cardFinalizar').style.display = 'none';
+  document.getElementById('barraFija').style.display = 'none';
+  document.getElementById('pantallaQR').style.display = 'none';
   document.getElementById('cardAdios').style.display = 'block';
   window.scrollTo(0, 0);
   try { window.close(); } catch (e) {}
