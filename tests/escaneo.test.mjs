@@ -111,27 +111,30 @@ test("doble escaneo: autorizar, repetir y comprobar el estado", async () => {
   assert.ok(trasRepetida.marcado_dia1_at, "el vendedor debe seguir con su marca del dia 1");
 });
 
-test("dia invalido: p_dia fuera de rango no autoriza el dia 1", async () => {
-  // VERIFICADO contra staging y contra el SQL de la migracion 0001:
-  // f_puerta_marcar_vendedor solo distingue p_dia = 1; cualquier otro valor
-  // cae en la rama del dia 2 (limitacion conocida del servidor, fuera del
-  // alcance de estos tests). La propiedad que SI garantiza y que este test
-  // afirma es que un p_dia invalido NUNCA autoriza el dia 1 (el dia que el
-  // escaner esta controlando): estado_dia1 queda invariable.
-  // Efecto secundario documentado: esta llamada deja estado_dia2 de
-  // V-DEMO02 en "autorizado" (vendedor de prueba, ya consumido por el test
-  // de doble escaneo).
+test("dia invalido: p_dia fuera de rango no autoriza ningun dia", async () => {
+  // Desde la migracion 0002_f9_valida_p_dia.sql el servidor rechaza cualquier
+  // p_dia fuera de (1,2) ANTES de cualquier UPDATE (misma pauta que ya aplica
+  // f_puerta_marcar_cortesia en 0001_esquema_inicial.sql:3970): devuelve false
+  // y no toca ningun estado. Ya NO hay "limitacion conocida del servidor":
+  // el caso anterior, que solo podia garantizar que el dia 1 quedaba
+  // invariable (el dia 2 acababa autorizado), queda cubierto por esta
+  // afirmacion completa.
   const token = await tokenPuerta();
   const antes = await verVendedor(token, VENDEDOR_CONSUMIDO);
   assert.notEqual(antes, null, "V-DEMO02 deberia existir en el seed de staging");
-  console.log("dia invalido: estado_dia1 previo = " + antes.estado_dia1);
+  console.log("dia invalido: estado_dia1 previo = " + antes.estado_dia1
+    + " / estado_dia2 previo = " + antes.estado_dia2);
   const r = await rpc("f_puerta_marcar_vendedor", {
     p_token: token,
     p_vendedor_id: antes.vendedor_id,
     p_dia: 9,
     p_estado: "autorizado"
   });
+  assert.equal(r.ok, true, "el rechazo es logico: la RPC debe responder 200, no error HTTP");
+  assert.equal(r.datos, false, "la RPC debe devolver false para un p_dia fuera de (1,2)");
   const despues = await verVendedor(token, VENDEDOR_CONSUMIDO);
   assert.equal(despues.estado_dia1, antes.estado_dia1,
     "un p_dia invalido no debe cambiar el estado del dia 1");
+  assert.equal(despues.estado_dia2, antes.estado_dia2,
+    "un p_dia invalido no debe cambiar el estado del dia 2");
 });

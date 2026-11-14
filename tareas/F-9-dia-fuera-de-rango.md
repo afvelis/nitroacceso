@@ -29,10 +29,10 @@ Todo el SQL lo ejecuta el usuario; esta tarea no cambia nada del servidor sin su
 
 ## Pasos
 
-- [ ] El usuario ejecuta `pg_get_functiondef('f_puerta_marcar_vendedor')` en el SQL Editor y pega el resultado para reescribir sobre la definición real, no sobre la migración.
-- [ ] Hacer backup de la definición vigente (lotes de `docs/sql/`).
-- [ ] Reescribir la función para que valide `p_dia` contra `(1, 2)` y rechace cualquier otro valor (excepción o devolver `false`, según lo que permita el contrato de la función) ANTES del `UPDATE`.
-- [ ] Actualizar el caso «dia invalido» de `tests/escaneo.test.mjs` para afirmar el comportamiento nuevo: rechazo y ningún día modificado.
+- [x] El usuario ejecuta `pg_get_functiondef('f_puerta_marcar_vendedor')` en el SQL Editor y pega el resultado para reescribir sobre la definición real, no sobre la migración. (HECHO 14/11/2026: pegado por el usuario; el volcado queda en [docs/sql/f_puerta_marcar_vendedor-antes-f9-2026-11-14.sql](../docs/sql/f_puerta_marcar_vendedor-antes-f9-2026-11-14.sql).)
+- [x] Hacer backup de la definición vigente (lotes de `docs/sql/`). (HECHO 14/11/2026: `docs/sql/f_puerta_marcar_vendedor-antes-f9-2026-11-14.sql`, aún sin cambios de contenido, solo CRLF→LF.)
+- [ ] Reescribir la función para que valide `p_dia` contra `(1, 2)` y rechace cualquier otro valor (excepción o devolver `false`, según lo que permita el contrato de la función) ANTES del `UPDATE`. (§ Escrito pero NO aplicado: el SQL va como migración NUEVA `supabase/migrations/0002_f9_valida_p_dia.sql` — la `0001` es línea base y no se edita, lo dice `supabase/README.md`. Lo ejecuta el usuario en staging.)
+- [ ] Actualizar el caso «dia invalido» de `tests/escaneo.test.mjs` para afirmar el comportamiento nuevo: rechazo y ningún día modificado. (§ Escrito pero NO ejecutado: el caso está reescrito, la suite no se ha corrido porque exige la `0002` aplicada en staging.)
 
 ## Criterios de aceptación
 
@@ -54,7 +54,10 @@ Todo el SQL lo ejecuta el usuario; esta tarea no cambia nada del servidor sin su
 
 > El agente completa esta sección al terminar o bloquearse.
 
-- Qué cambió: (en curso) corrección de datos rancios al arrancar la Sesión 28 y apertura de la rama `agente/2026-11-14-f9-valida-p-dia`. La RPC todavía NO se ha tocado.
-- Archivos tocados: `ESTADO.md`, `DECISIONES.md`, `tareas/README.md`, `tareas/F-9-dia-fuera-de-rango.md`.
-- Pruebas ejecutadas: `scripts/verificar-arranque.py` al arrancar: 16 OK / 1 AVISO / 0 FALLAS (el aviso son 2 menciones históricas de una ruta antigua).
-- Riesgos o pendientes: falta `pg_get_functiondef('f_puerta_marcar_vendedor')` ejecutado por el usuario para escribir sobre la definición real. El bug está confirmado en el repo (`supabase/migrations/0001_esquema_inicial.sql:4052-4075`: solo valida sesión y `p_estado`, no `p_dia`) y el volcado de producción del 09/11 (`docs/sql/volcado-produccion-2026-11-09.csv:3565`) es idéntico salvo el `;` final. Patrón correcto ya usado en `f_puerta_marcar_cortesia` (`0001_esquema_inicial.sql:3970`): `IF p_dia NOT IN (1,2) THEN RETURN FALSE; END IF;`. PENDIENTE declarado: no se marca ningún criterio de aceptación como cumplido.
+- Qué cambió (2026-11-14, Sesión 28, rama `agente/2026-11-14-f9-valida-p-dia`):
+  - (a) `pg_get_functiondef('public.f_puerta_marcar_vendedor(uuid,uuid,integer,text)')` ejecutado por el USUARIO el 2026-11-14 en el SQL Editor del proyecto de staging `adoqujnnnrlgmvwbnwbl`. La definición es idéntica a la del repo salvo el `;` final y los finales de línea CRLF; el volcado queda en `docs/sql/f_puerta_marcar_vendedor-antes-f9-2026-11-14.sql` (con LF, sin cambios de contenido).
+  - (b) Escritos `supabase/migrations/0002_f9_valida_p_dia.sql` (la validación nueva en `0002_f9_valida_p_dia.sql:37`, misma pauta que `f_puerta_marcar_cortesia` en `0001_esquema_inicial.sql:3970`, sin tocar la `0001`) y el backup de `docs/sql/`. **NINGUNO de los dos está aplicado en la base.**
+  - (c) Caso «dia invalido» de `tests/escaneo.test.mjs:114-140` actualizado al comportamiento nuevo: la RPC responde `false` (contrato confirmado en `tests/helpers.mjs:124`: `rpc` devuelve `{status, ok, datos, texto}` con el cuerpo ya parseado) y ni `estado_dia1` ni `estado_dia2` cambian. **El test está escrito pero NO ejecutado**: correrlo antes de aplicar la `0002` en staging fallaría, porque staging todavía tiene la función vieja.
+- Archivos tocados: `ESTADO.md` (commit A), `docs/sql/f_puerta_marcar_vendedor-antes-f9-2026-11-14.sql`, `supabase/migrations/0002_f9_valida_p_dia.sql`, `tests/escaneo.test.mjs`, `tareas/F-9-dia-fuera-de-rango.md` (commit B).
+- Pruebas ejecutadas: `scripts/verificar-arranque.py` sobre el commit `45bc534` de esta rama: 15 OK / 2 AVISOS / 0 FALLAS (avisos: rama sin empujar a `origin` y 2 menciones históricas de una ruta antigua); sobre `main` al arrancar la sesión: 16 OK / 1 AVISO / 0 FALLAS. `node --check tests/escaneo.test.mjs`: sintaxis OK. La suite NO se corrió (ver (c)).
+- Riesgos o pendientes: **PENDIENTE: aplicar `0002_f9_valida_p_dia.sql` en staging (lo ejecuta el usuario en el SQL Editor, con consulta de conteo de verificación después) y correr la suite completa (`node --test tests/*.test.mjs`) contra staging.** No se marca ningún criterio de aceptación: siguen sin prueba en staging.
