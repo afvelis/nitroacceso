@@ -120,7 +120,7 @@ Los IDs de proyecto se leen de `config.js`; los códigos de demo, de `supabase/s
 | `aliado.html` | `?a=` | `js/aliado.js:2` |
 | `aliados-concursos.html` | `?asig=` | `js/aliados-concursos.js:209` |
 | `talento.html` | `?t=` (lector generico) | `js/talento.js:39` |
-| `puerta.html` | `?lista=`, `?v=`, `?cl=`, `?ci=` | `js/puerta.js:374-377` y `js/puerta.js:1028-1032` |
+| `puerta.html` | `?lista=`, `?v=`, `?cl=`, `?ci=` | `js/puerta.js:382-385` y `js/puerta.js:1036-1040` |
 | Cualquier página que cargue `config.js` (13 de las 14; todas menos `acceso-denegado.html`) | `?env=` (`staging`, `produccion`, `prod`) | `config.js:41-43` |
 | `acceso-denegado.html` | ninguno | página estática, no carga `config.js` |
 

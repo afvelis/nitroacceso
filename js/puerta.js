@@ -125,6 +125,14 @@ function diasTexto(d1, d2){
   return '-';
 }
 
+// es-VE devuelve "11:59:10 p. m." y la abreviatura ya lleva su punto. Las
+// plantillas de aviso añaden su propia puntuación detrás de la hora, así que
+// aquí se recorta el punto final de la abreviatura para no escribir "p. m..".
+// F-11 (tareas/F-11-doble-punto-hora-puerta.md).
+function horaTexto(iso){
+  return new Date(iso).toLocaleTimeString('es-VE').replace(/\.$/, '');
+}
+
 function mostrarPrincipal(){
   tarjetaLogin.style.display = 'none';
   tarjetaEventoAbierto.style.display = 'none';
@@ -451,7 +459,7 @@ async function buscarVendedor(codigoQR){
     
     if(yaAutorizado){
       const fecha = marcadoDia ? new Date(marcadoDia).toLocaleDateString('es-VE') : 'fecha no registrada';
-      const hora = marcadoDia ? new Date(marcadoDia).toLocaleTimeString('es-VE') : 'hora no registrada';
+      const hora = marcadoDia ? horaTexto(marcadoDia) : 'hora no registrada';
       html += `<div class="aviso aviso-rojo">⛔ ENTRADA YA CONSUMADA<br>Este código ya fue utilizado. Validado el <strong>${fecha}</strong> a las <strong>${hora}</strong>. No se puede autorizar de nuevo.</div>`;
     }else{
       html += `<button class="btn btn-grande" id="btnAutorizarVendedor">✅ AUTORIZAR ENTRADA</button>`;
@@ -515,7 +523,7 @@ async function buscarCortesiaLista(codigo){
     // NUEVO: Si todos ya entraron, mostrar bloqueo
     if(total > 0 && total === aut){
       const ultimaPersona = d.personas[d.personas.length - 1];
-      const horaUltima = ultimaPersona.marcado_at ? new Date(ultimaPersona.marcado_at).toLocaleTimeString('es-VE') : 'hora no registrada';
+      const horaUltima = ultimaPersona.marcado_at ? horaTexto(ultimaPersona.marcado_at) : 'hora no registrada';
       const nombres = d.personas.map(p => `✅ ${escaparHtml(p.nombre)} ${escaparHtml(p.apellido)}`).join('<br>');
       mostrarPanel(`
         <div class="resultado bloqueado">
@@ -623,7 +631,7 @@ async function buscarCortesiaIndividual(codigo){
       html += `<div class="aviso aviso-rojo">⚠️ Esta cortesía NO está aprobada para el Día ${diaSeleccionado}. No autorices el ingreso.</div>`;
     }else if(estado === 'autorizado'){
       const fecha = marcado ? new Date(marcado).toLocaleDateString('es-VE') : 'fecha no registrada';
-      const hora = marcado ? new Date(marcado).toLocaleTimeString('es-VE') : 'hora no registrada';
+      const hora = marcado ? horaTexto(marcado) : 'hora no registrada';
       html += `<div class="aviso aviso-rojo">⛔ ENTRADA YA CONSUMADA<br>Este pase ya fue utilizado. Validado el <strong>${fecha}</strong> a las <strong>${hora}</strong>. No se puede autorizar de nuevo.</div>`;
     }else{
       html += `<button class="btn btn-grande" id="btnAutCortesia">✅ AUTORIZAR ENTRADA</button>`;
@@ -690,7 +698,7 @@ async function buscarPremiacion(codigoQR){
 
     if(d.canjeado_at){
       const fecha = new Date(d.canjeado_at).toLocaleDateString('es-VE');
-      const hora = new Date(d.canjeado_at).toLocaleTimeString('es-VE');
+      const hora = horaTexto(d.canjeado_at);
       html += `<div class="aviso aviso-rojo">⛔ PREMIO YA CANJEADO<br>Este premio fue canjeado el <strong>${fecha}</strong> a las <strong>${hora}</strong>. Consumió ${consumidos} de ${cupones} cupones. No se puede autorizar de nuevo.</div>`;
     } else if(!aprobado){
       html += `<div class="aviso aviso-rojo">⚠️ Esta premiación NO está aprobada para el Día ${diaSeleccionado}. No autorices el ingreso.</div>`;
@@ -849,7 +857,7 @@ async function mostrarListaCompleta(lista){
     // NUEVO: Si todos ya entraron, mostrar bloqueo
     if(listaCompletada){
       const ultimaPersona = personas[personas.length - 1];
-      const horaUltima = ultimaPersona.marcado_at ? new Date(ultimaPersona.marcado_at).toLocaleTimeString('es-VE') : 'hora no registrada';
+      const horaUltima = ultimaPersona.marcado_at ? horaTexto(ultimaPersona.marcado_at) : 'hora no registrada';
       const nombres = personas.map(p => `✅ ${escaparHtml(p.nombre)} ${escaparHtml(p.apellido)} (CI: ${escaparHtml(p.cedula)})`).join('<br>');
       mostrarPanel(`
         <div class="resultado bloqueado">
