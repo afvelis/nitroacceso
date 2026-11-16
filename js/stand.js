@@ -208,7 +208,13 @@ function renderTabla() {
 function actualizarCupo() {
   const quedan = lugaresRestantes();
   const n = listaPersonas.length;
-  document.getElementById('msgCupo').textContent = 'Cupo total: ' + datosStand.cupo + ' · Registrados: ' + datosStand.vendedores.length + ' · En lista: ' + n + ' · Disponibles: ' + quedan + '.';
+  // "Disponibles" es lo que de verdad se puede agregar todavía: los lugares
+  // fisicos libres menos los que ya estan apartados en la lista de espera.
+  // lugaresRestantes() no resta la lista a proposito, porque la validacion del
+  // boton (btnAgregar) ya la compara por su cuenta. F-10
+  // (tareas/F-10-contador-disponibles-no-resta-lista.md).
+  const disponibles = Math.max(0, quedan - n);
+  document.getElementById('msgCupo').textContent = 'Cupo total: ' + datosStand.cupo + ' · Registrados: ' + datosStand.vendedores.length + ' · En lista: ' + n + ' · Disponibles: ' + disponibles + '.';
   document.getElementById('btnAgregar').disabled = (editIndex === -1 && n >= quedan);
   document.getElementById('btnRegistrar').disabled = (n === 0);
 }
