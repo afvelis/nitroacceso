@@ -32,7 +32,7 @@ Esto confunde a muchos, léelo con calma:
 
 - La tabla **"Lista de personas autorizadas"** con botones **"Agregar a la lista"**, "Modificar" y "Quitar" es **la lista de espera de esta tanda**: son las personas que estás preparando para registrar, **todavía no tienen QR**.
 - Los QR de las personas **ya registradas** NO se ven en esa tabla. Se ven pulsando **"✅ Terminé: ver mis QR"** (la barra fija de abajo, que aparece cuando ya hay gente registrada) o inmediatamente después de registrar.
-- La línea **"Cupo total: X · Registrados: Y · En lista: N · Disponibles: Z."** te separa las dos cosas: "Registrados" es lo que ya tiene QR; "En lista" es lo que aún falta confirmar.
+- La línea **"Cupo total: X · Registrados: Y · En lista: N · Disponibles: Z."** te separa las dos cosas: "Registrados" es lo que ya tiene QR; "En lista" es lo que aún falta confirmar. **"Disponibles" es lo que de verdad queda por agregar descontando la lista de espera: por eso puede ser menor que la diferencia entre Cupo y Registrados.**
 
 **3. Llenar los datos del negocio**
 
