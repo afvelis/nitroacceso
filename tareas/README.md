@@ -62,6 +62,7 @@ Usa [PLANTILLA.md](PLANTILLA.md) para crear tareas nuevas. No renombres los IDs 
 | [P0-04](P0-04-qr-csp-dependencias.md) | QR local, dependencias vendorizadas y CSP | P0 | **hecho** (30/10/2026) | — |
 | [P0-05](P0-05-backups-limpieza.md) | Backups, exportación y limpieza segura | P0 | **hecho** (31/10/2026) · Alcance A: respaldo JSON + candado doble + re-autenticación PIN + confirmación tipada + dry-run con conteos exactos (fases B-D absorbidas por M-37) | — |
 | [P0-06](P0-06-metas-no-referrer-noindex.md) | Reponer meta no-referrer y noindex en las páginas | P0 | **hecho** (31/10/2026) | P0-04 |
+| [P0-07](P0-07-vuelta-atras-volcado-restauracion.md) | Vuelta atrás: volcado/restauración por SQL Editor (canal único y simétrico) | P0 | **en_progreso** (17/11/2026: generador + sello + restauración probados en staging, criterios a-e y h cumplidos; quedan volcado de producción, segundo sitio y pruebas f/g) | — |
 | [P1-01](P1-01-integridad-escaneos-cupones.md) | Escaneos atómicos, cupones y cédulas duplicadas | P1 | pendiente | P0-02 |
 | [P1-02](P1-02-roles-estado-puerta.md) | Rol supervisor y revalidación de estado en puerta | P1 | pendiente | P0-02 |
 | [P1-03](P1-03-auditoria-privacidad.md) | Auditoría de acciones y privacidad de datos | P1 | pendiente | P0-02 |
@@ -79,7 +80,7 @@ Usa [PLANTILLA.md](PLANTILLA.md) para crear tareas nuevas. No renombres los IDs 
 | [F-8](F-8-reautorizacion-reescribe-hora.md) | La reautorización en puerta reescribe `marcado_dia1_at` y no deja rastro del doble escaneo | P2 | pendiente | — |
 | [F-9](F-9-dia-fuera-de-rango.md) | `f_puerta_marcar_vendedor` no valida `p_dia`: un valor fuera de rango autoriza otro día | P1 | **hecho** (14/11/2026, staging; pendiente aplicar en producción) | — |
 | [F-10](F-10-contador-disponibles-no-resta-lista.md) | El contador «Disponibles» del stand no resta la lista de espera | P2 | **hecho** (14/11/2026, PR #27) | — |
-| [F-11](F-11-doble-punto-hora-puerta.md) | Doble punto final en la hora de «ENTRADA YA CONSUMADA» en puerta | P3 | pendiente | — |
+| [F-11](F-11-doble-punto-hora-puerta.md) | Doble punto final en la hora de «ENTRADA YA CONSUMADA» en puerta | P3 | **hecho** (14/11/2026, PR #26) | — |
 | [M-33](M-33-vista-anulada-aliado.md) | Humanizar la vista «anulada» del aliado | P2 | pendiente | — |
 | [M-34](M-34-fecha-creacion-tarjeta-admin.md) | Mostrar la fecha de creación en la tarjeta del aliado (aliados.html) | P2 | pendiente | — |
 | [M-35](M-35-nombres-premios-anulados.md) | Mostrar nombres de premios anulados (requiere cambio de RPC) | P2 | pendiente | — |

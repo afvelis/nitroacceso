@@ -1,2 +1,10 @@
+# Volcados de datos con datos personales (tarea P0-07): contienen cédulas,
+# correos, teléfonos, códigos QR y hashes de PIN. Nunca se commitean: el
+# volcado se guarda en disco local del usuario, nunca en el repo.
+# Patrón SIN ruta a propósito: el volcado se llama volcado-FECHA-datos.sql y
+# el usuario puede soltarlo en cualquier carpeta del repo (raíz incluida).
+volcado-*-datos.sql
+respaldos/
+
 __pycache__/
 *.pyc
