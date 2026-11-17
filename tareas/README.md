@@ -87,6 +87,8 @@ Usa [PLANTILLA.md](PLANTILLA.md) para crear tareas nuevas. No renombres los IDs 
 | [M-36](M-36-modulo-reclamos.md) | Módulo de reclamos | P2 | pendiente | — |
 | [M-37](M-37-multi-evento.md) | Multi-evento: gestionar hasta 3 eventos simultáneos desde el dashboard | P2 | pendiente | P1-04 |
 | [M-38](M-38-aprobacion-coordinadores.md) | Aprobación de coordinadores desde el dashboard (solicitar → aprobar/rechazar) | P2 | pendiente | — |
+| [P0-08](P0-08-desbloqueo-puerta.md) | Desbloqueo de puerta y rediseño del bloqueo de login | P0 | pendiente | P0-07 |
+| [F-13](F-13-pin-8-digitos-bcrypt-12.md) | PIN de 8 dígitos y bcrypt coste 12 (más capítulo de manual) | P1 | pendiente | P0-07 |
 
 ---
 
