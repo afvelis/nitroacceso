@@ -10,6 +10,7 @@ archivos:
   - "docs/sql/verificar-conteos.sql"
   - "docs/sql/sembrar-sello-staging.sql"
   - "docs/sql/sembrar-sello-produccion.sql"
+  - "docs/sql/huella-contenido.sql"
   - ".gitignore"
 ---
 
@@ -58,13 +59,13 @@ Que exista una vuelta atrás probada y operable por el usuario solo: generar un 
 ## Criterios de aceptación
 
 - [x] (a) Existe un volcado completo ejecutable que incluye `id`s, `codigo_qr`, `links_anulados`, marcados de entrada y la fila `config`, y excluye `sesiones` y `login_intentos`.
-- [x] (b) Existe un guion de restauración que, partiendo de una base vacía, deja conteos idénticos por tabla al original.
+- [x] (b) Existe un guion de restauración que, partiendo de una base vacía, deja conteos idénticos por tabla al original. **Re-probado a volumen el 17/11/2026** con el volcado de producción (15 tablas, 317 filas) ejecutado íntegro sobre staging: 15 de 15 conteos exactos y huella de contenido idéntica (ver bloque «Prueba a volumen» en Notas de implementación).
 - [x] (c) La restauración se prueba en staging (desechable) y la suite de RPC queda en 8/8 después (la suite vive en `tests/` — `tests/escaneo.test.mjs` y `tests/login.test.mjs` — y se ejecuta con `node --test tests/*.test.mjs` contra staging; línea base actual: 8/8 en verde, verificada el 14/11/2026).
-- [x] (d) Está probado también el caso de restaurar sobre una base con datos (reemplazo), sin errores de `UNIQUE` ni de FK.
-- [x] (e) Ningún archivo con datos personales queda en el repo; `.gitignore` lo impide y está comprobado con `git status`.
-- [ ] (f) El generador descubre tablas y columnas del catálogo y aborta si aparece una tabla nueva sin ubicación.
-- [ ] (g) Un volcado truncado no puede restaurar a medias: el guion aborta y la base queda intacta.
-- [x] (h) El guion se niega a ejecutarse en un proyecto cuyo sello de entorno no coincide.
+- [x] (d) Está probado también el caso de restaurar sobre una base con datos (reemplazo), sin errores de `UNIQUE` ni de FK. **Re-probado a volumen el 17/11/2026:** tras borrar a propósito el stand con más vendedores (stands 22→21 y vendedores 84→59 por la cascada de `vendedores_stand_id_fkey ON DELETE CASCADE`, migración 0001:420), re-ejecutar EL MISMO archivo devolvió stands 22 y vendedores 84 y la huella quedó idéntica.
+- [x] (e) Ningún archivo con datos personales queda en el repo; `.gitignore` lo impide y está comprobado con `git status` (17/11/2026: la segunda copia del volcado de producción vive en el disco externo del usuario, fuera del repo).
+- [ ] (f) El generador descubre tablas y columnas del catálogo y aborta si aparece una tabla nueva sin ubicación. **PENDIENTE: no se ejecutó su prueba.**
+- [ ] (g) Un volcado truncado no puede restaurar a medias: el guion aborta y la base queda intacta. **PENDIENTE: no se ejecutó su prueba.**
+- [x] (h) El guion se niega a ejecutarse en un proyecto cuyo sello de entorno no coincide. **Lado positivo también probado a volumen el 17/11/2026:** staging se selló temporalmente como `produccion` (verificado: 1 fila, sello `produccion`) y el volcado de producción (sello `produccion`) se ejecutó COMPLETO ahí.
 
 ## Verificación
 
@@ -98,10 +99,21 @@ Que exista una vuelta atrás probada y operable por el usuario solo: generar un 
 > - **(g) PENDIENTE** — volcado truncado: no se ejecutó el escenario de archivo cortado.
 > - **(h) CUMPLIDO** — con el sello de staging cambiado temporalmente a `produccion`, el guion abortó con `ERROR: P0001: PROYECTO EQUIVOCADO: este volcado viene del entorno "staging", pero el proyecto abierto tiene el sello "produccion"...` y los conteos siguieron en 5/3/1: no se tocó ninguna fila. El sello se devolvió a `staging` y se verificó.
 >
+> **Prueba a VOLUMEN del volcado de PRODUCCIÓN (17/11/2026, ejecutada por el usuario en el SQL Editor):**
+>
+> - El volcado de producción del 17/11/2026 (15 tablas, 317 filas, sello `produccion`) se ejecutó COMPLETO sobre STAGING, poniendo antes el sello de staging en `produccion` (verificado: 1 fila, sello `produccion`).
+> - Conteos externos tras la ejecución: 15 de 15 coinciden exactamente — aliado_ampliaciones 3, aliado_asignaciones 12, aliado_concursos 4, aliados 11, config 1, coordinadores 2, cortesia_listas 15, cortesia_personas 68, cortesias 43, eventos 5, listas 8, personas 35, stands 22, talentos 4, vendedores 84 (suma 317).
+> - **Prueba destructiva controlada:** se borró el stand con MÁS vendedores → stands 22→21 y vendedores 84→59 (cascada de 25 vendedores por `vendedores_stand_id_fkey ON DELETE CASCADE`, migración 0001:420). Re-ejecutado EL MISMO archivo → Success; conteos de vuelta: stands 22, vendedores 84.
+> - **Huella de contenido** (md5 del contenido completo de las 15 tablas, sin imprimir ninguna fila) tras la re-restauración: IDÉNTICA a la de referencia — `e3c3141c1914c4820cd9e4075da86166` con 15 tablas. Conclusión: restauración fiel al byte a volumen de producción. Instrumento reutilizable: `docs/sql/huella-contenido.sql`.
+> - Cierre: staging devuelto a su estado — sello de vuelta a `staging` (verificado 1 fila) y volcado de staging re-ejecutado; total 22 filas verificado por consulta externa.
+> - **Segunda copia** del archivo de producción guardada en el DISCO EXTERNO del usuario, FUERA del repo (244 KB exactos, confirmada por el usuario).
+> - **Análisis de efectos colaterales** (verificado contra `supabase/migrations/0001_esquema_inicial.sql`): NINGUNA FK de `sesiones`, `login_intentos` ni `respaldo_sello` apunta a las 15 tablas, por lo que restaurar no borra sesiones ni el contador de intentos; las dos únicas FK sin cascada (`stands_coordinador_id_fkey` y `talentos_coordinador_id_fkey`) quedan satisfechas por el orden de borrado; no hay triggers de DELETE en las 15 tablas; ninguna PK de las 15 es identity (todas uuid con `gen_random_uuid()`, `config.id` fijo 1), por lo que los ids se conservan; ninguna FK apunta a `config`; `revoke all on all tables in schema public from anon, authenticated` (0001:5018) hace que las tablas de staging no sean legibles por la API REST.
+> - **Huella de REFERENCIA del volcado de producción del 17/11/2026: `e3c3141c1914c4820cd9e4075da86166` (15 tablas).** Solo es comparable con huellas producidas por el mismo archivo (`docs/sql/huella-contenido.sql`) sobre el mismo esquema.
+> - Criterios con esta prueba: (b), (d), (e) y (h) quedan probados también a volumen. **(f)** y **(g)** SIGUEN PENDIENTES: no se ejecutó su prueba.
+> - **AVISO PIN:** el archivo de producción es ANTERIOR a la rotación de PIN del 17/11/2026, así que si se restaura devuelve los PIN anteriores. **La regla es rotar los PIN después de restaurar.**
+>
 > **Qué falta para cerrar P0-07:**
 >
-> 1. Generar y guardar el volcado de **PRODUCCIÓN** (el probado hoy es el de staging).
-> 2. Guardar ese volcado en **DOS sitios**: hoy vive en un solo disco, y Supabase Free no da copias.
-> 3. Las pruebas pendientes **(f)** y **(g)**.
+> 1. Las pruebas pendientes **(f)** (tabla nueva sin ubicación) y **(g)** (volcado truncado): no se ejecutó su prueba; se ejercitarán la próxima vez que se genere un volcado (y (g) puede probarse en staging igual que la prueba del sello).
 >
-> **Nota honesta de estado:** la restauración se probó con 22 filas (datos de demostración de staging); el volumen de producción es otro y no está probado.
+> **Nota honesta de estado:** la restauración quedó probada con los datos de staging (22 filas) Y a volumen de producción (317 filas), con huella de contenido idéntica tras una prueba destructiva controlada y re-restauración. Lo único sin probar es el comportamiento del generador ante una tabla nueva sin ubicación (f) y ante un volcado truncado (g).
