@@ -1,0 +1,107 @@
+---
+id: "P0-07"
+titulo: "Vuelta atrás: volcado/restauración por SQL Editor (canal único y simétrico)"
+prioridad: "P0"
+estado: "en_progreso"
+area: "operacion"
+depende_de: []
+archivos:
+  - "docs/sql/volcado-datos.sql"
+  - "docs/sql/verificar-conteos.sql"
+  - "docs/sql/sembrar-sello-staging.sql"
+  - "docs/sql/sembrar-sello-produccion.sql"
+  - ".gitignore"
+---
+
+# P0-07 · Vuelta atrás: volcado/restauración por SQL Editor
+
+## Contexto
+
+Supabase **Free** no tiene PITR ni backups automáticos: el único job sobre la base es el keep-alive ([.github/workflows/keep-supabase-alive.yml](../.github/workflows/keep-supabase-alive.yml), que solo pinga). El "respaldo JSON" del admin (P0-05 alcance A, [js/admin.js:464](../js/admin.js#L464)) **no es restaurable**: le faltan `id`, `codigo_qr`, `codigo_link` y la fila `config`; sirve como informe, no como vuelta atrás. No existe ningún `pg_dump`, ni script de import, ni runbook: la restauración de un borrado accidental hoy es simplemente imposible. El usuario es el único que ejecuta SQL, en el SQL Editor web de Supabase (sin `psql`, sin acceso de red a la base desde el agente).
+
+Decisión aprobada (consejo de dos asesores, usuario de acuerdo, 2026-11-17): **canal único y simétrico** — el mismo camino de ida y vuelta. Una consulta en el SQL Editor que escupa texto SQL; el usuario lo guarda como archivo; restaurar = pegar ese archivo en el mismo editor. **Sin RPC nueva, sin botón nuevo, sin claves nuevas.** Y usar `jsonb_populate_recordset` (no `INSERT` generado a mano con `quote_literal`): es lo que resuelve bien los tipos `text[]` (`links_anulados`), `uuid`, `timestamptz` y los NULL, justo donde falla la generación manual.
+
+Esta tarea va ANTES de cualquier migración: sin vuelta atrás, ninguna otra P0 se puede probar contra producción sin riesgo.
+
+**Revisión del orquestador (2026-11-17, tras el esqueleto v1):** tres agujeros graves cerrados en la revisión 2. (1) Las columnas escritas a mano eran una foto del esquema: con F-12 añadiendo columnas a `vendedores`, el volcado habría perdido ese dato en silencio → las columnas se descubren del catálogo en el momento. (2) Una celda copiada truncada podría haber restaurado a medias → conteos esperados embebidos y verificación que aborta la transacción entera. (3) El guion EMPIEZA BORRANDO todas las tablas y el nombre de base es `postgres` en todo proyecto Supabase: pegar un volcado de staging en producción borró el evento real → guarda por sello de entorno (`public.respaldo_sello`), sin sello no hay volcado.
+
+## Evidencia
+
+- Supabase Free sin PITR ni backups automáticos; keep-alive solo pinga: [.github/workflows/keep-supabase-alive.yml:19](../.github/workflows/keep-supabase-alive.yml#L19) (única llamada, un ping).
+- El respaldo JSON del admin no es restaurable: [js/admin.js:464-504](../js/admin.js#L464-L504) compone el informe vía RPCs de lectura (`f_admin_ver_evento`, `f_admin_ver_cortesia`, `f_admin_ver_concursos_aliado`); ninguna devuelve `id`, `codigo_qr`, `codigo_link` ni la fila `config`.
+- Fases B/C de P0-05 (import/automatización) absorbidas por M-37, nunca ejecutadas: [tareas/P0-05-backups-limpieza.md:40-42](P0-05-backups-limpieza.md#L40-L42).
+- RLS activa sin policies: [supabase/migrations/0001_esquema_inicial.sql:4291](../supabase/migrations/0001_esquema_inicial.sql#L4291) y siguientes; todo el acceso pasa por RPCs `SECURITY DEFINER` (el SQL Editor corre como `postgres` y no pasa por RLS).
+- Las FK no están en `0001` sino solo en producción: [docs/sql/volcado-produccion-2026-11-09.csv:23-68](../docs/sql/volcado-produccion-2026-11-09.csv#L23-L68) (14 FK reales, con `ON DELETE CASCADE`/`SET NULL`); ese CSV es solo DDL, no datos.
+- `login_intentos.id` es `GENERATED ALWAYS AS IDENTITY`: [supabase/migrations/0001_esquema_inicial.sql:95](../supabase/migrations/0001_esquema_inicial.sql#L95).
+- Precedente del riesgo nº 1: un lote se ejecutó por error en otro proyecto y el SQL Editor dijo «Success» (29/10/2026, registrado en AGENTS.md, ritmo punto 3); el conteo lo delató, no el editor. De ahí el sello de entorno.
+- F-12 va a añadir columnas de anulación a `vendedores`: cualquier lista de columnas congelada produciría volcados que pierden ese dato en silencio.
+- No existe ningún script de volcado/import en el repo (verificado: `docs/sql/` solo tiene DDL, RPCs y SQL puntual al 2026-11-17).
+
+## Objetivo
+
+Que exista una vuelta atrás probada y operable por el usuario solo: generar un volcado completo ejecutable (con `id`s, `codigo_qr`, `links_anulados`, marcados de entrada y la fila `config`), y restaurarlo pegando el archivo en el SQL Editor, con conteos idénticos por tabla.
+
+## Pasos
+
+- [x] Escribir `docs/sql/volcado-datos.sql` (revisión 3): bloque `do` de solo lectura que descubre tablas y columnas del catálogo (`information_schema`, excluyendo `is_identity='YES'` y `is_generated<>'NEVER'`), aborta si hay una tabla nueva sin ubicación, embebe el sello de origen y los conteos esperados, y devuelve UNA fila y UNA columna (`script`) con el guion de restauración completo (`begin;`…`commit;`; guarda de sello; borrado en el INVERSO exacto del orden de inserción, con aserción en el generador de que el primer delete es la última tabla; inserciones `jsonb_populate_recordset`; verificación de integridad que aborta).
+- [x] Escribir `docs/sql/verificar-conteos.sql` (revisión 2): una fila por tabla (`tabla`, `filas`) descubierta del catálogo, misma lista y exclusiones que el generador.
+- [x] Escribir `docs/sql/sembrar-sello-staging.sql` y `docs/sql/sembrar-sello-produccion.sql`: paso previo ÚNICO por proyecto (`create table if not exists public.respaldo_sello` + RLS + `insert` idempotente).
+- [x] Añadir `.gitignore` para volcados con datos y carpeta `respaldos/`.
+- [x] El usuario ejecuta `sembrar-sello-staging.sql` en staging (verificado: `select entorno from public.respaldo_sello;` devuelve una fila `staging`; el sello de PRODUCCIÓN queda pendiente de sembrar cuando se genere el volcado de producción).
+- [x] El usuario ejecuta `volcado-datos.sql` en el SQL Editor de **staging**, guarda el resultado como `volcado-AAAA-MM-DD-datos.sql` (fuera del repo) y confirma que abre y empieza por la cabecera, con la lista de conteos esperados.
+- [ ] Prueba en staging desechable 1 (base vacía): restaurar el volcado en una base vacía con el mismo esquema; `verificar-conteos.sql` antes y después debe dar conteos idénticos; suite de RPC en 8/8.
+- [x] Prueba en staging desechable 2 (reemplazo): restaurar de nuevo sobre esa base ya poblada (mismo volcado) sin errores de `UNIQUE` ni de FK.
+- [x] Prueba negativa del sello: intentar restaurar el volcado de staging en un proyecto con sello distinto (o sin sembrar) debe abortar con el mensaje «PROYECTO EQUIVOCADO» / «PROYECTO SIN SELLO» sin borrar nada.
+- [ ] Prueba negativa de truncado: cortar el guion a mitad (p. ej. sin la última tabla) y ejecutarlo debe abortar con «VOLCADO INCOMPLETO: …» dejando la base intacta.
+- [x] Comprobar `git status` limpio (ningún volcado con datos en el repo).
+
+## Criterios de aceptación
+
+- [x] (a) Existe un volcado completo ejecutable que incluye `id`s, `codigo_qr`, `links_anulados`, marcados de entrada y la fila `config`, y excluye `sesiones` y `login_intentos`.
+- [x] (b) Existe un guion de restauración que, partiendo de una base vacía, deja conteos idénticos por tabla al original.
+- [x] (c) La restauración se prueba en staging (desechable) y la suite de RPC queda en 8/8 después (la suite vive en `tests/` — `tests/escaneo.test.mjs` y `tests/login.test.mjs` — y se ejecuta con `node --test tests/*.test.mjs` contra staging; línea base actual: 8/8 en verde, verificada el 14/11/2026).
+- [x] (d) Está probado también el caso de restaurar sobre una base con datos (reemplazo), sin errores de `UNIQUE` ni de FK.
+- [x] (e) Ningún archivo con datos personales queda en el repo; `.gitignore` lo impide y está comprobado con `git status`.
+- [ ] (f) El generador descubre tablas y columnas del catálogo y aborta si aparece una tabla nueva sin ubicación.
+- [ ] (g) Un volcado truncado no puede restaurar a medias: el guion aborta y la base queda intacta.
+- [x] (h) El guion se niega a ejecutarse en un proyecto cuyo sello de entorno no coincide.
+
+## Verificación
+
+1. **Estática (hecha el 2026-11-17, revisión 2):** parseo real con libpg_query (pglast v8.8) de los cuatro SQL (`volcado-datos.sql`, `verificar-conteos.sql`, los dos de sello) y del guion simulado con los dos bloques `do` nuevos (normal, y con columna extra tipo F-12 en `vendedores`): 1 `begin`, 1 `commit`, 15 `delete`, 15 `insert`, 2 `do`. Balance de comillas y `$j$`/`$sello$`/`$verificacion$` emparejados, `v_orden` idéntico en generador y verificar-conteos. Elaborado en `/tmp`, nada ejecutado contra Supabase.
+2. **Prueba del objetivo (usuario, staging):** conteos con `verificar-conteos.sql` antes y después de restaurar; tabla resultante fila a fila idéntica.
+3. **Pruebas negativas:** sello distinto → aborta sin borrar nada; guion truncado → «VOLCADO INCOMPLETO» y rollback de la transacción entera.
+4. `git status` no muestra volcados con datos.
+5. Las pruebas de staging son desechables: nunca contra producción.
+
+## Fuera de alcance
+
+- RPCs nuevas, botones nuevos o claves nuevas (decisión del consejo: canal único por SQL Editor).
+- Backup automático o PITR (requiere plan de pago; no lo pide el usuario).
+- M-37 (multi-evento): esta tarea es la vuelta atrás del modelo actual.
+- Migrar esquema o tocar RPCs existentes.
+
+## Notas de implementación
+
+> **Esqueleto v1 el 2026-11-17; revisión 2 el mismo día tras revisión del orquestador; revisión 3 tras tribunal (RECHAZADO por un P0, corregido).** Lo corregido en la revisión 3: (P0) el borrado salía en orden DIRECTO porque se concatenaba en el mismo bucle forward — con las 2 FK en modo NO ACTION (`stands_coordinador_id_fkey`, `talentos_coordinador_id_fkey`) la restauración sobre base poblada era imposible; ahora los deletes se anteponen en el bucle (inverso exacto) y el generador tiene aserción: mismo número de deletes que de inserts y primer delete = última tabla del orden. (P1) `.gitignore` sin ruta (`volcado-*-datos.sql`) para cubrir el volcado aunque caiga en la raíz; verificado con `git check-ignore -v`. (P2) `config` vacía ya no produce script NULL en silencio (`max()` sin `limit` + aserción de largo mínimo); sello con `btrim` en el guard generado y escapado en los mensajes; aviso destructivo en la TERCERA línea del guion generado (1º banner, 2º título, 3º aviso) con el total de filas a borrar; FK documentadas como 12 CASCADE/SET NULL + 2 NO ACTION.
+>
+> **Revisión 2 (2026-11-17):** (1) `volcado-datos.sql` descubre las columnas de `information_schema.columns` en el momento (excluyendo `is_identity='YES'` y `is_generated<>'NEVER'`) y las tablas del catálogo: si aparece una tabla de `public` que no está en `v_orden` ni en las excluidas, ABORTA nombrándola; el mismo guion sirve antes y después de F-12. (2) El guion generado embebe el conteo real por tabla (cabecera + bloque `do $verificacion$` antes del `commit` que lanza `VOLCADO INCOMPLETO: tabla % esperaba % filas y hay %` y aborta la transacción entera). (3) Sello de entorno: `public.respaldo_sello` (una fila, RLS activa sin policies); el generador toma el sello del proyecto donde corre (aborta si falta, vacía o ambigua) y el guion abre con `do $sello$`. `verificar-conteos.sql` también descubre del catálogo. El borrado sigue en orden inverso a la inserción; ambas listas salen de la misma fuente (`v_orden`), idéntico en generador y verificar-conteos. Ningún criterio marcado: falta sembrar sellos y probar en staging (pasos 5-11).
+>
+> **Prueba real en STAGING (17/11/2026, ejecutada por el usuario en el SQL Editor de Supabase):**
+>
+> - **(a) CUMPLIDO** — el generador (`docs/sql/volcado-datos.sql`), ejecutado en staging, produjo un guion con las 15 tablas y 22 filas, con `id`, `codigo_qr`, `links_anulados` y la fila `config` completa (incluidos los hashes de PIN); `sesiones` y `login_intentos` quedaron fuera. El archivo resultante se guardó en el disco del usuario, FUERA del repo.
+> - **(b) CUMPLIDO** — ejecutado el guion guardado en staging: `Success. No rows returned` y las 15 comprobaciones de conteo embebidas pasaron antes del `commit`.
+> - **(c) CUMPLIDO** — tras restaurar: `node --test tests/*.test.mjs` → `tests 8 / pass 8 / fail 0` (línea base idéntica a la de antes de la restauración).
+> - **(d) CUMPLIDO** — prueba de reemplazo sobre base poblada: se borró a propósito `personas` con cédula `10000001` (conteo 5→4), se ejecutó el guion y la fila volvió (conteo 4→5, `cedula_10000001 = 1`). Un guion que no hiciera nada habría dejado 4.
+> - **(e) CUMPLIDO** — `git check-ignore -v` demuestra que `volcado-2026-11-17-datos.sql` está ignorado tanto en la raíz como en `docs/sql/`, y que `docs/sql/volcado-datos.sql` (el generador) y `docs/sql/verificar-conteos.sql` NO lo están. Ningún archivo con datos personales está en el repo.
+> - **(f) PENDIENTE** — tabla nueva sin ubicación: no se ejecutó con una tabla falsa; se ejercitará de forma natural la primera vez que se genere el volcado de producción (si producción tuviera una tabla fuera de la lista, el generador abortará nombrándola).
+> - **(g) PENDIENTE** — volcado truncado: no se ejecutó el escenario de archivo cortado.
+> - **(h) CUMPLIDO** — con el sello de staging cambiado temporalmente a `produccion`, el guion abortó con `ERROR: P0001: PROYECTO EQUIVOCADO: este volcado viene del entorno "staging", pero el proyecto abierto tiene el sello "produccion"...` y los conteos siguieron en 5/3/1: no se tocó ninguna fila. El sello se devolvió a `staging` y se verificó.
+>
+> **Qué falta para cerrar P0-07:**
+>
+> 1. Generar y guardar el volcado de **PRODUCCIÓN** (el probado hoy es el de staging).
+> 2. Guardar ese volcado en **DOS sitios**: hoy vive en un solo disco, y Supabase Free no da copias.
+> 3. Las pruebas pendientes **(f)** y **(g)**.
+>
+> **Nota honesta de estado:** la restauración se probó con 22 filas (datos de demostración de staging); el volumen de producción es otro y no está probado.
