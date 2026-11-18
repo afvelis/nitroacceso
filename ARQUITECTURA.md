@@ -17,8 +17,8 @@
 
 ## 2 · Actores y roles
 
-1. Administrador (tú): PIN 8 dígitos → dashboard.html
-2. Staff de puerta: PIN 4 dígitos → puerta.html
+1. Administrador (tú): PIN nuevo de 8 dígitos; los de 6 anteriores siguen entrando hasta rotarse → dashboard.html
+2. Staff de puerta: PIN nuevo de 8 dígitos; los de 6 anteriores siguen entrando hasta rotarse → puerta.html
 3. Coordinador de talentos: código COORD- o link coord.html?c=
 4. Coordinador de stands: código COORD- o link coord.html?c=
 5. Representante de talento: link talento.html?t=

@@ -44,7 +44,7 @@
 - **Salida real:** `borrarSesion()` (config.js) revoca en la base (`f_logout`) y limpia el navegador; no bloquea el cierre local si la red falla. Aplica a dashboard, admin y puerta.
 - **Auto-bloqueo 5 minutos** en puerta y admin (`iniciarAutoBloqueo()`): sin clic/tecla/toque/scroll/ratón → salida real + vuelta al login. Candado local evita temporizadores duplicados.
 - **Panel admin — tarjeta "Sesiones y seguridad":** ver sesiones activas (hash truncado a 12, rol, dispositivo, creada, expira, último uso, badge "Esta sesión"), **"Revocar todas las demás sesiones"** (excluye la propia, reporta cuántas mató) y **"Rotar PIN admin / Rotar PIN puerta"** (2 pasos en modal con campo oculto).
-- **Login:** placeholder de 6 puntos; el bloqueo se muestra legible (`⛔ Bloqueado: demasiados intentos fallidos…`) sin filtrar el error crudo de PostgREST.
+- **Login:** placeholder de 8 puntos; el bloqueo se muestra legible (`⛔ Bloqueado: demasiados intentos fallidos…`) sin filtrar el error crudo de PostgREST.
 - **`admin.html` v2:** sistema de modales propio (regla v2.1) en TODA la página — los diálogos nativos encadenados pueden ser suprimidos por Chrome y ocultar resultados (incidente real de esta tarea).
 - `dashboard.html` no cambió: su botón Salir hereda la salida real de config.js.
 
