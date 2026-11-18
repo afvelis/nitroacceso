@@ -56,6 +56,7 @@ Está escrito para gente no técnica, con prisa el día del evento: te dice qué
 | [07 - Aliados y coordinadores](07-aliados-y-coordinadores.md) | Crear coordinadores y gestionar aliados y concursos | Administrador y coordinadores |
 | [08 - Estadísticas](08-estadisticas.md) | Los números del evento y el informe final | Administrador |
 | [09 - Problemas frecuentes](09-problemas-frecuentes.md) | Síntoma, causa y qué hacer | Todos |
+| [10 - Seguridad del panel](10-seguridad-del-panel.md) | Rotar PIN y revocar sesiones | Administrador |
 
 **Si es tu primer día, lee en este orden:**
 

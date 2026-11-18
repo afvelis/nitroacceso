@@ -63,7 +63,7 @@ Verificadas el 27-28/10/2026 con la Consulta B (§8); `login_intentos` añadida 
 - `f_logout(p_token uuid)` → boolean — revoca la propia sesión (salida real; la usan los botones Salir vía config.js)
 - `f_admin_sesiones(p_token uuid)` → table(sesion_hash, rol, device_label, creada_at, expira_at, ultimo_uso_at, propia) — vista del panel; el hash se muestra truncado a 12
 - `f_admin_revocar_sesiones(p_token uuid)` → integer — revoca TODAS las sesiones activas EXCEPTO la propia; -1 si el token es inválido
-- `f_admin_rotar_pin(p_token uuid, p_objetivo text, p_pin_actual text, p_pin_nuevo text)` → text — exige el PIN admin actual (prueba de presencia, también para rotar el de puerta) y PIN nuevo exactamente de 6 dígitos; guarda bcrypt
+- `f_admin_rotar_pin(p_token uuid, p_objetivo text, p_pin_actual text, p_pin_nuevo text)` → text — exige el PIN admin actual (prueba de presencia, también para rotar el de puerta) y PIN nuevo exactamente de 8 dígitos (los de 6 anteriores siguen entrando hasta rotarse); guarda bcrypt coste 12 (F-13, 0004)
 
 ### Admin
 - `f_admin_toggle_edicion(p_token, p_abierta boolean)`

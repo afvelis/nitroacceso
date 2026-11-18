@@ -15,7 +15,7 @@ Los demás roles NO usan esta pantalla: coordinadores, representantes de talento
 
 ## Antes de empezar
 
-- Ten tu **PIN a mano**. El PIN es de 6 dígitos y lo entrega el administrador del evento.
+- Ten tu **PIN a mano**. El PIN lo entrega el administrador del evento. Los PIN nuevos son de 8 dígitos; los PIN anteriores de 6 dígitos siguen funcionando hasta que se roten.
 - El administrador y la puerta usan **PINs distintos**. Si el tuyo no entra, no insistas muchas veces: el sistema bloquea los intentos (ver abajo).
 - No compartas tu PIN con nadie. Cada puesto debe entrar con su propio PIN.
 - Entra desde el link oficial de NitroSystem que te dio el administrador. Si abres una página vieja guardada en favoritos, verifica que la dirección sea la correcta.
@@ -25,7 +25,7 @@ Los demás roles NO usan esta pantalla: coordinadores, representantes de talento
 **Para entrar:**
 
 1. Abre NitroSystem. Verás la tarjeta **"🔐 Ingreso al sistema"**.
-2. En el campo con el rótulo **"Escribe tu PIN"**, escribe tu PIN de 6 dígitos. Verás puntos, no los números: es normal.
+2. En el campo con el rótulo **"Escribe tu PIN"**, escribe tu PIN (de 8 dígitos si es nuevo; los de 6 dígitos anteriores siguen sirviendo). Verás puntos, no los números: es normal.
 3. Pulsa el botón **"Entrar"**.
 4. El botón cambia a **"Entrando..."** unos segundos. Después:
    - Si tu PIN es de **administrador**, llegas al panel principal, con el encabezado **"NitroSystem - Panel principal del administrador"**.

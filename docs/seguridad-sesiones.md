@@ -35,8 +35,8 @@
 
 ## 4 · PINs
 
-- Ambos PINs (admin y puerta) tienen **exactamente 6 dígitos** y viven como **bcrypt** (pgcrypto, `$2a$06$…`, 60 chars). Verificación segura: `(left(pin, 2) = '$2') as es_bcrypt` → `true, true` (29/10/2026).
-- **Rotación** (`f_admin_rotar_pin`): exige el **PIN admin actual** como prueba de presencia (aunque el objetivo sea el de puerta), el nuevo debe casar `^[0-9]{6}$`, no puede repetir el actual, y queda `extensions.crypt(p_pin_nuevo, extensions.gen_salt('bf'))`. El PIN anterior muere de inmediato (el hash no acepta el claro).
+- Ambos PINs (admin y puerta) viven como **bcrypt** (pgcrypto, 60 chars). Desde F-13 (17/11/2026) los PIN **nuevos** tienen **exactamente 8 dígitos** y se guardan con coste 12 (`$2a$12$…`); los PIN anteriores de 6 dígitos siguen funcionando para ENTRAR hasta que se roten (f_login no valida formato, solo compara con `extensions.crypt`). Verificación segura: `(left(pin, 2) = '$2') as es_bcrypt` → `true, true` (29/10/2026).
+- **Rotación** (`f_admin_rotar_pin`): exige el **PIN admin actual** como prueba de presencia (aunque el objetivo sea el de puerta), el nuevo debe casar `^[0-9]{8}$`, no puede repetir el actual, y queda `extensions.crypt(p_pin_nuevo, extensions.gen_salt('bf', 12))`. El PIN anterior muere de inmediato (el hash no acepta el claro).
 - **Regla de verificación permanente: las claves jamás se muestran** — ni prefijos, ni largos, ni fragmentos; solo booleanos. (Incidente del 29/10 registrado: una consulta expuso 7 de 8 caracteres de un PIN en claro; quedó neutralizado por rotación.)
 
 ## 5 · Frontend (qué cambió para el usuario)
