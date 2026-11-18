@@ -321,3 +321,9 @@
 
 - 17/11 · **El PIN nuevo pasa a 8 dígitos y el bcrypt a coste 12 en la MISMA migración (`0004_f13_pin_8_digitos_bcrypt_12.sql`).** Por qué: el coste por defecto de pgcrypto (6, al llamar `gen_salt('bf')` sin argumentos) hacía que un hash filtrado de 6 dígitos se agotara por fuerza bruta en minutos; 8 dígitos más coste 12 son ~6400 veces más caros de atacar. NO se cambia la longitud del login: `f_login` no valida formato y los PIN de 6 existentes siguen funcionando hasta que se roten.
 - 17/11 · **La comprobación de PIN repetido (ERR_IGUAL) estaba MUERTA: comparaba texto plano contra un hash bcrypt, condición que nunca es verdadera.** Se arregla en la 0004 comparando con `extensions.crypt()`. Por qué: una validación que nunca se ejecuta da una falsa sensación de control.
+
+## Sesión 30 — F-13 probada en staging (17/11/2026)
+
+- 17/11 · **La compatibilidad de un PIN heredado se prueba creando A MANO un PIN de 6 dígitos por SQL y llamando a `f_login`, no por la interfaz.** Por qué: la rotación ya exige 8 y la pantalla de puerta está bloqueada con la edición abierta (`edicion_abierta = true` congela el módulo por diseño); `f_login` es la misma función que usa la pantalla, así que la prueba vale y no obliga a cambiar el estado del evento. Esa llamada crea una sesión real: limpiar con la función de revocar.
+- 17/11 · **El coste bcrypt 12 se acepta: medido en ~300 ms por hash.** Por qué: es una vez por turno (login/rotación) y no afecta al escaneo; 6400 veces más caro de romper que el coste por defecto.
+- 17/11 · **Toda migración que reemplace una RPC tiene que dejar en `docs/sql/` la definición anterior EXACTA, capturada con `pg_get_functiondef`, ANTES de aplicarse.** Por qué: revertir con un pegado, no de memoria. Primera aplicación: `docs/sql/f_admin_rotar_pin-antes-f13-2026-11-17.sql` (definición previa a la 0004, capturada el 17/11/2026).

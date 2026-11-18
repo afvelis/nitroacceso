@@ -103,6 +103,8 @@ NA: entorno activo: staging
 | Tras cambiar HTML o JS, el navegador muestra lo viejo | `Ctrl+Shift+R` para forzar la recarga. El servidor manda `no-store`, pero el navegador conserva el documento anterior si no se fuerza. |
 | Un archivo de 0 bytes creado por el Bloc de notas bloquea un `git pull` y hace creer que el código está roto | El archivo vacío es el problema, no el código: revisar el árbol de trabajo (`git status`) antes de culpar al código. |
 | El servidor no arranca porque el puerto está ocupado | Arrancarlo en otro puerto: `py scripts\dev-server.py --puerto 8001` (y abrir la URL con ese puerto). |
+| El navegador sirve código viejo aunque hagas Ctrl+F5 | Puede que NO sea caché: comprobar `netstat -ano \| findstr :8000`. En este proyecto se dio el caso (17/11/2026) de DOS procesos LISTENING en el mismo puerto, uno de una sesión anterior: Windows los admite y el navegador habla con el primero, que sirve código viejo. Solución: `taskkill /PID <pid> /F` de todos y arrancar uno solo. Comprobación definitiva de qué sirve el servidor (se pregunta al servidor, no al navegador, así la caché no interviene): `curl -s http://127.0.0.1:8000/js/admin.js \| findstr /C:"texto esperado"`. |
+| La pantalla de puerta no deja entrar: «Evento aún abierto» | No es un fallo de PIN: con `edicion_abierta = true` el módulo de puerta se bloquea POR DISEÑO. Para probar AUTENTICACIÓN con la edición abierta, usar `select public.f_login('<pin>')` en el SQL Editor, que es la misma función que usa la pantalla. AVISO: esa llamada crea una sesión real; limpiar con la función de revocar (`f_admin_revocar_sesiones`). |
 
 ## 8 · Por qué existe este documento
 
