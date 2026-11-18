@@ -77,7 +77,7 @@ Usa [PLANTILLA.md](PLANTILLA.md) para crear tareas nuevas. No renombres los IDs 
 | [F-5](F-5-puerta-parametros-tras-login.md) | Conservar los parámetros ?lista=/?v= tras el login de puerta.html | P2 | pendiente | — |
 | [F-6](F-6-talento-copiar-selectivo.md) | Copiar del Día 1 al Día 2 selectivo, repetible y siempre visible | P1 | **hecho** (11/11/2026) | — |
 | [F-7](F-7-modales-nativos.md) | Sustituir los diálogos nativos por los modales de la app (regla v2.1) | P1 | **hecho** (11/11/2026, PR #14) | — |
-| [F-8](F-8-reautorizacion-reescribe-hora.md) | La reautorización en puerta reescribe `marcado_dia1_at` y no deja rastro del doble escaneo | P2 | pendiente | — |
+| [F-8](F-8-reautorizacion-reescribe-hora.md) | La reautorización en puerta reescribe `marcado_dia1_at` y no deja rastro del doble escaneo | P2 | **hecho** (14/11/2026, staging y producción) | — |
 | [F-9](F-9-dia-fuera-de-rango.md) | `f_puerta_marcar_vendedor` no valida `p_dia`: un valor fuera de rango autoriza otro día | P1 | **hecho** (14/11/2026, staging; pendiente aplicar en producción) | — |
 | [F-10](F-10-contador-disponibles-no-resta-lista.md) | El contador «Disponibles» del stand no resta la lista de espera | P2 | **hecho** (14/11/2026, PR #27) | — |
 | [F-11](F-11-doble-punto-hora-puerta.md) | Doble punto final en la hora de «ENTRADA YA CONSUMADA» en puerta | P3 | **hecho** (14/11/2026, PR #26) | — |
