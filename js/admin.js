@@ -189,10 +189,10 @@ async function rotarPin(objetivo){
   if (actual === null) return;
   actual = actual.trim();
   if (!actual) { await modalAlert('Escribe tu PIN admin actual.', 'Falta el PIN'); return; }
-  var nuevo = await modalPrompt('Paso 2 de 2: escribe el PIN ' + nombre + ' NUEVO (exactamente 6 digitos):', '', 'Rotar PIN ' + nombre, true);
+  var nuevo = await modalPrompt('Paso 2 de 2: escribe el PIN ' + nombre + ' NUEVO (exactamente 8 digitos):', '', 'Rotar PIN ' + nombre, true);
   if (nuevo === null) return;
   nuevo = nuevo.trim();
-  if (!/^[0-9]{6}$/.test(nuevo)) { await modalAlert('El nuevo PIN debe ser exactamente 6 digitos.', 'Formato invalido'); return; }
+  if (!/^[0-9]{8}$/.test(nuevo)) { await modalAlert('El nuevo PIN debe ser exactamente 8 digitos.', 'Formato invalido'); return; }
   try {
     var r = await llamar('f_admin_rotar_pin', { p_token: ses.token, p_objetivo: objetivo, p_pin_actual: actual, p_pin_nuevo: nuevo });
     if (r === 'ok') {
@@ -200,7 +200,7 @@ async function rotarPin(objetivo){
     } else if (r === 'ERR_PIN_ACTUAL') {
       alert('El PIN admin actual no coincide.');
     } else if (r === 'ERR_FORMATO') {
-      alert('El nuevo PIN debe ser exactamente 6 digitos.');
+      alert('El nuevo PIN debe ser exactamente 8 digitos.');
     } else if (r === 'ERR_IGUAL') {
       alert('El nuevo PIN es igual al actual.');
     } else if (r === 'ERR_OBJETIVO') {

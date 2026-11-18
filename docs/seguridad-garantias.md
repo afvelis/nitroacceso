@@ -25,7 +25,7 @@ Versión: **2** · 31/10/2026 · Rescatado al repo el 09/11/2026 como `docs/segu
 
 **G3 · Autorización en la base (P0-02, cerrada 29/10).** RLS activo en 16/16 tablas, 0 privilegios públicos, sin `EXECUTE` para `PUBLIC`, `search_path` fijado en todas las funciones, matriz de autorización verificada por consultas. Toda función nueva nace con RLS/permisos revisados; una RPC nueva sin revisión de permisos es un fallo, no una deuda.
 
-**G4 · Sesiones y credenciales (P0-03, cerrada 29-30/10).** Tokens de sesión guardados **solo hasheados** (SHA-256; PK por `token_hash`, la columna plana se eliminó), con expiración, revocación y último uso. Rate limit 5 intentos / 15 min por IP. PINs bcrypt de 6 dígitos. Auto-bloqueo por intentos fallidos. Jamás volver a guardar tokens planos.
+**G4 · Sesiones y credenciales (P0-03, cerrada 29-30/10).** Tokens de sesión guardados **solo hasheados** (SHA-256; PK por `token_hash`, la columna plana se eliminó), con expiración, revocación y último uso. Rate limit 5 intentos / 15 min por IP. PINs bcrypt de 6 dígitos. Desde F-13 (17/11/2026, migración 0004) los PIN NUEVOS son de 8 dígitos con bcrypt coste 12; los de 6 anteriores siguen entrando hasta rotarse. Auto-bloqueo por intentos fallidos. Jamás volver a guardar tokens planos.
 
 **G5 · Dependencias vendorizadas (P0-04 fases 1-3).** Cero CDN, cero servicios externos: QR generado local (`vendor/qrcode-generator-1.4.4.js` + gancho UTF-8) y lectura con `vendor/jsqr-1.4.0.js`. Los códigos de pase jamás viajan a servicios de terceros. Si alguna vez se necesita un script externo: con `integrity` + `crossorigin` y justificación escrita.
 
