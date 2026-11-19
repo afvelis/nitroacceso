@@ -53,7 +53,7 @@ Que exista una vuelta atrás probada y operable por el usuario solo: generar un 
 - [ ] Prueba en staging desechable 1 (base vacía): restaurar el volcado en una base vacía con el mismo esquema; `verificar-conteos.sql` antes y después debe dar conteos idénticos; suite de RPC en 8/8.
 - [x] Prueba en staging desechable 2 (reemplazo): restaurar de nuevo sobre esa base ya poblada (mismo volcado) sin errores de `UNIQUE` ni de FK.
 - [x] Prueba negativa del sello: intentar restaurar el volcado de staging en un proyecto con sello distinto (o sin sembrar) debe abortar con el mensaje «PROYECTO EQUIVOCADO» / «PROYECTO SIN SELLO» sin borrar nada.
-- [ ] Prueba negativa de truncado: cortar el guion a mitad (p. ej. sin la última tabla) y ejecutarlo debe abortar con «VOLCADO INCOMPLETO: …» dejando la base intacta.
+- [x] Prueba negativa de truncado: cortar el guion a mitad (p. ej. sin la última tabla) y ejecutarlo debe abortar con «VOLCADO INCOMPLETO: …» dejando la base intacta. — CUMPLIDO el 18/11/2026 en staging (variante g-2: archivo sin el insert de una tabla; ver «Pruebas (f) y (g)»).
 - [x] Comprobar `git status` limpio (ningún volcado con datos en el repo).
 
 ## Criterios de aceptación
@@ -116,7 +116,7 @@ Que exista una vuelta atrás probada y operable por el usuario solo: generar un 
 >
 > Las pruebas (f) y (g) se ejecutaron el 18/11/2026 en staging; ver la sección «Pruebas (f) y (g) — 18/11/2026, en staging». Con eso, el guion de vuelta atrás queda cerrado.
 >
-> **Nota honesta de estado:** la restauración quedó probada con los datos de staging (22 filas) Y a volumen de producción (317 filas), con huella de contenido idéntica tras una prueba destructiva controlada y re-restauración. Lo único sin probar es el comportamiento del generador ante una tabla nueva sin ubicación (f) y ante un volcado truncado (g).
+> **Nota honesta de estado:** la restauración quedó probada con los datos de staging (22 filas) y a volumen de producción (317 filas), con huella de contenido idéntica tras una prueba destructiva controlada y re-restauración; y el comportamiento del generador ya está probado: aborta ante una tabla nueva sin ubicación (f) y un volcado truncado no puede restaurar a medias (g), verificado el 18/11/2026 en staging en sus dos variantes.
 
 ## Pruebas (f) y (g) — 18/11/2026, en staging
 
