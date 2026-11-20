@@ -231,8 +231,8 @@ async function verificarEstadoEvento(){
 
 btnEntrar.addEventListener('click', async () => {
   const pin = elPin.value.trim();
-  if(!pin){ alert('Escribe el PIN de puerta.'); return; }
   msgError.style.display = 'none';
+  if(!pin){ alert('Escribe el PIN de puerta.'); return; }
   btnEntrar.disabled = true;
   btnEntrar.textContent = 'Entrando...';
   try{

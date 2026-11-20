@@ -40,7 +40,7 @@ Que en pleno evento el administrador pueda reabrir la puerta en segundos, con ra
 
 - [ ] (a) RPC nueva `f_admin_reabrir_puerta(p_token uuid, p_motivo text)`: exige `f_sesion_ok(p_token,'admin')`; exige `p_motivo` no vacío (mínimo 10 caracteres) y devuelve `'ERR_MOTIVO'` si falta; borra SOLO las filas de `login_intentos` con `exito = false` dentro de la ventana vigente (nunca las exitosas); deja entrar con el PIN que ya se tiene, sin rotarlo; devuelve `'ok'`.
 - [ ] (b) Toda reapertura queda auditada: quién (token/sesión), cuándo y motivo, en una tabla de auditoría propia. Ninguna reapertura sin rastro.
-- [ ] (c) Separar el contador de admin del de puerta para que los fallos de una pantalla no bloqueen la otra. **DECISIÓN PENDIENTE (no hecho):** esto exige cambiar la firma de `f_login` (parámetro nuevo `p_rol_solicitado`) o rediseñar la comprobación, y la regla del proyecto prohíbe cambiar firmas sin aprobación explícita del usuario. Queda escrito como decisión pendiente, no como hecho.
+- [ ] (c) Separar el contador de admin del de puerta para que los fallos de una pantalla no bloqueen la otra. **APROBADO E IMPLEMENTADO:** el usuario aprobó el alcance completo a–g el 18/11/2026 (incluido el cambio de firma de `f_login`); implementado en [supabase/migrations/0005_p08_reabrir_puerta.sql](../supabase/migrations/0005_p08_reabrir_puerta.sql) como `f_login(p_pin text, p_rol_solicitado text default null)`, con contadores separados por origen (`rol_solicitado`) y ventanas propias: puerta 90 segundos, admin 15 minutos. Sin marcar `[x]` hasta las pruebas de staging (g).
 - [ ] (d) Ventana de bloqueo de puerta corta (60-120 s), ventana de admin larga (15 min). **ADVERTENCIA:** acortar la ventana es seguro SOLO si a la vez los PIN pasan a 8 dígitos ([F-13](F-13-pin-8-digitos-bcrypt-12.md)). Con 6 dígitos, 5 intentos por minuto agotan 10^6 en ~139 días, que es tolerable pero no holgado. **No hacer (c) ni (d) por separado de F-13.**
 - [ ] (e) Mensaje de bloqueo con segundos restantes en lugar del «15 minutos» fijo, y en la pantalla de puerta el texto exacto que debe ver el operador: «esperar N segundos» o «avisar al administrador».
 - [ ] (f) Botón «Reabrir puerta» en la tarjeta «Sesiones y seguridad» de [admin.html](../admin.html) (`<section class="tarjeta" id="sesiones">`, línea 124), con motivo obligatorio y resultado mostrado en la propia tarjeta (norma de mensajes v2.2 del [AGENTS.md](../AGENTS.md)), no solo en cabecera.
@@ -55,7 +55,7 @@ Que en pleno evento el administrador pueda reabrir la puerta en segundos, con ra
 ## Fuera de alcance
 
 - Rotar PINs o tocar `config` (eso es [F-13](F-13-pin-8-digitos-bcrypt-12.md)).
-- Cambiar la firma de `f_login` sin aprobación explícita del usuario (criterio (c) queda como decisión pendiente).
+- Cambiar la firma de `f_login` sin aprobación explícita del usuario (ya aprobada el 18/11/2026 para este alcance; cualquier otro cambio de firma sigue necesitando aprobación).
 - Ejecutar cualquier SQL contra producción: todo lo ejecuta el usuario en el SQL Editor, primero en staging.
 
 ## Notas de implementación

@@ -2,10 +2,11 @@
 
 ## Que es
 
-Esta es la tarjeta **"Sesiones y seguridad"** del panel de administración (la gestión completa). Desde aquí el administrador hace las dos acciones de seguridad del sistema:
+Esta es la tarjeta **"Sesiones y seguridad"** del panel de administración (la gestión completa). Desde aquí el administrador hace las tres acciones de seguridad del sistema:
 
 - **"Rotar PIN admin"** y **"Rotar PIN puerta"**: cambiar un PIN por uno nuevo.
 - **"Revocar todas las demás sesiones"**: echar a todos los que están dentro, menos tú.
+- **"Reabrir puerta"** — cuando la pantalla de puerta se bloquea por intentos fallidos, este botón le devuelve el acceso en segundos. Pide un motivo de al menos 10 caracteres y queda registrado en la auditoría: quién lo hizo, cuándo y por qué. No cambia el PIN y no toca el bloqueo del administrador.
 
 ## Quien lo usa
 
@@ -46,7 +47,7 @@ Solo el **administrador**, después de entrar con su PIN (capítulo 01).
 
 - **"El PIN admin actual no coincide."**: escribiste mal tu PIN de administrador en el paso 1. No es el PIN de puerta ni el PIN nuevo: es el de administrador, el que usaste para entrar.
 - **Esperaba que rotar el PIN sacara a la gente**: no lo hace. Usa "Revocar todas las demás sesiones" (paso 2 de arriba).
-- **Me bloqueó el sistema**: si se equivoca el PIN varias veces (5 fallos), el sistema bloquea esa conexión (IP) por **15 minutos**. Verás el aviso **"⛔ Bloqueado: demasiados intentos fallidos desde esta conexión. Espera 15 minutos..."**. No hay forma de desbloquearlo antes: espera, o si es urgente, avisa al administrador. Cada fallo suma, incluso con el PIN correcto después.
+- **Me bloqueó el sistema**: si se equivoca el PIN varias veces (5 fallos), el sistema bloquea esa conexión (IP) por **15 minutos**. Verás el aviso **"⛔ Bloqueado: espera N segundos y vuelve a intentar."** (N son los segundos que faltan). No hay forma de desbloquear el panel antes: espera, o si es urgente, avisa a otro dispositivo con red distinta. Cada fallo suma, incluso con el PIN correcto después. (El bloqueo de la puerta, que es de 90 segundos, sí lo levanta el administrador con "Reabrir puerta", arriba en esta tarjeta.)
 - **El PIN de puerta dejó de funcionar de golpe**: probablemente alguien lo rotó. Pide el PIN nuevo al administrador.
 
 ## Que no hacer
