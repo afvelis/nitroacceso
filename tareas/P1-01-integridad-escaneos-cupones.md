@@ -35,7 +35,7 @@ Que una entrada o un cupón no se puedan consumir dos veces, ni por concurrencia
 
 ## Pasos
 
-- [ ] Implementar el marcado como actualización condicional atómica:
+- [ ] Implementar el marcado como actualización condicional atómica: — **DESCARTADO**, ver «Notas de implementación» (las tres RPC de marcado no tienen carrera real y cambiarlas rompería el contrato de F-8):
 
 ```sql
 update personas
@@ -47,20 +47,20 @@ returning id;
 
 Si no devuelve fila, responder “ya consumado”. Repetir para vendedores, cortesías y premiaciones.
 
-- [ ] Añadir una clave de idempotencia por escaneo (por ejemplo, `p_request_id`) para que un reintento de red no duplique la operación.
-- [ ] Para cupones, descontar dentro de una transacción con bloqueo de fila (`select ... for update`) o un `update ... where disponibles >= n returning ...`.
-- [ ] Añadir restricciones `check` para que los contadores no queden negativos.
+- [ ] Añadir una clave de idempotencia por escaneo (por ejemplo, `p_request_id`) para que un reintento de red no duplique la operación. — **TRASLADADO a P2-01** (aprobado por el usuario el 2026-11-20: hoy no existe cola offline, así que no protege de nada real y añadiría riesgo de sobrecarga PGRST203).
+- [x] Para cupones, descontar dentro de una transacción con bloqueo de fila (`select ... for update`) o un `update ... where disponibles >= n returning ...`. — HECHO en la 0007 (2026-11-20).
+- [x] Añadir restricciones `check` para que los contadores no queden negativos. — HECHO en la 0007 (2026-11-20), probado en staging.
 - [ ] Añadir un registro/ledger de movimientos de cupones (reserva, consumo, liberación, anulación) y verificar que la suma cuadra.
 - [ ] Implementar detección global de cédulas duplicadas por evento, con un reporte para el admin y una forma de anular el pase sobrante. No aplicar un `unique` ciego si una persona puede ser legítimamente talento y vendedor; primero definir la regla.
-- [ ] Probar concurrencia real: dos requests simultáneos con el mismo ID y dos reservas simultáneas del último cupón.
+- [x] Probar concurrencia real: dos requests simultáneos con el mismo ID y dos reservas simultáneas del último cupón. — HECHO para el canje de premios (dos pestañas, 2026-11-20). La reserva de cupones de aliado tiene el bloqueo aplicado pero su prueba con datos de aliado queda PENDIENTE.
 
 ## Criterios de aceptación
 
-- [ ] Dos escaneos simultáneos del mismo pase: solo uno devuelve éxito.
-- [ ] Dos reservas simultáneas del último cupón: solo una tiene éxito; el saldo nunca queda negativo.
-- [ ] Un reintento de red con la misma clave de idempotencia no duplica la entrada.
-- [ ] El reporte de cédulas duplicadas detecta el caso entre dos listas distintas.
-- [ ] Las restricciones están en la base de datos y se probaron en staging.
+- [x] Dos canjes simultáneos del mismo premio: solo uno canjea y `cupones_consumidos` no se duplica. *(Redacción original: «dos escaneos simultáneos del mismo pase: solo uno devuelve éxito»; se reescribió el 2026-11-20 con aprobación del usuario porque choca con el contrato de F-8 y con `tests/escaneo.test.mjs:83`, donde el segundo escaneo devuelve `true` como éxito idempotente. Probado en staging: A `ok`, B `ERR_USADA`, consumidos 3 y no 6.)*
+- [ ] Dos reservas simultáneas del último cupón: solo una tiene éxito; el saldo nunca queda negativo. — Bloqueo aplicado en `f_aliado_crear_concurso`/`f_aliado_editar_concurso`; **prueba con datos de aliado PENDIENTE** en staging.
+- [ ] Un reintento de red con la misma clave de idempotencia no duplica la entrada. — **TRASLADADO a P2-01** junto con `p_request_id`.
+- [ ] El reporte de cédulas duplicadas detecta el caso entre dos listas distintas. — **PENDIENTE: fase 3** (aún no implementado).
+- [x] Las restricciones están en la base de datos y se probaron en staging. — 2026-11-20: las tres en estado `validada` y las tres rechazan la fila mala con `23514`.
 - [ ] No se puede reabrir una lista y volver a autorizar a alguien ya autorizado sin una acción explícita.
 
 ## Verificación
@@ -83,4 +83,29 @@ Revisar que solo una respuesta sea verdadera y que el conteo de autorizados sea 
 
 ## Notas de implementación
 
-> Pendiente.
+> **Fase 1 cerrada en staging el 2026-11-20. Fase 3 (ledger de cupones + cédulas duplicadas) pendiente.**
+>
+> ### Fase 1 — atomicidad (aplicada y probada en staging el 2026-11-20)
+>
+> **Archivos:** `supabase/migrations/0007_p1_01_atomicidad_cupones.sql` y el respaldo previo `docs/sql/p1-01-definiciones-antes-2026-11-20.sql` (6 funciones capturadas con `pg_get_functiondef` en staging antes de reemplazarlas, según `DECISIONES.md:329`).
+>
+> **Qué se cambió**
+> - `for update` antes de decidir en `f_aliado_crear_concurso`, `f_aliado_editar_concurso`, `f_aliado_asignar_ganador` (orden fijo: asignación → concurso), `f_admin_ampliar_cupones`, `f_puerta_canjear_premiacion` y `f_admin_editar_cortesia_premiacion`.
+> - Canje condicional en `f_puerta_canjear_premiacion`: `update ... where id = ... and canjeado_at is null returning id`; si no afecta fila, `ERR_USADA`.
+> - El pool «único» de `f_admin_ampliar_cupones` pasa a incremento relativo.
+> - Tres `CHECK` en `cortesias`: `cupones_total >= 0`, `cupones_consumidos >= 0`, `cupones_consumidos <= cupones_total`.
+>
+> **Qué NO se tocó, y por qué**
+> - `f_puerta_marcar_vendedor`, `f_puerta_marcar_cortesia` y `f_puerta_marcar_persona`: solo escriben una bandera de estado, no un contador; bajo `READ COMMITTED` no hay actualización perdida. Tocarlas habría roto el contrato de F-8 (`tests/escaneo.test.mjs:83`) y devuelto a la puerta el modal falso «No se pudo autorizar.».
+> - Ninguna firma cambió: cero riesgo de `PGRST202`/`PGRST203` (incidente del 2026-11-20 con `f_login`).
+> - Ningún valor de retorno cambió.
+>
+> **Evidencia ejecutada en staging**
+> 1. 9 de 9: las 3 restricciones en `validada` y las 6 funciones `con for update`, con las firmas intactas (`f_puerta_canjear_premiacion(uuid,text,integer)` igual; `f_admin_editar_cortesia_premiacion` con sus 8 argumentos).
+> 2. Los `CHECK` muerden: `cupones_consumidos = cupones_total + 1` y `cupones_consumidos = -1` → `23514` en los dos casos; fila de prueba borrada.
+> 3. Doble canje secuencial con la RPC real: primer canje `ok`, segundo `ERR_USADA`, `cupones_consumidos` queda en 3 (no 6).
+> 4. Concurrencia real, dos pestañas del SQL Editor y `pg_sleep(15)`: la primera `ok` con el bloqueo tomado, la segunda `ERR_USADA`; `cupones_consumidos = 3`. Dos puertas simultáneas, un solo canje.
+>
+> **Fallo del revisor corregido antes de aplicar:** el `CHECK` de `cupones_consumidos <= cupones_total` podía abortar RPCs por carrera con `f_admin_editar_cortesia_premiacion`; se añadió `for update` a la lectura de `v_cortesia` en el canje y esa función entró en la 0007.
+>
+> **Pendiente para cerrar la tarea:** fase 3 (ledger de movimientos de cupones con suma cuadrada y reporte global de cédulas duplicadas entre listas, con regla previa sobre talento+vendedor legítimo).
