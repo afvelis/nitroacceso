@@ -20,7 +20,7 @@ Busca en la tabla el síntoma más parecido a lo que ves y aplica "qué hacer". 
 | Síntoma | Causa probable | Qué hacer |
 |---|---|---|
 | No entra el PIN; dice "PIN incorrecto." | Un dígito mal, o es el PIN del otro rol (admin vs puerta). | Revisa el PIN con el administrador y reintenta con calma. |
-| Dice "⛔ Bloqueado: demasiados intentos fallidos desde esta conexión. Espera 15 minutos y vuelve a intentar." | Demasiados intentos fallidos seguidos. | Espera 15 minutos sin insistir. No hay desbloqueo antes; pasado el tiempo, entra con el PIN correcto. |
+| Dice "⛔ Bloqueado: espera N segundos..." (en la puerta o en el panel) | Demasiados intentos fallidos seguidos. En la pantalla de puerta la espera es de 90 segundos; en el panel de administrador, de 15 minutos. | Espera los segundos que dice el mensaje sin insistir. En puerta, si urge, pide al administrador que pulse "Reabrir puerta" (Admin → "Sesiones y seguridad"): borra los intentos fallidos de la puerta y deja entrar con el mismo PIN. El bloqueo de la puerta NO bloquea al administrador. |
 | En puerta aparece la tarjeta "⚠️ Evento aún abierto" | El administrador todavía NO cerró la edición del evento. | Avisa al administrador para que pulse "🔒 Cerrar edición" en su panel. Mientras tanto, la puerta no opera. Pulsa "🚪 Salir" si te piden liberar el puesto. |
 | En puerta sale "⛔ ENTRADA YA CONSUMADA" | Ese QR o código ya entró ese día; el sistema lo bloquea. | No es un error: la ficha muestra la fecha y hora de la entrada anterior. Muéstrala a la persona; si insiste, avisa al administrador. No intentes "pasarla otra vez". |
 | En puerta sale "⛔ LISTA CERRADA" | Alguien cerró esa lista (desde la puerta misma o al cerrar el Día 1). | Si fue un error, el mismo personal de puerta puede pulsar "🔓 Reabrir lista" en esa ficha (el sistema lo advierte antes de confirmar). Si fue al cerrar el Día 1, la lista del Día 1 no vuelve de ninguna forma. |
@@ -42,7 +42,7 @@ Busca en la tabla el síntoma más parecido a lo que ves y aplica "qué hacer". 
 
 ## Errores comunes
 
-- **Reintentar muchas veces un PIN que no entra**: termina en el bloqueo de 15 minutos.
+- **Reintentar muchas veces un PIN que no entra**: termina en el bloqueo (90 segundos en la pantalla de puerta, 15 minutos en el panel). Rotar el PIN NO desbloquea: para reabrir la puerta, el administrador pulsa "Reabrir puerta" y escribe el motivo (queda registrado).
 - **Tratar "ENTRADA YA CONSUMADA" como falla del sistema**: es la protección anti duplicados cumpliendo su trabajo.
 - **Buscar una falla del equipo donde no la hay**: casi todos estos síntomas tienen causa operativa (estado del evento, link equivocado, código repetido), no de equipo.
 

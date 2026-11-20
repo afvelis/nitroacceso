@@ -2,14 +2,18 @@
 id: "P0-08"
 titulo: "Desbloqueo de puerta y rediseño del bloqueo de login"
 prioridad: "P0"
-estado: "pendiente"
+estado: "en_progreso"
 area: "seguridad"
 depende_de: ["P0-07"]
 archivos:
-  - "supabase/migrations/0001_esquema_inicial.sql"
+  - "supabase/migrations/0005_p08_reabrir_puerta.sql"
   - "js/admin.js"
   - "admin.html"
+  - "js/index.js"
+  - "js/puerta.js"
+  - "puerta.html"
   - "docs/manual-usuario/09-problemas-frecuentes.md"
+  - "ARQUITECTURA.md"
 ---
 
 # P0-08 · Desbloqueo de puerta y rediseño del bloqueo de login
