@@ -2,7 +2,7 @@
 id: "P1-01"
 titulo: "Escaneos atómicos, cupones y cédulas duplicadas"
 prioridad: "P1"
-estado: "pendiente"
+estado: "en_progreso"
 area: "integridad"
 depende_de: ["P0-02"]
 archivos:
