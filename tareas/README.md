@@ -62,7 +62,7 @@ Usa [PLANTILLA.md](PLANTILLA.md) para crear tareas nuevas. No renombres los IDs 
 | [P0-04](P0-04-qr-csp-dependencias.md) | QR local, dependencias vendorizadas y CSP | P0 | **hecho** (30/10/2026) | — |
 | [P0-05](P0-05-backups-limpieza.md) | Backups, exportación y limpieza segura | P0 | **hecho** (31/10/2026) · Alcance A: respaldo JSON + candado doble + re-autenticación PIN + confirmación tipada + dry-run con conteos exactos (fases B-D absorbidas por M-37) | — |
 | [P0-06](P0-06-metas-no-referrer-noindex.md) | Reponer meta no-referrer y noindex en las páginas | P0 | **hecho** (31/10/2026) | P0-04 |
-| [P0-07](P0-07-vuelta-atras-volcado-restauracion.md) | Vuelta atrás: volcado/restauración por SQL Editor (canal único y simétrico) | P0 | **hecho** (18/11/2026: probado a volumen el 17/11 — volcado de producción de 15 tablas/317 filas restaurado íntegro sobre staging con huella de contenido idéntica `e3c3141c1914c4820cd9e4075da86166`, prueba destructiva + re-restauración incluida, criterios b/d/e/h re-verificados; huella en `docs/sql/huella-contenido.sql`; criterios (f) y (g) probados en staging el 18/11) | — |
+| [P0-07](P0-07-vuelta-atras-volcado-restauracion.md) | Vuelta atrás: volcado/restauración por SQL Editor (canal único y simétrico) | P0 | **hecho** (20/11/2026: probado a volumen el 17/11 — volcado de producción de 15 tablas/317 filas restaurado íntegro sobre staging con huella de contenido idéntica `e3c3141c1914c4820cd9e4075da86166`, prueba destructiva + re-restauración incluida, criterios b/d/e/h re-verificados; huella en `docs/sql/huella-contenido.sql`; criterios (f) y (g) probados en staging el 20/11) | — |
 | [P1-01](P1-01-integridad-escaneos-cupones.md) | Escaneos atómicos, cupones y cédulas duplicadas | P1 | pendiente | P0-02 |
 | [P1-02](P1-02-roles-estado-puerta.md) | Rol supervisor y revalidación de estado en puerta | P1 | pendiente | P0-02 |
 | [P1-03](P1-03-auditoria-privacidad.md) | Auditoría de acciones y privacidad de datos | P1 | pendiente | P0-02 |
@@ -87,9 +87,10 @@ Usa [PLANTILLA.md](PLANTILLA.md) para crear tareas nuevas. No renombres los IDs 
 | [M-36](M-36-modulo-reclamos.md) | Módulo de reclamos | P2 | pendiente | — |
 | [M-37](M-37-multi-evento.md) | Multi-evento: gestionar hasta 3 eventos simultáneos desde el dashboard | P2 | pendiente | P1-04 |
 | [M-38](M-38-aprobacion-coordinadores.md) | Aprobación de coordinadores desde el dashboard (solicitar → aprobar/rechazar) | P2 | pendiente | — |
-| [P0-08](P0-08-desbloqueo-puerta.md) | Desbloqueo de puerta y rediseño del bloqueo de login | P0 | pendiente | P0-07 |
+| [P0-08](P0-08-desbloqueo-puerta.md) | Desbloqueo de puerta y rediseño del bloqueo de login | P0 | **hecho** (20/11/2026: RPC de reapertura con auditoría, contadores separados por rol, ventanas 90 s / 15 min, botón en el panel; batería de 10 pruebas en staging; incidente PGRST202/PGRST203 resuelto con la 0006) | P0-07 |
 | [F-13](F-13-pin-8-digitos-bcrypt-12.md) | PIN de 8 dígitos y bcrypt coste 12 (más capítulo de manual) | P1 | **hecho** (17/11/2026: migración 0004 aplicada y verificada con los cinco booleanos en staging y en PRODUCCIÓN; PIN rotados a 8 dígitos y entrada real verificada a las dos pantallas) | P0-07 |
 | [P2-04](P2-04-ci-depende-de-pin-de-staging.md) | El CI depende de los PIN de demo de staging: rotar un PIN tumba la suite de todo el repo | P2 | pendiente | — |
+| [P0-09](P0-09-ci-f-login-un-argumento.md) | El CI prueba f_login con un solo argumento y no cubre los cubos por rol | P2 | pendiente (`tests/helpers.mjs:131` llama a `f_login` con un argumento, que hoy cae en el cubo `rol_solicitado = null`; el aislamiento por rol —criterio (c) de P0-08— no tiene cobertura automatizada) | — |
 
 ---
 
