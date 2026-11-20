@@ -53,7 +53,7 @@ Que exista una vuelta atrás probada y operable por el usuario solo: generar un 
 - [ ] Prueba en staging desechable 1 (base vacía): restaurar el volcado en una base vacía con el mismo esquema; `verificar-conteos.sql` antes y después debe dar conteos idénticos; suite de RPC en 8/8.
 - [x] Prueba en staging desechable 2 (reemplazo): restaurar de nuevo sobre esa base ya poblada (mismo volcado) sin errores de `UNIQUE` ni de FK.
 - [x] Prueba negativa del sello: intentar restaurar el volcado de staging en un proyecto con sello distinto (o sin sembrar) debe abortar con el mensaje «PROYECTO EQUIVOCADO» / «PROYECTO SIN SELLO» sin borrar nada.
-- [x] Prueba negativa de truncado: cortar el guion a mitad (p. ej. sin la última tabla) y ejecutarlo debe abortar con «VOLCADO INCOMPLETO: …» dejando la base intacta. — CUMPLIDO el 18/11/2026 en staging (variante g-2: archivo sin el insert de una tabla; ver «Pruebas (f) y (g)»).
+- [x] Prueba negativa de truncado: cortar el guion a mitad (p. ej. sin la última tabla) y ejecutarlo debe abortar con «VOLCADO INCOMPLETO: …» dejando la base intacta. — CUMPLIDO el 20/11/2026 en staging (variante g-2: archivo sin el insert de una tabla; ver «Pruebas (f) y (g)»).
 - [x] Comprobar `git status` limpio (ningún volcado con datos en el repo).
 
 ## Criterios de aceptación
@@ -63,8 +63,8 @@ Que exista una vuelta atrás probada y operable por el usuario solo: generar un 
 - [x] (c) La restauración se prueba en staging (desechable) y la suite de RPC queda en 8/8 después (la suite vive en `tests/` — `tests/escaneo.test.mjs` y `tests/login.test.mjs` — y se ejecuta con `node --test tests/*.test.mjs` contra staging; línea base actual: 8/8 en verde, verificada el 14/11/2026).
 - [x] (d) Está probado también el caso de restaurar sobre una base con datos (reemplazo), sin errores de `UNIQUE` ni de FK. **Re-probado a volumen el 17/11/2026:** tras borrar a propósito el stand con más vendedores (stands 22→21 y vendedores 84→59 por la cascada de `vendedores_stand_id_fkey ON DELETE CASCADE`, migración 0001:420), re-ejecutar EL MISMO archivo devolvió stands 22 y vendedores 84 y la huella quedó idéntica.
 - [x] (e) Ningún archivo con datos personales queda en el repo; `.gitignore` lo impide y está comprobado con `git status` (17/11/2026: la segunda copia del volcado de producción vive en el disco externo del usuario, fuera del repo).
-- [x] (f) El generador descubre tablas y columnas del catálogo y aborta si aparece una tabla nueva sin ubicación. **CUMPLIDO (18/11/2026, staging)** — se creó una tabla fuera de `v_orden` y el generador abortó nombrándola: `ERROR: P0001: TABLA NUEVA SIN UBICACION: public.tabla_prueba_p07 no está en el orden de FK del volcado ni en las excluidas…` (`CONTEXT: PL/pgSQL function inline_code_block line 77 at RAISE`). No se generó ningún guion. Detalle en las notas de implementación.
-- [x] (g) Un volcado truncado no puede restaurar a medias: el guion aborta y la base queda intacta. **CUMPLIDO (18/11/2026, staging)** — probado en dos variantes: archivo cortado (rechazado, nada aplicado) y archivo válido sin el `insert` de una tabla (`VOLCADO INCOMPLETO` y reversión completa). Detalle en las notas de implementación.
+- [x] (f) El generador descubre tablas y columnas del catálogo y aborta si aparece una tabla nueva sin ubicación. **CUMPLIDO (20/11/2026, staging)** — se creó una tabla fuera de `v_orden` y el generador abortó nombrándola: `ERROR: P0001: TABLA NUEVA SIN UBICACION: public.tabla_prueba_p07 no está en el orden de FK del volcado ni en las excluidas…` (`CONTEXT: PL/pgSQL function inline_code_block line 77 at RAISE`). No se generó ningún guion. Detalle en las notas de implementación.
+- [x] (g) Un volcado truncado no puede restaurar a medias: el guion aborta y la base queda intacta. **CUMPLIDO (20/11/2026, staging)** — probado en dos variantes: archivo cortado (rechazado, nada aplicado) y archivo válido sin el `insert` de una tabla (`VOLCADO INCOMPLETO` y reversión completa). Detalle en las notas de implementación.
 - [x] (h) El guion se niega a ejecutarse en un proyecto cuyo sello de entorno no coincide. **Lado positivo también probado a volumen el 17/11/2026:** staging se selló temporalmente como `produccion` (verificado: 1 fila, sello `produccion`) y el volcado de producción (sello `produccion`) se ejecutó COMPLETO ahí.
 
 ## Verificación
@@ -114,11 +114,11 @@ Que exista una vuelta atrás probada y operable por el usuario solo: generar un 
 >
 > **Qué falta para cerrar P0-07:**
 >
-> Las pruebas (f) y (g) se ejecutaron el 18/11/2026 en staging; ver la sección «Pruebas (f) y (g) — 18/11/2026, en staging». Con eso, el guion de vuelta atrás queda cerrado.
+> Las pruebas (f) y (g) se ejecutaron el 20/11/2026 en staging; ver la sección «Pruebas (f) y (g) — 20/11/2026, en staging». Con eso, el guion de vuelta atrás queda cerrado.
 >
-> **Nota honesta de estado:** la restauración quedó probada con los datos de staging (22 filas) y a volumen de producción (317 filas), con huella de contenido idéntica tras una prueba destructiva controlada y re-restauración; y el comportamiento del generador ya está probado: aborta ante una tabla nueva sin ubicación (f) y un volcado truncado no puede restaurar a medias (g), verificado el 18/11/2026 en staging en sus dos variantes.
+> **Nota honesta de estado:** la restauración quedó probada con los datos de staging (22 filas) y a volumen de producción (317 filas), con huella de contenido idéntica tras una prueba destructiva controlada y re-restauración; y el comportamiento del generador ya está probado: aborta ante una tabla nueva sin ubicación (f) y un volcado truncado no puede restaurar a medias (g), verificado el 20/11/2026 en staging en sus dos variantes.
 
-## Pruebas (f) y (g) — 18/11/2026, en staging
+## Pruebas (f) y (g) — 20/11/2026, en staging
 
 Ejecutadas por el usuario en el SQL Editor del proyecto de staging, con `docs/sql/verificar-conteos.sql` medido antes y después de cada prueba. Los archivos con datos personales usados en la prueba se quedaron siempre en la carpeta de respaldos del usuario, FUERA del repo; nada de eso se commiteó.
 
