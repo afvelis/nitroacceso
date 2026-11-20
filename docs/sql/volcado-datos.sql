@@ -58,10 +58,13 @@ declare
     'listas',
     'personas',
     'eventos'];
-  -- Excluidas a propósito: transitorios de seguridad. Revivir sesiones es un riesgo,
-  -- y login_intentos.id es GENERATED ALWAYS AS IDENTITY (un insert con identidad
-  -- explícita fallaría); al excluir la tabla, ninguna sentencia usa identidad explícita.
-  v_excluidas text[] := array['sesiones', 'login_intentos'];
+  -- Excluidas a propósito: transitorios de seguridad y registro operativo de
+  -- auditoría. Revivir sesiones es un riesgo, login_intentos.id y
+  -- reaperturas_puerta.id son GENERATED ALWAYS AS IDENTITY (un insert con
+  -- identidad explícita fallaría); y reaperturas_puerta, como sesiones y
+  -- login_intentos, es registro operativo de auditoría: no se restaura ni se
+  -- cuenta en el volcado. Al excluir, ninguna sentencia usa identidad explícita.
+  v_excluidas text[] := array['sesiones', 'login_intentos', 'reaperturas_puerta'];
 
   v_tabla    text;
   v_com      text;
@@ -222,7 +225,8 @@ begin
     || '-- tabla con el esperado y lanza VOLCADO INCOMPLETO si difiere: un archivo' || chr(10)
     || '-- truncado NO puede restaurar a medias.' || chr(10)
     || '--' || chr(10)
-    || '-- Tablas EXCLUIDAS a propósito: sesiones y login_intentos.' || chr(10)
+    || '-- Tablas EXCLUIDAS a propósito: sesiones, login_intentos y' || chr(10)
+    || '-- reaperturas_puerta.' || chr(10)
     || '-- Son transitorios de seguridad: revivir sesiones es un riesgo, y' || chr(10)
     || '-- login_intentos.id es GENERATED ALWAYS AS IDENTITY (un insert con' || chr(10)
     || '-- identidad explícita fallaría); al excluir la tabla, ninguna sentencia' || chr(10)
