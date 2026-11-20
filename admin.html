@@ -123,7 +123,7 @@ li{margin:4px 0;}
 
   <section class="tarjeta" id="sesiones">
     <h2>Sesiones y seguridad</h2>
-    <p class="suave">Aqui ves las sesiones activas del sistema (panel y puerta). "Revocar" cierra TODAS las demas sesiones menos esta. La rotacion cambia un PIN por uno nuevo de exactamente 8 digitos: el nuevo queda guardado cifrado (bcrypt) y el anterior deja de servir.</p>
+    <p class="suave">Aqui ves las sesiones activas del sistema (panel y puerta). "Revocar" cierra TODAS las demas sesiones menos esta. La rotacion cambia un PIN por uno nuevo de exactamente 8 digitos: el nuevo queda guardado cifrado (bcrypt) y el anterior deja de servir. "Reabrir puerta" borra los intentos fallidos de la pantalla de puerta de los últimos 90 segundos y queda registrado con su motivo: sirve cuando la puerta se bloquea en pleno evento.</p>
     <div class="fila">
       <button class="btn" id="btnVerSesiones">Ver sesiones activas</button>
       <button class="btn btn-rojo" id="btnRevocarSesiones">Revocar todas las demas sesiones</button>
@@ -132,6 +132,10 @@ li{margin:4px 0;}
       <button class="btn btn-gris" id="btnRotarAdmin">Rotar PIN admin</button>
       <button class="btn btn-gris" id="btnRotarPuerta">Rotar PIN puerta</button>
     </div>
+    <div class="fila">
+      <button class="btn btn-rojo" id="btnReabrirPuerta">Reabrir puerta</button>
+    </div>
+    <div id="resultadoReabrir" class="suave" role="status" aria-live="polite" style="margin-top:8px"></div>
     <div id="listaSesiones"></div>
   </section>
  

@@ -60,7 +60,7 @@ En la pantalla de gestión completa del administrador y en la puerta, si la pant
 - Si sales bien: el encabezado de tu pantalla ("Panel principal del administrador" o "Puerta de entrada").
 - Si el PIN está mal, un aviso rojo con el texto exacto: **"PIN incorrecto."** y el botón vuelve a decir "Entrar".
 - Si el navegador no tiene conexión: **"Error al entrar. Revisa tu conexión e intenta de nuevo."**
-- Si hubo demasiados intentos fallidos: **"⛔ Bloqueado: demasiados intentos fallidos desde esta conexión. Espera 15 minutos y vuelve a intentar."**
+- Si hubo demasiados intentos fallidos: **"⛔ Bloqueado: espera N segundos y vuelve a intentar."** (N son los segundos que faltan; la pantalla de puerta espera 90 segundos y el panel hasta 15 minutos.)
 - Si pulsas "Entrar" con el campo vacío: **"Escribe un PIN."**
 
 ## Errores comunes

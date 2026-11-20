@@ -27,15 +27,16 @@
 8. Ganador de premiación: link cortesia.html?c= (con tipo premiación)
 9. Aliado: link aliado.html?a=ASI-xxxxxxxx (pool de cupones, crea concursos y asigna ganadores)
 
-## 3 · Tablas (17) — RLS activado en todas SIN políticas; todo acceso vía funciones SECURITY DEFINER
+## 3 · Tablas (18) — RLS activado en todas SIN políticas; todo acceso vía funciones SECURITY DEFINER
 
-Verificadas el 27-28/10/2026 con la Consulta B (§8); `login_intentos` añadida y `sesiones` ampliada el 29/10/2026 (P0-03). Las originales 16 coinciden con lo documentado en v2.4, salvo una adición menor (sesiones.creada_at).
+Verificadas el 27-28/10/2026 con la Consulta B (§8); `login_intentos` añadida y `sesiones` ampliada el 29/10/2026 (P0-03). Las originales 16 coinciden con lo documentado en v2.4, salvo una adición menor (sesiones.creada_at). `reaperturas_puerta` añadida el 18/11/2026 (P0-08, migración 0005).
 
 | Tabla | Columnas verificadas |
 | --- | --- |
 | config | id=1, nombre_evento, edicion_abierta bool, pin_admin, pin_puerta, dia_activo int default 1 check in (1,2), dia1_cerrado bool, dia2_cerrado bool |
 | sesiones | **token_hash** (64 hex, PK desde el 30/10/2026), rol text (admin\|puerta), device_label, creada_at, expira_at, revocado_at, ultimo_uso_at — **la columna `token` fue ELIMINADA (P0-03); el token vive solo en el navegador** |
-| login_intentos | id, ip, dispositivo, exito bool, creada_at (nueva 29/10/2026, P0-03; auditoría de logins; se barre en la limpieza de fin de evento) |
+| login_intentos | id, ip, dispositivo, exito bool, creada_at, **rol_solicitado text (admin\|puerta\|null; nueva 18/11/2026, P0-08/0005: separa el contador de bloqueo por pantalla)** (auditoría de logins; se barre en la limpieza de fin de evento) |
+| reaperturas_puerta | id, creada_at, sesion_token_hash (SOLO hash sha256 del token, nunca el token en claro), motivo, intentos_borrados int, ventana — **nueva 18/11/2026 (P0-08/0005)**: auditoría de cada reapertura de puerta; RLS sin policies y sin grants de lectura (no se expone por la API) |
 | coordinadores | id uuid, tipo, nombre, codigo, correo, creada_at, activo bool |
 | talentos | id, nombre, dia1, dia2, codigo_link, correo_link, coordinador_id uuid, creada_at, links_anulados text[] |
 | listas | id, talento_id, dia int, estado text, codigo_corto, cerrada_at |
@@ -51,19 +52,20 @@ Verificadas el 27-28/10/2026 con la Consulta B (§8); `login_intentos` añadida 
 | aliado_concursos | id uuid pk, asignacion_id fk cascade, nombre not null, descripcion, fecha_concurso date (obligatoria, hoy o posterior), cupones_reservados int check >=1, estado (abierto\|cerrado), creada_at, cerrada_at |
 | aliado_ampliaciones | id uuid pk, asignacion_id fk cascade, cupones_antes int, cupones_despues int, motivo not null, motivo_detalle, creada_at |
 
-## 4 · Funciones RPC vigentes (verificadas 27/10 con la Consulta A: 79 filas = 78 funciones + 1 sobrecarga; tras los DROPs del 29/10 quedaron 76; **tras P0-03 (29-30/10) quedan 81 funciones + `rls_auto_enable` = 82 objetos**: 5 nuevas y 41 reescritas)
+## 4 · Funciones RPC vigentes (verificadas 27/10 con la Consulta A: 79 filas = 78 funciones + 1 sobrecarga; tras los DROPs del 29/10 quedaron 76; **tras P0-03 (29-30/10) quedan 81 funciones + `rls_auto_enable` = 82 objetos**; **tras P0-08 (18/11/2026) quedan 82 funciones + `rls_auto_enable` = 83 objetos**: 1 nueva (`f_admin_reabrir_puerta`) y `f_login` reescrita como sobrecarga con `p_rol_solicitado`)
 
 ### Internas
 - `f_sesion_ok(p_token uuid, p_rol_requerido text)` → boolean — **guardián único (P0-03)**: valida hash+revocación+expiración+rol y anota `ultimo_uso_at`; la usan 36 funciones
 - `f_sesion_rol(p_token uuid)` → text — misma validación devolviendo el rol; la usan las 13 helper-users (P0-03)
 - `f_codigo(p_prefijo text, p_largo integer)` → text (prefijos SIEMPRE con guion)
-- `f_login(p_pin text)` → table(token uuid, rol text) — **P0-03**: rate limit 5 fallas/15 min por IP (error BLOQUEADO), registra `login_intentos`, crea sesión de 8 h guardando SOLO el hash del token; los PINs se validan por bcrypt (`extensions.crypt`) — la aceptación en claro murió con las rotaciones del 29/10
+- `f_login(p_pin text, p_rol_solicitado text default null)` → table(token uuid, rol text) — **P0-03**: rate limit por IP (error BLOQUEADO), registra `login_intentos`, crea sesión de 8 h guardando SOLO el hash del token; los PINs se validan por bcrypt (`extensions.crypt`) — la aceptación en claro murió con las rotaciones del 29/10 · **P0-08 (18/11/2026, 0005)**: `p_rol_solicitado` (admin\|puerta\|null, error `ERR_ROL` si no válido) separa los contadores por pantalla con ventanas propias — **puerta 90 segundos, admin y llamadas sin rol 15 minutos** — y el error BLOQUEADO dice los segundos restantes; un login correcto NO borra los fallos previos (desbloquear solo con `f_admin_reabrir_puerta`)
 
 ### Sesiones y seguridad (nuevas en P0-03)
 - `f_logout(p_token uuid)` → boolean — revoca la propia sesión (salida real; la usan los botones Salir vía config.js)
 - `f_admin_sesiones(p_token uuid)` → table(sesion_hash, rol, device_label, creada_at, expira_at, ultimo_uso_at, propia) — vista del panel; el hash se muestra truncado a 12
 - `f_admin_revocar_sesiones(p_token uuid)` → integer — revoca TODAS las sesiones activas EXCEPTO la propia; -1 si el token es inválido
 - `f_admin_rotar_pin(p_token uuid, p_objetivo text, p_pin_actual text, p_pin_nuevo text)` → text — exige el PIN admin actual (prueba de presencia, también para rotar el de puerta) y PIN nuevo exactamente de 8 dígitos (los de 6 anteriores siguen entrando hasta rotarse); guarda bcrypt coste 12 (F-13, 0004)
+- `f_admin_reabrir_puerta(p_token uuid, p_motivo text)` → text — **nueva en P0-08 (18/11/2026, 0005)**: exige rol admin (`ERR_TOKEN` si no) y motivo de al menos 10 caracteres (`ERR_MOTIVO`); borra SOLO los intentos FALLIDOS de `login_intentos` en ventana (rol `puerta`: últimos 90 s; `rol_solicitado` null/legado: últimos 15 min — **el contador del admin no se toca jamás**) y registra la reapertura en `reaperturas_puerta` (hash del token, motivo recortado a 300, borrados, ventana); devuelve `'ok'`; un login correcto NO desbloquea
 
 ### Admin
 - `f_admin_toggle_edicion(p_token, p_abierta boolean)`

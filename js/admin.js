@@ -183,6 +183,45 @@ async function revocarSesiones(){
   } catch (e) { alert('Fallo: ' + e.message); }
 }
 
+// P0-08: reabrir la puerta en pleno evento (borra solo los fallos de puerta, con auditoria)
+async function reabrirPuerta(){
+  if (!await modalConfirm('Esto borrara los intentos fallidos de la pantalla de puerta (90 s) para que pueda entrar con el PIN actual. NO cambia el PIN ni toca el bloqueo del administrador. Continuar?', 'Reabrir puerta')) return;
+  var motivo = await modalPrompt('Motivo de la reapertura (minimo 10 caracteres). Queda registrado.', '', 'Motivo', false);
+  if (motivo === null) return;
+  motivo = motivo.trim();
+  if (motivo.length < 10) { alert('El motivo debe tener al menos 10 caracteres: queda registrado en la auditoria.'); return; }
+  var resultado = $('resultadoReabrir');
+  try {
+    var r = await llamar('f_admin_reabrir_puerta', { p_token: ses.token, p_motivo: motivo });
+    if (r === 'ok') {
+      // La RPC no devuelve el contador de borrados: no se inventa ningun numero.
+      resultado.textContent = 'Puerta reabierta: se borraron los intentos fallidos. Ya se puede entrar con el PIN actual.';
+      try { sessionStorage.setItem('na_ultima_reapertura', JSON.stringify({ ts: Date.now(), motivo: motivo })); } catch (e2) {}
+    } else if (r === 'ERR_MOTIVO') {
+      alert('Motivo demasiado corto: minimo 10 caracteres.');
+      resultado.textContent = 'No se reabrio: el motivo era demasiado corto (minimo 10 caracteres).';
+    } else if (r === 'ERR_TOKEN') {
+      alert('Tu sesion expiro o no es de administrador: entra de nuevo con tu PIN.');
+      resultado.textContent = 'No se reabrio: la sesion expiro o no es de administrador.';
+    } else {
+      alert('No se pudo reabrir: ' + (r || 'respuesta inesperada'));
+      resultado.textContent = 'No se pudo reabrir: ' + String(r || 'respuesta inesperada');
+    }
+  } catch (e) {
+    alert('Fallo: ' + e.message);
+    resultado.textContent = 'Fallo al reabrir: ' + String(e.message || e);
+  }
+}
+
+function repintarUltimaReapertura(){
+  try {
+    var r = JSON.parse(sessionStorage.getItem('na_ultima_reapertura') || 'null');
+    if (r && r.ts && r.motivo) {
+      $('resultadoReabrir').textContent = 'Ultima reapertura: ' + fechaBonita(r.ts) + ' · motivo: ' + r.motivo;
+    }
+  } catch (e) {}
+}
+
 async function rotarPin(objetivo){
   var nombre = (objetivo === 'admin') ? 'admin' : 'puerta';
   var actual = await modalPrompt('Rotar PIN ' + nombre + '.\n\nPaso 1 de 2: escribe tu PIN ADMIN ACTUAL (prueba de presencia):', '', 'Rotar PIN ' + nombre, true);
@@ -875,7 +914,7 @@ async function limpiarTodo(){
   var pin = await modalPrompt('Re-autenticacion: escribe tu PIN de administrador para autorizar la limpieza.', '', 'PIN de administrador', true);
   if (!pin) return;
   try {
-    var lr = await llamar('f_login', { p_pin: pin });
+    var lr = await llamar('f_login', { p_pin: pin, p_rol_solicitado: 'admin' });
     var tok = (lr && lr.length) ? lr[0].token : null;
     var rol = (lr && lr.length) ? lr[0].rol : null;
     if (tok) llamar('f_logout', { p_token: tok }).catch(function(){});
@@ -908,6 +947,8 @@ if (!ses || ses.rol !== 'admin') {
   $('btnLimpiarTodo').onclick = limpiarTodo;
   $('btnVerSesiones').onclick = cargarSesiones;
   $('btnRevocarSesiones').onclick = revocarSesiones;
+  $('btnReabrirPuerta').onclick = reabrirPuerta;
+  repintarUltimaReapertura();
   $('btnRotarAdmin').onclick = function(){ rotarPin('admin'); };
   $('btnRotarPuerta').onclick = function(){ rotarPin('puerta'); };
   $('btnVolver').onclick = function(){ location.replace('dashboard.html'); };

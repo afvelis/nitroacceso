@@ -31,7 +31,7 @@ btnEntrar.addEventListener('click', async () => {
   msgError.style.display = 'none';
   
   try{
-    const r = await llamar('f_login', { p_pin: pin });
+    const r = await llamar('f_login', { p_pin: pin, p_rol_solicitado: 'admin' });
     if(!r || r.length === 0){
       msgError.textContent = 'PIN incorrecto.';
       msgError.style.display = 'block';
@@ -46,7 +46,11 @@ btnEntrar.addEventListener('click', async () => {
     // P0-03: mensajes legibles y sin filtrar detalles internos.
     const msgRaw = (e && e.message) ? e.message : String(e);
     if(msgRaw.indexOf('BLOQUEADO') !== -1){
-      msgError.textContent = '⛔ Bloqueado: demasiados intentos fallidos desde esta conexión. Espera 15 minutos y vuelve a intentar.';
+      // P0-08: el mensaje del servidor trae los segundos que faltan ("Espera N segundos").
+      const m = msgRaw.match(/Espera (\d+) segundos/);
+      msgError.textContent = m
+        ? '⛔ Bloqueado: espera ' + m[1] + ' segundos y vuelve a intentar.'
+        : '⛔ Bloqueado: demasiados intentos fallidos desde esta conexión. Espera y vuelve a intentar.';
     }else{
       msgError.textContent = 'Error al entrar. Revisa tu conexión e intenta de nuevo.';
     }

@@ -70,6 +70,7 @@ window.alert = function(msg){ modalAlert(String(msg)); };
 // ===== fin modal estético =====
 const elPin = document.getElementById('pin');
 const btnEntrar = document.getElementById('btnEntrar');
+const msgError = document.getElementById('msgError');
 const tarjetaLogin = document.getElementById('tarjetaLogin');
 const tarjetaEventoAbierto = document.getElementById('tarjetaEventoAbierto');
 const tarjetaPrincipal = document.getElementById('tarjetaPrincipal');
@@ -230,11 +231,12 @@ async function verificarEstadoEvento(){
 
 btnEntrar.addEventListener('click', async () => {
   const pin = elPin.value.trim();
+  msgError.style.display = 'none';
   if(!pin){ alert('Escribe el PIN de puerta.'); return; }
   btnEntrar.disabled = true;
   btnEntrar.textContent = 'Entrando...';
   try{
-    const r = await llamar('f_login', { p_pin: pin });
+    const r = await llamar('f_login', { p_pin: pin, p_rol_solicitado: 'puerta' });
     if(!r || r.length === 0 || r[0].rol !== 'puerta'){
       alert('PIN incorrecto o no es de puerta.');
       btnEntrar.disabled = false;
@@ -246,7 +248,17 @@ btnEntrar.addEventListener('click', async () => {
     activarAutoBloqueo();
     await verificarEstadoEvento();
   }catch(e){
-    alert('Error al entrar: ' + (e.message || e));
+    // P0-08: el bloqueo de puerta se pinta junto al campo (norma v2.2), sin modal.
+    const msgRaw = (e && e.message) ? e.message : String(e);
+    if(msgRaw.indexOf('BLOQUEADO') !== -1){
+      const m = msgRaw.match(/Espera (\d+) segundos/);
+      msgError.textContent = m
+        ? '⛔ Bloqueado: espera ' + m[1] + ' segundos o avisa al administrador.'
+        : '⛔ Bloqueado: demasiados intentos fallidos. Espera o avisa al administrador.';
+      msgError.style.display = 'block';
+    }else{
+      alert('Error al entrar: ' + (e.message || e));
+    }
   }
   btnEntrar.disabled = false;
   btnEntrar.textContent = 'Entrar';

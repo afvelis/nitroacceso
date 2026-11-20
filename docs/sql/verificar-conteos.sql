@@ -13,8 +13,9 @@
 -- (docs/sql/volcado-datos.sql), en el mismo orden de FK.
 --
 -- EXCLUIDAS a propósito:
---   · sesiones y login_intentos: transitorios de seguridad, no entran en
---     el volcado ni en la comparación.
+--   · sesiones, login_intentos y reaperturas_puerta: transitorios de seguridad
+--     y registro operativo de auditoría, no entran en el volcado ni en la
+--     comparación.
 --   · respaldo_sello: sello de entorno (docs/sql/sembrar-sello-*.sql), no
 --     es una tabla del volcado.
 -- Si aparece una tabla nueva de public sin ubicación, ABORTA nombrándola,
@@ -40,7 +41,7 @@ declare
     'listas',
     'personas',
     'eventos'];
-  v_excluidas text[] := array['sesiones', 'login_intentos', 'respaldo_sello'];
+  v_excluidas text[] := array['sesiones', 'login_intentos', 'reaperturas_puerta', 'respaldo_sello'];
   v_tabla     text;
   v_filas     bigint;
   v_i         int;
