@@ -6,7 +6,7 @@
 -- Obligatorio segun DECISIONES.md:329: toda migracion que reemplace una RPC
 -- deja aqui la definicion anterior EXACTA.
 --
--- Contiene SOLO las 5 funciones que la 0007 reemplaza. Las otras 3 del
+-- Contiene SOLO las 6 funciones que la 0007 reemplaza. Las otras 3 del
 -- relevamiento (f_puerta_marcar_vendedor, _cortesia, _persona) NO se tocan.
 --
 -- Para restaurar una: copiar su bloque completo en el SQL Editor y ejecutar.
@@ -300,6 +300,53 @@ BEGIN
   VALUES (p_asignacion_id, v_cupones_antes, v_cupones_despues, trim(p_motivo), NULLIF(trim(p_motivo_detalle),''));
 
   RETURN jsonb_build_object('ok', true, 'cupones_antes', v_cupones_antes, 'cupones_despues', v_cupones_despues);
+END;
+$function$
+;
+
+-- -----------------------------------------------------------------------------
+-- 6/6  f_admin_editar_cortesia_premiacion(uuid, text, text, text, text, text,
+--                                         integer, text)
+--      Estado anterior: buscaba la cortesia por codigo_link y escribia
+--      cupones_total sin bloqueo (carrera: podia dejar cupones_consumidos por
+--      encima de cupones_total, y con el CHECK de la 0007 eso aborta el RPC).
+-- -----------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.f_admin_editar_cortesia_premiacion(p_token uuid, p_codigo_link text, p_nombre text, p_apellido text, p_cedula text, p_concurso text, p_cupones_total integer, p_aliado text)
+ RETURNS text
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_cortesia cortesias%ROWTYPE;
+BEGIN
+  IF public.f_sesion_ok(p_token, 'admin') IS NOT TRUE THEN RETURN NULL; END IF;
+
+  SELECT * INTO v_cortesia FROM cortesias WHERE codigo_link = p_codigo_link AND tipo='premiacion';
+  IF NOT FOUND THEN RETURN 'ERR_NO_EXISTE'; END IF;
+  IF v_cortesia.estado = 'anulada' THEN RETURN 'ERR_ANULADA'; END IF;
+  IF v_cortesia.canjeado_at IS NOT NULL THEN RETURN 'ERR_USADA'; END IF;
+
+  IF p_nombre IS NULL OR trim(p_nombre)='' THEN RETURN 'ERR_DATOS'; END IF;
+  IF p_apellido IS NULL OR trim(p_apellido)='' THEN RETURN 'ERR_DATOS'; END IF;
+  IF p_cedula IS NULL OR trim(p_cedula)='' THEN RETURN 'ERR_DATOS'; END IF;
+  IF p_concurso IS NULL OR trim(p_concurso)='' THEN RETURN 'ERR_DATOS'; END IF;
+  IF p_cupones_total IS NULL OR p_cupones_total < 1 THEN RETURN 'ERR_DATOS'; END IF;
+  IF p_aliado IS NULL OR trim(p_aliado)='' THEN RETURN 'ERR_DATOS'; END IF;
+
+  UPDATE cortesias SET
+    concurso = trim(p_concurso),
+    cupones_total = p_cupones_total,
+    aliado = trim(p_aliado)
+  WHERE id = v_cortesia.id;
+
+  UPDATE cortesia_personas SET
+    nombre = trim(p_nombre),
+    apellido = trim(p_apellido),
+    cedula = trim(p_cedula)
+  WHERE cortesia_id = v_cortesia.id AND lista_id IS NULL;
+
+  RETURN 'ok';
 END;
 $function$
 ;

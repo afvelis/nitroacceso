@@ -11,6 +11,8 @@
 --      canjear el mismo premio.
 --   3. Añade CHECK para que los contadores de cupones no queden negativos ni
 --      por encima del total.
+--   4. Bloquea también la edición admin de una cortesía de premiación, que era
+--      el último escritor capaz de violar el CHECK por carrera.
 --
 -- QUÉ NO HACE, A PROPÓSITO
 --   - NO cambia ninguna firma de función: cero riesgo de PGRST202/PGRST203
@@ -84,7 +86,11 @@ begin
   select * into v_persona from cortesia_personas where codigo_qr = p_codigo_qr;
   if not found then return 'ERR_NO_EXISTE'; end if;
 
-  select * into v_cortesia from cortesias where id = v_persona.cortesia_id and tipo = 'premiacion';
+  -- P1-01: FOR UPDATE fija estado, canjeado_at y cupones_total durante toda la
+  -- transacción. Sin esto, f_admin_editar_cortesia_premiacion puede bajar
+  -- cupones_total entre la lectura y el UPDATE y disparar el CHECK
+  -- cortesias_cupones_consumidos_no_excede_total (error 23514 en la puerta).
+  select * into v_cortesia from cortesias where id = v_persona.cortesia_id and tipo = 'premiacion' for update;
   if not found then return 'ERR_NO_EXISTE'; end if;
 
   if v_cortesia.estado = 'anulada' then return 'ERR_ANULADA'; end if;
@@ -365,6 +371,54 @@ begin
   values (p_asignacion_id, v_cupones_antes, v_cupones_despues, trim(p_motivo), nullif(trim(p_motivo_detalle),''));
 
   return jsonb_build_object('ok', true, 'cupones_antes', v_cupones_antes, 'cupones_despues', v_cupones_despues);
+end;
+$function$;
+
+-- -----------------------------------------------------------------------------
+-- 7. f_admin_editar_cortesia_premiacion
+--    Último escritor sin bloqueo de cupones_total. Sin este FOR UPDATE, bajar
+--    el total mientras la puerta canjea puede dejar cupones_consumidos por
+--    encima de cupones_total y abortar con 23514. Con el bloqueo, si el canje
+--    llegó primero se ve canjeado_at escrito y se devuelve ERR_USADA.
+-- -----------------------------------------------------------------------------
+
+create or replace function public.f_admin_editar_cortesia_premiacion(p_token uuid, p_codigo_link text, p_nombre text, p_apellido text, p_cedula text, p_concurso text, p_cupones_total integer, p_aliado text)
+ returns text
+ language plpgsql
+ security definer
+ set search_path to 'public', 'pg_temp'
+as $function$
+declare
+  v_cortesia cortesias%rowtype;
+begin
+  if public.f_sesion_ok(p_token, 'admin') is not true then return null; end if;
+
+  -- P1-01: mismo bloqueo y mismo orden que el canje de puerta.
+  select * into v_cortesia from cortesias where codigo_link = p_codigo_link and tipo='premiacion' for update;
+  if not found then return 'ERR_NO_EXISTE'; end if;
+  if v_cortesia.estado = 'anulada' then return 'ERR_ANULADA'; end if;
+  if v_cortesia.canjeado_at is not null then return 'ERR_USADA'; end if;
+
+  if p_nombre is null or trim(p_nombre)='' then return 'ERR_DATOS'; end if;
+  if p_apellido is null or trim(p_apellido)='' then return 'ERR_DATOS'; end if;
+  if p_cedula is null or trim(p_cedula)='' then return 'ERR_DATOS'; end if;
+  if p_concurso is null or trim(p_concurso)='' then return 'ERR_DATOS'; end if;
+  if p_cupones_total is null or p_cupones_total < 1 then return 'ERR_DATOS'; end if;
+  if p_aliado is null or trim(p_aliado)='' then return 'ERR_DATOS'; end if;
+
+  update cortesias set
+    concurso = trim(p_concurso),
+    cupones_total = p_cupones_total,
+    aliado = trim(p_aliado)
+  where id = v_cortesia.id;
+
+  update cortesia_personas set
+    nombre = trim(p_nombre),
+    apellido = trim(p_apellido),
+    cedula = trim(p_cedula)
+  where cortesia_id = v_cortesia.id and lista_id is null;
+
+  return 'ok';
 end;
 $function$;
 
