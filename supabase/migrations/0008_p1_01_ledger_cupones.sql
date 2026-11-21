@@ -23,6 +23,13 @@
 --   un fallo de auditoría jamás puede tumbar un canje en la puerta el día del
 --   evento. Se prefiere perder una fila de auditoría antes que un ingreso.
 --
+-- CONVENCIONES DEL LEDGER (importante para quien sume estas filas despues)
+--   - `consumo` guarda el ACUMULADO de cupones_consumidos del premio, no un
+--     delta. Hoy es seguro porque el unico escritor es el canje condicional de
+--     la 0007, que solo actua una vez por premio.
+--   - `reserva_liberada` se registra en POSITIVO (cupones que vuelven al
+--     pool), no en negativo. Quien sume el ledger debe restarlo, no sumarlo.
+--
 -- POR QUÉ SIN CLAVES FORÁNEAS EN EL LEDGER
 --   Un historial de auditoría no debe borrarse en cascada cuando se borra su
 --   origen. Las columnas son uuid sueltos a propósito.
@@ -72,6 +79,29 @@ create index if not exists cupones_movimientos_creada_idx
 
 -- El ledger no se expone: solo lo leen las RPC SECURITY DEFINER.
 revoke all on public.cupones_movimientos from anon, authenticated;
+
+-- -----------------------------------------------------------------------------
+-- 1.b Backfill del historico
+--     Los canjes hechos ANTES de aplicar esta migracion no tienen fila de
+--     ledger. Sin esta carga, `consumido_ledger` valdria 0 y el cuadre daria
+--     falso negativo en todos los premios ya canjeados. Solo se rellena
+--     `consumo`, que es lo unico que compara f_admin_cuadre_cupones.
+-- -----------------------------------------------------------------------------
+
+insert into public.cupones_movimientos
+  (tipo, cantidad, asignacion_id, concurso_id, cortesia_id, detalle)
+select 'consumo', ct.cupones_consumidos, ct.asignacion_id, ct.concurso_id, ct.id,
+       'backfill inicial 0008'
+  from public.cortesias ct
+ where ct.tipo = 'premiacion'
+   and ct.canjeado_at is not null
+   and ct.cupones_consumidos > 0
+   and not exists (
+     select 1
+       from public.cupones_movimientos m
+      where m.cortesia_id = ct.id
+        and m.tipo = 'consumo'
+   );
 
 -- -----------------------------------------------------------------------------
 -- 2. Función de trigger
@@ -245,8 +275,12 @@ begin
                  where ct.asignacion_id = a.id and ct.estado <> 'anulada'), 0) as consumido,
       coalesce((select sum(ct.cupones_total - ct.cupones_consumidos) from public.cortesias ct
                  where ct.asignacion_id = a.id and ct.estado = 'anulada'), 0) as anulado,
-      coalesce((select sum(m.cantidad) from public.cupones_movimientos m
-                 where m.asignacion_id = a.id and m.tipo = 'consumo'), 0) as consumido_ledger
+      coalesce((select sum(m.cantidad)
+                  from public.cupones_movimientos m
+                  join public.cortesias ct2 on ct2.id = m.cortesia_id
+                 where m.asignacion_id = a.id
+                   and m.tipo = 'consumo'
+                   and ct2.estado <> 'anulada'), 0) as consumido_ledger
     from public.aliado_asignaciones a
     left join public.aliados al on al.id = a.aliado_id
   )
