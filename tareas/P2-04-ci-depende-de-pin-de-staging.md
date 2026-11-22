@@ -2,7 +2,7 @@
 id: "P2-04"
 titulo: "El CI depende de los PIN de demo de staging: rotar un PIN tumba la suite de todo el repo"
 prioridad: "P2"
-estado: "pendiente"
+estado: "en_progreso"
 area: "operacion"
 depende_de: []
 archivos:
