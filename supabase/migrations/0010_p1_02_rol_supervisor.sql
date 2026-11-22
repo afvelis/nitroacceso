@@ -335,6 +335,8 @@ AS $function$
 declare
   v_pin_admin text;
   v_pin_objetivo text;
+  v_pin_puerta text;
+  v_pin_supervisor text;
 begin
   if public.f_sesion_ok(p_token, 'admin') is not true then
     return null;
@@ -352,7 +354,9 @@ begin
     return 'ERR_PIN_ACTUAL';
   end if;
 
-  if p_objetivo not in ('admin', 'puerta', 'supervisor') then
+  -- Descartar NULL antes del not in: con p_objetivo NULL, 'not in' evaluaria
+  -- a NULL, el IF no se tomaria y el else del case rotaria el PIN supervisor.
+  if p_objetivo is null or p_objetivo not in ('admin', 'puerta', 'supervisor') then
     return 'ERR_OBJETIVO';
   end if;
 
@@ -364,16 +368,30 @@ begin
            when 'admin' then pin_admin
            when 'puerta' then pin_puerta
            else pin_supervisor
-         end
-    into v_pin_objetivo
+         end,
+         pin_puerta,
+         pin_supervisor
+    into v_pin_objetivo,
+         v_pin_puerta,
+         v_pin_supervisor
     from public.config where id = 1;
 
   -- Comparacion de PIN repetido conservada de la 0004 (crypt contra el
   -- hash, con comparacion directa para un valor no bcrypt).
-  if v_pin_objetivo is not null
-     and (v_pin_objetivo = p_pin_nuevo
-          or (left(v_pin_objetivo, 2) = '$2'
-              and extensions.crypt(p_pin_nuevo, v_pin_objetivo) = v_pin_objetivo)) then
+  -- P1-02: la comparacion es contra los TRES PINs vigentes (admin, puerta y
+  -- supervisor). Si el PIN nuevo coincide con otro rol, en f_login la rama
+  -- que va primero devolveria la sesion de ese otro rol y el PIN real
+  -- quedaria inutilizable. pin_supervisor solo si no es null.
+  if (v_pin_admin = p_pin_nuevo
+        or (left(v_pin_admin, 2) = '$2'
+            and extensions.crypt(p_pin_nuevo, v_pin_admin) = v_pin_admin))
+     or (v_pin_puerta = p_pin_nuevo
+        or (left(v_pin_puerta, 2) = '$2'
+            and extensions.crypt(p_pin_nuevo, v_pin_puerta) = v_pin_puerta))
+     or (v_pin_supervisor is not null
+        and (v_pin_supervisor = p_pin_nuevo
+          or (left(v_pin_supervisor, 2) = '$2'
+              and extensions.crypt(p_pin_nuevo, v_pin_supervisor) = v_pin_supervisor))) then
     return 'ERR_IGUAL';
   end if;
 
