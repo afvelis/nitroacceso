@@ -2,7 +2,7 @@
 id: "P0-09"
 titulo: "El CI prueba f_login con un solo argumento y no cubre los cubos por rol"
 prioridad: "P2"
-estado: "pendiente"
+estado: "en_progreso"
 area: "operacion"
 depende_de: []
 archivos:
@@ -19,7 +19,16 @@ archivos:
 
 **Segundo riesgo ligado (el incidente del 20/11/2026):** una llamada de un solo argumento es exactamente la forma que quedó rota con `PGRST203` mientras vivió la sobrecarga `f_login(text)`; el CI debería confirmar que la RPC responde bien con la firma vigente y que no reaparecen sobrecargas.
 
-## Criterios de aceptación (propuestos, sin implementar)
+## Criterios de aceptación
 
-- [ ] La helper de login llama a `f_login` con `p_rol_solicitado` explícito (admin y puerta, cada una con su rol) y no compra en el cubo legado.
-- [ ] Existe un test automatizado de aislamiento: 5 fallos de puerta no bloquean el siguiente login de admin (y ventanas: puerta 90 s, admin 15 min en el mensaje BLOQUEADO).
+- [x] La helper de login llama a `f_login` con `p_rol_solicitado` explícito (admin y puerta, cada una con su rol) y no compra en el cubo legado.
+- [ ] Aislamiento de 5 fallos: cubierto por prueba MANUAL en `tests/negativos-login.manual.mjs` (NO en CI, porque provoca bloqueo de puerta 90 s en staging y puede tumbar escaneo / la corrida siguiente). Pendiente de ejecución manual cuando no haya demo en curso.
+
+## Notas de implementación
+
+- `tests/helpers.mjs`: `login(pin)` pasó a `login(pin, rol)`. El rol es obligatorio y validado (solo `"admin"` o `"puerta"`; cualquier otro valor lanza error antes de llamar a la RPC) y se envía como `p_rol_solicitado` explícito, de modo que los tests dejan de comprar en el cubo legado `null`.
+- Callers actualizados a la firma nueva: `tests/login.test.mjs` (admin y puerta), `tests/escaneo.test.mjs` (`tokenPuerta()`) y `tests/cupones.test.mjs` (login único de admin).
+- `tests/login.test.mjs` suma 2 tests seguros para CI: (a) `f_login` con 1 argumento (cubo legado `null`) sigue respondiendo HTTP 200 sin `PGRST203`; (b) `f_login` con `p_rol_solicitado` inválido falla con `ERR_ROL` sin consumir cubo (el `raise` ocurre antes de insertar en `login_intentos`).
+- El test de aislamiento de 5 fallos (5 fallos de puerta + login admin vivo) vive en `tests/negativos-login.manual.mjs` y NO corre en CI: provocarlo bloquea la puerta 90 s en staging y puede tumbar escaneo / la corrida siguiente (misma razón por la que los negativos ya estaban fuera del pipeline). Ver `DECISIONES.md` 2026-11-22 Sesión 33. Pendiente de ejecución manual cuando no haya demo en curso.
+- Archivos tocados: `tests/helpers.mjs`, `tests/login.test.mjs`, `tests/escaneo.test.mjs`, `tests/cupones.test.mjs`, `tests/negativos-login.manual.mjs`, esta ficha y `DECISIONES.md`. No se tocó SQL.
+- CI cubre: firma de 2 argumentos, compatibilidad de 1 argumento (sin `PGRST203`) y rechazo de rol inválido sin consumir cubo.
