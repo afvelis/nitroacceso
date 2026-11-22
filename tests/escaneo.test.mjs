@@ -23,7 +23,7 @@ const CODIGO_INEXISTENTE = "V-NOEXISTE-TEST";
 // Las RPC de puerta exigen rol 'puerta', asi que el token sale de f_login
 // con el PIN de puerta de demo.
 async function tokenPuerta() {
-  const ses = await login(PIN_PUERTA_DEMO);
+  const ses = await login(PIN_PUERTA_DEMO, "puerta");
   assert.notEqual(ses, null, "no se pudo iniciar sesion de puerta para los tests");
   assert.equal(ses.rol, "puerta");
   return ses.token;
