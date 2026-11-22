@@ -84,7 +84,7 @@ NA: entorno activo: staging
 | QR vendedor 1 | `V-DEMO01` | Escaneo de entrada |
 | QR vendedor 2 | `V-DEMO02` | Escaneo de entrada (doble prueba) |
 
-**Los PIN de demo `100000` (admin) y `200000` (puerta) NO son de adorno: el CI depende de ellos** ([P2-04](../tareas/P2-04-ci-depende-de-pin-de-staging.md)). Después de CUALQUIER rotación, restauración o reconstrucción del staging hay que restaurar los PIN de demo del seed (`supabase/seed.sql`, admin y puerta) **ANTES de abrir o relanzar un PR**: si no, el CI se pone rojo por entorno, no por código.
+**Los dos PIN de demo del seed (admin y puerta, en la tabla de arriba) NO son de adorno: el CI depende de ellos** ([P2-04](../tareas/P2-04-ci-depende-de-pin-de-staging.md)). Después de CUALQUIER rotación, restauración o reconstrucción del staging hay que restaurar los PIN de demo del seed (`supabase/seed.sql`, admin y puerta) **ANTES de abrir o relanzar un PR**: si no, el CI se pone rojo por entorno, no por código.
 
 La comprobación tarda 10 segundos:
 
