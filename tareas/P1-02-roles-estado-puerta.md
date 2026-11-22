@@ -2,7 +2,7 @@
 id: "P1-02"
 titulo: "Rol supervisor y revalidación de estado en puerta"
 prioridad: "P1"
-estado: "pendiente"
+estado: "en_progreso"
 area: "seguridad"
 depende_de: ["P0-02"]
 archivos:
