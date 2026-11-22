@@ -172,6 +172,10 @@ function actualizarSelectorDia(){
     // P1-02: solo una sesión de supervisor ve (y puede usar) el cierre de día.
     // La RPC ya lo rechaza para un token de puerta; este panel es la capa visible.
     panelCerrarDia1.style.display = esSupervisor() ? 'block' : 'none';
+    // Hallazgo 2: si el día volvió a 1, el botón vuelve completo y habilitado.
+    btnCerrarDia1.style.display = '';
+    btnCerrarDia1.disabled = false;
+    btnCerrarDia1.textContent = '🔒 Cerrar Día 1 y activar Día 2';
   }else{
     btnDia1.disabled = true;
     btnDia2.disabled = false;
@@ -220,6 +224,8 @@ btnCerrarDia1.addEventListener('click', async () => {
       pintarAviso(msgCerrarDia,
         '✅ Día ' + res.dia_cerrado + ' cerrado. Listas cerradas: ' + res.listas_cerradas + '. Día ' + res.dia_nuevo + ' activado.',
         'aviso aviso-verde');
+      // Hallazgo 2: ya no hay día que cerrar; el botón se oculta, no queda muerto.
+      btnCerrarDia1.style.display = 'none';
     }else{
       const err = (res && res.error) || 'desconocido';
       if(err === 'ERR_ROL'){
@@ -227,11 +233,13 @@ btnCerrarDia1.addEventListener('click', async () => {
       }else{
         pintarAviso(msgCerrarDia, 'No se pudo cerrar el día (' + err + ').', 'aviso aviso-rojo');
       }
+      btnCerrarDia1.style.display = '';
       btnCerrarDia1.disabled = false;
       btnCerrarDia1.textContent = '🔒 Cerrar Día 1 y activar Día 2';
     }
   }catch(e){
     pintarAviso(msgCerrarDia, 'No se pudo conectar. Revisa la conexión e inténtalo otra vez.', 'aviso aviso-rojo');
+    btnCerrarDia1.style.display = '';
     btnCerrarDia1.disabled = false;
     btnCerrarDia1.textContent = '🔒 Cerrar Día 1 y activar Día 2';
   }
@@ -267,7 +275,10 @@ btnEntrar.addEventListener('click', async () => {
   try{
     const r = await llamar('f_login', { p_pin: pin, p_rol_solicitado: 'puerta' });
     if(!r || r.length === 0 || (r[0].rol !== 'puerta' && r[0].rol !== 'supervisor')){
-      alert('PIN incorrecto o no es de puerta.');
+      // Hallazgo 1: el rechazo se pinta junto al campo (norma v2.2), como el
+      // bloque BLOQUEADO; no por alert global.
+      msgError.textContent = 'PIN incorrecto, o no es un PIN de puerta ni de supervisor.';
+      msgError.style.display = 'block';
       btnEntrar.disabled = false;
       btnEntrar.textContent = 'Entrar';
       return;
@@ -1059,17 +1070,23 @@ async function mostrarListaCompleta(lista){
             await buscarListaPorCodigo(listaActualCodigo);
             // El panel se redibujó (la lista ya está abierta): repinta el
             // resultado en #msgReabrir, que sigue presente y oculto.
-            const msgReabrir = document.getElementById('msgReabrir');
-            if(msgReabrir){
-              pintarAviso(msgReabrir, 'Lista reabierta. Ya puedes autorizar a las personas pendientes.', 'aviso aviso-verde');
+            const m = document.getElementById('msgReabrir');
+            if(m){
+              pintarAviso(m, 'Lista reabierta. Ya puedes autorizar a las personas pendientes.', 'aviso aviso-verde');
             }
           }else{
-            pintarAviso(document.getElementById('msgReabrir'), 'No se pudo reabrir la lista. Puede que tu sesión no sea de supervisor.', 'aviso aviso-rojo');
+            const m = document.getElementById('msgReabrir');
+            if(m){
+              pintarAviso(m, 'No se pudo reabrir la lista. Puede que tu sesión no sea de supervisor.', 'aviso aviso-rojo');
+            }
             btnReabrir.disabled = false;
             btnReabrir.textContent = '🔓 Reabrir lista';
           }
         }catch(e){
-          pintarAviso(document.getElementById('msgReabrir'), 'No se pudo conectar. Revisa la conexión e inténtalo otra vez.', 'aviso aviso-rojo');
+          const m = document.getElementById('msgReabrir');
+          if(m){
+            pintarAviso(m, 'No se pudo conectar. Revisa la conexión e inténtalo otra vez.', 'aviso aviso-rojo');
+          }
           btnReabrir.disabled = false;
           btnReabrir.textContent = '🔓 Reabrir lista';
         }
