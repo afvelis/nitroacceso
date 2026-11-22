@@ -2,6 +2,12 @@
 // Este modulo NO define tests: solo funciones compartidas. Se ejecuta al ser
 // importado por las suites, nunca como suite propia (no llama a node:test).
 //
+// login(pin, rol) pasa el rol EXPLICITO (`p_rol_solicitado`) a f_login con la
+// firma de la 0005: los cubos del limitador son separados por rol (puerta 90 s,
+// admin 15 min) y comprar en el cubo legado `null` (un argumento) deja el
+// aislamiento por rol sin probar y tasa los logins de test al cubo compartido
+// (P0-09). El valor del rol es obligatorio y validado: nunca se llama con null.
+//
 // Regla de claves (obligatoria): NUNCA se imprime el valor de un PIN ni la
 // clave publicable. En los mensajes de error se dice "PIN de admin",
 // "PIN de puerta" o "clave publicable", nunca el valor. El valor de la clave
@@ -124,11 +130,16 @@ export async function rpc(nombre, cuerpo) {
   return { status: r.status, ok: r.ok, datos: datos, texto: texto };
 }
 
-// f_login con un PIN. Devuelve {token, rol} o null si no hay sesion.
-// Un PIN malo devuelve array vacio; si la IP esta bloqueada el servidor responde
-// con un HTTP de error cuyo texto empieza por BLOQUEADO. En ambos casos: null.
-export async function login(pin) {
-  const r = await rpc("f_login", { p_pin: pin });
+// f_login con un PIN y su rol explicito. Devuelve {token, rol} o null si no
+// hay sesion. Un PIN malo devuelve array vacio; si la IP esta bloqueada el
+// servidor responde con un HTTP de error cuyo texto empieza por BLOQUEADO. En
+// ambos casos: null. El rol obligatorio ("admin" o "puerta") evita gastar el
+// cubo legado null por accidente (P0-09).
+export async function login(pin, rol) {
+  if (rol !== "admin" && rol !== "puerta") {
+    throw new Error("login() requiere rol 'admin' o 'puerta' (no usar el cubo legado null)");
+  }
+  const r = await rpc("f_login", { p_pin: pin, p_rol_solicitado: rol });
   if (!r.ok) {
     // Solo se distingue por el texto del error, nunca se imprime el PIN.
     if (typeof r.texto === "string" && r.texto.includes("BLOQUEADO")) return null;

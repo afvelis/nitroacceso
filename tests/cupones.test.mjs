@@ -19,7 +19,7 @@ import { login, rpc, PIN_ADMIN_DEMO } from "./helpers.mjs";
 // Un solo login admin para toda la suite: las tres RPC exigen rol admin y
 // compartir sesión evita gastar ventanas del limitador de login (incidente
 // del 13/11: cada llamada cuenta para 5 fallos/15 min por IP).
-const admin = await login(PIN_ADMIN_DEMO);
+const admin = await login(PIN_ADMIN_DEMO, "admin");
 
 test("sesion admin disponible: login de staging devuelve token", () => {
   assert.ok(admin && admin.token, "Sin sesión admin de staging (¿PIN de demo rotado? ver P2-04)");
