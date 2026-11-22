@@ -31,7 +31,7 @@ test("f_admin_cuadre_cupones devuelve estructura valida", async () => {
   assert.equal(r.status, 200, "el cuadre con sesión válida debe responder 200");
   assert.equal(r.datos.ok, true, "el cuadre con sesión válida debe responder ok");
   assert.ok(Array.isArray(r.datos.filas), "el cuadre debe devolver la lista 'filas'");
-  assert.equal(typeof r.datos.huerfanas, "object", "el cuadre debe devolver el objeto 'huerfanas'");
+  assert.ok(r.datos.huerfanas && typeof r.datos.huerfanas === "object", "el cuadre debe devolver el objeto 'huerfanas'");
 });
 
 test("f_admin_cuadre_cupones rechaza token invalido", async () => {
