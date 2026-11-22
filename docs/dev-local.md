@@ -84,6 +84,19 @@ NA: entorno activo: staging
 | QR vendedor 1 | `V-DEMO01` | Escaneo de entrada |
 | QR vendedor 2 | `V-DEMO02` | Escaneo de entrada (doble prueba) |
 
+**Los dos PIN de demo del seed (admin y puerta, en la tabla de arriba) NO son de adorno: el CI depende de ellos** ([P2-04](../tareas/P2-04-ci-depende-de-pin-de-staging.md)). Después de CUALQUIER rotación, restauración o reconstrucción del staging hay que restaurar los PIN de demo del seed (`supabase/seed.sql`, admin y puerta) **ANTES de abrir o relanzar un PR**: si no, el CI se pone rojo por entorno, no por código.
+
+La comprobación tarda 10 segundos:
+
+```
+node tests/preflight-entorno.mjs
+```
+
+- `ENTORNO STAGING PREPARADO: PIN de admin y PIN de puerta entran en staging.` → todo bien.
+- `ENTORNO STAGING NO PREPARADO: …` → restaurar los PIN de demo del seed y volver a comprobar (el mensaje dice la causa).
+
+El preflight también corre en CI como primer paso del job (`.github/workflows/ci.yml`).
+
 **Diferencia entre los dos proyectos Supabase** (dos bases distintas, no dos entornos de la misma):
 
 | Proyecto | Papel | URL |

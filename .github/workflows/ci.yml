@@ -30,5 +30,13 @@ jobs:
         with:
           node-version: 20
 
+      # Preflight (P2-04): si los PIN de demo de staging no entran (rotacion,
+      # restauracion del staging, seed no reaplicado), el job falla AQUI con
+      # "ENTORNO STAGING NO PREPARADO" en vez de fallar los tests con errores
+      # que parecen de codigo. Gasta como maximo 1 login por rol y corrida:
+      # por eso vive en su propio paso y no dentro de cada suite.
+      - name: Preflight del entorno de staging (P2-04)
+        run: node tests/preflight-entorno.mjs
+
       - name: Tests por RPC contra staging
         run: node --test tests/*.test.mjs

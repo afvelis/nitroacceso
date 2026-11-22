@@ -150,3 +150,104 @@ export async function login(pin, rol) {
   if (!ses || !ses.token) return null;
   return { token: ses.token, rol: ses.rol };
 }
+
+// ---------------------------------------------------------------------------
+// PREFLIGHT DEL ENTORNO DE STAGING (P2-04): distingue un "entorno roto" de
+// un "codigo roto". Existe porque rotar un PIN en staging tumbo el CI con 8
+// fallos que parecian de codigo y bloquearon un PR que nada tenia que ver.
+//
+// Este preflight NO se ejecuta dentro de cada suite A PROPOSITO: son 3 suites
+// x 2 logins por suite y, si el entorno esta roto, cada login fallido gasta
+// el limitador de f_login (5 fallos por IP y rol cada 15 min): se agotaria la
+// cuota y se taparia el diagnostico. Por eso va en un paso propio del job de
+// CI (una vez por corrida, no por suite) y en el script manual
+// tests/preflight-entorno.mjs.
+//
+// El diagnostico es SIN AMBIGUEDAD a proposito (correccion del 22/11/2026):
+// una caida de red o un HTTP de error NO se reporta igual que "un PIN fue
+// rechazado", para no mandar a nadie a restaurar el seed cuando el problema
+// es la conexion. motivoLogin() clasifica cada login y verificarEntornoStaging()
+// lista, para cada rol que fallo, el motivo y SOLO la remediacion de ese motivo.
+
+// Mensaje canonico del preflight: si el entorno no esta preparado, este texto
+// abre el diagnostico (en el log del CI y en el script manual).
+export const MENSAJE_ENTORNO_NO_PREPARADO = "ENTORNO STAGING NO PREPARADO";
+
+// Clasifica UNA llamada a f_login con un PIN y su rol explicito. Devuelve un
+// string corto: "sesion" si hay token, "rechazado" si la respuesta es 2xx con
+// array vacio, "bloqueado" si el texto de la respuesta contiene BLOQUEADO,
+// "http_<status>" si la respuesta no es ok, y "red" si fetch lanza. No imprime
+// nada y no expone tokens, claves ni valores de PIN (regla del modulo).
+// NOTA: rpc() llama a leerEntornoStaging(), asi que el candado de produccion
+// corre aqui tambien; su excepcion no puede confundirse con "red" porque
+// verificarEntornoStaging() lo llama PRIMERO y sin capturar (ver abajo).
+export async function motivoLogin(pin, rol) {
+  let r;
+  try {
+    r = await rpc("f_login", { p_pin: pin, p_rol_solicitado: rol });
+  } catch (e) {
+    return "red";
+  }
+  if (typeof r.texto === "string" && r.texto.includes("BLOQUEADO")) return "bloqueado";
+  if (!r.ok) return "http_" + r.status;
+  if (Array.isArray(r.datos) && r.datos.length > 0 && r.datos[0] && r.datos[0].token) {
+    return "sesion";
+  }
+  return "rechazado";
+}
+
+// Remediacion solo para cada motivo que fallo (nunca la generica de siempre).
+function remediacionDeMotivo(motivo) {
+  if (motivo === "rechazado") {
+    return "restaura los PIN de demo del seed (supabase/seed.sql) y ver docs/dev-local.md seccion 6";
+  }
+  if (motivo === "bloqueado") {
+    return "el limitador de f_login bloqueo la IP por fallos recientes: esperar 15 minutos y reintentar";
+  }
+  if (motivo === "red") {
+    return "no se pudo hablar con staging: revisar conexion y que el proyecto de staging este arriba";
+  }
+  // http_<status> y cualquier motivo futuro no reconocido:
+  return "staging respondio con error HTTP: revisar el estado del proyecto de staging";
+}
+
+// Comprueba que los PIN de demo del seed siguen entrando en staging: 1 llamada
+// f_login con el PIN de admin (rol "admin") y 1 con el PIN de puerta (rol
+// "puerta"). NO imprime nada (que decida quien llama) y NO devuelve tokens ni
+// claves. Devuelve { url, admin: true, puerta: true }; si alguno de los dos
+// logins no da sesion, lanza un Error cuyo mensaje empieza por el mensaje
+// canonico, dice por cada rol que fallo el MOTIVO entre parentesis (rechazado /
+// bloqueado / red / http_<status>) y solo la remediacion que corresponda a ese
+// motivo, sin revelar ningun valor de PIN.
+export async function verificarEntornoStaging() {
+  // Candado de produccion primero: si lanza, es un fallo de seguridad (la URL
+  // no es staging) y se propaga TAL CUAL, sin reenvolverlo como entorno no
+  // preparado.
+  const { url } = leerEntornoStaging();
+
+  const motivoAdmin = await motivoLogin(PIN_ADMIN_DEMO, "admin");
+  const motivoPuerta = await motivoLogin(PIN_PUERTA_DEMO, "puerta");
+
+  if (motivoAdmin === "sesion" && motivoPuerta === "sesion") {
+    return { url: url, admin: true, puerta: true };
+  }
+
+  const fallos = [];
+  if (motivoAdmin !== "sesion") fallos.push("el PIN de admin (" + motivoAdmin + ")");
+  if (motivoPuerta !== "sesion") fallos.push("el PIN de puerta (" + motivoPuerta + ")");
+
+  // Motivos distintos en orden de aparicion (1 o 2); su remediacion una vez.
+  const motivos = [];
+  for (const m of [motivoAdmin, motivoPuerta]) {
+    if (m !== "sesion" && !motivos.includes(m)) motivos.push(m);
+  }
+  const remedios = motivos.map(remediacionDeMotivo).join("; ");
+
+  const detalle = fallos.length === 1
+    ? "no entra " + fallos[0] + " en staging."
+    : "no entran " + fallos[0] + " ni " + fallos[1] + " en staging.";
+  throw new Error(
+    MENSAJE_ENTORNO_NO_PREPARADO + ": " + detalle +
+    " Remediacion: " + remedios + "."
+  );
+}
