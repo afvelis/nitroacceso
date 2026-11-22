@@ -93,6 +93,7 @@ const panelResultado = document.getElementById('panelResultado');
 const barraSiguiente = document.getElementById('barraSiguiente');
 const btnSiguiente = document.getElementById('btnSiguiente');
 const btnSalir = document.getElementById('btnSalir');
+const msgCerrarDia = document.getElementById('msgCerrarDia');
 
 let diaSeleccionado = null;
 let diaActivo = 1;
@@ -101,6 +102,22 @@ let streamVideo = null;
 let scanningInterval = null;
 let listaActualId = null;
 let listaActualCodigo = null;
+
+// P1-02: la sesión de esta página puede ser de puerta o de supervisor.
+// Helpers únicos: el resto del archivo usa estos, no relee sessionStorage.
+function rolSesion(){
+  const s = leerSesion();
+  return (s && s.rol) || null;
+}
+function esSupervisor(){ return rolSesion() === 'supervisor'; }
+
+// Pinta el resultado de una acción DENTRO de su tarjeta, junto al botón (norma v2.2).
+// `clase` reutiliza las de aviso existentes ('aviso' neutra/amarilla, 'aviso-verde', 'aviso-rojo').
+function pintarAviso(el, msg, clase){
+  el.className = clase || 'aviso';
+  el.textContent = msg;
+  el.hidden = false;
+}
 
 // ===== P0-03 · Auto-bloqueo por inactividad (5 min) =====
 // Candado local: garantiza que iniciarAutoBloqueo() corra UNA sola vez por
@@ -152,7 +169,9 @@ function actualizarSelectorDia(){
     btnDia2.disabled = true;
     estadoDia1.textContent = '';
     estadoDia2.textContent = '🔒 Disponible al cerrar Día 1';
-    panelCerrarDia1.style.display = 'block';
+    // P1-02: solo una sesión de supervisor ve (y puede usar) el cierre de día.
+    // La RPC ya lo rechaza para un token de puerta; este panel es la capa visible.
+    panelCerrarDia1.style.display = esSupervisor() ? 'block' : 'none';
   }else{
     btnDia1.disabled = true;
     btnDia2.disabled = false;
@@ -194,15 +213,25 @@ btnCerrarDia1.addEventListener('click', async () => {
     if(res && res.ok){
       diaActivo = res.dia_nuevo;
       actualizarSelectorDia();
-      alert('✅ Día ' + res.dia_cerrado + ' cerrado.\nListas cerradas: ' + res.listas_cerradas + '.\nDía ' + res.dia_nuevo + ' activado.');
+      // El aviso vive dentro de #panelCerrarDia1: se pinta DESPUÉS de refrescar
+      // el selector, y se deja el panel visible para que el resultado siga
+      // legible tras pasar a Día 2 (norma v2.2).
+      panelCerrarDia1.style.display = 'block';
+      pintarAviso(msgCerrarDia,
+        '✅ Día ' + res.dia_cerrado + ' cerrado. Listas cerradas: ' + res.listas_cerradas + '. Día ' + res.dia_nuevo + ' activado.',
+        'aviso aviso-verde');
     }else{
       const err = (res && res.error) || 'desconocido';
-      alert('No se pudo cerrar el Día 1 (' + err + ').');
+      if(err === 'ERR_ROL'){
+        pintarAviso(msgCerrarDia, 'Solo el supervisor puede cerrar el día. Esta sesión es de puerta.');
+      }else{
+        pintarAviso(msgCerrarDia, 'No se pudo cerrar el día (' + err + ').', 'aviso aviso-rojo');
+      }
       btnCerrarDia1.disabled = false;
       btnCerrarDia1.textContent = '🔒 Cerrar Día 1 y activar Día 2';
     }
   }catch(e){
-    alert('Error: ' + (e.message || e));
+    pintarAviso(msgCerrarDia, 'No se pudo conectar. Revisa la conexión e inténtalo otra vez.', 'aviso aviso-rojo');
     btnCerrarDia1.disabled = false;
     btnCerrarDia1.textContent = '🔒 Cerrar Día 1 y activar Día 2';
   }
@@ -237,7 +266,7 @@ btnEntrar.addEventListener('click', async () => {
   btnEntrar.textContent = 'Entrando...';
   try{
     const r = await llamar('f_login', { p_pin: pin, p_rol_solicitado: 'puerta' });
-    if(!r || r.length === 0 || r[0].rol !== 'puerta'){
+    if(!r || r.length === 0 || (r[0].rol !== 'puerta' && r[0].rol !== 'supervisor')){
       alert('PIN incorrecto o no es de puerta.');
       btnEntrar.disabled = false;
       btnEntrar.textContent = 'Entrar';
@@ -899,11 +928,18 @@ async function mostrarListaCompleta(lista){
     
     html += `<div class="acciones-lista">`;
     if(lista.estado === 'cerrada'){
-      html += `<button class="btn btn-gris" id="btnReabrirLista">🔓 Reabrir lista</button>`;
+      // P1-02: reabrir solo lo ve el supervisor; la RPC ya lo rechaza para puerta.
+      // El botón de cerrar lista (p_cerrada:true) es flujo normal del operador.
+      if(esSupervisor()){
+        html += `<button class="btn btn-gris" id="btnReabrirLista">🔓 Reabrir lista</button>`;
+      }
     }else{
       html += `<button class="btn btn-rojo" id="btnCerrarLista"> Cerrar lista</button>`;
     }
     html += `</div>`;
+    // Contenedor del resultado de reabrir: siempre presente (oculto) para que
+    // el mensaje sobreviva al redibujado del panel tras el reabrir (norma v2.2).
+    html += `<div id="msgReabrir" class="aviso" role="status" aria-live="polite" hidden></div>`;
     
     if(lista.estado === 'cerrada'){
       html += `<div class="aviso aviso-rojo mb-12">⛔ LISTA CERRADA<br>Esta lista fue cerrada y ya no permite nuevas autorizaciones. Las personas pendientes no pueden entrar.</div>`;
@@ -1020,14 +1056,20 @@ async function mostrarListaCompleta(lista){
             p_cerrada: false
           });
           if(ok){
-            buscarListaPorCodigo(listaActualCodigo);
+            await buscarListaPorCodigo(listaActualCodigo);
+            // El panel se redibujó (la lista ya está abierta): repinta el
+            // resultado en #msgReabrir, que sigue presente y oculto.
+            const msgReabrir = document.getElementById('msgReabrir');
+            if(msgReabrir){
+              pintarAviso(msgReabrir, 'Lista reabierta. Ya puedes autorizar a las personas pendientes.', 'aviso aviso-verde');
+            }
           }else{
-            alert('No se pudo reabrir la lista.');
+            pintarAviso(document.getElementById('msgReabrir'), 'No se pudo reabrir la lista. Puede que tu sesión no sea de supervisor.', 'aviso aviso-rojo');
             btnReabrir.disabled = false;
             btnReabrir.textContent = '🔓 Reabrir lista';
           }
         }catch(e){
-          alert('Error: ' + (e.message || e));
+          pintarAviso(document.getElementById('msgReabrir'), 'No se pudo conectar. Revisa la conexión e inténtalo otra vez.', 'aviso aviso-rojo');
           btnReabrir.disabled = false;
           btnReabrir.textContent = '🔓 Reabrir lista';
         }
@@ -1040,10 +1082,13 @@ async function mostrarListaCompleta(lista){
 
 (function(){
   const s = leerSesion();
-  if(s && s.rol === 'puerta'){
+  if(s && (s.rol === 'puerta' || s.rol === 'supervisor')){
     tokenSesion = s.token;
     activarAutoBloqueo();
     verificarEstadoEvento();
+  }else{
+    // P1-02: un rol guardado que ya no es válido aquí (p. ej. admin) no entra.
+    borrarSesion();
   }
   const params = new URLSearchParams(location.search);
   const listaParam = params.get('lista');
