@@ -150,3 +150,60 @@ export async function login(pin, rol) {
   if (!ses || !ses.token) return null;
   return { token: ses.token, rol: ses.rol };
 }
+
+// ---------------------------------------------------------------------------
+// PREFLIGHT DEL ENTORNO DE STAGING (P2-04): distingue un "entorno roto" de
+// un "codigo roto". Existe porque rotar un PIN en staging tumbo el CI con 8
+// fallos que parecian de codigo y bloquearon un PR que nada tenia que ver.
+//
+// Este preflight NO se ejecuta dentro de cada suite A PROPOSITO: son 3 suites
+// x 2 logins por suite y, si el entorno esta roto, cada login fallido gasta
+// el limitador de f_login (5 fallos por IP y rol cada 15 min): se agotaria la
+// cuota y se taparia el diagnostico. Por eso va en un paso propio del job de
+// CI (una vez por corrida, no por suite) y en el script manual
+// tests/preflight-entorno.mjs.
+
+// Mensaje canonico del preflight: si el entorno no esta preparado, este texto
+// abre el diagnostico (en el log del CI y en el script manual).
+export const MENSAJE_ENTORNO_NO_PREPARADO = "ENTORNO STAGING NO PREPARADO";
+
+// Comprueba que los PIN de demo del seed siguen entrando en staging: 1 login
+// con el PIN de admin (rol "admin") y 1 con el PIN de puerta (rol "puerta").
+// NO imprime nada (que decida quien llama) y NO devuelve tokens ni claves.
+// Devuelve { url, admin: true, puerta: true }; si alguno de los dos logins
+// falla (null o excepcion), lanza un Error cuyo mensaje empieza por el
+// mensaje canonico y explica la remediacion, sin revelar ningun valor de PIN.
+export async function verificarEntornoStaging() {
+  // Candado de produccion primero: si lanza, es un fallo de seguridad (la URL
+  // no es staging) y se propaga TAL CUAL, sin reenvolverlo como entorno no
+  // preparado.
+  const { url } = leerEntornoStaging();
+
+  let admin = null;
+  try {
+    admin = await login(PIN_ADMIN_DEMO, "admin");
+  } catch (e) {
+    admin = null; // login fallo (HTTP, red, limite): el mensaje no lleva detalle
+  }
+  let puerta = null;
+  try {
+    puerta = await login(PIN_PUERTA_DEMO, "puerta");
+  } catch (e) {
+    puerta = null;
+  }
+
+  if (admin !== null && puerta !== null) {
+    return { url: url, admin: true, puerta: true };
+  }
+
+  const fallos = [];
+  if (admin === null) fallos.push("el PIN de admin");
+  if (puerta === null) fallos.push("el PIN de puerta");
+  throw new Error(
+    MENSAJE_ENTORNO_NO_PREPARADO + ": " +
+    "no entra " + fallos.join(" ni ") + " en staging (login rechazado o con error). " +
+    "Probablemente se roto un PIN de staging o se restauro el staging desde un volcado anterior. " +
+    "Remediacion: restaurar los PIN de demo del seed (supabase/seed.sql, admin y puerta) " +
+    "y ver docs/dev-local.md seccion 6."
+  );
+}
