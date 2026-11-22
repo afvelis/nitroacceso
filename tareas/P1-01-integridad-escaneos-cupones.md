@@ -51,7 +51,7 @@ Si no devuelve fila, responder “ya consumado”. Repetir para vendedores, cort
 - [x] Para cupones, descontar dentro de una transacción con bloqueo de fila (`select ... for update`) o un `update ... where disponibles >= n returning ...`. — HECHO en la 0007 (2026-11-20).
 - [x] Añadir restricciones `check` para que los contadores no queden negativos. — HECHO en la 0007 (2026-11-20), probado en staging.
 - [x] Añadir un registro/ledger de movimientos de cupones (reserva, consumo, liberación, anulación) y verificar que la suma cuadra. *(Implementado en `0008`: tabla `cupones_movimientos`, 3 triggers de auditoría y RPC `f_admin_cuadre_cupones`. La verificación de cuadre por tests está PENDIENTE.)*
-- [x] Implementar detección global de cédulas duplicadas por evento, con un reporte para el admin y una forma de anular el pase sobrante. No aplicar un `unique` ciego si una persona puede ser legítimamente talento y vendedor; primero definir la regla. — HECHO en la `0009` (2026-11-22): regla definida (regla B: nada se anula sin motivo), reporte `f_admin_cedulas_duplicadas` y anulación `f_admin_anular_pase_duplicado`. **Prueba entre dos listas PENDIENTE.**
+- [x] Implementar detección global de cédulas duplicadas por evento, con un reporte para el admin y una forma de anular el pase sobrante. No aplicar un `unique` ciego si una persona puede ser legítimamente talento y vendedor; primero definir la regla. — HECHO en la `0009` (2026-11-20): regla definida (regla B: nada se anula sin motivo), reporte `f_admin_cedulas_duplicadas` y anulación `f_admin_anular_pase_duplicado`. **Prueba entre dos listas PENDIENTE.**
 - [x] Probar concurrencia real: dos requests simultáneos con el mismo ID y dos reservas simultáneas del último cupón. — HECHO para el canje de premios (dos pestañas, 2026-11-20). La reserva de cupones de aliado tiene el bloqueo aplicado pero su prueba con datos de aliado queda PENDIENTE.
 
 ## Criterios de aceptación
@@ -83,7 +83,7 @@ Revisar que solo una respuesta sea verdadera y que el conteo de autorizados sea 
 
 ## Notas de implementación
 
-> **Fase 1 cerrada en staging el 2026-11-20. Fases 2a (ledger, `0008`) y 3 (cédulas duplicadas, `0009`) implementadas en código (2026-11-22); sus pruebas y la confirmación en staging quedan PENDIENTES.**
+> **Fase 1 cerrada en staging el 2026-11-20. Fases 2a (ledger, `0008`) y 3 (cédulas duplicadas, `0009`) implementadas en código (2026-11-20); sus pruebas y la confirmación en staging quedan PENDIENTES.**
 >
 > ### Fase 1 — atomicidad (aplicada y probada en staging el 2026-11-20)
 >
