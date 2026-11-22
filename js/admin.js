@@ -223,7 +223,7 @@ function repintarUltimaReapertura(){
 }
 
 async function rotarPin(objetivo){
-  var nombre = (objetivo === 'admin') ? 'admin' : 'puerta';
+  var nombre = objetivo;
   var actual = await modalPrompt('Rotar PIN ' + nombre + '.\n\nPaso 1 de 2: escribe tu PIN ADMIN ACTUAL (prueba de presencia):', '', 'Rotar PIN ' + nombre, true);
   if (actual === null) return;
   actual = actual.trim();
@@ -951,6 +951,7 @@ if (!ses || ses.rol !== 'admin') {
   repintarUltimaReapertura();
   $('btnRotarAdmin').onclick = function(){ rotarPin('admin'); };
   $('btnRotarPuerta').onclick = function(){ rotarPin('puerta'); };
+  $('btnRotarSupervisor').onclick = function(){ rotarPin('supervisor'); };
   $('btnVolver').onclick = function(){ location.replace('dashboard.html'); };
   cargarEstado();
   cargarLista();
