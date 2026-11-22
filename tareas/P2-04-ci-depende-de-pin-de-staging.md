@@ -51,7 +51,7 @@ EXIT=0
 
 **Pendientes.**
 
-- [ ] Verificar el paso de preflight en el CI real (primer push/PR tras fusionar): debe verse `Preflight del entorno de staging (P2-04)` en verde y las suites detrás.
+- [x] Verificar el paso de preflight en el CI real (primer push/PR tras fusionar): debe verse `Preflight del entorno de staging (P2-04)` en verde y las suites detrás. **Cumplido (2026-11-22):** PR #44 fusionado; en el run `45046841967` el paso `Preflight del entorno de staging (P2-04)` terminó en `success` ANTES de `Tests por RPC contra staging`, con lo que el criterio (a) queda probado en Actions y no solo en local.
 - [ ] La mutación de `V-DEMO02` en `tests/escaneo.test.mjs` sigue sin restaurarse: el riesgo (b) queda documentado, NO arreglado, y con la opción A las pruebas manuales y el CI siguen compartiendo base.
 
 **Correcciones del juez aplicadas el 22/11/2026 (veredicto del juez: VB).**
