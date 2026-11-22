@@ -50,8 +50,8 @@ Si no devuelve fila, responder “ya consumado”. Repetir para vendedores, cort
 - [ ] Añadir una clave de idempotencia por escaneo (por ejemplo, `p_request_id`) para que un reintento de red no duplique la operación. — **TRASLADADO a P2-01** (aprobado por el usuario el 2026-11-20: hoy no existe cola offline, así que no protege de nada real y añadiría riesgo de sobrecarga PGRST203).
 - [x] Para cupones, descontar dentro de una transacción con bloqueo de fila (`select ... for update`) o un `update ... where disponibles >= n returning ...`. — HECHO en la 0007 (2026-11-20).
 - [x] Añadir restricciones `check` para que los contadores no queden negativos. — HECHO en la 0007 (2026-11-20), probado en staging.
-- [ ] Añadir un registro/ledger de movimientos de cupones (reserva, consumo, liberación, anulación) y verificar que la suma cuadra.
-- [ ] Implementar detección global de cédulas duplicadas por evento, con un reporte para el admin y una forma de anular el pase sobrante. No aplicar un `unique` ciego si una persona puede ser legítimamente talento y vendedor; primero definir la regla.
+- [x] Añadir un registro/ledger de movimientos de cupones (reserva, consumo, liberación, anulación) y verificar que la suma cuadra. *(Implementado en `0008`: tabla `cupones_movimientos`, 3 triggers de auditoría y RPC `f_admin_cuadre_cupones`. La verificación de cuadre por tests está PENDIENTE.)*
+- [x] Implementar detección global de cédulas duplicadas por evento, con un reporte para el admin y una forma de anular el pase sobrante. No aplicar un `unique` ciego si una persona puede ser legítimamente talento y vendedor; primero definir la regla. — HECHO en la `0009` (2026-11-22): regla definida (regla B: nada se anula sin motivo), reporte `f_admin_cedulas_duplicadas` y anulación `f_admin_anular_pase_duplicado`. **Prueba entre dos listas PENDIENTE.**
 - [x] Probar concurrencia real: dos requests simultáneos con el mismo ID y dos reservas simultáneas del último cupón. — HECHO para el canje de premios (dos pestañas, 2026-11-20). La reserva de cupones de aliado tiene el bloqueo aplicado pero su prueba con datos de aliado queda PENDIENTE.
 
 ## Criterios de aceptación
@@ -59,7 +59,7 @@ Si no devuelve fila, responder “ya consumado”. Repetir para vendedores, cort
 - [x] Dos canjes simultáneos del mismo premio: solo uno canjea y `cupones_consumidos` no se duplica. *(Redacción original: «dos escaneos simultáneos del mismo pase: solo uno devuelve éxito»; se reescribió el 2026-11-20 con aprobación del usuario porque choca con el contrato de F-8 y con `tests/escaneo.test.mjs:83`, donde el segundo escaneo devuelve `true` como éxito idempotente. Probado en staging: A `ok`, B `ERR_USADA`, consumidos 3 y no 6.)*
 - [ ] Dos reservas simultáneas del último cupón: solo una tiene éxito; el saldo nunca queda negativo. — Bloqueo aplicado en `f_aliado_crear_concurso`/`f_aliado_editar_concurso`; **prueba con datos de aliado PENDIENTE** en staging.
 - [ ] Un reintento de red con la misma clave de idempotencia no duplica la entrada. — **TRASLADADO a P2-01** junto con `p_request_id`.
-- [ ] El reporte de cédulas duplicadas detecta el caso entre dos listas distintas. — **PENDIENTE: fase 3** (aún no implementado).
+- [ ] El reporte de cédulas duplicadas detecta el caso entre dos listas distintas. — **Implementado en `0009`** (`f_admin_cedulas_duplicadas`, `f_admin_anular_pase_duplicado` con motivo obligatorio). **Prueba entre dos listas PENDIENTE.**
 - [x] Las restricciones están en la base de datos y se probaron en staging. — 2026-11-20: las tres en estado `validada` y las tres rechazan la fila mala con `23514`.
 - [ ] No se puede reabrir una lista y volver a autorizar a alguien ya autorizado sin una acción explícita.
 
@@ -83,7 +83,7 @@ Revisar que solo una respuesta sea verdadera y que el conteo de autorizados sea 
 
 ## Notas de implementación
 
-> **Fase 1 cerrada en staging el 2026-11-20. Fase 3 (ledger de cupones + cédulas duplicadas) pendiente.**
+> **Fase 1 cerrada en staging el 2026-11-20. Fases 2a (ledger, `0008`) y 3 (cédulas duplicadas, `0009`) implementadas en código (2026-11-22); sus pruebas y la confirmación en staging quedan PENDIENTES.**
 >
 > ### Fase 1 — atomicidad (aplicada y probada en staging el 2026-11-20)
 >
@@ -108,4 +108,12 @@ Revisar que solo una respuesta sea verdadera y que el conteo de autorizados sea 
 >
 > **Fallo del revisor corregido antes de aplicar:** el `CHECK` de `cupones_consumidos <= cupones_total` podía abortar RPCs por carrera con `f_admin_editar_cortesia_premiacion`; se añadió `for update` a la lectura de `v_cortesia` en el canje y esa función entró en la 0007.
 >
-> **Pendiente para cerrar la tarea:** fase 3 (ledger de movimientos de cupones con suma cuadrada y reporte global de cédulas duplicadas entre listas, con regla previa sobre talento+vendedor legítimo).
+> ### Fase 2a — ledger de cupones (migración `0008`)
+>
+> Crea la tabla `cupones_movimientos` (`id` bigint identity, `creada_at`, `tipo` text con CHECK de 8 valores: `emision`, `reserva`, `ajuste_reserva`, `reserva_liberada`, `ajuste_pool`, `consumo`, `ajuste_total`, `anulacion`; `cantidad`, `asignacion_id`, `concurso_id`, `cortesia_id`, `detalle`), sin foreign keys para que la auditoría no se borre en cascada con la fila origen, y sin acceso para `anon`/`authenticated` (revoke). Tres triggers AFTER en `cortesias`, `aliado_concursos` y `aliado_asignaciones` vía `f_trg_cupones_movimientos()` (auditoría best-effort: `exception when others then null`, un fallo del ledger no rompe la operación real). Incluye backfill de los consumos históricos. RPC `f_admin_cuadre_cupones(p_token uuid)` devuelve por asignación `otorgado/reservado/emitido/consumido/anulado/consumido_ledger` con el booleano `cuadra`, más `huerfanas` (cortesías sin asignación). **Evidencia:** `supabase/migrations/0008_p1_01_ledger_cupones.sql`. **PENDIENTE:** test de cuadre y confirmar aplicación en staging.
+>
+> ### Fase 3 — cédulas duplicadas (migración `0009`)
+>
+> Crea la tabla `cedulas_duplicadas_log` (`id`, `creada_at`, `cedula`, `origen`, `pase_id`, `motivo`, `admin_token_hash`; sin acceso para `anon`/`authenticated`) y dos RPC: `f_admin_cedulas_duplicadas(p_token uuid)` (detecta duplicados entre `personas`, `vendedores` y `cortesia_personas`, devuelve por cédula `origenes[]`, `total` y detalle con `origen/pase_id/estado/lista_id`) y `f_admin_anular_pase_duplicado(p_token uuid, p_origen text, p_id uuid, p_motivo text)`, que exige motivo no vacío (regla B: nada se anula sin motivo), desautoriza el pase a `pendiente` y registra `sha256(p_token)` en el log. Errores: `ERR_SESION`, `ERR_ORIGEN_INVALIDO`, `ERR_MOTIVO_VACIO`, `ERR_NO_EXISTE`, `ERR_NO_DUPLICADO`, `ERR_NO_ANULADA`. **Evidencia:** `supabase/migrations/0009_p1_01_cedulas_duplicadas.sql`. **PENDIENTE:** test entre dos listas y confirmar aplicación en staging (al probar la anulación, evitar datos destructivos sobre staging: usar rutas de error y/o limpiar lo creado).
+>
+> **Pendiente para cerrar la tarea:** Fases 2a y 3 implementadas en código (0008/0009). Para cerrar la tarea faltan: (1) tests de ledger/cuadre/duplicados y (2) confirmar con consulta de conteo que 0008/0009 están aplicadas en staging (el "Success" del SQL Editor no es verificación).
