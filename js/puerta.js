@@ -163,6 +163,12 @@ function mostrarEventoAbierto(){
   tarjetaLogin.style.display = 'none';
   tarjetaPrincipal.style.display = 'none';
   tarjetaEventoAbierto.style.display = 'block';
+  // Entrada (login, estadoEventoOperativo o resolverRechazoAutorizacion): deja
+  // el botón de reintento usable y el aviso limpio, para que la guard de
+  // reentrancia de reintentarEstadoEvento no lo devuelva en cada clic.
+  btnComprobarEvento.disabled = false;
+  msgEventoAbierto.textContent = '';
+  msgEventoAbierto.hidden = true;
 }
 
 function actualizarSelectorDia(){
@@ -300,6 +306,11 @@ async function reintentarEstadoEvento(){
   diaActivo = estado.dia_activo || 1;
   mostrarPrincipal();
   actualizarSelectorDia();
+  // Reintento exitoso: sin resultado de una consulta vieja (botones «Autorizar»
+  // de un escaneo previo, quizá de otro día).
+  panelResultado.innerHTML = '';
+  panelResultado.style.display = 'none';
+  barraSiguiente.style.display = 'none';
   // Éxito pintado en el contenedor de la pantalla principal (norma v2.2);
   // se pinta DESPUÉS de actualizarSelectorDia para sobrevivir al repintado.
   pintarAviso(avisoDia,
