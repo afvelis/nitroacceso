@@ -30,7 +30,7 @@ Quien entra con el PIN de puerta es **operador de puerta**; quien entra con el P
 **1. Entrar**
 
 1. Escribe tu PIN y pulsa **"Entrar"**: el de puerta si eres personal de puerta, el de supervisor si eres el supervisor.
-2. Si el evento sigue en edición, verás la tarjeta **"⚠️ Evento aún abierto"** con el aviso de que el módulo de puerta no puede usarse hasta que el administrador cierre la edición, y el botón **"🚪 Salir"**. Sal y avisa al administrador.
+2. Si el evento sigue en edición, verás la tarjeta **"⚠️ Evento aún abierto"** con el aviso de que el módulo de puerta no puede usarse hasta que el administrador cierre la edición, el botón **"🔄 Comprobar de nuevo"** y el botón **"🚪 Salir"**. Avisa al administrador; cuando él confirme que cerró la edición, pulsa **"🔄 Comprobar de nuevo"**: la puerta se habilita **ahí mismo, sin salir ni volver a entrar**, y muestra "✅ El evento ya está cerrado. Día activo: N. Escanea el QR o abre la lista de nuevo.". Solo pulsa **"🚪 Salir"** si prefieres volver a entrar con el PIN. Si la comprobación falla, la propia tarjeta te lo dice y puedes volver a intentarlo.
 3. Si el evento está cerrado, llegas al panel **"🎯 Control de acceso"**.
 
 **2. Elegir el día de control**
@@ -91,6 +91,7 @@ Pulsa **"🚪 Cerrar sesión"**, confirma, y vuelves a la pantalla del PIN de pu
 - En **cada autorización** la puerta vuelve a consultar el estado del evento al servidor antes de marcar: si el administrador abrió la edición o cambió el día desde otro equipo, la autorización **no se manda** y aparece el motivo en una ventana o en la propia tarjeta.
 
 - El título **"🎯 Control de acceso"** y el rótulo **"✓ Controlando entrada del Día N"**.
+- En la tarjeta **"⚠️ Evento aún abierto"** los dos botones: **"🔄 Comprobar de nuevo"** (encima) y **"🚪 Salir"** (debajo), con el resultado de cada comprobación pintado dentro de la tarjeta.
 - En cada autorización: la ficha con tipo, nombre y cédula; el botón se lee tal cual **"✅ AUTORIZAR ENTRADA"** (vendedores y cortesía individual) o **"✅ Autorizar"** (personas de listas y cortesía por lista).
 - El bloque rojo **"⛔ ENTRADA YA CONSUMADA … Validado el [fecha] a las [hora]. No se puede autorizar de nuevo."** cuando el código ya pasó: es la prueba de que el sistema está protegiendo el acceso.
 - El resumen de la lista siempre con los tres números: total, autorizados y pendientes.
@@ -103,7 +104,7 @@ Pulsa **"🚪 Cerrar sesión"**, confirma, y vuelves a la pantalla del PIN de pu
 - **"⚠️ El día activo cambió a Día N desde otro equipo. Este panel tenía estado viejo y se actualizó..."**: alguien cerró el día desde otra pestaña. El sistema te deja en el día que de verdad está activo; vuelve a escanear el QR en ese día.
 - **"⛔ No se pudo autorizar. El evento sigue operativo y en el Día N: el servidor rechazó por otra causa (día cerrado, pase ya consumido o lista cerrada)"** (bloque rojo junto al botón): el sistema re-verificó el estado del evento y el rechazo viene del servidor. En lista y cortesía, ese mismo bloque queda dentro de la tarjeta; el día del evento, si un rechazo se repite para varios pases seguidos, pasa al **fallback manual**: autoriza de a dedo con la lista impresa y anota cada entrada.
 - **"⛔ No se pudo verificar el estado del evento. La autorización queda cancelada..."**: la conexión falló justo antes de autorizar y el sistema, por seguridad, no manda nada. Revisa la conexión y escanea de nuevo.
-- **"⚠️ Evento aún abierto"**: la edición NO está cerrada. Avisa al administrador; nada que hagas en puerta opera hasta entonces.
+- **"⚠️ Evento aún abierto"**: la edición NO está cerrada. Avisa al administrador; nada que hagas en puerta opera hasta entonces. Cuando él confirme que cerró la edición, pulsa **"🔄 Comprobar de nuevo"**: si el evento ya está cerrado, la puerta se habilita sin recargar y sin perder la sesión; si sigue en edición, la propia tarjeta avisa "El evento sigue en edición. Se volverá a comprobar cuando pulses otra vez.".
 - **"PIN incorrecto, o no es un PIN de puerta ni de supervisor."**: usaste el PIN del administrador o hay un dígito mal.
 - **"Solo el supervisor puede cerrar el día. Esta sesión es de puerta."**: alguien con sesión de puerta intentó cerrar el día. Solo el supervisor puede hacerlo: avísale.
 - **La cámara no abre o no lee**: pulsa "⏹ Detener cámara" y usa el código manual o la búsqueda por nombre. El sistema avisa "No se pudo acceder a la cámara. Usa el código manual o el buscador por nombre."
@@ -119,4 +120,4 @@ Pulsa **"🚪 Cerrar sesión"**, confirma, y vuelves a la pantalla del PIN de pu
 - **No pidas al administrador "habilitar" un código consumido**: la protección existe justamente para eso; el dueño del QR que ya lo usó no puede volver a usarlo.
 - **No dejes la sesión de puerta sin vigilancia**: se cierra sola tras 5 minutos sin uso, y hay que volver a entrar con el PIN.
 
-*Probado en el entorno de pruebas el 10/11/2026. Los mensajes de revalidación de estado (evento en edición, día cambiado, rechazo concreto junto al botón) quedaron escritos el 23/11/2026 y están PENDIENTES de prueba en navegador.*
+*Probado en el entorno de pruebas el 10/11/2026. Los mensajes de revalidación de estado (evento en edición, día cambiado, rechazo concreto junto al botón) quedaron escritos el 23/11/2026 y están PENDIENTES de prueba en navegador. El botón **"🔄 Comprobar de nuevo"** de la tarjeta "Evento aún abierto" también quedó escrito el 23/11/2026 y está PENDIENTE de prueba en navegador.*

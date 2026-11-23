@@ -75,6 +75,8 @@ const tarjetaLogin = document.getElementById('tarjetaLogin');
 const tarjetaEventoAbierto = document.getElementById('tarjetaEventoAbierto');
 const tarjetaPrincipal = document.getElementById('tarjetaPrincipal');
 const btnSalirEventoAbierto = document.getElementById('btnSalirEventoAbierto');
+const btnComprobarEvento = document.getElementById('btnComprobarEvento');
+const msgEventoAbierto = document.getElementById('msgEventoAbierto');
 const btnDia1 = document.getElementById('btnDia1');
 const btnDia2 = document.getElementById('btnDia2');
 const estadoDia1 = document.getElementById('estadoDia1');
@@ -161,6 +163,12 @@ function mostrarEventoAbierto(){
   tarjetaLogin.style.display = 'none';
   tarjetaPrincipal.style.display = 'none';
   tarjetaEventoAbierto.style.display = 'block';
+  // Entrada (login, estadoEventoOperativo o resolverRechazoAutorizacion): deja
+  // el botón de reintento usable y el aviso limpio, para que la guard de
+  // reentrancia de reintentarEstadoEvento no lo devuelva en cada clic.
+  btnComprobarEvento.disabled = false;
+  msgEventoAbierto.textContent = '';
+  msgEventoAbierto.hidden = true;
 }
 
 function actualizarSelectorDia(){
@@ -264,6 +272,77 @@ async function verificarEstadoEvento(){
   }catch(e){
     alert('Error al verificar el evento: ' + (e.message || e));
   }
+}
+
+// Marcador de tiempo agotado para la carrera con el temporizador de reintento.
+const ESTADO_TIMEOUT = Symbol('f_puerta_estado sin respuesta a tiempo');
+
+// P1-02 / incidente 23/11: la tarjeta "Evento aún abierto" no tenía camino de
+// vuelta sin recargar (solo "Salir", que borra la sesión). Este reintento
+// reconsulta f_puerta_estado y, si el administrador ya cerró la edición,
+// recupera el panel SIN recargar y SIN perder la sesión.
+async function reintentarEstadoEvento(){
+  // Evita doble consulta por doble clic o por visibilitychange en pleno vuelo.
+  if(btnComprobarEvento.disabled) return;
+  btnComprobarEvento.disabled = true;
+  msgEventoAbierto.hidden = true;
+  let estado = null;
+  let agotado = false;
+  let temporizador = null;
+  try{
+    // Carrera con un límite de 10 segundos: llamar() no tiene timeout propio
+    // (es código compartido, fuera de alcance) y sin este límite una red sin
+    // respuesta dejaba el botón "Comprobar de nuevo" deshabilitado para siempre
+    // por el guard de reentrancia.
+    estado = await Promise.race([
+      llamar('f_puerta_estado', { p_token: tokenSesion }),
+      new Promise(resolve => {
+        temporizador = setTimeout(() => resolve(ESTADO_TIMEOUT), 10000);
+      })
+    ]);
+    // La llamada terminó (o se agotó): no dejar el temporizador colgando.
+    clearTimeout(temporizador);
+  }catch(e){
+    clearTimeout(temporizador);
+    estado = null;
+  }
+  if(estado === ESTADO_TIMEOUT){
+    agotado = true;
+    estado = null;
+  }
+  if(!estado){
+    if(agotado){
+      pintarAviso(msgEventoAbierto,
+        '⏱️ La conexión no responde. Comprueba la red y pulsa "🔄 Comprobar de nuevo" otra vez.',
+        'aviso aviso-rojo');
+    }else{
+      pintarAviso(msgEventoAbierto,
+        '⛔ No se pudo consultar el estado del evento. Puede faltar conexión o la sesión pudo haber caducado. Pulsa "🔄 Comprobar de nuevo" otra vez; si vuelve a fallar, sal con "🚪 Salir" y entra de nuevo con tu PIN.',
+        'aviso aviso-rojo');
+    }
+    btnComprobarEvento.disabled = false;
+    return;
+  }
+  if(estado.edicion_abierta){
+    pintarAviso(msgEventoAbierto,
+      '⏳ El evento sigue en edición. Se volverá a comprobar cuando pulses otra vez.',
+      'aviso');
+    btnComprobarEvento.disabled = false;
+    return;
+  }
+  diaActivo = estado.dia_activo || 1;
+  mostrarPrincipal();
+  actualizarSelectorDia();
+  // Reintento exitoso: sin resultado de una consulta vieja (botones «Autorizar»
+  // de un escaneo previo, quizá de otro día).
+  panelResultado.innerHTML = '';
+  panelResultado.style.display = 'none';
+  barraSiguiente.style.display = 'none';
+  // Éxito pintado en el contenedor de la pantalla principal (norma v2.2);
+  // se pinta DESPUÉS de actualizarSelectorDia para sobrevivir al repintado.
+  pintarAviso(avisoDia,
+    '✅ El evento ya está cerrado. Día activo: ' + diaActivo + '. Escanea el QR o abre la lista de nuevo.',
+    'aviso aviso-verde');
 }
 
 // ===== P1-02 fase 2 · Revalidación de estado antes de cada autorización =====
@@ -379,6 +458,16 @@ btnEntrar.addEventListener('click', async () => {
 btnSalirEventoAbierto.addEventListener('click', () => {
   borrarSesion();
   location.reload();
+});
+
+btnComprobarEvento.addEventListener('click', reintentarEstadoEvento);
+
+// Opcional trivial: al volver el foco a la pestaña, si el operario seguía en la
+// tarjeta de evento abierto, se reconsulta solo. Mismo guard de reentrancia.
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'visible' && tarjetaEventoAbierto.style.display === 'block'){
+    reintentarEstadoEvento();
+  }
 });
 
 btnSalir.addEventListener('click', async () => {

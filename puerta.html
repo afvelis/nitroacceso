@@ -117,8 +117,11 @@ label{display:block;margin-bottom:6px;color:var(--suave);font-size:15px}
     <div class="aviso aviso-rojo">
       <strong>La base de datos no está congelada.</strong><br><br>
       El evento todavía se encuentra en modo de edición. El módulo de puerta no puede usarse hasta que el administrador cierre la edición.<br><br>
-      Comuníquese con el administrador para que cierre el evento y habilite el control de acceso.
+      Comuníquese con el administrador para que cierre el evento y habilite el control de acceso. Cuando él confirme que cerró la edición, pulse <strong>"🔄 Comprobar de nuevo"</strong> y la puerta se habilita aquí mismo, sin salir ni volver a entrar. Solo pulse "🚪 Salir" si prefiere entrar de nuevo con el PIN.
     </div>
+    <button class="btn btn-azul" id="btnComprobarEvento">🔄 Comprobar de nuevo</button>
+    <!-- P1-02: resultado de la comprobación pintado junto al botón (norma v2.2). -->
+    <div id="msgEventoAbierto" class="aviso" role="status" aria-live="polite" hidden></div>
     <button class="btn btn-gris" id="btnSalirEventoAbierto">🚪 Salir</button>
   </div>
 
