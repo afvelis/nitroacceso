@@ -88,6 +88,8 @@ Pulsa **"🚪 Cerrar sesión"**, confirma, y vuelves a la pantalla del PIN de pu
 
 ## Que debes ver
 
+- En **cada autorización** la puerta vuelve a consultar el estado del evento al servidor antes de marcar: si el administrador abrió la edición o cambió el día desde otro equipo, la autorización **no se manda** y aparece el motivo en una ventana o en la propia tarjeta.
+
 - El título **"🎯 Control de acceso"** y el rótulo **"✓ Controlando entrada del Día N"**.
 - En cada autorización: la ficha con tipo, nombre y cédula; el botón se lee tal cual **"✅ AUTORIZAR ENTRADA"** (vendedores y cortesía individual) o **"✅ Autorizar"** (personas de listas y cortesía por lista).
 - El bloque rojo **"⛔ ENTRADA YA CONSUMADA … Validado el [fecha] a las [hora]. No se puede autorizar de nuevo."** cuando el código ya pasó: es la prueba de que el sistema está protegiendo el acceso.
@@ -97,6 +99,10 @@ Pulsa **"🚪 Cerrar sesión"**, confirma, y vuelves a la pantalla del PIN de pu
 
 ## Errores comunes
 
+- **"⛔ El administrador puso el evento en EDICIÓN. La puerta no puede autorizar..."** (ventana, y la tarjeta del evento vuelve a mostrarse): el evento se reabrió para editar mientras tenías la pestaña cargada. NADA que hagas en puerta opera hasta que el administrador cierre la edición de nuevo. Sal con "🚪 Salir", avisa al administrador y entra otra vez cuando confirme.
+- **"⚠️ El día activo cambió a Día N desde otro equipo. Este panel tenía estado viejo y se actualizó..."**: alguien cerró el día desde otra pestaña. El sistema te deja en el día que de verdad está activo; vuelve a escanear el QR en ese día.
+- **"⛔ No se pudo autorizar. El evento sigue operativo y en el Día N: el servidor rechazó por otra causa (día cerrado, pase ya consumido o lista cerrada)"** (bloque rojo junto al botón): el sistema re-verificó el estado del evento y el rechazo viene del servidor. En lista y cortesía, ese mismo bloque queda dentro de la tarjeta; el día del evento, si un rechazo se repite para varios pases seguidos, pasa al **fallback manual**: autoriza de a dedo con la lista impresa y anota cada entrada.
+- **"⛔ No se pudo verificar el estado del evento. La autorización queda cancelada..."**: la conexión falló justo antes de autorizar y el sistema, por seguridad, no manda nada. Revisa la conexión y escanea de nuevo.
 - **"⚠️ Evento aún abierto"**: la edición NO está cerrada. Avisa al administrador; nada que hagas en puerta opera hasta entonces.
 - **"PIN incorrecto, o no es un PIN de puerta ni de supervisor."**: usaste el PIN del administrador o hay un dígito mal.
 - **"Solo el supervisor puede cerrar el día. Esta sesión es de puerta."**: alguien con sesión de puerta intentó cerrar el día. Solo el supervisor puede hacerlo: avísale.
@@ -113,4 +119,4 @@ Pulsa **"🚪 Cerrar sesión"**, confirma, y vuelves a la pantalla del PIN de pu
 - **No pidas al administrador "habilitar" un código consumido**: la protección existe justamente para eso; el dueño del QR que ya lo usó no puede volver a usarlo.
 - **No dejes la sesión de puerta sin vigilancia**: se cierra sola tras 5 minutos sin uso, y hay que volver a entrar con el PIN.
 
-*Probado en el entorno de pruebas el 10/11/2026.*
+*Probado en el entorno de pruebas el 10/11/2026. Los mensajes de revalidación de estado (evento en edición, día cambiado, rechazo concreto junto al botón) quedaron escritos el 23/11/2026 y están PENDIENTES de prueba en navegador.*
