@@ -266,6 +266,78 @@ async function verificarEstadoEvento(){
   }
 }
 
+// ===== P1-02 fase 2 · Revalidación de estado antes de cada autorización =====
+// Criterios 3 y 4 de tareas/P1-02-roles-estado-puerta.md:47-48: el estado de
+// "evento en edición" y el día activo ya no se confían solo al chequeo del
+// login. El servidor los revalida en cada f_puerta_marcar_* (migración 0011);
+// estas dos funciones son la capa cliente: evitan mandar la llamada cuando ya
+// se sabe que caerá y muestran el motivo concreto en vez de un error genérico.
+
+// Revalida el estado del evento ANTES de cada autorización. Devuelve true solo
+// si la RPC de marcar puede llamarse ya; en caso contrario NO se llama, se
+// avisa con el modal propio (norma v2.1) y se actualiza el estado local.
+async function estadoEventoOperativo(){
+  let estado = null;
+  try{
+    estado = await llamar('f_puerta_estado', { p_token: tokenSesion });
+  }catch(e){
+    estado = null;
+  }
+  if(!estado){
+    // Fail-closed: sin verificación el servidor no recibe la autorización.
+    modalAlert('⛔ No se pudo verificar el estado del evento. La autorización queda cancelada. Revisa la conexión y escanea el QR de nuevo.');
+    return false;
+  }
+  if(estado.edicion_abierta){
+    mostrarEventoAbierto();
+    modalAlert('⛔ El administrador puso el evento en EDICIÓN. La puerta no puede autorizar hasta que lo cierre de nuevo. Vuelve a entrar cuando se cierre.');
+    return false;
+  }
+  const diaServidor = estado.dia_activo || 1;
+  if(diaServidor !== diaActivo){
+    diaActivo = diaServidor;
+    actualizarSelectorDia();
+    modalAlert('⚠️ El día activo cambió a Día ' + diaServidor + ' desde otro equipo. Este panel tenía estado viejo y se actualizó. Escanea el QR de nuevo.');
+    return false;
+  }
+  return true;
+}
+
+// Resuelve un rechazo real de la RPC de marcar (devolvió false): reconsulta el
+// estado del evento y prepara el motivo concreto para pintarlo DENTRO de la
+// tarjeta, junto al botón (norma v2.2), DESPUÉS del eventual repintado para
+// que el mensaje sobreviva a la recarga de la vista.
+// Devuelve { repintar, msg }: si repintar, el llamador recarga su vista antes
+// de pintar msg; msg puede venir null cuando ya se avisó por modal o cambia la
+// pantalla entera (evento en edición / día cambiado).
+async function resolverRechazoAutorizacion(){
+  let estado = null;
+  try{
+    estado = await llamar('f_puerta_estado', { p_token: tokenSesion });
+  }catch(e){
+    estado = null;
+  }
+  if(estado && estado.edicion_abierta){
+    mostrarEventoAbierto();
+    modalAlert('⛔ El administrador puso el evento en EDICIÓN. La puerta no puede autorizar hasta que lo cierre de nuevo. Vuelve a entrar cuando se cierre.');
+    return { repintar: false, msg: null };
+  }
+  if(estado){
+    const diaServidor = estado.dia_activo || 1;
+    if(diaServidor !== diaActivo){
+      diaActivo = diaServidor;
+      actualizarSelectorDia();
+      modalAlert('⚠️ El día activo cambió a Día ' + diaServidor + ' desde otro equipo. Este panel tenía estado viejo y se actualizó. Vuelve a escanear el QR.');
+      return { repintar: true, msg: null };
+    }
+    return {
+      repintar: false,
+      msg: '⛔ No se pudo autorizar. El evento sigue operativo y en el Día ' + (estado.dia_activo || 1) + ': el servidor rechazó por otra causa (día cerrado, pase ya consumido, lista cerrada o lista de otro día). Vuelve a escanear el QR.'
+    };
+  }
+  return { repintar: false, msg: '⛔ No se pudo autorizar y tampoco se pudo verificar el estado del evento. Revisa la conexión y vuelve a escanear el QR.' };
+}
+
 btnEntrar.addEventListener('click', async () => {
   const pin = elPin.value.trim();
   msgError.style.display = 'none';
@@ -516,12 +588,21 @@ async function buscarVendedor(codigoQR){
     }else{
       html += `<button class="btn btn-grande" id="btnAutorizarVendedor">✅ AUTORIZAR ENTRADA</button>`;
     }
+    // Contenedor del resultado de la autorización (norma v2.2): presente siempre
+    // (oculto) para que el rechazo de la RPC se pinte junto al botón y no por
+    // una ventanita global.
+    html += `<div id="msgAutVendedor" class="aviso" hidden></div>`;
     html += `</div>`;
     mostrarPanel(html);
     
     if(!yaAutorizado){
       document.getElementById('btnAutorizarVendedor').addEventListener('click', async () => {
         const btn = document.getElementById('btnAutorizarVendedor');
+        // P1-02 fase 2: revalidar el estado del evento ANTES de autorizar
+        // (criterios 3 y 4). Sin verificación no se llama a la RPC.
+        if(!await estadoEventoOperativo()){
+          return;
+        }
         btn.disabled = true;
         btn.textContent = 'Autorizando...';
         try{
@@ -534,9 +615,17 @@ async function buscarVendedor(codigoQR){
           if(ok){
             buscarVendedor(codigoQR);
           }else{
-            alert('No se pudo autorizar.');
-            btn.disabled = false;
-            btn.textContent = '✅ AUTORIZAR ENTRADA';
+            // P1-02 fase 2: rechazo real de la RPC. Se reconsulta el estado y
+            // se muestra el motivo concreto dentro de esta tarjeta (norma v2.2).
+            const r = await resolverRechazoAutorizacion();
+            if(r.repintar) await buscarVendedor(codigoQR);
+            const m = document.getElementById('msgAutVendedor');
+            if(m && r.msg) pintarAviso(m, r.msg, 'aviso aviso-rojo');
+            const b = document.getElementById('btnAutorizarVendedor');
+            if(b){
+              b.disabled = false;
+              b.textContent = '✅ AUTORIZAR ENTRADA';
+            }
           }
         }catch(e){
           alert('Error: ' + (e.message || e));
@@ -619,12 +708,21 @@ async function buscarCortesiaLista(codigo){
       }
       html += `</div>`;
     });
-    html += `</div></div>`;
+    html += `</div>`;
+    // Contenedor del resultado de la autorización de esta cortesía (norma v2.2):
+    // el rechazo de la RPC se pinta aquí, junto al botón correspondiente.
+    html += `<div id="msgAutCortesiaLista" class="aviso" hidden></div>`;
+    html += `</div>`;
     mostrarPanel(html);
     
     panelResultado.querySelectorAll('button[data-cpersona]').forEach(btn => {
       btn.addEventListener('click', async () => {
         const id = btn.getAttribute('data-cpersona');
+        // P1-02 fase 2: revalidar el estado del evento ANTES de autorizar
+        // (criterios 3 y 4). Sin verificación no se llama a la RPC.
+        if(!await estadoEventoOperativo()){
+          return;
+        }
         btn.disabled = true;
         btn.textContent = 'Autorizando...';
         try{
@@ -637,9 +735,16 @@ async function buscarCortesiaLista(codigo){
           if(ok){
             buscarCortesiaLista(codigo);
           }else{
-            alert('No se pudo autorizar esta cortesía.');
-            btn.disabled = false;
-            btn.textContent = '✅ Autorizar';
+            // P1-02 fase 2: rechazo real de la RPC. Se reconsulta el estado y
+            // se muestra el motivo concreto dentro de esta tarjeta (norma v2.2).
+            const r = await resolverRechazoAutorizacion();
+            if(r.repintar) await buscarCortesiaLista(codigo);
+            const m = document.getElementById('msgAutCortesiaLista');
+            if(m && r.msg) pintarAviso(m, r.msg, 'aviso aviso-rojo');
+            if(!r.repintar){
+              btn.disabled = false;
+              btn.textContent = '✅ Autorizar';
+            }
           }
         }catch(e){
           alert('Error: ' + (e.message || e));
@@ -688,12 +793,19 @@ async function buscarCortesiaIndividual(codigo){
     }else{
       html += `<button class="btn btn-grande" id="btnAutCortesia">✅ AUTORIZAR ENTRADA</button>`;
     }
+    // Contenedor del resultado de la autorización (norma v2.2).
+    html += `<div id="msgAutCortesiaInd" class="aviso" hidden></div>`;
     html += `</div>`;
     mostrarPanel(html);
     
     const b = document.getElementById('btnAutCortesia');
     if(b){
       b.addEventListener('click', async () => {
+        // P1-02 fase 2: revalidar el estado del evento ANTES de autorizar
+        // (criterios 3 y 4). Sin verificación no se llama a la RPC.
+        if(!await estadoEventoOperativo()){
+          return;
+        }
         b.disabled = true;
         b.textContent = 'Autorizando...';
         try{
@@ -706,9 +818,17 @@ async function buscarCortesiaIndividual(codigo){
           if(ok){
             buscarCortesiaIndividual(codigo);
           }else{
-            alert('No se pudo autorizar esta cortesía.');
-            b.disabled = false;
-            b.textContent = '✅ AUTORIZAR ENTRADA';
+            // P1-02 fase 2: rechazo real de la RPC. Se reconsulta el estado y
+            // se muestra el motivo concreto dentro de esta tarjeta (norma v2.2).
+            const r = await resolverRechazoAutorizacion();
+            if(r.repintar) await buscarCortesiaIndividual(codigo);
+            const m = document.getElementById('msgAutCortesiaInd');
+            if(m && r.msg) pintarAviso(m, r.msg, 'aviso aviso-rojo');
+            const b2 = document.getElementById('btnAutCortesia');
+            if(b2){
+              b2.disabled = false;
+              b2.textContent = '✅ AUTORIZAR ENTRADA';
+            }
           }
         }catch(e){
           alert('Error: ' + (e.message || e));
@@ -994,12 +1114,21 @@ async function mostrarListaCompleta(lista){
       }
       html += `</div>`;
     });
-    html += `</div></div>`;
+    html += `</div>`;
+    // Contenedor del resultado de la autorización de esta persona (norma v2.2):
+    // el rechazo de la RPC se pinta aquí, junto al botón correspondiente.
+    html += `<div id="msgAutPersona" class="aviso" hidden></div>`;
+    html += `</div>`;
     mostrarPanel(html);
     
     panelResultado.querySelectorAll('button[data-persona]').forEach(btn => {
       btn.addEventListener('click', async () => {
         const personaId = btn.getAttribute('data-persona');
+        // P1-02 fase 2: revalidar el estado del evento ANTES de autorizar
+        // (criterios 3 y 4). Sin verificación no se llama a la RPC.
+        if(!await estadoEventoOperativo()){
+          return;
+        }
         btn.disabled = true;
         btn.textContent = 'Autorizando...';
         try{
@@ -1011,9 +1140,16 @@ async function mostrarListaCompleta(lista){
           if(ok){
             buscarListaPorCodigo(listaActualCodigo);
           }else{
-            alert('No se pudo autorizar.');
-            btn.disabled = false;
-            btn.textContent = '✅ Autorizar';
+            // P1-02 fase 2: rechazo real de la RPC. Se reconsulta el estado y
+            // se muestra el motivo concreto dentro de esta tarjeta (norma v2.2).
+            const r = await resolverRechazoAutorizacion();
+            if(r.repintar) await buscarListaPorCodigo(listaActualCodigo);
+            const m = document.getElementById('msgAutPersona');
+            if(m && r.msg) pintarAviso(m, r.msg, 'aviso aviso-rojo');
+            if(!r.repintar){
+              btn.disabled = false;
+              btn.textContent = '✅ Autorizar';
+            }
           }
         }catch(e){
           alert('Error: ' + (e.message || e));

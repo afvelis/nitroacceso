@@ -29,6 +29,27 @@ async function tokenPuerta() {
   return ses.token;
 }
 
+// Estado REAL del evento en staging, leido una vez al cargar el archivo con la
+// RPC existente f_puerta_estado (mismo token de puerta que usan los tests).
+// Antes la suite asumia estado base (dia_activo = 1) y el CI cambiaba de
+// resultado al avanzar el dia del evento: con la revalidacion de la 0011 el
+// servidor rechaza p_dia <> dia_activo y el doble escaneo con p_dia: 1 fijo
+// devolvia false. Con esto la suite es determinista con CUALQUIER dia_activo
+// valido (1 o 2), y si staging esta en edicion falla con un mensaje claro de
+// ENTORNO (no un false confuso que parece codigo roto).
+const ESTADO_SERVIDOR = await (async () => {
+  const token = await tokenPuerta();
+  const r = await rpc("f_puerta_estado", { p_token: token });
+  if (!r.ok || !r.datos || typeof r.datos !== "object") {
+    throw new Error("f_puerta_estado no respondio para el rol puerta: no se puede determinar dia_activo de staging");
+  }
+  return r.datos;
+})();
+const diaActivo = ESTADO_SERVIDOR.dia_activo;
+if (ESTADO_SERVIDOR.edicion_abierta === true) {
+  throw new Error("staging está en edición: la puerta no puede autorizar; cierra la edición antes de correr los tests");
+}
+
 async function verVendedor(token, codigo) {
   const r = await rpc("f_puerta_vendedor_por_qr", { p_token: token, p_codigo_qr: codigo });
   // Con token valido la RPC responde 200; el cuerpo es el objeto o null.
@@ -68,29 +89,38 @@ test("doble escaneo: autorizar, repetir y comprobar el estado", async () => {
   // "No se pudo autorizar." en un escaneo que no rompio nada.
   // Hasta que la 0003 este aplicada en staging, este test es ROJO por
   // diseno: la funcion vieja reescribia la hora en cada llamada.
+  //
+  // El dia que se marca es el DIA ACTIVO leido de f_puerta_estado arriba
+  // (antes era p_dia: 1 a mano, y con dia_activo = 2 en staging la 0011
+  // devolvia false y tumbo el CI sin que el codigo estuviera roto). Los campos
+  // estado_diaN / marcado_diaN_at se calculan del dia marcado, para que las
+  // aserciones comparen lo que de verdad toco la RPC.
   const token = await tokenPuerta();
   const antes = await verVendedor(token, VENDEDOR_CONSUMIDO);
   assert.notEqual(antes, null, "V-DEMO02 deberia existir en el seed de staging");
+  const campoEstado = "estado_dia" + diaActivo;
+  const campoMarca = "marcado_dia" + diaActivo + "_at";
 
   async function marcarAutorizado() {
     return rpc("f_puerta_marcar_vendedor", {
       p_token: token,
       p_vendedor_id: antes.vendedor_id,
-      p_dia: 1,
+      p_dia: diaActivo,
       p_estado: "autorizado"
     });
   }
 
-  console.log("doble escaneo: estado previo = " + antes.estado_dia1);
+  console.log("doble escaneo: dia activo = " + diaActivo
+    + " / estado previo = " + antes[campoEstado]);
 
   // Primera autorizacion: no debe dar error y debe dejar el estado autorizado.
   const primera = await marcarAutorizado();
   assert.equal(primera.ok, true, "la primera autorizacion no debe dar error HTTP");
-  if (antes.estado_dia1 !== "autorizado") {
+  if (antes[campoEstado] !== "autorizado") {
     assert.equal(primera.datos, true, "la primera autorizacion deberia devolver true");
   }
   const trasPrimera = await verVendedor(token, VENDEDOR_CONSUMIDO);
-  assert.equal(trasPrimera.estado_dia1, "autorizado", "tras autorizar, el estado debe ser autorizado");
+  assert.equal(trasPrimera[campoEstado], "autorizado", "tras autorizar, el estado debe ser autorizado");
 
   // REPETICION identica: no debe dar error, debe devolver true (exito
   // idempotente) y el estado debe seguir autorizado.
@@ -101,19 +131,19 @@ test("doble escaneo: autorizar, repetir y comprobar el estado", async () => {
   const trasRepetida = await verVendedor(token, VENDEDOR_CONSUMIDO);
 
   // La hora de entrada se PRESERVA: repetir no la reescribe.
-  const marca1 = trasPrimera.marcado_dia1_at;
-  const marca2 = trasRepetida.marcado_dia1_at;
-  console.log("doble escaneo: marcado_dia1_at tras 1a autorizacion = " + marca1);
-  console.log("doble escaneo: marcado_dia1_at tras repeticion     = " + marca2);
+  const marca1 = trasPrimera[campoMarca];
+  const marca2 = trasRepetida[campoMarca];
+  console.log("doble escaneo: " + campoMarca + " tras 1a autorizacion = " + marca1);
+  console.log("doble escaneo: " + campoMarca + " tras repeticion          = " + marca2);
   assert.equal(marca2, marca1,
-    "el doble escaneo REESCRIBE marcado_dia1_at: la hora de entrada queda clavada en la segunda autorizacion y se pierde la primera, sin dejar rastro del reintento (mira supabase/migrations/0003_f8_preserva_hora_reautorizacion.sql)");
+    "el doble escaneo REESCRIBE " + campoMarca + ": la hora de entrada queda clavada en la segunda autorizacion y se pierde la primera, sin dejar rastro del reintento (mira supabase/migrations/0003_f8_preserva_hora_reautorizacion.sql)");
   assert.notEqual(marca1, null,
-    "marcado_dia1_at debe tener valor tras autorizar: la primera entrada debe quedar con hora registrada en la base");
+    campoMarca + " debe tener valor tras autorizar: la primera entrada debe quedar con hora registrada en la base");
 
   // Asercion final: repetir no desautoriza y no deja el registro en otro estado.
-  assert.equal(trasRepetida.estado_dia1, "autorizado",
+  assert.equal(trasRepetida[campoEstado], "autorizado",
     "tras la autorizacion repetida el vendedor debe seguir autorizado");
-  assert.ok(trasRepetida.marcado_dia1_at, "el vendedor debe seguir con su marca del dia 1");
+  assert.ok(trasRepetida[campoMarca], "el vendedor debe seguir con su marca del dia " + diaActivo);
 });
 
 test("dia invalido: p_dia fuera de rango no autoriza ningun dia", async () => {
@@ -144,85 +174,39 @@ test("dia invalido: p_dia fuera de rango no autoriza ningun dia", async () => {
     "un p_dia invalido no debe cambiar el estado del dia 2");
 });
 
-// Caso nuevo (14/11/2026): cubre el criterio 3 de F-9, que la validacion de
-// p_dia introducida por supabase/migrations/0002_f9_valida_p_dia.sql:37 no
-// haya roto los dias legítimos. Precedente del patron (rechazar el p_dia
-// invalido ANTES del UPDATE): f_puerta_marcar_cortesia, en
-// 0001_esquema_inicial.sql:3970. Hasta ahora la suite solo ejercitaba el
-// dia 1 (doble escaneo) y un p_dia invalido (dia invalido): el dia 2
-// legitimo no tenia prueba.
-// Ampliado (14/11/2026, F-8): ademas cubre la REAUTORIZACION del dia 2
-// (contrato nuevo de supabase/migrations/0003_f8_preserva_hora_reautorizacion.sql):
-// repetir la marca de 'autorizado' sobre el dia 2 PRESERVA marcado_dia2_at
-// y devuelve true como exito idempotente, igual que el doble escaneo del dia 1.
-test("dia 2 legitimo: p_dia = 2 autoriza y desautoriza el dia 2 sin tocar el dia 1", async () => {
-  // NOTA sobre el estado final: este test deja estado_dia2 de V-DEMO02 en
-  // "autorizado" (su segundo marcado). Si empezo en otro valor (p. ej.
-  // "pendiente"), NO lo restaura: se documenta aqui y no se anade logica
-  // extra de restauracion, igual que hace el doble escaneo con el dia 1.
+// Test reescrito (23/11/2026, PR #47): el objetivo ORIGINAL de este test era
+// cubrir el dia 2 legitimo (criterio 3 de F-9) y su reautorizacion (F-8),
+// pero exigia que el dia activo del servidor fuera 2: era INCOMPATIBLE con el
+// doble escaneo, que marcaba el dia 1. Con la revalidacion de la 0011 el
+// servidor ademas rechaza p_dia <> dia_activo, de modo que el dia legítimo
+// que marca la puerta ES el dia activo y ya lo cubre el doble escaneo de
+// arriba (con el dia activo dinamico, cubre 1 y 2 legitimos). Este test pasa
+// a cubrir lo que hacia falta: el criterio 4 de P1-02 — el servidor rechaza
+// autorizar en el dia que NO esta activo (con la puerta/esquema viejos la
+// RPC aceptaba cualquier p_dia valido y el criterio no tenia prueba).
+test("dia no activo: no autoriza en el dia equivocado (criterio 4)", async () => {
   const token = await tokenPuerta();
   const antes = await verVendedor(token, VENDEDOR_CONSUMIDO);
   assert.notEqual(antes, null, "V-DEMO02 deberia existir en el seed de staging");
-  const dia1Previo = antes.estado_dia1;
-  const dia2Previo = antes.estado_dia2;
-  console.log("dia 2 legitimo: estado_dia1 previo = " + dia1Previo
-    + " / estado_dia2 previo = " + dia2Previo);
-
-  // Paso 1: marcar el dia 2 como pendiente (desautorizar).
-  const pendiente = await rpc("f_puerta_marcar_vendedor", {
+  const otroDia = diaActivo === 1 ? 2 : 1;
+  console.log("dia no activo: dia activo = " + diaActivo
+    + " / se intenta el dia " + otroDia
+    + " / estado_dia1 previo = " + antes.estado_dia1
+    + " / estado_dia2 previo = " + antes.estado_dia2);
+  const r = await rpc("f_puerta_marcar_vendedor", {
     p_token: token,
     p_vendedor_id: antes.vendedor_id,
-    p_dia: 2,
-    p_estado: "pendiente"
-  });
-  assert.equal(pendiente.ok, true, "la marca del dia 2 (pendiente) no debe dar error HTTP");
-  assert.equal(pendiente.datos, true, "la marca del dia 2 (pendiente) debe encontrar la fila y devolver true");
-  const trasPendiente = await verVendedor(token, VENDEDOR_CONSUMIDO);
-  assert.equal(trasPendiente.estado_dia2, "pendiente",
-    "tras marcar el dia 2, estado_dia2 debe ser pendiente");
-  assert.equal(trasPendiente.estado_dia1, dia1Previo,
-    "marcar el dia 2 no debe tocar el dia 1");
-
-  // Paso 2: marcar el dia 2 como autorizado (camino legitimo del evento).
-  const autorizado = await rpc("f_puerta_marcar_vendedor", {
-    p_token: token,
-    p_vendedor_id: antes.vendedor_id,
-    p_dia: 2,
+    p_dia: otroDia,
     p_estado: "autorizado"
   });
-  assert.equal(autorizado.ok, true, "la marca del dia 2 (autorizado) no debe dar error HTTP");
-  assert.equal(autorizado.datos, true, "la marca del dia 2 (autorizado) debe encontrar la fila y devolver true");
-  const trasAutorizado = await verVendedor(token, VENDEDOR_CONSUMIDO);
-  assert.equal(trasAutorizado.estado_dia2, "autorizado",
-    "tras autorizar el dia 2, estado_dia2 debe ser autorizado");
-  assert.equal(trasAutorizado.estado_dia1, dia1Previo,
-    "autorizar el dia 2 no debe tocar el dia 1");
-  assert.ok(trasAutorizado.marcado_dia2_at,
-    "autorizar el dia 2 debe dejar marcado_dia2_at con valor");
-
-  // Paso 3 (F-8): REAUTORIZACION del dia 2. La misma llamada repetida debe
-  // devolver true (exito idempotente) y PRESERVAR marcado_dia2_at: la hora de
-  // la primera entrada del dia 2 no se reescribe. Contrato de
-  // supabase/migrations/0003_f8_preserva_hora_reautorizacion.sql. Con la
-  // funcion vieja (solo 0002 aplicada) este paso es ROJO por diseno: la
-  // llamada reescribia marcado_dia2_at con now() en cada pase.
-  const marca2Primera = trasAutorizado.marcado_dia2_at;
-  const repetidaDia2 = await rpc("f_puerta_marcar_vendedor", {
-    p_token: token,
-    p_vendedor_id: antes.vendedor_id,
-    p_dia: 2,
-    p_estado: "autorizado"
-  });
-  assert.equal(repetidaDia2.ok, true, "la reautorizacion del dia 2 no debe dar error HTTP");
-  assert.equal(repetidaDia2.datos, true,
-    "la reautorizacion del dia 2 devuelve true como exito idempotente: un false aqui dispararia el error falso de la puerta");
-  const trasRepetidaDia2 = await verVendedor(token, VENDEDOR_CONSUMIDO);
-  assert.equal(trasRepetidaDia2.estado_dia2, "autorizado",
-    "tras la reautorizacion del dia 2, estado_dia2 debe seguir autorizado");
-  assert.equal(trasRepetidaDia2.marcado_dia2_at, marca2Primera,
-    "la reautorizacion del dia 2 REESCRIBE marcado_dia2_at: se pierde la hora de la primera entrada del dia 2, igual que pasaba con el dia 1 antes del arreglo (mira supabase/migrations/0003_f8_preserva_hora_reautorizacion.sql)");
-  assert.notEqual(marca2Primera, null,
-    "marcado_dia2_at debe tener valor tras autorizar el dia 2: la primera entrada del dia 2 debe quedar con hora registrada en la base");
-  assert.equal(trasRepetidaDia2.estado_dia1, dia1Previo,
-    "la reautorizacion del dia 2 no debe tocar el dia 1");
+  assert.equal(r.ok, true, "el rechazo es logico: la RPC debe responder 200, no error HTTP");
+  assert.equal(r.datos, false,
+    "criterio 4 de P1-02: no se puede autorizar en el dia que no esta activo");
+  // El rechazo ocurre ANTES de cualquier UPDATE (misma pauta que el p_dia
+  // invalido): ninguno de los dos dias debe cambiar de estado.
+  const despues = await verVendedor(token, VENDEDOR_CONSUMIDO);
+  assert.equal(despues.estado_dia1, antes.estado_dia1,
+    "intentar autorizar el dia no activo no debe cambiar el estado del dia 1");
+  assert.equal(despues.estado_dia2, antes.estado_dia2,
+    "intentar autorizar el dia no activo no debe cambiar el estado del dia 2");
 });
