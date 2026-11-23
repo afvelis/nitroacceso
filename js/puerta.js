@@ -75,6 +75,8 @@ const tarjetaLogin = document.getElementById('tarjetaLogin');
 const tarjetaEventoAbierto = document.getElementById('tarjetaEventoAbierto');
 const tarjetaPrincipal = document.getElementById('tarjetaPrincipal');
 const btnSalirEventoAbierto = document.getElementById('btnSalirEventoAbierto');
+const btnComprobarEvento = document.getElementById('btnComprobarEvento');
+const msgEventoAbierto = document.getElementById('msgEventoAbierto');
 const btnDia1 = document.getElementById('btnDia1');
 const btnDia2 = document.getElementById('btnDia2');
 const estadoDia1 = document.getElementById('estadoDia1');
@@ -266,6 +268,45 @@ async function verificarEstadoEvento(){
   }
 }
 
+// P1-02 / incidente 23/11: la tarjeta "Evento aún abierto" no tenía camino de
+// vuelta sin recargar (solo "Salir", que borra la sesión). Este reintento
+// reconsulta f_puerta_estado y, si el administrador ya cerró la edición,
+// recupera el panel SIN recargar y SIN perder la sesión.
+async function reintentarEstadoEvento(){
+  // Evita doble consulta por doble clic o por visibilitychange en pleno vuelo.
+  if(btnComprobarEvento.disabled) return;
+  btnComprobarEvento.disabled = true;
+  msgEventoAbierto.hidden = true;
+  let estado = null;
+  try{
+    estado = await llamar('f_puerta_estado', { p_token: tokenSesion });
+  }catch(e){
+    estado = null;
+  }
+  if(!estado){
+    pintarAviso(msgEventoAbierto,
+      '⛔ No se pudo consultar el estado del evento. Puede faltar conexión o la sesión pudo haber caducado. Pulsa "🔄 Comprobar de nuevo" otra vez; si vuelve a fallar, sal con "🚪 Salir" y entra de nuevo con tu PIN.',
+      'aviso aviso-rojo');
+    btnComprobarEvento.disabled = false;
+    return;
+  }
+  if(estado.edicion_abierta){
+    pintarAviso(msgEventoAbierto,
+      '⏳ El evento sigue en edición. Se volverá a comprobar cuando pulses otra vez.',
+      'aviso');
+    btnComprobarEvento.disabled = false;
+    return;
+  }
+  diaActivo = estado.dia_activo || 1;
+  mostrarPrincipal();
+  actualizarSelectorDia();
+  // Éxito pintado en el contenedor de la pantalla principal (norma v2.2);
+  // se pinta DESPUÉS de actualizarSelectorDia para sobrevivir al repintado.
+  pintarAviso(avisoDia,
+    '✅ El evento ya está cerrado. Día activo: ' + diaActivo + '. Escanea el QR o abre la lista de nuevo.',
+    'aviso aviso-verde');
+}
+
 // ===== P1-02 fase 2 · Revalidación de estado antes de cada autorización =====
 // Criterios 3 y 4 de tareas/P1-02-roles-estado-puerta.md:47-48: el estado de
 // "evento en edición" y el día activo ya no se confían solo al chequeo del
@@ -379,6 +420,16 @@ btnEntrar.addEventListener('click', async () => {
 btnSalirEventoAbierto.addEventListener('click', () => {
   borrarSesion();
   location.reload();
+});
+
+btnComprobarEvento.addEventListener('click', reintentarEstadoEvento);
+
+// Opcional trivial: al volver el foco a la pestaña, si el operario seguía en la
+// tarjeta de evento abierto, se reconsulta solo. Mismo guard de reentrancia.
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'visible' && tarjetaEventoAbierto.style.display === 'block'){
+    reintentarEstadoEvento();
+  }
 });
 
 btnSalir.addEventListener('click', async () => {
