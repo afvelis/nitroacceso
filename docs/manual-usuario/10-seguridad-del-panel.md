@@ -2,9 +2,9 @@
 
 ## Que es
 
-Esta es la tarjeta **"Sesiones y seguridad"** del panel de administración (la gestión completa). Desde aquí el administrador hace las tres acciones de seguridad del sistema:
+Esta es la tarjeta **"Sesiones y seguridad"** del panel de administración (la gestión completa). Desde aquí el administrador hace las cuatro acciones de seguridad del sistema:
 
-- **"Rotar PIN admin"** y **"Rotar PIN puerta"**: cambiar un PIN por uno nuevo.
+- **"Rotar PIN admin"**, **"Rotar PIN puerta"** y **"Rotar PIN supervisor"**: cambiar un PIN por uno nuevo.
 - **"Revocar todas las demás sesiones"**: echar a todos los que están dentro, menos tú.
 - **"Reabrir puerta"** — cuando la pantalla de puerta se bloquea por intentos fallidos, este botón le devuelve el acceso en segundos. Pide un motivo de al menos 10 caracteres y queda registrado en la auditoría: quién lo hizo, cuándo y por qué. No cambia el PIN y no toca el bloqueo del administrador.
 
@@ -12,19 +12,28 @@ Esta es la tarjeta **"Sesiones y seguridad"** del panel de administración (la g
 
 Solo el **administrador**, después de entrar con su PIN (capítulo 01).
 
+## El PIN de supervisor
+
+La app tiene un **tercer PIN**, además del de administrador y el de puerta: el **PIN de supervisor**. Con él se entra por la **misma pantalla de puerta** y el mismo campo de PIN, y da el rol de **supervisor**: puede todo lo que hace el personal de puerta y, además, **cerrar el día** (activando el siguiente) y **reabrir listas cerradas** — justamente las dos acciones que el personal de puerta ya **no** puede hacer (ver capítulo 06).
+
+- Es de **exactamente 8 dígitos**, como los otros dos, y se guarda cifrado en la base igual que ellos.
+- El operador de puerta **no necesita saberlo ni usarlo**: es el PIN del responsable de la puerta.
+- **Custodia recomendada:** que sea **distinto de los otros dos** (el sistema no deja grabar uno que coincida con otro), que **no se comparta con el operador de puerta** y que se custodie **en papel, en un lugar físico seguro y cerrado** (por ejemplo, un sobre bajo llave), lejos de los papeles del puesto de puerta: es la llave de las acciones que no se pueden deshacer.
+- Cuando lo rotes, **rota también el registrado en el papel**: el anterior muere al instante.
+
 ## Antes de empezar
 
-- Decide el PIN nuevo **antes** de empezar: debe tener **exactamente 8 dígitos** y ser distinto del actual.
-- Ten a mano tu **PIN de administrador actual**: lo vas a necesitar siempre, también para cambiar el PIN de puerta.
-- Recuerda: en cuanto rotas un PIN, el anterior **deja de funcionar al instante**. Avisa a quien use el PIN de puerta antes de rotarlo.
+- Decide el PIN nuevo **antes** de empezar: debe tener **exactamente 8 dígitos**, ser distinto del que tenía **y de los PINs de los otros dos puestos** (el sistema rechaza un PIN nuevo que coincida con otro).
+- Ten a mano tu **PIN de administrador actual**: lo vas a necesitar siempre, también cuando vas a cambiar el PIN de puerta o el de supervisor.
+- Recuerda: en cuanto rotas un PIN, el anterior **deja de funcionar al instante**. Avisa a quien use el PIN que rotas (puerta o supervisor) antes de rotarlo.
 
 ## Paso a paso
 
-**1. Rotar un PIN (admin o puerta)**
+**1. Rotar un PIN (admin, puerta o supervisor)**
 
-1. En "Sesiones y seguridad", pulsa **"Rotar PIN admin"** o **"Rotar PIN puerta"**.
-2. **Paso 1 de 2**: el sistema pide tu **PIN de ADMINISTRADOR actual**. Esto pasa SIEMPRE, también cuando vas a cambiar el PIN de puerta: es la prueba de que estás tú delante de la pantalla. **No hace falta saber el PIN de puerta para cambiarlo.**
-3. **Paso 2 de 2**: escribe el PIN nuevo, de **exactamente 8 dígitos** y distinto del que había.
+1. En "Sesiones y seguridad", pulsa **"Rotar PIN admin"**, **"Rotar PIN puerta"** o **"Rotar PIN supervisor"**.
+2. **Paso 1 de 2**: el sistema pide tu **PIN de ADMINISTRADOR actual**. Esto pasa SIEMPRE, también cuando vas a cambiar el PIN de puerta o el de supervisor: es la prueba de que estás tú delante de la pantalla. **No hace falta saber el PIN de puerta para cambiarlo.**
+3. **Paso 2 de 2**: escribe el PIN nuevo, de **exactamente 8 dígitos**, distinto del que había y distinto de los PINs de los otros dos puestos.
 4. Si sale bien: el aviso dice **"PIN [admin/puerta] rotado. El anterior ya no sirve."** El PIN nuevo funciona de inmediato y el anterior muere en ese momento.
 
 **2. Revocar sesiones (esto NO lo hace la rotación)**
@@ -36,10 +45,10 @@ Solo el **administrador**, después de entrar con su PIN (capítulo 01).
 
 ## Que debes ver
 
-- El aviso **"PIN admin rotado. El anterior ya no sirve."** (o "PIN puerta...") dentro de la ventana de la propia NitroSystem.
+- El aviso **"PIN admin rotado. El anterior ya no sirve."** (o "PIN puerta", o "PIN supervisor") dentro de la ventana de la propia NitroSystem.
 - Si el PIN actual de admin está mal: **"El PIN admin actual no coincide."** y el PIN NO cambia.
 - Si el PIN nuevo no tiene 8 dígitos: **"El nuevo PIN debe ser exactamente 8 digitos."** y el PIN NO cambia.
-- Si el PIN nuevo es igual al que ya había: **"El nuevo PIN es igual al actual."** y el PIN NO cambia.
+- Si el PIN nuevo coincide con otro que ya estaba (el suyo propio o el de otro puesto — admin, puerta o supervisor): **"El nuevo PIN es igual al actual."** y el PIN NO cambia.
 - Al revocar: el número exacto de sesiones cerradas, y tu propia sesión sigue funcionando.
 - Al entrar con el PIN nuevo: entra normal (puede tardar un instante más que antes; es el costo de la protección extra, no una falla).
 
@@ -48,12 +57,12 @@ Solo el **administrador**, después de entrar con su PIN (capítulo 01).
 - **"El PIN admin actual no coincide."**: escribiste mal tu PIN de administrador en el paso 1. No es el PIN de puerta ni el PIN nuevo: es el de administrador, el que usaste para entrar.
 - **Esperaba que rotar el PIN sacara a la gente**: no lo hace. Usa "Revocar todas las demás sesiones" (paso 2 de arriba).
 - **Me bloqueó el sistema**: si se equivoca el PIN varias veces (5 fallos), el sistema bloquea esa conexión (IP) por **15 minutos**. Verás el aviso **"⛔ Bloqueado: espera N segundos y vuelve a intentar."** (N son los segundos que faltan). No hay forma de desbloquear el panel antes: espera, o si es urgente, avisa a otro dispositivo con red distinta. Cada fallo suma, incluso con el PIN correcto después. (El bloqueo de la puerta, que es de 90 segundos, sí lo levanta el administrador con "Reabrir puerta", arriba en esta tarjeta.)
-- **El PIN de puerta dejó de funcionar de golpe**: probablemente alguien lo rotó. Pide el PIN nuevo al administrador.
+- **El PIN de puerta (o el de supervisor) dejó de funcionar de golpe**: probablemente alguien lo rotó. Pide el PIN nuevo al administrador.
 
 ## Que no hacer
 
 - **No compartas el PIN** con nadie ni por ningún canal: cada PIN es la llave de un puesto de trabajo.
-- **No dejes el PIN escrito** en papeles, notas del teléfono ni pantallas pegadas cerca del puesto.
-- **No dejes de rotar los PIN después de restaurar un respaldo**: cualquier restauración de la base devuelve los PIN que existían cuando se hizo el respaldo. Después de restaurar, rota los dos PIN de inmediato.
+- **No dejes el PIN escrito** en notas del teléfono ni pantallas pegadas cerca del puesto. (Excepción acordada: el PIN de supervisor se custodia impreso, en lugar cerrado y bajo llave — ver "El PIN de supervisor".)
+- **No dejes de rotar los PIN después de restaurar un respaldo**: cualquier restauración de la base devuelve los PIN que existían cuando se hizo el respaldo. Después de restaurar, rota los tres PIN de inmediato, incluyendo el de supervisor si ya tiene uno.
 
 *Pendiente de probar en el entorno de pruebas.*
