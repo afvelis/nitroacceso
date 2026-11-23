@@ -44,8 +44,8 @@ Separar las acciones destructivas de puerta en un rol `supervisor` (o `admin`) y
 
 - [x] Un token de `puerta` no puede cerrar el día ni reabrir una lista.
 - [x] Un token de `supervisor` sí puede, y queda registrado.
-- [ ] Si el evento está en edición, toda autorización falla aunque la pestaña se haya cargado antes.
-- [ ] Si el día activo cambió, una puerta con estado viejo no puede autorizar en el día equivocado.
+- [x] Si el evento está en edición, toda autorización falla aunque la pestaña se haya cargado antes. **(Probado en pantalla 23/11/2026: con `edicion_abierta = true` y la pestaña ya cargada, pulsar Autorizar muestra el modal propio y NO autoriza; con la edición cerrada y SIN recargar, la puerta se recupera con «🔄 Comprobar de nuevo» y autoriza — `Nombre Dos` 19:16:04 y `Nombre Tres` 19:18:57; la lista `LST-DEMO01-D2` quedó completada 2/2 y se cerró sola.)**
+- [ ] Si el día activo cambió, una puerta con estado viejo no puede autorizar en el día equivocado. **(Nota 23/11/2026: la vía de SERVIDOR está probada por el test de CI «dia no activo: no autoriza en el día equivocado (criterio 4)» en `tests/escaneo.test.mjs`, verde en `main`; la vía de PANTALLA queda PENDIENTE — pestaña vieja con el día cambiado sin recargar.)**
 - [x] La UI muestra u oculta los botones según el rol, pero la seguridad no depende de eso.
 - [x] No hay regresiones en el flujo normal de escaneo.
 
@@ -125,3 +125,15 @@ Verificado por el agente con herramientas disponibles: `node --check js/puerta.j
 - Referencias §9 actualizadas en `docs/dev-local.md` por el desplazamiento de líneas de `js/puerta.js`: `506-509` → `557-560` y `1247-1250` → `1298-1301`. Manual `docs/manual-usuario/06-puerta.md` actualizado en el mismo commit (paso 1, "Que debes ver", "Errores comunes").
 
 **Pendiente:** la prueba en navegador del arreglo está PENDIENTE (con la base en edición, pulsar Comprobar y comprobar las tres salidas). Los criterios 3 y 4 siguen `[ ]`.
+
+### 23/11/2026 — Cierre de sesión: criterio 3 PROBADO EN PANTALLA; criterio 4 probado en servidor por CI, la vía de pantalla queda PENDIENTE
+
+**Criterio 3 — probado en pantalla el 23/11/2026 (staging, `adoqujnnnrlgmvwbnwbl`):** con `edicion_abierta = true` y la pestaña de puerta ya cargada, pulsar Autorizar mostró el modal propio y NO autorizó. Con la edición cerrada desde admin y SIN recargar la pestaña, la puerta se recuperó con el botón "🔄 Comprobar de nuevo" (sin perder la sesión) y autorizó: `Nombre Dos` a las 19:16:04 y `Nombre Tres` a las 19:18:57; la lista `LST-DEMO01-D2` quedó completada 2/2 y se cerró automáticamente. Evidencia medida, no simbólica: la lista terminó `completada 2/2`.
+
+**Criterio 4 — probado en SERVIDOR, pantalla PENDIENTE:** la vía del servidor está probada por el test automatizado de CI (`tests/escaneo.test.mjs`, "dia no activo: no autoriza en el día equivocado (criterio 4)"), verde en `main`. La vía de PANTALLA (pestaña vieja con el día cambiado sin recargar) sigue PENDIENTE de prueba; por eso el criterio NO se marca `[x]`.
+
+**El arreglo del defecto quedó probado en el mismo test del criterio 3:** el callejón sin salida ("Evento aún abierto" con única salida "Salir" que borraba la sesión) ya no ocurre — la prueba de recuperación del 23/11 (edición cerrada, sin recargar, botón Comprobar de nuevo, autoriza) es por donde el criterio 3 pasó hoy.
+
+**Migración `0011_p1_02_revalidacion_estado_puerta.sql`:** aplicada en STAGING y verificada contra el catálogo (3 filas, firmas 4/3/4, retorno `boolean`, guardas presentes). NO aplicada en producción; el SQL pendiente es para el usuario.
+
+**Pendiente tras este cierre:** (1) ejecutar `0011` en PRODUCCIÓN con el usuario (mismo archivo ya verificado + consulta de conteo); (2) prueba en pantalla del criterio 4 (pestaña vieja + día cambiado); (3) retomar la siguiente tarea `pendiente` con dependencias resueltas.
