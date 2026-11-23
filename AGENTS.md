@@ -164,4 +164,8 @@ Prohibido al arrancar: corregir SHAs o ramas en documentos, abrir o fusionar PRs
 - **Los jueces van acotados por escrito**: alcance cerrado, sin `find`/`ls` recursivos, tope de turnos. Un juez que expira o pide herramientas que no tiene NO es un veredicto: se sustituye y se anota cuál se usó.
 - **Una sesión que no toca la app es una sesión fallida.**
 
+### Emergencias
+
+Ante `PROTOCOLO DE EMERGENCIA` y `FIN DE LA EMERGENCIA` manda [`docs/protocolo-emergencia.md`](docs/protocolo-emergencia.md). El trabajo no se reanuda hasta que el usuario escriba `continúa`. En una emergencia que solo afecta al equipo del usuario se sigue en modo degradado local (una unidad de trabajo = un commit).
+
 Siguen vigentes sin cambios: un solo escritor por repo, nunca commit a `main` ni fusión de PRs por el agente, todo el SQL lo ejecuta el usuario, `pg_get_functiondef` antes de reescribir cualquier RPC, archivos finales y completos, una instrucción a la vez con su prueba del objetivo, y la jerarquía `AGENTS.md` > `ESTADO.md` > repo > memoria.

@@ -371,3 +371,9 @@
 - 22/11 · **Auditoría en tabla nueva `acciones_supervisor` con el hash sha256 de la sesión, nunca el token.** Por qué: mismo patrón que `reaperturas_puerta` (0005).
 - 22/11 · **Dos huecos que el juez encontró y se cerraron antes de aplicar el SQL:** `p_objetivo` nulo en `f_admin_rotar_pin` rotaba en silencio el PIN de supervisor (se descarta el nulo antes del `not in`), y `ERR_IGUAL` solo comparaba contra el PIN del rol destino (ahora contra los tres, para que un PIN repetido no deje al admin sin poder rotar).
 - 22/11 · **Incidente del placeholder `TU_PIN`:** el SQL de ejemplo se ejecutó tal cual y quedó una credencial conocida en staging. Reglas nuevas: los SQL de ejemplo que se entregan al usuario no llevan nunca un valor literal entre comillas que pueda confundirse con un dato real (se usan marcadores tipo `<8 DIGITOS>`), y tras cargar una clave se verifica con un booleano que el marcador no quedó guardado.
+
+## 2026-11-23 · Sesión 37
+
+- 23/11 · **Se adopta `docs/protocolo-emergencia.md`, escrito a medida de este proyecto.** Motiva el incidente de este día: se aplicó un protocolo de emergencia genérico que asumía transacciones abiertas y archivos a medias — cosas que aquí no ocurren (el agente nunca ejecuta SQL; las escrituras son commits atómicos) — y que además no entregó como línea única para pegar la reversión de `edicion_abierta`.
+- 23/11 · **La reversión de `edicion_abierta = true` quedó sin ejecutar en staging durante unos minutos** hasta que se detectó. Regla nueva permanente: toda instrucción con escritura en `config` lleva su reversión en el mismo bloque, numerada, en el mismo turno.
+- 23/11 · **Modo degradado definido en el protocolo:** en una emergencia que solo afecta al equipo del usuario, lo que no depende del usuario ni de la base sigue trabajando local (lectura, docs, código commiteado), con la regla una unidad de trabajo = un commit; el trabajo no se reanuda hasta que el usuario escriba `continúa`.
