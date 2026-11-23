@@ -267,7 +267,7 @@ async function verificarEstadoEvento(){
 }
 
 // ===== P1-02 fase 2 · Revalidación de estado antes de cada autorización =====
-// Criterios 3 y 4 de tareas/P1-02-roles-estado-puerta.md:63-64: el estado de
+// Criterios 3 y 4 de tareas/P1-02-roles-estado-puerta.md:47-48: el estado de
 // "evento en edición" y el día activo ya no se confían solo al chequeo del
 // login. El servidor los revalida en cada f_puerta_marcar_* (migración 0011);
 // estas dos funciones son la capa cliente: evitan mandar la llamada cuando ya
@@ -332,7 +332,7 @@ async function resolverRechazoAutorizacion(){
     }
     return {
       repintar: false,
-      msg: '⛔ No se pudo autorizar. El evento sigue operativo y en el Día ' + (estado.dia_activo || 1) + ': el servidor rechazó por otra causa (día cerrado, pase ya consumido o lista cerrada). Vuelve a escanear el QR.'
+      msg: '⛔ No se pudo autorizar. El evento sigue operativo y en el Día ' + (estado.dia_activo || 1) + ': el servidor rechazó por otra causa (día cerrado, pase ya consumido, lista cerrada o lista de otro día). Vuelve a escanear el QR.'
     };
   }
   return { repintar: false, msg: '⛔ No se pudo autorizar y tampoco se pudo verificar el estado del evento. Revisa la conexión y vuelve a escanear el QR.' };

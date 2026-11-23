@@ -1,6 +1,6 @@
 -- 0011_p1_02_revalidacion_estado_puerta.sql
 -- Proyecto: NitroSystem (control de acceso) · Tarea: P1-02 fase 2 (criterios 3 y 4)
--- Referencia: tareas/P1-02-roles-estado-puerta.md:63-64
+-- Referencia: tareas/P1-02-roles-estado-puerta.md:47-48
 --
 -- POR QUÉ (criterios 3 y 4 de la tarea):
 --   Criterio 3 — “Si el evento está en edición, toda autorización falla aunque
@@ -44,6 +44,16 @@
 --
 -- NOTA 4: se usa CREATE OR REPLACE (idempotente; no drop) y NO se repiten los
 -- grants/revoke: conservan los de 0001_esquema_inicial.sql:4944-4965.
+--
+-- NOTA 5: dos comportamientos revisados y dejados COMO ESTÁN a propósito:
+--   a) el `return found` final de f_puerta_marcar_persona puede devolver false
+--      aunque la autorización se aplicó, si el `update listas` del cierre
+--      automático afecta a 0 filas (carrera con el supervisor). Se conserva
+--      porque el cuerpo es el de producción y cambiarlo no es de esta tarea;
+--      el cliente reconsulta y se auto-sana.
+--   b) las tres funciones asumen config.id = 1 (igual que f_puerta_estado).
+--      ANTES de ejecutar esta migración hay que confirmar con un conteo que
+--      existe la fila id = 1.
 --
 -- El servidor (esta migración) es la seguridad real; el cliente
 -- (js/puerta.js) reconsulta f_puerta_estado antes de cada autorización como
@@ -198,7 +208,7 @@ BEGIN
   END IF;
 
   SELECT * INTO v_cortesia FROM cortesias WHERE id = v_persona.cortesia_id;
-  IF v_cortesia.estado <> 'activa' THEN
+  IF v_cortesia.id IS NULL OR v_cortesia.estado IS DISTINCT FROM 'activa' THEN
     RETURN FALSE;
   END IF;
 

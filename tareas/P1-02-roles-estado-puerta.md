@@ -91,8 +91,8 @@ En staging:
 **Pendiente (no marcar los criterios 3 y 4 hasta tener las pruebas):**
 
 1. `pg_get_functiondef` de las tres RPC en staging ANTES de ejecutar el SQL (instrucción permanente del proyecto) y luego ejecutar `0011_p1_02_revalidacion_estado_puerta.sql` completo en el SQL Editor de staging (`adoqujnnnrlgmvwbnwbl`), seguido de la consulta de conteo de verificación de siempre (un "Success" no es verificación).
-2. Prueba en navegador (criterio 3, tarea :63): con la pestaña de puerta abierta, abrir edición desde admin y escanear: la autorización debe fallar mostrando el motivo; repetir con autorizar en lista y cortesía.
-3. Prueba en navegador (criterio 4, tarea :64): cerrar Día 1 desde otra pestaña y escanear en la pestaña vieja: el panel se actualiza al Día 2 y no autoriza nada del Día 1.
+2. Prueba en navegador (criterio 3, tarea :47): con la pestaña de puerta abierta, abrir edición desde admin y escanear: la autorización debe fallar mostrando el motivo; repetir con autorizar en lista y cortesía.
+3. Prueba en navegador (criterio 4, tarea :48): cerrar Día 1 desde otra pestaña y escanear en la pestaña vieja: el panel se actualiza al Día 2 y no autoriza nada del Día 1.
 4. Verificar que el flujo normal de escaneo no regresa (criterio 6): autorizar vendedor, persona de lista y cortesía funciona igual que antes.
 5. Fallback manual del día del evento: si la verificación del estado falla por conexión, la puerta cancela la autorización; tener plan de a dedo con lista impresa.
 
