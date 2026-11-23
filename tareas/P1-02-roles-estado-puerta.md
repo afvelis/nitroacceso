@@ -34,11 +34,11 @@ Separar las acciones destructivas de puerta en un rol `supervisor` (o `admin`) y
 - [x] Actualizar `f_login` y las RPC para devolver/validar el rol `supervisor`.
 - [x] Restringir `f_puerta_cerrar_dia_y_activar_siguiente` y `f_puerta_cerrar_lista` a `supervisor`/`admin`.
 - [x] En la UI de puerta, ocultar esos botones si el rol no es `supervisor`; el ocultamiento es cosmético, la RPC debe rechazar igual.
-- [ ] Antes de cada autorización, el servidor debe comprobar: evento no en edición, día correcto, lista abierta, pase no anulado, pase no consumido.
-- [ ] En el cliente, reconsultar `f_puerta_estado` antes de cada escaneo o cada N segundos, y bloquear si el estado cambió.
-- [ ] Si el día cambia mientras hay una puerta abierta, forzar recarga o volver al selector de día.
+- [ ] Antes de cada autorización, el servidor debe comprobar: evento no en edición, día correcto, lista abierta, pase no anulado, pase no consumido. **(Parcial 23/11/2026: `0011` valida evento en edición, día activo y día cerrado en las tres RPC de marcado; **no** valida pase anulado ni pase consumido — pendiente.)**
+- [x] En el cliente, reconsultar `f_puerta_estado` antes de cada escaneo o cada N segundos, y bloquear si el estado cambió. **(Implementado en `js/puerta.js`: `estadoEventoOperativo()` reconsulta antes de cada una de las 4 autorizaciones, y **ejercitado en pantalla el 23/11/2026**: con `edicion_abierta = true` la autorización se bloqueó sin llamar al marcado. Sin polling periódico: se reconsulta antes de autorizar y al recuperar el foco con la tarjeta de evento abierto visible; «cada N segundos» NO es lo que se hizo.)**
+- [ ] Si el día cambia mientras hay una puerta abierta, forzar recarga o volver al selector de día. **(Implementado en cliente 23/11/2026: `estadoEventoOperativo()` detecta el cambio de día, actualiza `diaActivo`, refresca el selector y cancela la autorización con aviso. Prueba en PANTALLA pendiente.)**
 - [x] Registrar en auditoría quién cerró/reabrió y por qué (motivo opcional).
-- [ ] Probar el escenario: admin reabre edición mientras puerta escanea; la siguiente autorización debe fallar.
+- [x] Probar el escenario: admin reabre edición mientras puerta escanea; la siguiente autorización debe fallar. **(Probado el 23/11/2026 en staging con una pestaña ya cargada: se puso `edicion_abierta = true`, la siguiente autorización mostró el modal propio y NO autorizó; cerrada la edición sin recargar, la puerta se recuperó con «🔄 Comprobar de nuevo» y autorizó — `Nombre Dos` 19:16:04, `Nombre Tres` 19:18:57, lista `LST-DEMO01-D2` 2/2.)**
 
 ## Criterios de aceptación
 
