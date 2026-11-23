@@ -97,3 +97,19 @@ En staging:
 5. Fallback manual del día del evento: si la verificación del estado falla por conexión, la puerta cancela la autorización; tener plan de a dedo con lista impresa.
 
 Verificado por el agente con herramientas disponibles: `node --check js/puerta.js` (sintaxis OK) y `python3 scripts/verificar-arranque.py` (OK en "seccion 9 de dev-local"; la única FALLA —"contiene main: 1 commit de retraso"— es situacion previa de git de la rama, ajena a este cambio). NO verificado por el agente: ejecución del SQL (lo ejecuta el usuario) y prueba en navegador.
+
+### 23/11/2026 — El CI dependía de `dia_activo`; la suite de escaneo ahora se adapta y usa el servidor como juez del criterio 4
+
+**Lo que pasó con evidencia (PR #47):** el CI corría `node --test tests/*.test.mjs` contra staging y fallaba 1 de 18 (`tests/escaneo.test.mjs:99`, reautorización idempotente, `expected: true, actual: false`). Causa confirmada, no de código: el test 12 («doble escaneo») llamaba a `f_puerta_marcar_vendedor` con `p_dia: 1` escrito a mano, mientras staging tiene `config.dia_activo = 2` y `dia1_cerrado = true` (fruto de la prueba real de la fase 1). Con la revalidación de `0011` aplicada en staging, la RPC devuelve `false` si `p_dia <> dia_activo` o si el día está cerrado — es decir, la RPC estaba haciendo EXACTAMENTE lo que la fase 2 pide, y el test la castigaba por ello. Defecto estructural: el test 12 exigía `dia_activo = 1` y el test 14 exigía `dia_activo = 2`, así que la suite cambiaba de resultado al avanzar el día del evento.
+
+**Corregido en `tests/escaneo.test.mjs` (mismo commit; solo tests, sin tocar servidor ni `js/puerta.js`):**
+
+- Al cargar el archivo, la suite consulta `f_puerta_estado` con el token de puerta (helper `rpc` ya existente; sin cliente HTTP nuevo) y guarda `dia_activo`. Si `edicion_abierta` es `true`, falla con mensaje claro («staging está en edición: la puerta no puede autorizar...») — fallo de entorno, no un `false` confuso.
+- Test 12 «doble escaneo»: `p_dia` pasa a ser el `dia_activo` leído del servidor, y los campos `estado_diaN` / `marcado_diaN_at` se calculan del día marcado. Se mantienen las dos aserciones del contrato F-8: primera autorización `true` y REAUTORIZACIÓN `true` con su mensaje (idempotencia).
+- Test 14 pasa a «dia no activo: no autoriza en el día equivocado (criterio 4)»: con `otroDia = diaActivo === 1 ? 2 : 1`, la expectativa es `false` y que ningún día cambie de estado (la 0011 rechaza ANTES del UPDATE). Así la suite AHORA SÍ ejercita el criterio 4 del servidor (rechazo del día equivocado) de forma automática; antes el día legítimo solo lo cubría el doble escaneo con su día activo dinámico.
+- Test 13 (`p_dia: 9`, fuera de rango) queda igual. Sin teardown nuevo: el doble escaneo deja el día activo de V-DEMO02 en «autorizado» igual que antes, y el test del día no activo no muta nada (la RPC rechaza antes del UPDATE).
+- `tests/preflight-entorno.mjs` (P2-04): tras el login de puerta consulta `f_puerta_estado`; falla con «ENTORNO STAGING EN EDICIÓN...» si `edicion_abierta`, falla si `dia_activo` no es 1 ni 2, y en éxito imprime `dia_activo` en su línea.
+
+**Verificado con herramientas disponibles:** `node --check tests/escaneo.test.mjs` y `node --check tests/preflight-entorno.mjs` (sintaxis OK). NO ejecutado por decisión del orquestador: la suite y el preflight contra staging (hacen `fetch()` y mutarían staging; también falta confirmar el resultado del CI real en el PR #47 tras este commit).
+
+**Sigue pendiente:** los criterios 3 y 4 siguen `[ ]` — la prueba en navegador (admin abre edición mientras la puerta escanea; cerrar Día 1 en otra pestaña) no se ha hecho. Lo que este cambio prueba automáticamente es el rechazo del servidor, no la reacción del cliente `js/puerta.js` (mensajes en tarjeta, modal, recarga del día).
