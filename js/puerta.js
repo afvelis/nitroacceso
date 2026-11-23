@@ -274,6 +274,9 @@ async function verificarEstadoEvento(){
   }
 }
 
+// Marcador de tiempo agotado para la carrera con el temporizador de reintento.
+const ESTADO_TIMEOUT = Symbol('f_puerta_estado sin respuesta a tiempo');
+
 // P1-02 / incidente 23/11: la tarjeta "Evento aún abierto" no tenía camino de
 // vuelta sin recargar (solo "Salir", que borra la sesión). Este reintento
 // reconsulta f_puerta_estado y, si el administrador ya cerró la edición,
@@ -284,15 +287,39 @@ async function reintentarEstadoEvento(){
   btnComprobarEvento.disabled = true;
   msgEventoAbierto.hidden = true;
   let estado = null;
+  let agotado = false;
+  let temporizador = null;
   try{
-    estado = await llamar('f_puerta_estado', { p_token: tokenSesion });
+    // Carrera con un límite de 10 segundos: llamar() no tiene timeout propio
+    // (es código compartido, fuera de alcance) y sin este límite una red sin
+    // respuesta dejaba el botón "Comprobar de nuevo" deshabilitado para siempre
+    // por el guard de reentrancia.
+    estado = await Promise.race([
+      llamar('f_puerta_estado', { p_token: tokenSesion }),
+      new Promise(resolve => {
+        temporizador = setTimeout(() => resolve(ESTADO_TIMEOUT), 10000);
+      })
+    ]);
+    // La llamada terminó (o se agotó): no dejar el temporizador colgando.
+    clearTimeout(temporizador);
   }catch(e){
+    clearTimeout(temporizador);
+    estado = null;
+  }
+  if(estado === ESTADO_TIMEOUT){
+    agotado = true;
     estado = null;
   }
   if(!estado){
-    pintarAviso(msgEventoAbierto,
-      '⛔ No se pudo consultar el estado del evento. Puede faltar conexión o la sesión pudo haber caducado. Pulsa "🔄 Comprobar de nuevo" otra vez; si vuelve a fallar, sal con "🚪 Salir" y entra de nuevo con tu PIN.',
-      'aviso aviso-rojo');
+    if(agotado){
+      pintarAviso(msgEventoAbierto,
+        '⏱️ La conexión no responde. Comprueba la red y pulsa "🔄 Comprobar de nuevo" otra vez.',
+        'aviso aviso-rojo');
+    }else{
+      pintarAviso(msgEventoAbierto,
+        '⛔ No se pudo consultar el estado del evento. Puede faltar conexión o la sesión pudo haber caducado. Pulsa "🔄 Comprobar de nuevo" otra vez; si vuelve a fallar, sal con "🚪 Salir" y entra de nuevo con tu PIN.',
+        'aviso aviso-rojo');
+    }
     btnComprobarEvento.disabled = false;
     return;
   }
