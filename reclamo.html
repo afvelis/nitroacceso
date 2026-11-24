@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://exrbwctegkzxurzwihvh.supabase.co; font-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'; style-src 'self' 'sha256-bjm9e6itthc0swO2tLgzdOqAH8xOnhjMUnfPi6huQFk='">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NitroSystem - Consulta de reclamo</title>
+<script src="config.js"></script>
+<style>
+:root{
+  --fondo:#0b1220;--tarjeta:#121c2e;--borde:#24344d;--texto:#eef3f8;
+  --suave:#9fb0c3;--acento:#35d07f;--acento2:#1fa2ff;--aviso:#ffd33d;
+  --rojo:#e05252;--rojo2:#c73e3e;--morado:#b06aff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--fondo);color:var(--texto);font-size:17px;line-height:1.5;min-height:100vh;padding-bottom:40px}
+.franja{height:6px;background:linear-gradient(90deg,var(--morado),var(--acento2))}
+.cabecera{display:flex;align-items:center;gap:14px;padding:18px 20px;background:var(--tarjeta);border-bottom:1px solid var(--borde)}
+.logo{font-size:28px;background:linear-gradient(135deg,var(--morado),var(--acento2));width:48px;height:48px;display:flex;align-items:center;justify-content:center;border-radius:10px}
+.titulo{font-size:20px;font-weight:700}
+.subtitulo{font-size:14px;color:var(--suave)}
+.contenedor{max-width:960px;margin:20px auto;padding:0 16px}
+.tarjeta{background:var(--tarjeta);border:1px solid var(--borde);border-radius:16px;padding:20px;margin-bottom:18px;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.tarjeta h2{font-size:19px;margin-bottom:14px;color:var(--acento);text-align:center}
+.fila-datos{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.dato{background:#0e1728;border:1px solid var(--borde);border-radius:10px;padding:10px 12px}
+.dato strong{color:var(--suave);font-size:12px;display:block;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px}
+.dato span{font-size:17px;font-weight:600;word-break:break-all}
+.dato .num{font-size:26px;color:var(--acento);font-weight:800;display:block}
+.dato .num.chico{font-size:22px;color:var(--aviso)}
+.aviso{padding:12px 14px;border-radius:10px;background:rgba(255,211,61,.12);border:1px solid var(--aviso);color:var(--aviso);margin-bottom:14px;font-size:15px;line-height:1.6}
+.aviso-rojo{background:rgba(224,82,82,.12);border-color:var(--rojo);color:var(--rojo)}
+.aviso-verde{background:rgba(53,208,127,.12);border-color:var(--acento);color:var(--acento)}
+.aviso-azul{background:rgba(31,162,255,.12);border-color:var(--acento2);color:var(--acento2)}
+.btn{display:inline-block;padding:12px 20px;border:none;border-radius:10px;font-size:17px;font-weight:600;cursor:pointer;color:white;background:linear-gradient(135deg,var(--acento),#26a866);transition:transform .1s;text-decoration:none;text-align:center}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-gris{background:#2a3648}
+.btn-rojo{background:linear-gradient(135deg,var(--rojo),var(--rojo2))}
+.btn-azul{background:linear-gradient(135deg,var(--acento2),#147acc)}
+.btn-morado{background:linear-gradient(135deg,var(--morado),#7a3ff2)}
+.btn-grande{width:100%;padding:18px;font-size:19px;margin-bottom:12px}
+.btn-mini{padding:8px 14px;font-size:14px;border-radius:8px}
+input,select,textarea{width:100%;padding:12px 14px;border:1px solid var(--borde);border-radius:10px;background:#0d1626;color:var(--texto);font-size:16px;font-family:inherit;margin-top:6px}
+input:focus,textarea:focus{outline:2px solid var(--acento2);border-color:var(--acento2)}
+label{display:block;margin-bottom:12px;color:var(--suave);font-size:14px;font-weight:600}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pill{display:inline-block;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700}
+.pill-verde{background:rgba(53,208,127,.18);color:var(--acento)}
+.pill-rojo{background:rgba(224,82,82,.18);color:var(--rojo)}
+.pill-azul{background:rgba(31,162,255,.18);color:var(--acento2)}
+.pill-amarillo{background:rgba(255,211,61,.18);color:var(--aviso)}
+.pill-morado{background:rgba(176,106,255,.18);color:var(--morado)}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:1px}
+.seccion-acciones{display:flex;justify-content:flex-end;margin-bottom:14px}
+.titulo-historial{font-size:13px;color:var(--suave);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin:4px 0 14px;text-align:center;border-bottom:1px solid var(--borde);padding-bottom:8px}
+.concurso-item{border:1px solid var(--borde);border-radius:12px;padding:14px;margin-bottom:12px;background:#0e1728}
+.concurso-item .cab{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:10px}
+.concurso-item .nom{font-size:17px;font-weight:700}
+.concurso-item .meta{font-size:13px;color:var(--suave);margin-top:2px}
+.concurso-item .acciones{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;justify-content:center}
+.concurso-item .acciones .btn{min-width:auto}
+.mini-stats-dia{margin-top:10px;padding:12px 14px;border-radius:10px;background:#0e1728;border:1px solid var(--borde);font-size:14px}
+.mini-stats-dia .fila-stats{display:flex;justify-content:space-between;align-items:center;padding:4px 0}
+.mini-stats-dia .fila-stats .dia-lbl{color:var(--suave);font-weight:600}
+.mini-stats-dia .fila-stats .dia-num{font-weight:700;color:var(--acento)}
+.mini-stats-dia .triste{color:var(--aviso);font-size:13px;margin-top:6px;text-align:center}
+.bloque-datos{margin-bottom:10px}
+.bloque-titulo{font-size:12px;color:var(--acento2);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:6px}
+.dato-gan{display:flex;justify-content:space-between;gap:10px;padding:4px 0;border-bottom:1px dashed var(--borde);font-size:14px}
+.dato-gan:last-child{border-bottom:none}
+.dato-gan strong{font-size:12px;color:var(--suave);text-transform:uppercase;letter-spacing:1px;flex-shrink:0}
+.dato-gan span{text-align:right;word-break:break-word}
+.modal-fondo{position:fixed;inset:0;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px;overflow-y:auto}
+.modal-caja{background:var(--tarjeta);border:1px solid var(--borde);border-radius:16px;padding:22px;max-width:600px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,.5);max-height:92vh;overflow-y:auto}
+.modal-titulo{font-size:20px;font-weight:700;color:var(--acento);margin-bottom:12px;text-align:center}
+.modal-sub{font-size:14px;color:var(--suave);margin-bottom:16px;text-align:center}
+.modal-mensaje{color:var(--texto);white-space:pre-wrap;line-height:1.55;margin-bottom:16px;font-size:15px}
+.modal-acciones{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px}
+.modal-acciones .btn{padding:11px 18px;font-size:16px}
+.check-linea{display:flex;align-items:flex-start;gap:10px;background:#0d1626;border:1px solid var(--borde);border-radius:10px;padding:12px;margin-top:10px;font-size:14px;color:var(--texto)}
+.check-linea input{width:auto;margin:2px 0 0 0;flex-shrink:0}
+.cuponera{background:#0d1626;border:1px solid var(--borde);border-radius:10px;padding:14px;text-align:center;margin-bottom:14px}
+.cuponera .grande{font-size:30px;font-weight:800;color:var(--acento);display:block}
+.cuponera .lbl{font-size:13px;color:var(--suave)}
+.cola-seccion-titulo{font-size:13px;color:var(--acento2);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin:14px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--borde)}
+.cola-item{border:1px solid var(--borde);border-radius:12px;padding:12px;margin-bottom:10px;background:#0e1728}
+.cola-item.enviado{opacity:.75}
+.cola-item .cola-cab{font-size:15px;font-weight:700;margin-bottom:8px;text-align:center;color:var(--acento2)}
+.cola-item .cola-acciones{display:flex;justify-content:center;margin-top:12px}
+.felicidades{text-align:center;padding:20px;font-size:18px;color:var(--acento);font-weight:700}
+.felicidades .emoji{font-size:44px;display:block;margin-bottom:10px}
+.alerta-sub{border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:14px;line-height:1.55}
+.alerta-sub-titulo{font-weight:700;margin-bottom:6px;display:block}
+.alerta-sub .acciones{display:flex;justify-content:flex-end;margin-top:10px}
+.alerta-sub-azul{background:rgba(31,162,255,.10);border:1px solid var(--acento2);color:var(--texto)}
+.alerta-sub-azul .alerta-sub-titulo{color:var(--acento2)}
+.alerta-sub-amarilla{background:rgba(255,211,61,.10);border:1px solid var(--aviso);color:var(--texto)}
+.alerta-sub-amarilla .alerta-sub-titulo{color:var(--aviso)}
+.alerta-sub-roja{background:rgba(224,82,82,.10);border:1px solid var(--rojo);color:var(--texto)}
+.alerta-sub-roja .alerta-sub-titulo{color:var(--rojo)}
+.alerta-sub ul{margin:6px 0 0 0;padding-left:20px}
+.alerta-sub li{margin:3px 0}
+/* ===== P0-04 fase 4b: clases que sustituyen a los style= de este HTML y de js/aliado.js ===== */
+.oculto{display:none}
+.suave{color:var(--suave)}
+.suave-14{color:var(--suave);font-size:14px}
+.suave-13{color:var(--suave);font-size:13px}
+.mt-10{margin-top:10px}
+.borde-aviso{border-color:var(--aviso)}
+.titulo-aviso{color:var(--aviso)}
+.vacio-notice{color:var(--suave);text-align:center;padding:10px}
+.desc-suave13{color:var(--suave);font-size:13px;margin-top:4px}
+.hint-fecha12{color:var(--suave);font-size:12px;margin-top:6px;font-weight:normal;line-height:1.45}
+.campo-corto{max-width:160px}
+.mb-12{margin-bottom:12px}
+.lbl-dias{color:var(--suave);font-size:14px;margin-bottom:6px}
+.fila-check{display:flex;gap:8px;align-items:center;color:var(--texto)}
+.chk-auto{width:auto}
+.texto-rojo{color:var(--rojo)}
+/* ===== M-36 fase 1: bloque de reclamo en la pantalla anulada ===== */
+/* .codigo igual al de aliados.html: el código REC-XXXXXX destaca en mono. */
+.codigo{background:#0d1526;border:1px solid var(--borde);border-radius:10px;padding:12px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:20px;letter-spacing:2px;margin-top:8px;word-break:break-all;text-align:center;font-weight:700}
+.botones-fila{display:flex;gap:10px;justify-content:flex-start;flex-wrap:wrap;margin-top:8px}
+.err-campo{color:var(--rojo);font-size:13px;margin-top:4px;font-weight:600}
+.campo-error{border-color:var(--rojo)!important}
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header class="cabecera">
+  <div class="logo">📮</div>
+  <div>
+    <div class="titulo">NitroSystem</div>
+    <div class="subtitulo">Consulta del estado de un reclamo</div>
+  </div>
+</header>
+
+<main class="contenedor">
+  <!-- M-36 fase 1 (RQ-07): consulta pública por el código REC-XXXXXX. Sin login,
+       sin datos personales: la tabla solo muestra código, motivo, estado, fecha y
+       respuesta. Todo lo que viene de la base se pinta con textContent. -->
+  <div class="tarjeta">
+    <h2>📮 Consultar un reclamo</h2>
+    <p class="suave-14">Escribe el código del reclamo que te dieron cuando lo registraste (por ejemplo, REC-ABC123) y pulsa Consultar.</p>
+    <label for="reclamoCodigo">Código del reclamo</label>
+    <input id="reclamoCodigo" maxlength="20" class="mono" placeholder="Ej.: REC-ABC123" autocomplete="off">
+    <div class="botones-fila">
+      <button class="btn btn-morado" id="btnConsultarReclamo">Consultar</button>
+    </div>
+    <div id="reclamoPanel" class="mt-10"></div>
+  </div>
+</main>
+
+<script src="js/reclamo.js"></script>
+</body>
+</html>

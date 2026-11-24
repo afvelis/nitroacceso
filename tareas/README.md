@@ -84,7 +84,7 @@ Usa [PLANTILLA.md](PLANTILLA.md) para crear tareas nuevas. No renombres los IDs 
 | [M-33](M-33-vista-anulada-aliado.md) | Humanizar la vista «anulada» del aliado | P2 | **hecho** (23/11/2026) | — |
 | [M-34](M-34-fecha-creacion-tarjeta-admin.md) | Mostrar la fecha de creación en la tarjeta del aliado (aliados.html) | P2 | **hecho** (23/11/2026) | — |
 | [M-35](M-35-nombres-premios-anulados.md) | Mostrar nombres de premios anulados (requiere cambio de RPC) | P2 | pendiente | — |
-| [M-36](M-36-modulo-reclamos.md) | Módulo de reclamos | P2 | pendiente | — |
+| [M-36](M-36-modulo-reclamos.md) | Módulo de reclamos | P2 | **en_progreso** (fase 1 construida y probada 24/11/2026; pendientes: envío vacío y contador; fases 2 y 3 sin empezar) | — |
 | [M-37](M-37-multi-evento.md) | Multi-evento: gestionar hasta 3 eventos simultáneos desde el dashboard | P2 | pendiente | P1-04 |
 | [M-38](M-38-aprobacion-coordinadores.md) | Aprobación de coordinadores desde el dashboard (solicitar → aprobar/rechazar) | P2 | pendiente | — |
 | [P0-08](P0-08-desbloqueo-puerta.md) | Desbloqueo de puerta y rediseño del bloqueo de login | P0 | **hecho** (20/11/2026: RPC de reapertura con auditoría, contadores separados por rol, ventanas 90 s / 15 min, botón en el panel; batería de 10 pruebas en staging; incidente PGRST202/PGRST203 resuelto con la 0006) | P0-07 |

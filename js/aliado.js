@@ -732,14 +732,18 @@ async function cargar(){
     document.getElementById('panelCarga').style.display = 'none';
 
     if(!d.aliado.activo || d.asignacion.estado !== 'activa'){
-      // M-33: la vista "anulada" ahora explica QUÉ pasó y QUÉ hacer. Dos casos:
+      // M-33: la vista "anulada" explica QUÉ pasó y QUÉ hacer. Dos casos:
       // organización desactivada vs. asignación anulada. Los valores dinámicos
       // (nombre, motivo, código) van SIEMPRE por textContent/createElement:
       // nunca por innerHTML (vienen de la base y la llena el administrador).
+      // M-36: el camino "comunícate con la mesa técnica ... diles este código":
+      // ya no se repite aquí, vive dentro de #bloqueReclamo (segunda opción,
+      // debajo del formulario) y la primera opción es registrar un reclamo.
       const tituloAnulado = document.getElementById('tituloAnulado');
       const razonAnulada = document.getElementById('razonAnulada');
       const detalleAnulado = document.getElementById('detalleAnulado');
       detalleAnulado.textContent = '';
+      document.getElementById('reclamoMesaCodigo').textContent = d.asignacion.codigo_link;
       if(!d.aliado.activo){
         tituloAnulado.textContent = '⛔ Tu organización quedó desactivada';
         razonAnulada.textContent = d.aliado.nombre_organizacion
@@ -747,10 +751,7 @@ async function cargar(){
           : 'La cuenta de esta organización ya no está activa en este evento.';
         const p1 = document.createElement('p');
         p1.textContent = 'Los cupones de esta organización no se pueden usar en la puerta.';
-        const p2 = document.createElement('p');
-        p2.textContent = 'Si crees que es un error, comunícate con la mesa técnica del evento y diles este código: ' + d.asignacion.codigo_link + '.';
         detalleAnulado.appendChild(p1);
-        detalleAnulado.appendChild(p2);
       }else{
         tituloAnulado.textContent = '⛔ Esta asignación quedó anulada';
         razonAnulada.textContent = d.asignacion.razon_anulacion
@@ -758,12 +759,10 @@ async function cargar(){
           : 'No se registró un motivo de la anulación.';
         const p1 = document.createElement('p');
         p1.textContent = 'Los cupones de esta asignación ya no se pueden usar en la puerta.';
-        const p2 = document.createElement('p');
-        p2.textContent = 'Si crees que es un error, comunícate con la mesa técnica del evento y diles este código: ' + d.asignacion.codigo_link + '.';
         detalleAnulado.appendChild(p1);
-        detalleAnulado.appendChild(p2);
       }
       document.getElementById('panelAnulado').style.display = 'block';
+      pintarReclamoPrevio();
       return;
     }
 
@@ -794,5 +793,198 @@ document.getElementById('btnNuevoConcurso').addEventListener('click', async () =
   }
   abrirModalConcurso(null);
 });
+
+// ============================================================
+// M-36 FASE 1: RECLAMO EN LA PANTALLA ANULADA (RQ-01, RQ-02, RQ-03, RQ-09, RQ-12)
+// Norma v2.2: validación al escribir en el propio campo (borde + aria-invalid
+// + texto corto bajo el campo) y el resultado de la acción DENTRO de esta
+// tarjeta (#reclamoResultado), nunca en un contenedor global ni en un modal.
+// ============================================================
+const CLAVE_ULTIMO_RECLAMO = 'na_ultimo_reclamo_' + CODIGO;
+
+const ERRORES_RECLAMO_SERVIDOR = {
+  CODIGO_INVALIDO: 'Este link no está registrado en el evento. Habla con la mesa técnica.',
+  LIMITE_DIARIO: 'Ya enviaste 3 reclamos hoy con este link. Espera 24 horas o habla con la mesa técnica.',
+  NO_SE_PUDO_CREAR: 'No se pudo registrar el reclamo. Inténtalo otra vez o habla con la mesa técnica.'
+};
+
+// Errores de la RPC que se marcan EN EL CAMPO que corresponde.
+const ERRORES_CAMPO_RECLAMO = {
+  NOMBRE_INVALIDO: ['reclamoNombre', 'errReclamoNombre', 'El nombre debe tener entre 3 y 120 caracteres.'],
+  CONTACTO_INVALIDO: ['reclamoContacto', 'errReclamoContacto', 'El contacto debe tener entre 5 y 120 caracteres.'],
+  DETALLE_LARGO: ['reclamoDetalle', 'errReclamoDetalle', 'El detalle es demasiado largo (máximo 500 caracteres).']
+};
+
+function campoReclamo(id){ return document.getElementById(id); }
+
+function marcarErrorCampo(input, errEl, texto){
+  input.setAttribute('aria-invalid', 'true');
+  input.classList.add('campo-error');
+  errEl.textContent = texto;
+  errEl.hidden = false;
+}
+
+function limpiarErrorCampo(input, errEl){
+  input.removeAttribute('aria-invalid');
+  input.classList.remove('campo-error');
+  errEl.textContent = '';
+  errEl.hidden = true;
+}
+
+// Valida y pinta el estado del campo. Devuelve true si el campo está bien.
+function validarNombreReclamo(){
+  const input = campoReclamo('reclamoNombre');
+  const v = input.value.trim();
+  const ok = v.length >= 3 && v.length <= 120;
+  if(ok){ limpiarErrorCampo(input, campoReclamo('errReclamoNombre')); return true; }
+  marcarErrorCampo(input, campoReclamo('errReclamoNombre'),
+    v.length === 0 ? 'Escribe tu nombre.' : 'El nombre debe tener entre 3 y 120 caracteres.');
+  return false;
+}
+
+function validarContactoReclamo(){
+  const input = campoReclamo('reclamoContacto');
+  const v = input.value.trim();
+  const ok = v.length >= 5 && v.length <= 120;
+  if(ok){ limpiarErrorCampo(input, campoReclamo('errReclamoContacto')); return true; }
+  marcarErrorCampo(input, campoReclamo('errReclamoContacto'),
+    v.length === 0 ? 'Escribe un correo o teléfono para poder contactarte.' : 'El contacto debe tener entre 5 y 120 caracteres.');
+  return false;
+}
+
+function validarDetalleReclamo(){
+  const input = campoReclamo('reclamoDetalle');
+  const v = input.value.trim();
+  const ok = v.length <= 500;
+  if(ok){ limpiarErrorCampo(input, campoReclamo('errReclamoDetalle')); return true; }
+  marcarErrorCampo(input, campoReclamo('errReclamoDetalle'), 'El detalle es demasiado largo (máximo 500 caracteres).');
+  return false;
+}
+
+function validarMotivoReclamo(){
+  const sel = campoReclamo('reclamoMotivo');
+  if(sel.value){ limpiarErrorCampo(sel, campoReclamo('errReclamoMotivo')); return true; }
+  marcarErrorCampo(sel, campoReclamo('errReclamoMotivo'), 'Elige un motivo del reclamo.');
+  return false;
+}
+
+// Pinta el resultado "ok" DENTRO de la tarjeta (nada viaja por innerHTML: el
+// código viene de la base y va por textContent).
+function pintarReclamoResultado(codigo){
+  const zona = campoReclamo('reclamoResultado');
+  zona.textContent = '';
+  const aviso = document.createElement('div');
+  aviso.className = 'aviso aviso-verde';
+  aviso.textContent = '✅ Reclamo registrado.';
+  zona.appendChild(aviso);
+  const cajaCodigo = document.createElement('div');
+  cajaCodigo.className = 'codigo';
+  cajaCodigo.textContent = codigo;
+  zona.appendChild(cajaCodigo);
+  const guarda = document.createElement('p');
+  guarda.className = 'suave-14 mt-10';
+  guarda.textContent = 'Guarda este código: con él puedes consultar la respuesta.';
+  zona.appendChild(guarda);
+  const enlace = document.createElement('a');
+  enlace.className = 'btn btn-azul btn-mini';
+  enlace.textContent = 'Ver el estado de mi reclamo';
+  enlace.href = BASE + 'reclamo.html?r=' + encodeURIComponent(codigo);
+  zona.appendChild(enlace);
+}
+
+// "Sobrevive a la recarga": si en este navegador ya se registró un reclamo para
+// este link, se re-pinta el resultado consultándolo a la base con f_reclamo_ver.
+// Si no existe o falla la consulta, no se pinta nada falso.
+async function pintarReclamoPrevio(){
+  const guardado = sessionStorage.getItem(CLAVE_ULTIMO_RECLAMO);
+  if(!guardado) return;
+  try{
+    const r = await llamar('f_reclamo_ver', { p_codigo_reclamo: guardado });
+    if(r && r.codigo_reclamo) pintarReclamoResultado(r.codigo_reclamo);
+  }catch(e){ /* sin red: queda la pantalla anulada normal */ }
+}
+
+async function enviarReclamo(){
+  const motivoOk = validarMotivoReclamo();
+  const nombreOk = validarNombreReclamo();
+  const contactoOk = validarContactoReclamo();
+  const detalleOk = validarDetalleReclamo();
+  if(!motivoOk || !nombreOk || !contactoOk || !detalleOk) return;
+
+  const zona = campoReclamo('reclamoResultado');
+  const btn = campoReclamo('btnEnviarReclamo');
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+  try{
+    const r = await llamar('f_reclamo_crear', {
+      p_codigo_link: CODIGO,
+      p_nombre: campoReclamo('reclamoNombre').value.trim(),
+      p_contacto: campoReclamo('reclamoContacto').value.trim(),
+      p_motivo: campoReclamo('reclamoMotivo').value,
+      p_detalle: campoReclamo('reclamoDetalle').value.trim() || null
+    });
+    if(r && r.ok){
+      sessionStorage.setItem(CLAVE_ULTIMO_RECLAMO, r.codigo_reclamo);
+      pintarReclamoResultado(r.codigo_reclamo);
+      campoReclamo('formReclamo').hidden = true;
+      campoReclamo('btnReclamar').hidden = false;
+    }else if(r && ERRORES_CAMPO_RECLAMO[r.error]){
+      const [campoId, errId, texto] = ERRORES_CAMPO_RECLAMO[r.error];
+      zona.textContent = '';
+      marcarErrorCampo(campoReclamo(campoId), campoReclamo(errId), texto);
+    }else{
+      const mensaje = (r && ERRORES_RECLAMO_SERVIDOR[r.error]) || ERRORES_RECLAMO_SERVIDOR.NO_SE_PUDO_CREAR;
+      zona.textContent = '';
+      const aviso = document.createElement('div');
+      aviso.className = 'aviso aviso-rojo';
+      aviso.textContent = mensaje;
+      zona.appendChild(aviso);
+      // C1 (norma v2.2): CODIGO_INVALIDO y LIMITE_DIARIO impiden continuar,
+      // así que además del mensaje en la tarjeta se avisa con el modal propio
+      // de esta página (modalAlert, definido arriba en este mismo archivo).
+      // Cualquier error de servidor no mapeado (p. ej. MOTIVO_INVALIDO solo
+      // alcanzable manipulando el <select>) cae en el texto genérico: nunca
+      // se pinta "undefined" porque el fallback es un string fijo.
+      if(r && (r.error === 'CODIGO_INVALIDO' || r.error === 'LIMITE_DIARIO')){
+        await modalAlert(mensaje, 'No se pudo registrar el reclamo');
+      }
+    }
+  }catch(e){
+    zona.textContent = '';
+    const aviso = document.createElement('div');
+    aviso.className = 'aviso aviso-rojo';
+    aviso.textContent = 'No se pudo conectar con el servidor. Revisa tu internet e inténtalo otra vez.';
+    zona.appendChild(aviso);
+    // C1 (norma v2.2): el fallo de red también impide continuar: modal propio.
+    await modalAlert('No se pudo conectar con el servidor. Revisa tu internet e inténtalo otra vez.', 'Sin conexión');
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Enviar reclamo';
+  }
+}
+
+// Wiring del bloque (los elementos nacen con la página; se conectan una sola vez).
+(function prepararBloqueReclamo(){
+  if(!campoReclamo('bloqueReclamo')) return;
+  const btnReclamar = campoReclamo('btnReclamar');
+  const formReclamo = campoReclamo('formReclamo');
+  btnReclamar.addEventListener('click', () => {
+    btnReclamar.hidden = true;
+    formReclamo.hidden = false;
+  });
+  campoReclamo('btnCancelarReclamo').addEventListener('click', () => {
+    formReclamo.hidden = true;
+    btnReclamar.hidden = false;
+  });
+  campoReclamo('btnEnviarReclamo').addEventListener('click', enviarReclamo);
+  campoReclamo('reclamoMotivo').addEventListener('change', validarMotivoReclamo);
+  campoReclamo('reclamoNombre').addEventListener('input', validarNombreReclamo);
+  campoReclamo('reclamoContacto').addEventListener('input', validarContactoReclamo);
+  const inDetalle = campoReclamo('reclamoDetalle');
+  inDetalle.addEventListener('input', () => {
+    campoReclamo('reclamoDetalleCuenta').textContent = inDetalle.value.length + '/500';
+    validarDetalleReclamo();
+  });
+})();
 
 cargar();

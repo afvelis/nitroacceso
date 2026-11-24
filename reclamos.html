@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-+/Yv4Bv8Ewd/gNioEZEQykHGCyNAO93lEYrgKenVu5M='; img-src 'self' data: blob:; connect-src 'self' https://exrbwctegkzxurzwihvh.supabase.co; font-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'; style-src 'self' 'sha256-Ap/wiyMCny8yb4LLl3ZaAbpnECNG8gk2xGhKoeP25ys=' 'sha256-JIzoyzyPdBK1tb3tSupou6Bk2GiFFROWK5LiAkNlPtk='">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NitroSystem - Reclamos</title>
+<style>html,body{background:#0b1220;margin:0;}</style>
+<script src="config.js"></script>
+<script>
+  // M-28: chequeo de sesión ANTES de pintar el body (evita destello).
+  (function(){
+    var s = leerSesion();
+    if (!s || s.rol !== 'admin'){
+      location.replace('acceso-denegado.html');
+    }
+  })();
+</script>
+<style>
+:root{
+  --fondo:#0b1220; --tarjeta:#121c2e; --borde:#24344d; --texto:#eef3f8;
+  --suave:#9fb0c3; --acento:#35d07f; --acento2:#1fa2ff; --aviso:#ffd33d;
+  --rojo:#e05252;
+}
+*{box-sizing:border-box;}
+body{margin:0; background:var(--fondo); color:var(--texto); font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; font-size:17px; line-height:1.5;}
+.franja{height:6px;background:linear-gradient(90deg,var(--acento),var(--acento2));}
+.cabecera{display:flex;gap:14px;align-items:center;padding:20px 16px;max-width:1000px;margin:0 auto;}
+.logo{width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,var(--acento),var(--acento2));display:flex;align-items:center;justify-content:center;font-size:30px;flex:none;}
+.ceja{color:var(--suave);letter-spacing:2px;text-transform:uppercase;font-size:17px;}
+h1{margin:0;font-size:26px;}
+main{max-width:1000px;margin:0 auto;padding:0 16px 40px;display:flex;flex-direction:column;gap:20px;}
+.tarjeta{background:var(--tarjeta);border:1px solid var(--borde);border-radius:16px;padding:20px;box-shadow:0 8px 24px rgba(0,0,0,.35);}
+h2{margin:0 0 12px;font-size:22px;}
+label{display:block;margin:10px 0;font-size:15px;color:var(--suave);font-weight:600;}
+select,textarea{width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1px solid var(--borde);background:#0d1526;color:var(--texto);font-size:16px;font-family:inherit;}
+textarea{resize:vertical;}
+select:focus,textarea:focus{outline:2px solid var(--acento2);border-color:var(--acento2);}
+select.campo-error,textarea.campo-error{border-color:var(--rojo)!important;font-weight:400;}
+.centrado{text-align:center;}
+.btn{display:inline-block;border:none;border-radius:12px;padding:12px 18px;font-size:17px;font-weight:600;color:#06281a;background:linear-gradient(135deg,var(--acento),#2bb673);cursor:pointer;text-decoration:none;}
+.btn-gris{background:#2a3648;color:var(--texto);}
+.btn-rojo{background:linear-gradient(135deg,#e05252,#c73e3e);color:#fff;}
+.btn-verde{background:linear-gradient(135deg,var(--acento),#2bb673);color:#06281a;}
+.btn-azul{background:linear-gradient(135deg,var(--acento2),#147acc);color:#fff;}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+.btn-mini{padding:8px 14px;font-size:14px;border-radius:8px;}
+.fila{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;align-items:center;}
+.fila-mt0{margin-top:0}
+.suave{color:var(--suave);}
+.suave-14{color:var(--suave);font-size:14px;}
+.codigo{background:#0d1526;border:1px solid var(--borde);border-radius:10px;padding:12px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:20px;letter-spacing:2px;margin-top:8px;word-break:break-all;}
+.filtros{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+.filtro{border:1px solid var(--borde);background:#0d1526;color:var(--suave);border-radius:999px;padding:6px 16px;font-size:14px;font-weight:700;cursor:pointer;}
+.filtro-activo{background:rgba(31,162,255,.18);color:var(--acento2);border-color:var(--acento2);}
+.reclamo{border:1px solid var(--borde);border-radius:12px;padding:14px;margin-top:12px;background:#0e1728;}
+.reclamo .cab{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:8px;}
+.reclamo .cab strong{font-size:17px;}
+.pill{display:inline-block;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700;}
+.pill-verde{background:rgba(53,208,127,.18);color:var(--acento);}
+.pill-rojo{background:rgba(224,82,82,.18);color:var(--rojo);}
+.pill-azul{background:rgba(31,162,255,.18);color:var(--acento2);}
+.pill-amarillo{background:rgba(255,211,61,.18);color:var(--aviso);}
+.r-linea{color:var(--suave);font-size:14px;margin:3px 0;word-break:break-word;}
+.r-linea b{color:var(--texto);}
+.form-reclamo{margin-top:10px;border-top:1px dashed var(--borde);padding-top:10px;}
+.msg-tarjeta{margin-top:8px;font-size:14px;font-weight:600;}
+.msg-ok{color:var(--acento);}
+.msg-err{color:var(--rojo);}
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header class="cabecera">
+  <div class="logo">📮</div>
+  <div>
+    <div class="ceja">Reclamos</div>
+    <h1>NitroSystem</h1>
+  </div>
+</header>
+<main>
+
+  <div class="fila fila-mt0">
+    <a href="dashboard.html" class="btn btn-gris">← Volver al dashboard</a>
+  </div>
+
+  <section class="tarjeta">
+    <h2 class="centrado">📮 Bandeja de reclamos</h2>
+    <p class="suave centrado">Reclamos enviados por los aliados desde sus links. Responde a cada uno: la respuesta la consulta el reclamante con su código.</p>
+    <div class="filtros" id="zonaFiltros">
+      <button class="filtro filtro-activo" data-estado="">Todos</button>
+      <button class="filtro" data-estado="nuevo">Nuevos</button>
+      <button class="filtro" data-estado="en_revision">En revisión</button>
+      <button class="filtro" data-estado="resuelto">Resueltos</button>
+      <button class="filtro" data-estado="rechazado">Rechazados</button>
+    </div>
+    <div id="zonaReclamos"><p class="suave">Consultando reclamos...</p></div>
+  </section>
+
+</main>
+<script src="js/modales.js"></script>
+<script src="js/reclamos.js"></script>
+</body>
+</html>

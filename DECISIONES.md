@@ -405,3 +405,12 @@
 - M-33: la pantalla de anulado del aliado deja de mostrar texto crudo y explica en llano qué pasó, qué no se puede usar y con qué código reclamar. Los valores de la base se pintan con `textContent`, nunca dentro de `innerHTML`.
 - M-34: la tarjeta del aliado muestra `Creado: dd/mm/aaaa` con una función propia (`fechaCorta`), no con `toLocaleDateString`, para que el formato no cambie según el navegador.
 - La prueba de M-33 exigió anular `ASI-DEMO01` en staging: se hizo con reversión incluida en el mismo turno y se verificó por RPC (`estado: activa`, `razon_anulacion: null`). Regla que confirma: toda mutación de datos de prueba en staging viaja con su reversión y se verifica por dato, no por el «Success» del editor.
+
+---
+
+## 24/11/2026 · M-36 fase 1: reclamos nativos, sin salir de la app
+
+- El usuario aprobó el brief y la tabla RQ-01…RQ-15 el 23/11/2026, con una decisión explícita: **los avisos son solo dentro de la app**. No hay correo automático ni ningún canal externo; el módulo es nativo y la mejora continua se verá cuando esté completo.
+- El reclamo no cambia estados ni cupones: es registro y seguimiento. La seguridad vive en el servidor (RLS cerrada, `revoke all` para `anon`, todo por RPC, `security definer` con `search_path` a `public, pg_temp`).
+- El formulario se probó de punta a punta con un reclamo real (`REC-CEB4AD`): crear, consultar, ver en la bandeja, responder y volver a consultar. El código `REC-XXXXXX` es la única llave del reclamante, así que la vista pública no devuelve datos personales ni la nota interna.
+- Se rechazó el atajo de «avisar por correo» por ahora: no hay motor de envío y el usuario no quiere externalizar nada hasta que el módulo esté completo.

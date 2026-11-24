@@ -99,3 +99,18 @@ Si el administrador anuló la asignación de un aliado (o desactivó su organiza
 En la tarjeta de cada aliado del panel del administrador, la línea **Creado:** muestra la fecha en formato **dd/mm/aaaa** (por ejemplo, `Creado: 10/11/2026`). El resto de la tarjeta no cambió.
 
 *(Probado en el entorno de pruebas el 23/11/2026: la pantalla de asignación anulada con la asignación `ASI-DEMO01` anulada y revertida después; la fecha en la tarjeta `Aliado Demo`. El caso de organización desactivada quedó verificado por código, sin caso real que probar en pantalla.)*
+
+## Nota (24/11/2026) — reclamar desde la pantalla de anulado
+
+Si tu asignación quedó anulada, la misma tarjeta de anulado ahora tiene un camino propio para reclamar, sin salir de la app:
+
+1. Pulsa el botón **"Reclamar"** de la tarjeta de anulado.
+2. Llena el formulario: el **motivo** (elige uno de la lista, por ejemplo "Creo que me anularon por error"), el **detalle** (opcional, hasta 500 letras), tu **nombre** y **un contacto** (correo o teléfono).
+3. Pulsa el botón de enviar. El aviso **"Reclamo registrado."** sale **dentro de la misma tarjeta**, junto con tu **código de reclamo `REC-XXXXXX`**.
+4. **Guarda ese código**: es la única llave para consultar tu reclamo después en reclamo.html (capítulo 11).
+
+Límite: se admiten hasta **3 reclamos por el mismo link cada 24 horas**; si te pasas, el aviso de error sale en la tarjeta y además se abre un aviso en pantalla (una ventana de la propia NitroSystem, no un diálogo del navegador).
+
+La mesa técnica sigue siendo la segunda opción: el texto con su código y la orientación de hablar con ella permanecen en la tarjeta de anulado.
+
+*(Probado en el entorno de pruebas el 24/11/2026 con la asignación `ASI-DEMO01` anulada a propósito y revertida después: el reclamo `REC-CEB4AD` se creó, se consultó y se respondió de punta a punta.)*
