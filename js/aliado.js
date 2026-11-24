@@ -939,6 +939,15 @@ async function enviarReclamo(){
       aviso.className = 'aviso aviso-rojo';
       aviso.textContent = mensaje;
       zona.appendChild(aviso);
+      // C1 (norma v2.2): CODIGO_INVALIDO y LIMITE_DIARIO impiden continuar,
+      // así que además del mensaje en la tarjeta se avisa con el modal propio
+      // de esta página (modalAlert, definido arriba en este mismo archivo).
+      // Cualquier error de servidor no mapeado (p. ej. MOTIVO_INVALIDO solo
+      // alcanzable manipulando el <select>) cae en el texto genérico: nunca
+      // se pinta "undefined" porque el fallback es un string fijo.
+      if(r && (r.error === 'CODIGO_INVALIDO' || r.error === 'LIMITE_DIARIO')){
+        await modalAlert(mensaje, 'No se pudo registrar el reclamo');
+      }
     }
   }catch(e){
     zona.textContent = '';
@@ -946,6 +955,8 @@ async function enviarReclamo(){
     aviso.className = 'aviso aviso-rojo';
     aviso.textContent = 'No se pudo conectar con el servidor. Revisa tu internet e inténtalo otra vez.';
     zona.appendChild(aviso);
+    // C1 (norma v2.2): el fallo de red también impide continuar: modal propio.
+    await modalAlert('No se pudo conectar con el servidor. Revisa tu internet e inténtalo otra vez.', 'Sin conexión');
   }finally{
     btn.disabled = false;
     btn.textContent = 'Enviar reclamo';

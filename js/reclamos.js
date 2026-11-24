@@ -164,7 +164,12 @@
         btn.disabled = false;
         btn.textContent = 'Guardar cambios';
         const error = r ? r.error : '';
-        setMensaje(zonaMsg, ERRORES_GUARDAR[error] || 'No se pudo guardar el reclamo. Inténtalo otra vez.', true);
+        const texto = ERRORES_GUARDAR[error] || 'No se pudo guardar el reclamo. Inténtalo otra vez.';
+        setMensaje(zonaMsg, texto, true);
+        // C1 (norma v2.2): la sesión expirada impide continuar: modal propio.
+        if(error === 'SESION'){
+          try{ await NA.avisar(texto, 'Sesión expirada'); }catch(e2){ /* sin modal: queda el mensaje en la tarjeta */ }
+        }
       }catch(e){
         btn.disabled = false;
         btn.textContent = 'Guardar cambios';
@@ -199,6 +204,10 @@
       aviso.className = 'msg-tarjeta msg-err';
       aviso.textContent = 'Tu sesión expiró. Entra de nuevo con tu PIN.';
       zona.appendChild(aviso);
+      // C1 (norma v2.2): la sesión expirada impide continuar: además del mensaje
+      // en la tarjeta, aviso con el modal propio de la app (NA.avisar, del
+      // helper compartido js/modales.js, cargado por la página).
+      try{ await NA.avisar('Tu sesión expiró. Entra de nuevo con tu PIN.', 'Sesión expirada'); }catch(e2){ /* sin modal: queda el mensaje en la tarjeta */ }
       return;
     }
     if(!lista.length){
