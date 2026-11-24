@@ -136,4 +136,6 @@ Verificado por el agente con herramientas disponibles: `node --check js/puerta.j
 
 **Migración `0011_p1_02_revalidacion_estado_puerta.sql`:** aplicada en STAGING y verificada contra el catálogo (3 filas, firmas 4/3/4, retorno `boolean`, guardas presentes). NO aplicada en producción; el SQL pendiente es para el usuario.
 
-**Pendiente tras este cierre:** (1) ejecutar `0011` en PRODUCCIÓN con el usuario (mismo archivo ya verificado + consulta de conteo); (2) prueba en pantalla del criterio 4 (pestaña vieja + día cambiado); (3) retomar la siguiente tarea `pendiente` con dependencias resueltas.
+**Pendiente tras este cierre:** (1) ~~ejecutar `0011` en PRODUCCIÓN con el usuario~~ — HECHO el 23/11/2026 (ver línea siguiente); (2) prueba en pantalla del criterio 4 (pestaña vieja + día cambiado); (3) retomar la siguiente tarea `pendiente` con dependencias resueltas.
+
+**Actualización 23/11/2026 (cierre final):** `0011` aplicada también en PRODUCCIÓN y verificada contra el catálogo (mismas firmas 4/3/4, retorno `boolean` y longitudes 2544/1765/1711 que staging, con `pg_get_functiondef` previo que confirmó definiciones idénticas al cuerpo base); la línea anterior sobre "NO aplicada en producción" queda superada por esta.
