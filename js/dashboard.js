@@ -234,3 +234,25 @@ btnSalir.addEventListener('click', async () => {
     panelCarga.innerHTML = `<div class="alerta alerta-roja">Error al cargar: ${escaparHtml(e.message || e)}</div>`;
   }
 })();
+
+// M-36 fase 1 (RQ-05): contador de reclamos nuevos. Llamada independiente:
+// si falla o devuelve null, solo esa tarjeta queda con "No se pudo cargar el
+// contador" y el resto del dashboard sigue funcionando.
+(async () => {
+  const contador = document.getElementById('contadorReclamos');
+  if(!contador) return;
+  try{
+    const lista = await llamar('f_admin_listar_reclamos', { p_token: token, p_estado: 'nuevo' });
+    if(!lista){
+      contador.textContent = 'No se pudo cargar el contador';
+      return;
+    }
+    contador.textContent = lista.length === 0
+      ? 'Sin reclamos nuevos'
+      : lista.length === 1
+        ? '1 reclamo nuevo'
+        : lista.length + ' reclamos nuevos';
+  }catch(e){
+    contador.textContent = 'No se pudo cargar el contador';
+  }
+})();

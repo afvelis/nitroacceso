@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://exrbwctegkzxurzwihvh.supabase.co; font-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'; style-src 'self' 'sha256-DG85gQIDNHgTQQRSEmlcBRq6EDxDirQzJkfRU9YzkQA='">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://exrbwctegkzxurzwihvh.supabase.co; font-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'; style-src 'self' 'sha256-bjm9e6itthc0swO2tLgzdOqAH8xOnhjMUnfPi6huQFk='">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -120,6 +120,12 @@ label{display:block;margin-bottom:12px;color:var(--suave);font-size:14px;font-we
 .fila-check{display:flex;gap:8px;align-items:center;color:var(--texto)}
 .chk-auto{width:auto}
 .texto-rojo{color:var(--rojo)}
+/* ===== M-36 fase 1: bloque de reclamo en la pantalla anulada ===== */
+/* .codigo igual al de aliados.html: el código REC-XXXXXX destaca en mono. */
+.codigo{background:#0d1526;border:1px solid var(--borde);border-radius:10px;padding:12px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:20px;letter-spacing:2px;margin-top:8px;word-break:break-all;text-align:center;font-weight:700}
+.botones-fila{display:flex;gap:10px;justify-content:flex-start;flex-wrap:wrap;margin-top:8px}
+.err-campo{color:var(--rojo);font-size:13px;margin-top:4px;font-weight:600}
+.campo-error{border-color:var(--rojo)!important}
 </style>
 </head>
 <body>
@@ -144,6 +150,44 @@ label{display:block;margin-bottom:12px;color:var(--suave);font-size:14px;font-we
     <h2 id="tituloAnulado">⛔ Esta asignación quedó anulada</h2>
     <div class="aviso aviso-rojo" id="razonAnulada"></div>
     <div id="detalleAnulado" class="suave-14 mt-10"></div>
+    <!-- M-36 fase 1 (RQ-01): el reclamo vive DENTRO de esta tarjeta. El resultado
+         de la acción se pinta aquí mismo, junto al botón (norma v2.2); sin
+         alert/confirm nativos (regla v2.1). -->
+    <div id="bloqueReclamo" class="mt-10">
+      <button class="btn btn-morado" id="btnReclamar">Reclamar</button>
+      <form id="formReclamo" hidden>
+        <label for="reclamoMotivo">Motivo del reclamo *</label>
+        <select id="reclamoMotivo">
+          <option value="">— Elige un motivo —</option>
+          <option value="anulacion_no_entendida">No entiendo por qué anularon mi asignación</option>
+          <option value="anulacion_por_error">Creo que me anularon por error</option>
+          <option value="cupones_no_disponibles">Mis cupones no aparecen o no se pueden usar</option>
+          <option value="datos_incorrectos">Mis datos están incorrectos</option>
+          <option value="otro">Otro motivo</option>
+        </select>
+        <div id="errReclamoMotivo" class="err-campo" hidden></div>
+
+        <label for="reclamoDetalle">Cuéntanos qué pasó (opcional)</label>
+        <textarea id="reclamoDetalle" rows="4" maxlength="500" placeholder="Explica brevemente tu situación."></textarea>
+        <div class="suave-13" id="reclamoDetalleCuenta">0/500</div>
+        <div id="errReclamoDetalle" class="err-campo" hidden></div>
+
+        <label for="reclamoNombre">Tu nombre *</label>
+        <input id="reclamoNombre" maxlength="120" autocomplete="name" placeholder="Ej.: María Pérez">
+        <div id="errReclamoNombre" class="err-campo" hidden></div>
+
+        <label for="reclamoContacto">Correo o teléfono de contacto *</label>
+        <input id="reclamoContacto" maxlength="120" autocomplete="email" placeholder="Correo o teléfono">
+        <div id="errReclamoContacto" class="err-campo" hidden></div>
+
+        <div class="botones-fila">
+          <button type="button" class="btn btn-morado" id="btnEnviarReclamo">Enviar reclamo</button>
+          <button type="button" class="btn btn-gris" id="btnCancelarReclamo">Cancelar</button>
+        </div>
+      </form>
+      <div id="reclamoResultado" class="mt-10"></div>
+      <p class="suave-13 mt-10">Si prefieres, también puedes hablar con la mesa técnica del evento y darles este código: <span class="mono" id="reclamoMesaCodigo"></span>.</p>
+    </div>
   </div>
 
   <div id="panelPrincipal" class="oculto">

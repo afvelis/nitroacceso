@@ -124,6 +124,16 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;backgr
       <div id="progresoDias"></div>
     </div>
 
+    <!-- M-36 fase 1 (RQ-05): atajo a la bandeja de reclamos + contador.
+         El contador se pinta aquí DENTRO de la tarjeta (norma v2.2); si la
+         llamada falla, el texto es "No se pudo cargar el contador" sin romper
+         el resto del dashboard. -->
+    <div class="tarjeta">
+      <h2>📮 Reclamos</h2>
+      <a href="reclamos.html" class="btn btn-azul">Ver la bandeja de reclamos</a>
+      <p class="suave-15 mb-8" id="contadorReclamos">Cargando reclamos...</p>
+    </div>
+
     <div class="tarjeta">
       <h2>⚡ Accesos rápidos</h2>
       <div class="accesos-grid">
