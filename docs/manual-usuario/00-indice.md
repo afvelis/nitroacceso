@@ -57,6 +57,7 @@ Está escrito para gente no técnica, con prisa el día del evento: te dice qué
 | [08 - Estadísticas](08-estadisticas.md) | Los números del evento y el informe final | Administrador |
 | [09 - Problemas frecuentes](09-problemas-frecuentes.md) | Síntoma, causa y qué hacer | Todos |
 | [10 - Seguridad del panel](10-seguridad-del-panel.md) | Rotar PIN y revocar sesiones | Administrador |
+| [11 - Reclamos](11-reclamos.md) | Consultar un reclamo con su código y atender la bandeja | Reclamante y administrador |
 
 **Si es tu primer día, lee en este orden:**
 

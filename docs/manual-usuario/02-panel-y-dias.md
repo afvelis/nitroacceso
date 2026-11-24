@@ -100,3 +100,12 @@ En la tarjeta **"⚡ Accesos rápidos"** tienes: **"🛠️ Gestión completa"**
 - **No confíes en la puerta sin ver la etiqueta roja** "Evento cerrado (listo para puerta)".
 
 *Pendiente de probar en el entorno de pruebas.*
+
+## Nota (24/11/2026) — tarjeta 📮 Reclamos del panel
+
+El panel tiene una tarjeta nueva, **"📮 Reclamos"** (después de las tarjetas de contadores):
+
+- El **contador** dice cuántos reclamos hay en estado "Nuevo" pendientes de revisar: **"Sin reclamos nuevos"**, **"1 reclamo nuevo"** o **"N reclamos nuevos"**.
+- El botón **"Ver la bandeja de reclamos"** te lleva a la bandeja para revisarlos y responderlos (capítulo 11).
+
+*(Probado en el entorno de pruebas el 24/11/2026: la bandeja se abre desde la tarjeta. El contador con cada texto literal quedó pendiente de comprobar en pantalla.)*

@@ -50,12 +50,12 @@ Paso 0 cumplido: requisitos aprobados por el usuario en una tabla antes de const
 | RQ-03 | Al enviar se guarda como `nuevo` y se devuelve un código `REC-XXXXXX` visible en pantalla | Aliado | 1 |
 | RQ-04 | Sin login: el código del link (`ASI-…`) identifica el caso | Aliado | 1 |
 | RQ-05 | El dashboard muestra contador de reclamos `nuevo` como alerta, con enlace a la bandeja | Admin | 1 |
-| RQ-06 | Bandeja: filtros por estado y fecha, detalle, cambio de estado `nuevo → en_revision → resuelto / rechazado`, nota interna y respuesta visible | Admin | 1 |
+| RQ-06 | Bandeja: filtros por estado y fecha, detalle, cambio de estado `nuevo → en_revision → resuelto / rechazado`, nota interna y respuesta visible (filtro por fecha: diferido a fase 2) | Admin | 1 |
 | RQ-07 | El reclamante consulta su reclamo con el código `REC-…` en una pantalla mínima | Aliado | 1 |
 | RQ-08 | Un reclamo no cambia estados, ni cupones, ni reactiva nada | — | 1 |
 | RQ-09 | Máximo 3 reclamos por link cada 24 h; el aviso se muestra en la tarjeta | — | 1 |
 | RQ-10 | Privacidad: solo nombre y un contacto; sin cédulas ni datos de terceros; RLS cerrada y todo por RPC | — | 1 |
-| RQ-11 | Los reclamos se archivan con el evento; no se borran sin orden explícita | Admin | 1 |
+| RQ-11 | Los reclamos se archivan con el evento; no se borran sin orden explícita | Admin | 2/3 |
 | RQ-12 | Fallback: la mesa técnica sigue siendo el camino si el módulo falla | — | 1 |
 | RQ-13 | Reclamos desde la vista de cortesía anulada | Beneficiario | 2 |
 | RQ-14 | Registro de reclamos en puerta (pase rechazado / QR ilegible) | Staff de puerta | 2 |
@@ -77,6 +77,9 @@ Paso 0 cumplido: requisitos aprobados por el usuario en una tabla antes de const
 - [ ] La tabla de requisitos existe y está aprobada por el usuario (queda copiada en esta tarea).
 - [ ] Nada fue construido antes de la aprobación del brief.
 - [ ] Si se construye después: cada fase con su prueba del objetivo dato a dato.
+- [x] Fase 1 construida y probada (24/11/2026): formulario en la pantalla de anulado del aliado, código `REC-XXXXXX`, consulta pública, bandeja del admin con filtros y contador en el dashboard.
+- [x] Servidor verificado por catálogo en staging el 23/11/2026: tabla `reclamos` con `rls=t`, `filas=0` inicial, sin grants para `anon`; las 4 funciones con `secdef=t`, `search_path=public, pg_temp` y `anon=t`.
+- [ ] PENDIENTE de prueba en pantalla: validación campo a campo al enviar vacío, y el contador de la tarjeta `📮 Reclamos` del dashboard.
 
 ## Verificación
 
@@ -95,3 +98,24 @@ En esta etapa no hay prueba técnica: la verificación es que el usuario apruebe
 - Brief y tabla de requisitos (RQ-01…RQ-15) aprobados por el usuario el 23/11/2026 y copiados arriba. Avisos solo dentro de la app: el módulo no se externaliza por correo ni por otro medio.
 - Revisión del SQL por juez independiente antes de ejecutarlo: PASA. Se corrigió `set search_path` a `pg_temp` (estaba `pg/temp`, que no existe y anulaba en silencio el endurecimiento) y se añadió `pg_advisory_xact_lock` por link para que dos envíos simultáneos no se salten el límite de 3 por 24 h.
 - Pendiente: el usuario ejecuta el SQL en staging y se verifica por catálogo (`pg_proc`/`information_schema`), no por el «Success» del editor. Después: frontend de la fase 1.
+
+**24/11/2026 — fase 1 probada en pantalla (staging).**
+
+Prueba real con la asignación `ASI-DEMO01` anulada a propósito (revertida después):
+
+| RQ | Cómo se probó | Resultado |
+| --- | --- | --- |
+| RQ-01 | `aliado.html?a=ASI-DEMO01` con la asignación anulada | CUMPLIDO: tarjeta de anulado con el botón `Reclamar` |
+| RQ-02/RQ-03 | Envío del formulario | CUMPLIDO: salió el código `REC-CEB4AD` con `Reclamo registrado.` dentro de la tarjeta |
+| RQ-04 | Sin login, solo con el código del link | CUMPLIDO |
+| RQ-05 | Tarjeta 📮 Reclamos del dashboard | PARCIAL: el botón «Ver la bandeja de reclamos» se usó desde la tarjeta; el texto del contador NO se comprobó en pantalla → PENDIENTE |
+| RQ-06 | `reclamos.html`: lista, filtros y guardado | PARCIAL: filtros por ESTADO y guardado CUMPLIDOS; el filtro por FECHA del requisito NO se construyó (diferido a fase 2) |
+| RQ-07 | `reclamo.html?r=REC-CEB4AD` antes y después de responder | CUMPLIDO: `Nuevo` → `En revisión` con la respuesta visible y sin nota interna |
+| RQ-08 | El reclamo no tocó cupones ni estados de la asignación | CUMPLIDO (la asignación solo cambió por el SQL de la prueba) |
+| RQ-09 | Límite de 3 por link cada 24 h | NO PROBADO en pantalla (implementado en servidor con `pg_advisory_xact_lock`) |
+| RQ-10 | RLS y grants | CUMPLIDO (verificado por catálogo el 23/11/2026) |
+| RQ-11 | Archivado con el evento | PENDIENTE (no hay nada construido para archivar; se decide en fase 2/3) |
+
+Pendiente de prueba en pantalla: la validación campo a campo al enviar vacío, y el contador de la tarjeta `📮 Reclamos` del dashboard. El reclamo `REC-CEB4AD` queda en staging como ejemplo.
+
+REC-CEB4AD: motivo = anulacion_por_error, respuesta = "Recibido, lo estamos revisando", estado final = En revisión.
