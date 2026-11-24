@@ -73,7 +73,7 @@ Usa [PLANTILLA.md](PLANTILLA.md) para crear tareas nuevas. No renombres los IDs 
 | [F-1](F-1-talento-copiar-dia2.md) | Reparar el botón «Repetir y editar la del Día 1» en talento.html | P1 | **hecho** (09/11/2026) | — |
 | [F-2](F-2-coord-mis-links-orden-cupo.md) | Reordenar «Mis links» de coord.html (más nuevo primero) y evaluar mostrar cupo | P2 | pendiente | — |
 | [F-3](F-3-auditoria-edicion-abierta-cerrada.md) | Revalidar la lógica edición-abierta / edición-cerrada módulo por módulo | P2 | pendiente | — |
-| [F-4](F-4-qr-talento-codigo-corto.md) | Mostrar el código corto en el QR del talento | P2 | pendiente | — |
+| [F-4](F-4-qr-talento-codigo-corto.md) | Mostrar el código corto en el QR del talento | P2 | hecho | — |
 | [F-5](F-5-puerta-parametros-tras-login.md) | Conservar los parámetros ?lista=/?v= tras el login de puerta.html | P2 | pendiente | — |
 | [F-6](F-6-talento-copiar-selectivo.md) | Copiar del Día 1 al Día 2 selectivo, repetible y siempre visible | P1 | **hecho** (11/11/2026) | — |
 | [F-7](F-7-modales-nativos.md) | Sustituir los diálogos nativos por los modales de la app (regla v2.1) | P1 | **hecho** (11/11/2026, PR #14) | — |
