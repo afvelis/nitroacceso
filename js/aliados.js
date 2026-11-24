@@ -192,6 +192,16 @@ async function copiarTexto(txt, btn){
 function fechaBonita(iso){
   try { return new Date(iso).toLocaleDateString('es-VE', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }); } catch (e) { return ''; }
 }
+// M-34: fecha en formato fijo dd/mm/aaaa con ceros a la izquierda, sin
+// toLocaleDateString (el formato corto varía por navegador). Nulo o fecha
+// inválida → '-'.
+function fechaCorta(iso){
+  var d = new Date(iso);
+  if(!iso || isNaN(d.getTime())) return '-';
+  var dd = String(d.getUTCDate()).padStart(2, '0');
+  var mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+  return dd + '/' + mm + '/' + d.getUTCFullYear();
+}
 function msgErrorAliado(r){
   var map = {
     ERR_SESION: 'Tu sesión expiró. Entra de nuevo con tu PIN.',
@@ -270,7 +280,7 @@ function renderAliado(a){
     '<p class="asig-linea">Cédula: <b>' + esc(a.cedula || '-') + '</b></p>' +
     '<p class="asig-linea">Correo: <b>' + esc(a.correo || '-') + '</b></p>' +
     '<p class="asig-linea">Teléfono: <b>' + esc(a.telefono || '-') + '</b></p>' +
-    '<p class="asig-linea">Creado: ' + fechaBonita(a.creada_at) + '</p>';
+    '<p class="asig-linea">Creado: ' + fechaCorta(a.creada_at) + '</p>';
   div.appendChild(info);
 
   if (a.activo){

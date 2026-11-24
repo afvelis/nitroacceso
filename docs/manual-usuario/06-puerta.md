@@ -121,3 +121,7 @@ Pulsa **"🚪 Cerrar sesión"**, confirma, y vuelves a la pantalla del PIN de pu
 - **No dejes la sesión de puerta sin vigilancia**: se cierra sola tras 5 minutos sin uso, y hay que volver a entrar con el PIN.
 
 *Probado en el entorno de pruebas el 10/11/2026. Los mensajes de revalidación de estado (evento en edición, día cambiado, rechazo concreto junto al botón) quedaron escritos el 23/11/2026 y están PENDIENTES de prueba en navegador. El botón **"🔄 Comprobar de nuevo"** de la tarjeta "Evento aún abierto" también quedó escrito el 23/11/2026 y está PENDIENTE de prueba en navegador.*
+
+## Nota (23/11/2026) — links con el código ya cargado
+
+Si el link con el que entras trae el código (`?lista=`, `?v=`, `?cl=` o `?ci=`), después de escribir el PIN y pulsar **Entrar** el campo del buscador aparece ya relleno con ese código. No se busca solo: pulsa **Buscar** para cargar la lista o el vendedor.

@@ -396,3 +396,12 @@
 - Se cierra con evidencia medida y sin tocar código: (a) pantalla de staging con `Codigo: LST-DEMO01-D1` bajo el QR; (b) `f_link_talento_ver("TAL-DEMO01")` devuelve ese mismo `codigo_corto`; (c) árbol git limpio y `stand.html` intacto; (d) `f_puerta_lista` encuentra `LST-DEMO01-D1` y `LST-DEMO01-D2`, así que el fallback manual del día del evento funciona.
 - Por qué así y no reescribiendo: volver a tocar una pantalla declarada congelada (ARQUITECTURA.md §7) no aportaba nada y añadía riesgo.
 - Regla que deja: una tarea nacida de un hallazgo se contrasta con el código actual ANTES de abrir rama; si ya está resuelta, se cierra con evidencia y se anota qué commit la resolvió.
+
+---
+
+## 23/11/2026 · F-5, M-33 y M-34: tres tareas de frontend cerradas con prueba en pantalla
+
+- F-5: `aplicarParametrosURL()` en `js/puerta.js` se llama también tras el login, así que un link `?lista=`/`?v=`/`?cl=`/`?ci=` ya no se pierde cuando no había sesión. Solo pre-llena el campo; no busca solo.
+- M-33: la pantalla de anulado del aliado deja de mostrar texto crudo y explica en llano qué pasó, qué no se puede usar y con qué código reclamar. Los valores de la base se pintan con `textContent`, nunca dentro de `innerHTML`.
+- M-34: la tarjeta del aliado muestra `Creado: dd/mm/aaaa` con una función propia (`fechaCorta`), no con `toLocaleDateString`, para que el formato no cambie según el navegador.
+- La prueba de M-33 exigió anular `ASI-DEMO01` en staging: se hizo con reversión incluida en el mismo turno y se verificó por RPC (`estado: activa`, `razon_anulacion: null`). Regla que confirma: toda mutación de datos de prueba en staging viaja con su reversión y se verifica por dato, no por el «Success» del editor.

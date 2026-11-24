@@ -527,6 +527,11 @@ function abrirModalDetallesGanador(concurso){
   const estadoG = g.estado === 'activa'
     ? (g.canjeado_at ? '<span class="pill pill-amarillo">Canjeado</span>' : '<span class="pill pill-verde">Activo</span>')
     : '<span class="pill pill-rojo">Anulado</span>';
+  // M-33: si el premio está anulado, bajo el dato "Estado" va una nota en texto
+  // claro. Texto fijo (sin datos dinámicos), puede ir dentro del HTML del modal.
+  const notaAnulado = g.estado === 'activa'
+    ? ''
+    : '<p class="suave-13 mt-10">Este premio fue anulado: ya no se puede canjear. Si crees que es un error, avisa a la mesa técnica del evento.</p>';
   const fechaTxt = concurso.fecha_concurso ? fmtFecha(concurso.fecha_concurso) : '—';
 
   const fondo = document.createElement('div');
@@ -548,6 +553,7 @@ function abrirModalDetallesGanador(concurso){
         '<div class="dato-gan"><strong>Fecha del concurso</strong><span>' + fechaTxt + '</span></div>' +
         '<div class="dato-gan"><strong>Entradas ganadas</strong><span>' + g.cupones_total + '</span></div>' +
         '<div class="dato-gan"><strong>Estado</strong><span>' + estadoG + '</span></div>' +
+        notaAnulado +
       '</div>' +
       '<div class="modal-acciones">' +
         '<button class="btn btn-gris" id="mCerrar">Cerrar</button>' +
@@ -726,9 +732,37 @@ async function cargar(){
     document.getElementById('panelCarga').style.display = 'none';
 
     if(!d.aliado.activo || d.asignacion.estado !== 'activa'){
-      document.getElementById('razonAnulada').textContent =
-        'Motivo: ' + (d.asignacion.razon_anulacion || 'No especificado') +
-        '\nAliado: ' + d.aliado.nombre_organizacion;
+      // M-33: la vista "anulada" ahora explica QUÉ pasó y QUÉ hacer. Dos casos:
+      // organización desactivada vs. asignación anulada. Los valores dinámicos
+      // (nombre, motivo, código) van SIEMPRE por textContent/createElement:
+      // nunca por innerHTML (vienen de la base y la llena el administrador).
+      const tituloAnulado = document.getElementById('tituloAnulado');
+      const razonAnulada = document.getElementById('razonAnulada');
+      const detalleAnulado = document.getElementById('detalleAnulado');
+      detalleAnulado.textContent = '';
+      if(!d.aliado.activo){
+        tituloAnulado.textContent = '⛔ Tu organización quedó desactivada';
+        razonAnulada.textContent = d.aliado.nombre_organizacion
+          ? 'La cuenta de ' + d.aliado.nombre_organizacion + ' ya no está activa en este evento.'
+          : 'La cuenta de esta organización ya no está activa en este evento.';
+        const p1 = document.createElement('p');
+        p1.textContent = 'Los cupones de esta organización no se pueden usar en la puerta.';
+        const p2 = document.createElement('p');
+        p2.textContent = 'Si crees que es un error, comunícate con la mesa técnica del evento y diles este código: ' + d.asignacion.codigo_link + '.';
+        detalleAnulado.appendChild(p1);
+        detalleAnulado.appendChild(p2);
+      }else{
+        tituloAnulado.textContent = '⛔ Esta asignación quedó anulada';
+        razonAnulada.textContent = d.asignacion.razon_anulacion
+          ? 'Motivo: ' + d.asignacion.razon_anulacion
+          : 'No se registró un motivo de la anulación.';
+        const p1 = document.createElement('p');
+        p1.textContent = 'Los cupones de esta asignación ya no se pueden usar en la puerta.';
+        const p2 = document.createElement('p');
+        p2.textContent = 'Si crees que es un error, comunícate con la mesa técnica del evento y diles este código: ' + d.asignacion.codigo_link + '.';
+        detalleAnulado.appendChild(p1);
+        detalleAnulado.appendChild(p2);
+      }
       document.getElementById('panelAnulado').style.display = 'block';
       return;
     }
