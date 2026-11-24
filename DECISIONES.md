@@ -414,3 +414,11 @@
 - El reclamo no cambia estados ni cupones: es registro y seguimiento. La seguridad vive en el servidor (RLS cerrada, `revoke all` para `anon`, todo por RPC, `security definer` con `search_path` a `public, pg_temp`).
 - El formulario se probó de punta a punta con un reclamo real (`REC-CEB4AD`): crear, consultar, ver en la bandeja, responder y volver a consultar. El código `REC-XXXXXX` es la única llave del reclamante, así que la vista pública no devuelve datos personales ni la nota interna.
 - Se rechazó el atajo de «avisar por correo» por ahora: no hay motor de envío y el usuario no quiere externalizar nada hasta que el módulo esté completo.
+
+---
+
+## 24/11/2026 · Orden de despliegue: primero la base, después el frontend
+
+- El PR de M-36 fase 1 se fusionó y Pages publicó el frontend el mismo día, mientras la migración `0012` solo estaba aplicada en staging: durante unos minutos producción tuvo el botón `Reclamar` y la bandeja sin las funciones detrás (el contador del panel lo absorbe con «No se pudo cargar el contador» y el reclamo falla con aviso en la tarjeta, así que no se rompe la página, pero el módulo queda a medias).
+- Se resolvió aplicando `0012` en producción y verificando por catálogo el mismo día. Lección para las próximas fases: **la migración va primero** (staging y producción) y el frontend se fusiona después, o ambos en el mismo lote con el SQL ya ejecutado.
+- Regla que se añade al control de cada PR que traiga SQL nuevo: decir en la descripción **en qué entorno está aplicada ya la migración** y si el frontend depende de ella.

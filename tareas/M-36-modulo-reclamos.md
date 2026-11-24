@@ -79,7 +79,8 @@ Paso 0 cumplido: requisitos aprobados por el usuario en una tabla antes de const
 - [ ] Si se construye después: cada fase con su prueba del objetivo dato a dato.
 - [x] Fase 1 construida y probada (24/11/2026): formulario en la pantalla de anulado del aliado, código `REC-XXXXXX`, consulta pública, bandeja del admin con filtros y contador en el dashboard.
 - [x] Servidor verificado por catálogo en staging el 23/11/2026: tabla `reclamos` con `rls=t`, `filas=0` inicial, sin grants para `anon`; las 4 funciones con `secdef=t`, `search_path=public, pg_temp` y `anon=t`.
-- [ ] PENDIENTE de prueba en pantalla: validación campo a campo al enviar vacío, y el contador de la tarjeta `📮 Reclamos` del dashboard.
+- [x] Contador de la tarjeta `📮 Reclamos` probado en pantalla el 24/11/2026 con **0 reclamos nuevos** (`Sin reclamos nuevos`). El caso con N>0 queda PENDIENTE.
+- [ ] PENDIENTE de prueba en pantalla: el envío del formulario con todos los campos vacíos (validación campo a campo).
 
 ## Verificación
 
@@ -119,3 +120,10 @@ Prueba real con la asignación `ASI-DEMO01` anulada a propósito (revertida desp
 Pendiente de prueba en pantalla: la validación campo a campo al enviar vacío, y el contador de la tarjeta `📮 Reclamos` del dashboard. El reclamo `REC-CEB4AD` queda en staging como ejemplo.
 
 REC-CEB4AD: motivo = anulacion_por_error, respuesta = "Recibido, lo estamos revisando", estado final = En revisión.
+
+**24/11/2026 — fase 1 también en servidor de producción.**
+
+- `0012_m36_modulo_reclamos.sql` ejecutada en producción y verificada **por catálogo** (no por el «Success» del editor): `f_reclamo_crear(text,text,text,text,text)`, `f_reclamo_ver(text)`, `f_admin_listar_reclamos(uuid,text)` y `f_admin_resolver_reclamo(uuid,text,text,text,text)` con `secdef=t`, `cfg=search_path=public, pg_temp` y `anon=t`; tabla `public.reclamos` con `rls=t` y `filas=0`; sin grants para `anon`.
+- Motivo de hacerlo el mismo día: el frontend ya estaba publicado en Pages, así que producción tenía el botón `Reclamar` sin sus funciones detrás. El módulo queda completo en los dos entornos.
+- Contador del panel probado en pantalla en staging: la tarjeta `📮 Reclamos` mostró `Sin reclamos nuevos` con su botón `Ver la bandeja de reclamos`. **El caso con reclamos nuevos (N>0) no se ha visto en pantalla.**
+- Sigue pendiente de prueba en pantalla: el envío del formulario vacío (validación campo a campo).
