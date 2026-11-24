@@ -89,3 +89,13 @@ El aliado abre su link (aliado.html) y ve su pantalla:
 - **No des tu código COORD- a otra persona**: crea links que quedarán a tu nombre.
 
 *Pendiente de probar en el entorno de pruebas.*
+
+## Nota (23/11/2026) — cuando algo quedó anulado
+
+Si el administrador anuló la asignación de un aliado (o desactivó su organización), al abrir el link el aliado ya no ve su pantalla normal: ve una tarjeta que explica en llano qué pasó (el título dice si fue la organización o la asignación), el motivo si se registró uno, qué cupones ya no se pueden usar en la puerta y, al final, **el código que debe dictar a la mesa técnica del evento** para reclamar. En el detalle de un ganador con premio anulado, debajo de «Estado» aparece además el aviso de que ese premio ya no se puede canjear.
+
+## Nota (23/11/2026) — fecha de creación en la tarjeta del aliado
+
+En la tarjeta de cada aliado del panel del administrador, la línea **Creado:** muestra la fecha en formato **dd/mm/aaaa** (por ejemplo, `Creado: 10/11/2026`). El resto de la tarjeta no cambió.
+
+*(Probado en el entorno de pruebas el 23/11/2026: la pantalla de asignación anulada con la asignación `ASI-DEMO01` anulada y revertida después; la fecha en la tarjeta `Aliado Demo`. El caso de organización desactivada quedó verificado por código, sin caso real que probar en pantalla.)*

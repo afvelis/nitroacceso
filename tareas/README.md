@@ -74,15 +74,15 @@ Usa [PLANTILLA.md](PLANTILLA.md) para crear tareas nuevas. No renombres los IDs 
 | [F-2](F-2-coord-mis-links-orden-cupo.md) | Reordenar «Mis links» de coord.html (más nuevo primero) y evaluar mostrar cupo | P2 | pendiente | — |
 | [F-3](F-3-auditoria-edicion-abierta-cerrada.md) | Revalidar la lógica edición-abierta / edición-cerrada módulo por módulo | P2 | pendiente | — |
 | [F-4](F-4-qr-talento-codigo-corto.md) | Mostrar el código corto en el QR del talento | P2 | hecho | — |
-| [F-5](F-5-puerta-parametros-tras-login.md) | Conservar los parámetros ?lista=/?v= tras el login de puerta.html | P2 | pendiente | — |
+| [F-5](F-5-puerta-parametros-tras-login.md) | Conservar los parámetros ?lista=/?v= tras el login de puerta.html | P2 | **hecho** (23/11/2026) | — |
 | [F-6](F-6-talento-copiar-selectivo.md) | Copiar del Día 1 al Día 2 selectivo, repetible y siempre visible | P1 | **hecho** (11/11/2026) | — |
 | [F-7](F-7-modales-nativos.md) | Sustituir los diálogos nativos por los modales de la app (regla v2.1) | P1 | **hecho** (11/11/2026, PR #14) | — |
 | [F-8](F-8-reautorizacion-reescribe-hora.md) | La reautorización en puerta reescribe `marcado_dia1_at` y no deja rastro del doble escaneo | P2 | **hecho** (14/11/2026, staging y producción) | — |
 | [F-9](F-9-dia-fuera-de-rango.md) | `f_puerta_marcar_vendedor` no valida `p_dia`: un valor fuera de rango autoriza otro día | P1 | **hecho** (14/11/2026, staging; pendiente aplicar en producción) | — |
 | [F-10](F-10-contador-disponibles-no-resta-lista.md) | El contador «Disponibles» del stand no resta la lista de espera | P2 | **hecho** (14/11/2026, PR #27) | — |
 | [F-11](F-11-doble-punto-hora-puerta.md) | Doble punto final en la hora de «ENTRADA YA CONSUMADA» en puerta | P3 | **hecho** (14/11/2026, PR #26) | — |
-| [M-33](M-33-vista-anulada-aliado.md) | Humanizar la vista «anulada» del aliado | P2 | pendiente | — |
-| [M-34](M-34-fecha-creacion-tarjeta-admin.md) | Mostrar la fecha de creación en la tarjeta del aliado (aliados.html) | P2 | pendiente | — |
+| [M-33](M-33-vista-anulada-aliado.md) | Humanizar la vista «anulada» del aliado | P2 | **hecho** (23/11/2026) | — |
+| [M-34](M-34-fecha-creacion-tarjeta-admin.md) | Mostrar la fecha de creación en la tarjeta del aliado (aliados.html) | P2 | **hecho** (23/11/2026) | — |
 | [M-35](M-35-nombres-premios-anulados.md) | Mostrar nombres de premios anulados (requiere cambio de RPC) | P2 | pendiente | — |
 | [M-36](M-36-modulo-reclamos.md) | Módulo de reclamos | P2 | pendiente | — |
 | [M-37](M-37-multi-evento.md) | Multi-evento: gestionar hasta 3 eventos simultáneos desde el dashboard | P2 | pendiente | P1-04 |
