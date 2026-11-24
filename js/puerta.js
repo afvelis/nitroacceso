@@ -438,6 +438,10 @@ btnEntrar.addEventListener('click', async () => {
     tokenSesion = r[0].token;
     activarAutoBloqueo();
     await verificarEstadoEvento();
+    // F-5: el panel principal ya está visible aquí si el evento está operativo,
+    // así que el campo manual existe y se ve rellenado con el código del link.
+    // Edición: solo pre-llena el campo; no lanza búsqueda automática.
+    aplicarParametrosURL();
   }catch(e){
     // P0-08: el bloqueo de puerta se pinta junto al campo (norma v2.2), sin modal.
     const msgRaw = (e && e.message) ? e.message : String(e);
@@ -1322,6 +1326,18 @@ async function mostrarListaCompleta(lista){
   }
 }
 
+// F-5 (tareas/F-5-parametros-url-puerta.md): al entrar (login nuevo o sesión ya
+// guardada), pre-llena el campo manual con el código que venga en el link
+// compartido: ?v= → ?lista= → ?cl= → ?ci=. Solo pre-llena el campo: NO lanza
+// búsqueda automática. Devuelve el código aplicado o null.
+function aplicarParametrosURL(){
+  const params = new URLSearchParams(location.search);
+  const codigo = params.get('v') || params.get('lista') || params.get('cl') || params.get('ci');
+  if(!codigo) return null;
+  inputManual.value = codigo;
+  return codigo;
+}
+
 (function(){
   const s = leerSesion();
   if(s && (s.rol === 'puerta' || s.rol === 'supervisor')){
@@ -1332,20 +1348,7 @@ async function mostrarListaCompleta(lista){
     // P1-02: un rol guardado que ya no es válido aquí (p. ej. admin) no entra.
     borrarSesion();
   }
-  const params = new URLSearchParams(location.search);
-  const listaParam = params.get('lista');
-  const vendedorParam = params.get('v');
-  const clParam = params.get('cl');
-  const ciParam = params.get('ci');
   if(tokenSesion){
-    if(vendedorParam){
-      inputManual.value = vendedorParam;
-    }else if(listaParam){
-      inputManual.value = listaParam;
-    }else if(clParam){
-      inputManual.value = clParam;
-    }else if(ciParam){
-      inputManual.value = ciParam;
-    }
+    aplicarParametrosURL();
   }
 })();
