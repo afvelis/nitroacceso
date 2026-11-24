@@ -387,3 +387,12 @@
 
 - 23/11 · **La migración `0011_p1_02_revalidacion_estado_puerta.sql` está aplicada y verificada también en PRODUCCIÓN — la entrada anterior de esta misma fecha que decía "NO en producción" queda SUPERADA por esta, no se borra (es el acta de cómo se trabajó).** Las tres RPC de marcado (`f_puerta_marcar_vendedor`, `f_puerta_marcar_persona`, `f_puerta_marcar_cortesia`) quedan con las mismas firmas (4/3/4), retorno `boolean` y guardas `edicion_abierta`/`dia_activo`/`dia1_cerrado` que en staging, y con las mismas longitudes en bytes (2544 / 1765 / 1711). Cómo se comprobó: ANTES de sustituir nada se corrió `pg_get_functiondef` de las tres en producción y se verificó que las definiciones de producción eran idénticas al cuerpo base (del que salió la 0011), de modo que no se perdiera ningún cambio local; después de aplicar, la verificación fue contra el catálogo de Postgres (3 filas, firmas y retornos), no por el "Success" del SQL Editor. Con esto el criterio 3 de P1-02 queda cerrado en SERVIDOR en los dos entornos.
 - 23/11 · **Riesgo operativo que abre la 0011 en producción: la puerta queda atada a `config.dia_activo`, que hoy está en `2`** (`dia1_cerrado = false`, `dia2_cerrado = false`, `edicion_abierta = false`). Debe revisarse ANTES del evento: si el evento arranca por el Día 1, hay que dejar `dia_activo = 1` a propósito y ANTES de abrir la puerta, porque el flujo del supervisor solo avanza de día, no retrocede.
+
+---
+
+## 23/11/2026 · F-4 se cierra como «ya implementada», no se re-implementa
+
+- La tarea F-4 quedó `pendiente` desde el 29/10 describiendo un defecto que P0-04 resolvió el 30/10 (commit `f87fb0f`) al introducir `dibujarPieQR()` en `config.js`.
+- Se cierra con evidencia medida y sin tocar código: (a) pantalla de staging con `Codigo: LST-DEMO01-D1` bajo el QR; (b) `f_link_talento_ver("TAL-DEMO01")` devuelve ese mismo `codigo_corto`; (c) árbol git limpio y `stand.html` intacto; (d) `f_puerta_lista` encuentra `LST-DEMO01-D1` y `LST-DEMO01-D2`, así que el fallback manual del día del evento funciona.
+- Por qué así y no reescribiendo: volver a tocar una pantalla declarada congelada (ARQUITECTURA.md §7) no aportaba nada y añadía riesgo.
+- Regla que deja: una tarea nacida de un hallazgo se contrasta con el código actual ANTES de abrir rama; si ya está resuelta, se cierra con evidencia y se anota qué commit la resolvió.
