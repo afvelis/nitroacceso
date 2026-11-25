@@ -2,7 +2,7 @@
 id: "P0-10"
 titulo: "CSP de puerta.html con hash style-src desfasado (página sin estilos en producción)"
 prioridad: "P0"
-estado: "en_progreso"
+estado: "hecho"
 area: "seguridad"
 depende_de: []
 archivos:
@@ -72,8 +72,10 @@ corresponde a ningún bloque, o bloque real sin hash declarado) produce
       con un hash totalmente falso, también FALLA; con la copia sin alterar,
       vuelve a `[ OK ] hashes CSP`. Una página a la que se le quitó el meta CSP
       no produce FALLA (se ignora, la cuenta baja a 15 páginas).
-- [ ] El usuario confirma EN PANTALLA que la puerta se ve con estilos.
-      **PENDIENTE DE PRUEBA EN PANTALLA.**
+- [x] El usuario confirma EN PANTALLA que la puerta se ve con estilos. "Prueba:"
+      «25/11/2026 — usuario confirma en producción (`https://afvelis.github.io/nitroacceso/puerta.html`)
+      que la pantalla de puerta se ve CON estilos tras el despliegue de
+      `pages-build-deployment #309`.»
 
 ## Notas de implementación
 
@@ -81,3 +83,25 @@ Implementado el 25/11/2026 en la rama `agente/2026-11-25-csp-hashes-puerta`
 (desde `bf6a15e`). El guardia también verificó los `script-src` inline de
 `aliados-concursos.html`, `aliados.html`, `dashboard.html` y `reclamos.html`:
 los 4 cuadran, sin desfasajes que reportar.
+
+## Cierre (25/11/2026)
+
+Prueba del criterio 3 recibida: el usuario confirma en producción
+(`https://afvelis.github.io/nitroacceso/puerta.html`) que la pantalla de puerta
+se ve CON estilos tras el despliegue de `pages-build-deployment #309`. Con esta
+prueba el criterio 3 queda cumplido y la tarea pasa a `estado: hecho` (la rama
+`agente/2026-11-25-csp-hashes-puerta` fue fusionada; ver PR #55, merge commit
+`8df5f29` en `main`).
+
+- **Commit culpable:** `18e0c95` (20/11/2026). Modificó el bloque `<style>` de
+  `puerta.html` añadiendo la regla `.aviso-error{...}` sin recalcular el hash
+  declarado en el meta CSP (línea 5). La página quedó entonces sin estilos;
+  defecto silencioso y sin otro síntoma visible hasta el 25/11.
+- **Arreglo:** hash nuevo en `puerta.html:5`
+  (`sha256-No2qdSo38EbkKjiSSCIvfL3K8i1CUlBEs552Pj3cgIM=`).
+- **Guardia:** `scripts/verificar-arranque.py` incorpora desde esta tarea el
+  chequeo `hashes CSP`: recalcula los `sha256-` inline de los bloques `<style>`
+  y `<script>` de todas las páginas de la raíz y los compara con lo declarado
+  en el meta CSP de cada una. Un desajuste da FALLA con `archivo:línea`.
+- **Intervalo real del defecto:** 20/11/2026 → 25/11/2026 (cinco días), porque
+  nadie verificaba hashes CSP antes de este guardia.

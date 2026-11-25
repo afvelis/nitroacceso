@@ -37,7 +37,7 @@ Poder responder “quién hizo qué y cuándo” para las acciones críticas, y 
 - [ ] Registrar como mínimo: login exitoso/fallido, logout, autorización de entrada, cierre/reapertura de lista, cierre de día, creación/anulación de cortesía, asignación de ganador, canje de premio, ampliación de cupones y limpieza.
 - [ ] Incluir el operador/dispositivo en las autorizaciones de puerta. Si se mantiene un PIN compartido, al menos registrar `device_label` y el token usado.
 - [ ] Añadir una vista de auditoría en admin, con filtros por fecha, acción y operador.
-- [ ] Enmascarar cédula en listados (`V-123****`) y mostrar el valor completo solo en la vista de detalle que lo requiera.  <!-- código listo, PENDIENTE DE PRUEBA EN PANTALLA -->
+- [x] Enmascarar cédula en listados (`V-123****`) y mostrar el valor completo solo en la vista de detalle que lo requiera. <!-- 25/11/2026: [x] por unidad 1a, ver notas; prueba en pantalla del mismo día en producción (dashboard.html → Aliados) -->
 - [ ] Revisar qué campos ve el aliado: limitar a nombre, cédula enmascarada y contacto necesario; no exponer más de lo necesario.
 - [x] Añadir aviso de privacidad/finalidad en formularios públicos (la casilla de consentimiento bloqueante se descarta por decisión: rompería el envío). <!-- 25/11/2026: finalidad + enlace, SIN casilla (decisión en DECISIONES.md); ver unidad 1a-2 -->
 - [x] Definir retención: qué se conserva al cerrar el evento, por cuánto tiempo y cómo se borra. <!-- 25/11/2026: docs/privacidad-retencion.md se deja como PROPUESTA; números pendientes de aprobación del organizador -->
@@ -49,8 +49,7 @@ Poder responder “quién hizo qué y cuándo” para las acciones críticas, y 
 - [ ] Se puede responder quién autorizó una entrada concreta y desde qué dispositivo.
 - [ ] Se puede ver quién anuló una cortesía o cambió una asignación.
 - [ ] Los intentos de login fallidos quedan registrados sin guardar el PIN.
-- [ ] La cédula se muestra enmascarada en los listados y el aliado no ve más datos de los necesarios.
-- [x] Existe aviso de privacidad y una política de retención documentada. <!-- 25/11/2026: [x] por unidad 1a-2, ver notas -->
+- [x] La cédula se muestra enmascarada en los listados y el aliado no ve más datos de los necesarios. <!-- 25/11/2026: [x] ver notas (unidad 1a + prueba en pantalla); queda unidad 1b en servidor -->- [x] Existe aviso de privacidad y una política de retención documentada. <!-- 25/11/2026: [x] por unidad 1a-2, ver notas -->
 - [x] Las páginas sensibles tienen `noindex` y `Referrer-Policy`. <!-- 25/11/2026: [x] por P0-06, re-verificado en unidad 1a-2 con grep por página (tabla en las notas) -->
 - [ ] La tabla de auditoría es append-only para los roles de la app.
 
@@ -136,3 +135,36 @@ Poder responder “quién hizo qué y cuándo” para las acciones críticas, y 
 - **Manual del usuario:** sección nueva «La privacidad de los datos del evento» en `docs/manual-usuario/10-seguridad-del-panel.md` (antes del cierre del capítulo). `00-indice.md` no enumera secciones del capítulo (solo capítulos), no se tocó.
 - **Verificación ejecutada:** `python3 scripts/verificar-arranque.py` → `RESULTADO: 15 OK, 2 AVISOS, 0 FALLAS`; parseo HTML con `html.parser` de los 4 ficheros HTML tocados → OK sin errores; `grep -rn "privacidad.html" --include=*.html .` → exactamente 3 enlaces (index:61, reclamo:161, aliado:165). Sin SQL, sin push, sin tocar `main`.
 - **Queda pendiente (unidad 1b / resto de P1-03):** tabla de auditoría + RPC; filtrar la cédula completa en el servidor (la máscara actual es solo de render); revisar campos del aliado en RPC; prueba en pantalla de la máscara (unidad 1a) y del bloque de reclamo; y aplicar/ajustar la política de retención tras la aprobación del organizador.
+
+**25/11/2026 — Cierre de la unidad 1a: prueba en pantalla del enmascaramiento.** En
+`dashboard.html` → Aliados (producción, `https://afvelis.github.io/nitroacceso/dashboard.html`),
+la línea `Cédula:` de la tarjeta del aliado se lee enmascarada (`NNN•••NN`); el usuario
+confirma que solo la cédula aparece enmascarada y el resto de datos del aliado sigue
+visible. Con esto queda marcado [x] el criterio «La cédula se muestra enmascarada en
+los listados y el aliado no ve más datos de los necesarios» (y su paso equivalente de la
+sección Pasos). El estado de la tarea queda `en_progreso`: queda la unidad 1b.
+
+**25/11/2026 — Unidad 1b pendiente (requiere SQL del usuario).** Hoy se enmascaró la
+cédula SOLO en el cliente (helper `cedulaMascara()` en los renders). Eso NO impide que
+el dato completo llegue al navegador: la RPC sigue devolviendo la cédula tal cual en el
+JSON, y cualquier persona con las herramientas de desarrollo ve el valor real. El
+diagnóstico de hoy identifica estas RPC que devuelven la cédula completa al navegador y
+que hay que enmascarar EN EL SERVIDOR (cada una con su `pg_get_functiondef` antes de
+reescribirla, y el SQL lo ejecuta el usuario):
+
+- `f_aliado_ver`
+- `f_admin_ver_concursos_aliado`
+- `f_admin_listar_aliados`
+- `f_link_stand_ver`
+- `f_admin_ver_evento`
+- `f_puerta_personas_de_lista`
+- `f_puerta_cortesia_lista`
+- `f_puerta_vendedor_por_qr`
+- `f_puerta_cortesia_individual`
+- `f_puerta_premiacion_por_qr`
+
+Nota de diseño pendiente de decidir con el usuario: las tres vistas de puerta donde hoy
+se muestra la cédula COMPLETA a propósito (comparación contra documento físico,
+`js/puerta.js:673/876/959`) podrían seguir necesitando el valor completo; si se decide
+así, esas RPC se enmascaran de otra forma o se consulta el dato puntual. Orden de
+despliegue obligatorio: migración primero (staging y producción), frontend después.
