@@ -422,3 +422,12 @@
 - El PR de M-36 fase 1 se fusionó y Pages publicó el frontend el mismo día, mientras la migración `0012` solo estaba aplicada en staging: durante unos minutos producción tuvo el botón `Reclamar` y la bandeja sin las funciones detrás (el contador del panel lo absorbe con «No se pudo cargar el contador» y el reclamo falla con aviso en la tarjeta, así que no se rompe la página, pero el módulo queda a medias).
 - Se resolvió aplicando `0012` en producción y verificando por catálogo el mismo día. Lección para las próximas fases: **la migración va primero** (staging y producción) y el frontend se fusiona después, o ambos en el mismo lote con el SQL ya ejecutado.
 - Regla que se añade al control de cada PR que traiga SQL nuevo: decir en la descripción **en qué entorno está aplicada ya la migración** y si el frontend depende de ella.
+
+---
+
+## 24/11/2026 · Cómo se valida una prueba de pantalla: túnel + RPC
+
+- El agente corre en Linux y el usuario prueba en Windows. Hasta hoy la prueba dependía de que el usuario levantara `scripts/dev-server.py` en su equipo. Desde el 24/11/2026 se hace al revés: el agente sirve el repo por `scripts/dev-server.py` en su máquina y lo publica con un túnel `cloudflared` (`*.trycloudflare.com`), que retira el CSP y fuerza `__NA_ENV__="staging"`. El usuario abre el link en su navegador y prueba; no instala nada.
+- El agente valida por su cuenta con RPC de solo lectura (clave `anon` de staging leída de `config.js`, nunca impresa): estado de la asignación, del reclamo, de las listas. Lo que el usuario ve en pantalla se contrasta contra ese dato. Una captura de pantalla no es prueba.
+- Toda mutación de datos de prueba en staging sale con su reversión en el mismo turno y se verifica por RPC, no por el «Success» del editor.
+- El túnel es público mientras está arriba: se levanta solo para la prueba y se baja al terminar la sesión.
