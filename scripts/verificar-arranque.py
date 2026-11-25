@@ -14,6 +14,10 @@ QUE HACE
   FALLA), parametros
   de URL documentados (incluida la
   tabla de la seccion 9 de docs/dev-local.md, verificada contra el codigo),
+  hashes CSP: para cada .html de la raiz recalcula los sha256 de los bloques
+  '<style>' y de los scripts inline y los compara con los declarados en el
+  meta CSP; un desajuste da FALLA con archivo:linea. Los atributos
+  'style="..."' individuales quedan fuera de su alcance.
   PR de la rama (solo si hay red) y pendientes de prueba de la tarea F-7.
   Al final imprime un bloque "PROMPT DE RELEVO" con datos reales, listo para
   copiar y pegar como arranque del siguiente agente.
