@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://exrbwctegkzxurzwihvh.supabase.co; font-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'; style-src 'self' 'sha256-bjm9e6itthc0swO2tLgzdOqAH8xOnhjMUnfPi6huQFk='">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://exrbwctegkzxurzwihvh.supabase.co; font-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'; style-src 'self' 'sha256-da+qqYv446u/lRbWAmFYcmGo1MayLWsJVcPhJEJ2Bfs='">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -126,6 +126,9 @@ label{display:block;margin-bottom:12px;color:var(--suave);font-size:14px;font-we
 .botones-fila{display:flex;gap:10px;justify-content:flex-start;flex-wrap:wrap;margin-top:8px}
 .err-campo{color:var(--rojo);font-size:13px;margin-top:4px;font-weight:600}
 .campo-error{border-color:var(--rojo)!important}
+/* ===== P1-03 (25/11/2026): finalidad + enlace al aviso de privacidad ===== */
+.finalidad-privacidad{margin-top:12px;font-size:13px;color:var(--suave)}
+.finalidad-privacidad a{color:var(--acento2)}
 </style>
 </head>
 <body>
@@ -155,6 +158,11 @@ label{display:block;margin-bottom:12px;color:var(--suave);font-size:14px;font-we
          alert/confirm nativos (regla v2.1). -->
     <div id="bloqueReclamo" class="mt-10">
       <button class="btn btn-morado" id="btnReclamar">Reclamar</button>
+      <!-- P1-03 (25/11/2026): finalidad + enlace al aviso de privacidad, junto al
+           bloque de reclamo (no en la cabecera global). Sin casilla de consentimiento
+           obligatoria: no debe bloquear el envío. Decisión en DECISIONES.md. -->
+      <p class="finalidad-privacidad">Usamos estos datos solo para gestionar tu reclamo y acreditar el acceso al evento. Al enviar, aceptas el aviso de privacidad.</p>
+      <p class="finalidad-privacidad"><a href="privacidad.html">Aviso de privacidad · cómo tratamos tus datos</a></p>
       <form id="formReclamo" hidden>
         <label for="reclamoMotivo">Motivo del reclamo *</label>
         <select id="reclamoMotivo">

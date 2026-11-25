@@ -673,7 +673,7 @@ async function verInforme(ev){
 function tablaPersonas(rows){
   var h = '<table><tr><th>Nombre</th><th>Apellido</th><th>Cedula</th><th>Cargo</th><th>Estado</th></tr>';
   (rows || []).forEach(function(p){
-    h += '<tr><td>' + esc(p.nombre) + '</td><td>' + esc(p.apellido) + '</td><td>' + esc(p.cedula) + '</td><td>' + esc(p.cargo) + '</td><td>' + esc(p.estado) + '</td></tr>';
+    h += '<tr><td>' + esc(p.nombre) + '</td><td>' + esc(p.apellido) + '</td><td>' + esc(cedulaMascara(p.cedula)) + '</td><td>' + esc(p.cargo) + '</td><td>' + esc(p.estado) + '</td></tr>';
   });
   h += '</table>';
   return h;
@@ -682,7 +682,7 @@ function tablaPersonas(rows){
 function tablaVendedores(rows){
   var h = '<table><tr><th>Nombre</th><th>Apellido</th><th>Cedula</th><th>Vende</th><th>Empresa</th><th>Dia 1</th><th>Dia 2</th></tr>';
   (rows || []).forEach(function(v){
-    h += '<tr><td>' + esc(v.nombre) + '</td><td>' + esc(v.apellido) + '</td><td>' + esc(v.cedula) + '</td><td>' + esc(v.vende) + '</td><td>' + esc(v.empresa || '') + '</td><td>' + esc(v.estado_dia1) + '</td><td>' + esc(v.estado_dia2) + '</td></tr>';
+    h += '<tr><td>' + esc(v.nombre) + '</td><td>' + esc(v.apellido) + '</td><td>' + esc(cedulaMascara(v.cedula)) + '</td><td>' + esc(v.vende) + '</td><td>' + esc(v.empresa || '') + '</td><td>' + esc(v.estado_dia1) + '</td><td>' + esc(v.estado_dia2) + '</td></tr>';
   });
   h += '</table>';
   return h;

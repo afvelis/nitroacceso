@@ -793,7 +793,7 @@ async function buscarCortesiaLista(codigo){
       html += `<div class="persona-item ${idx === d.personas.length - 1 ? 'ultimo' : ''}">`;
       html += `<div class="persona-info"><div class="persona-nombre">${escaparHtml(p.nombre)} ${escaparHtml(p.apellido)}`;
       html += ya ? `<span class="estado-badge pill-verde">✅ Entró ${hora}</span>` : `<span class="estado-badge pill-amarillo">Pendiente</span>`;
-      html += `</div><div class="persona-detalle">CI: ${escaparHtml(p.cedula)}</div></div>`;
+      html += `</div><div class="persona-detalle">CI: ${escaparHtml(cedulaMascara(p.cedula))}</div></div>`;
       if(ya){
         html += `<span class="pill pill-rojo"> Consumida</span>`;
       }else{
@@ -1123,7 +1123,7 @@ async function mostrarListaCompleta(lista){
     if(listaCompletada){
       const ultimaPersona = personas[personas.length - 1];
       const horaUltima = ultimaPersona.marcado_at ? horaTexto(ultimaPersona.marcado_at) : 'hora no registrada';
-      const nombres = personas.map(p => `✅ ${escaparHtml(p.nombre)} ${escaparHtml(p.apellido)} (CI: ${escaparHtml(p.cedula)})`).join('<br>');
+      const nombres = personas.map(p => `✅ ${escaparHtml(p.nombre)} ${escaparHtml(p.apellido)} (CI: ${escaparHtml(cedulaMascara(p.cedula))})`).join('<br>');
       mostrarPanel(`
         <div class="resultado bloqueado">
           <div class="dato"><strong>Tipo</strong><span class="pill pill-azul">Lista de talento</span></div>
@@ -1191,7 +1191,7 @@ async function mostrarListaCompleta(lista){
         html += `<span class="estado-badge pill-amarillo">Pendiente</span>`;
       }
       html += `</div>`;
-      html += `<div class="persona-detalle">CI: ${escaparHtml(p.cedula)} • ${escaparHtml(p.cargo)}</div>`;
+      html += `<div class="persona-detalle">CI: ${escaparHtml(cedulaMascara(p.cedula))} • ${escaparHtml(p.cargo)}</div>`;
       html += `</div>`;
       
       if(lista.estado === 'cerrada'){

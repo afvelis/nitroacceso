@@ -99,7 +99,7 @@ function textoGanadorEnTabla(c){
     estadoBadge = ' <span class="badge badge-ok">Canjeado</span>';
   }
   return '<b>' + esc(nombre) + '</b>' + estadoBadge +
-    '<div class="estado-mini">CI: ' + esc(g.cedula || '-') + '</div>' +
+    '<div class="estado-mini">CI: ' + esc(cedulaMascara(g.cedula) || '-') + '</div>' +
     '<div class="estado-mini">🎟️ ' + (g.cupones_total || 0) + ' cupones · ' + (g.cupones_consumidos || 0) + ' usados</div>';
 }
 
@@ -175,7 +175,7 @@ function abrirModalDetalle(c){
       '<div class="modal-seccion">' +
         '<h4>Ganador</h4>' +
         '<p class="detalle-linea"><b>' + esc(nombre) + '</b></p>' +
-        '<p class="detalle-linea">CI: <b>' + esc(g.cedula || '-') + '</b></p>' +
+        '<p class="detalle-linea">CI: <b>' + esc(cedulaMascara(g.cedula) || '-') + '</b></p>' +
         '<p class="detalle-linea">Correo: <b>' + esc(g.correo || '-') + '</b></p>' +
         '<p class="detalle-linea">Teléfono: <b>' + esc(g.telefono || '-') + '</b></p>' +
         '<p class="detalle-linea">Código: <span class="codigo codigo-chico codigo-inline2">' + esc(g.codigo_link || '-') + '</span></p>' +

@@ -432,6 +432,16 @@
 - Toda mutación de datos de prueba en staging sale con su reversión en el mismo turno y se verifica por RPC, no por el «Success» del editor.
 - El túnel es público mientras está arriba: se levanta solo para la prueba y se baja al terminar la sesión.
 
+---
+
+## 25/11/2026 · P1-03 unidad 1a-2: privacidad de la cédula, consentimiento y el aviso público
+
+- **Enmascarar la cédula en el cliente ahora y en las RPC después.** La máscara `123•••78` (unidad 1a, `cedulaMascara` en `config.js`) hoy solo esconde el dato al pintar: la RPC sigue enviando la cédula completa al navegador. Se decide en dos pasos a propósito: primero el render (barato, sin tocar la base), después el SQL/RPC (unidad 1b) para que el dato completo **ni siquiera llegue al navegador**. El dato completo solo tiene que existir donde hay que cotejar contra la cédula física en la puerta.
+- **Sin casilla de consentimiento obligatoria en los formularios públicos.** Tanto `reclamo.html` como el bloque de reclamo de `aliado.html` llevan la línea de finalidad y el enlace al aviso, pero NINGUNA casilla `required` ni validación que bloquee el envío: hay una prueba de pantalla pendiente del formulario vacío de M-36 y no se puede romper el flujo ya probado. El aviso informa; no bloquea.
+- **`privacidad.html` sin `noindex` por ser aviso público.** La regla de G6/P0-06 es que toda página nueva nace con `noindex, nofollow` (las 12 sensibles lo llevan) y que solo `index`/`acceso-denegado` lo omiten por ser pantallas neutras. El aviso de privacidad es el tercer caso, distinto de los dos: es una página pública que los formularios enlazan y que el usuario puede compartir, así que indexarla no expone datos. Lleva igualmente `referrer no-referrer` y su CSP (hash de su propio `<style>`, sin `connect-src` a Supabase porque no llama a la base).
+
+---
+
 ## 25/11/2026 · Verificación automática de los hashes CSP en el arrancador
 
 - Defecto P0 confirmado en pantalla: `puerta.html` se veía SIN estilos en producción. Su meta CSP declaraba en `style-src` un hash (`sha256-ijztkVW...`) que no correspondía al contenido real de su único bloque `<style>` (`sha256-No2qdSo38EbkKjiSSCIvfL3K8i1CUlBEs552Pj3cgIM=`, roto por el commit `18e0c95` del 20/11/2026 al añadir `.aviso-error{...}` sin recalcular). El navegador descartó el bloque entero y la página, que no tiene ningún otro CSS, quedó sin estilos.

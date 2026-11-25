@@ -399,7 +399,7 @@ function mostrarPanelCopiar(sec, rows, l){
     cb.value = p.persona_id;
     eti.appendChild(cb);
     var span = document.createElement('span');
-    span.textContent = (p.nombre || '') + ' ' + (p.apellido || '') + ' — Cedula: ' + (p.cedula || '') + (p.cargo ? ' — Cargo: ' + p.cargo : '');
+    span.textContent = (p.nombre || '') + ' ' + (p.apellido || '') + ' — Cedula: ' + cedulaMascara(p.cedula || '') + (p.cargo ? ' — Cargo: ' + p.cargo : '');
     eti.appendChild(span);
     if (dup) {
       var marca = document.createElement('span');
@@ -622,7 +622,7 @@ function tablaPersonas(rows){
   t.innerHTML = '<tr><th>Nombre</th><th>Apellido</th><th>Cedula</th><th>Cargo</th><th>Estado</th></tr>';
   (rows || []).forEach(function(p){
     var tr = document.createElement('tr');
-    tr.innerHTML = '<td>' + esc(p.nombre) + '</td><td>' + esc(p.apellido) + '</td><td>' + esc(p.cedula) + '</td><td>' + esc(p.cargo) + '</td><td>' + esc(p.estado) + '</td>';
+    tr.innerHTML = '<td>' + esc(p.nombre) + '</td><td>' + esc(p.apellido) + '</td><td>' + esc(cedulaMascara(p.cedula)) + '</td><td>' + esc(p.cargo) + '</td><td>' + esc(p.estado) + '</td>';
     t.appendChild(tr);
   });
   if (!(rows || []).length) {

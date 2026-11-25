@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'none'; img-src 'none'; font-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'; style-src 'self' 'sha256-6H7yrzRhOYi6njhGRp7pJuQ6YjkRRduGAM+y3DNt0ho='">
+<!-- P1-03 (25/11/2026): página pública SIN la meta robots de indexación que llevan
+     el resto de páginas. Es el aviso de privacidad del evento y los formularios
+     (reclamo.html, aliado.html, index.html) lo enlazan: debe poder enlazarse y
+     compartirse. Decisión en DECISIONES.md. CSP apretada: script-src 'none' e
+     img-src 'none' (la página no tiene ni un script ni una imagen); el hash de
+     style-src cubre el bloque de estilos inline. -->
+<meta name="referrer" content="no-referrer">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NitroSystem - Aviso de privacidad</title>
+<style>
+:root{
+  --fondo:#0b1220;--tarjeta:#121c2e;--borde:#24344d;--texto:#eef3f8;
+  --suave:#9fb0c3;--acento:#35d07f;--acento2:#1fa2ff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--fondo);color:var(--texto);font-size:17px;line-height:1.5;min-height:100vh;padding-bottom:40px}
+.franja{height:6px;background:linear-gradient(90deg,var(--acento),var(--acento2))}
+.cabecera{display:flex;align-items:center;gap:14px;padding:18px 20px;background:var(--tarjeta);border-bottom:1px solid var(--borde)}
+.logo{font-size:28px;background:linear-gradient(135deg,var(--acento),var(--acento2));width:48px;height:48px;display:flex;align-items:center;justify-content:center;border-radius:10px}
+.titulo{font-size:20px;font-weight:700}
+.subtitulo{font-size:14px;color:var(--suave)}
+.contenedor{max-width:820px;margin:20px auto;padding:0 16px}
+.tarjeta{background:var(--tarjeta);border:1px solid var(--borde);border-radius:16px;padding:20px;margin-bottom:18px;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.tarjeta h2{font-size:19px;margin-bottom:12px;color:var(--acento)}
+.tarjeta p{margin-bottom:10px}
+.tarjeta ul{margin:0 0 10px 0;padding-left:20px}
+.tarjeta li{margin:4px 0}
+.tarjeta p:last-child,.tarjeta ul:last-child{margin-bottom:0}
+.suave-14{color:var(--suave);font-size:14px}
+.pie-privacidad{margin-top:14px;font-size:13px;color:var(--suave);text-align:center}
+.pie-privacidad a{color:var(--acento2)}
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header class="cabecera">
+  <div class="logo">🔒</div>
+  <div>
+    <div class="titulo">NitroSystem</div>
+    <div class="subtitulo">Aviso de privacidad</div>
+  </div>
+</header>
+
+<main class="contenedor">
+  <!-- P1-03 (unidad 1a-2): pagina estatica de aviso de privacidad. Sin JavaScript,
+       sin llamadas RPC y sin datos de la base: se puede abrir como archivo. -->
+
+  <div class="tarjeta">
+    <h2>🔒 Quién trata tus datos y para qué</h2>
+    <p>Este sistema lo usa el <strong>organizador del evento</strong> para acreditar quién puede entrar (listas de talento, stands, cortesías y aliados) y controlar el acceso en la puerta (validar que tus datos correspondan y marcar tu entrada).</p>
+    <p>Los datos los maneja el organizador del evento. La app no los vende ni los entrega a empresas de publicidad ni a otras organizaciones.</p>
+  </div>
+
+  <div class="tarjeta">
+    <h2>📝 Qué datos recogemos (y nada más)</h2>
+    <ul>
+      <li>Tus <strong>datos de acreditación</strong>: nombre, apellido y cédula. En algunos casos también tu cargo o empresa (por ejemplo, en listas de talento y stands).</li>
+      <li>Un <strong>teléfono o correo</strong> solo cuando hay que contactarte: para avisarte si ganaste un concurso o para responder un reclamo que hayas hecho.</li>
+      <li>Los <strong>datos del escaneo en la puerta</strong>: si tu entrada ya se marcó y a qué hora, para impedir que la misma entrada se use dos veces.</li>
+      <li>Si <strong>escribes un reclamo</strong>, lo que pongas en el reclamo más un nombre y un dato de contacto para poder responderte.</li>
+    </ul>
+    <p>Con eso damos. No pedimos direcciones, datos bancarios, fotos de tus documentos ni ningún dato que no haga falta para dejarte entrar al evento.</p>
+  </div>
+
+  <div class="tarjeta">
+    <h2>👀 Quién puede ver tus datos</h2>
+    <ul>
+      <li>El <strong>organizador del evento</strong> (administrador): todo lo necesario para administrar el evento.</li>
+      <li>El <strong>coordinador</strong> de tu talento o stand: las listas de su propio talento o stand.</li>
+      <li>El <strong>personal de puerta</strong>: solo lo necesario para cotejar tu entrada con tu documento físico en el momento de entrar.</li>
+      <li>Un <strong>aliado con acceso limitado</strong>: únicamente lo de sus propios concursos y pases, como su ganador para poder entregarle un premio.</li>
+    </ul>
+  </div>
+
+  <div class="tarjeta">
+    <h2>🪶 Mostramos lo mínimo</h2>
+    <p>En las pantallas de listado la cédula aparece <strong>enmascarada</strong> (por ejemplo, <code>123•••78</code>): es lo que se muestra en pantalla; el dato completo no se exhibe en los listados.</p>
+    <p>El valor completo de la cédula solo se muestra en la pantalla de la puerta, al operador de puerta, para cotejar a la persona contra su cédula física. Fue una decisión de diseño: si hay que comparar documento contra documento, ahí sí hace falta ver el dato completo, y solo ahí.</p>
+  </div>
+
+  <div class="tarjeta">
+    <h2>🗑️ Cuánto tiempo se conservan tus datos</h2>
+    <p>Tus datos se conservan <strong>mientras el evento está activo</strong>: se usan para dejarte entrar, impedir duplicados y resolver reclamos.</p>
+    <p>Al terminar el evento, el organizador puede <strong>borrar los datos personales</strong>. Los registros de auditoría (quién hizo qué acción del sistema) se guardan un tiempo más, pero sin datos personales innecesarios: sin PINs y sin claves de sesión.</p>
+  </div>
+
+  <div class="tarjeta">
+    <h2>📬 Cómo pedir acceso, corrección o borrado de tus datos</h2>
+    <p>Puedes pedir ver tus datos, corregirlos o que se borren. Para eso, <strong>solicítalo al organizador del evento</strong> (la persona o la mesa que te invitaron o donde te registraste).</p>
+    <p>Si escribes un reclamo, usa el mismo asunto: el organizador del evento lo recibirá y te responderá por tu dato de contacto o con el código de tu reclamo.</p>
+  </div>
+
+  <p class="pie-privacidad">NitroSystem · Aviso de privacidad del evento · actualizado el 25/11/2026</p>
+</main>
+</body>
+</html>

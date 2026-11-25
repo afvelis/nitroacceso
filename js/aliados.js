@@ -277,7 +277,7 @@ function renderAliado(a){
   var info = document.createElement('div');
   info.innerHTML =
     '<p class="asig-linea">Responsable: <b>' + esc(a.responsable || '-') + '</b></p>' +
-    '<p class="asig-linea">Cédula: <b>' + esc(a.cedula || '-') + '</b></p>' +
+    '<p class="asig-linea">Cédula: <b>' + esc(cedulaMascara(a.cedula) || '-') + '</b></p>' +
     '<p class="asig-linea">Correo: <b>' + esc(a.correo || '-') + '</b></p>' +
     '<p class="asig-linea">Teléfono: <b>' + esc(a.telefono || '-') + '</b></p>' +
     '<p class="asig-linea">Creado: ' + fechaCorta(a.creada_at) + '</p>';

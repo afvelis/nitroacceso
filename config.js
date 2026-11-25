@@ -159,6 +159,15 @@ function cedulaValida(valor) {
   const v = valor.trim();
   return /^[0-9.\s-]{4,20}$/.test(v);
 }
+// P1-03: minimización de cédula al render (no es seguridad: el dato completo
+// no debe llegar al navegador; eso se resuelve con SQL en la unidad 1b).
+function cedulaMascara(valor) {
+  if (typeof valor !== "string") return "";
+  const v = valor.trim();
+  if (!v) return "";
+  if (v.length <= 5) return "•".repeat(v.length);
+  return v.slice(0, 3) + "•••" + v.slice(-2);
+}
 function correoValido(valor) {
   if (typeof valor !== "string") return false;
   const v = valor.trim();
