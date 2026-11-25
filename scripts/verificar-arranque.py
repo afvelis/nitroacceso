@@ -33,6 +33,8 @@ CODIGOS DE SALIDA
 """
 
 import json
+import base64
+import hashlib
 import os
 import re
 import socket
@@ -534,6 +536,105 @@ def main():
                   "el sha " + marcador + " del marcador main-medido "
                   "NO esta en la historia de main (" + sha_referencia[:40]
                   + "): apunta a otra rama o a un commit ajeno")
+
+    # j3. hashes CSP -------------------------------------------------------
+    # Cada 'sha256-...' declarado en las directivas style-src y script-src
+    # de un meta Content-Security-Policy debe corresponder al hash REAL del
+    # contenido de los bloques <style> y de los scripts inline (los bytes
+    # exactos entre etiquetas, como los hashea el navegador). Un hash
+    # desfasado bloquea el CSS/JS de la pagina entera SIN error visible para
+    # el usuario (incidente P0 de puerta.html, commit 18e0c95, 20/11/2026).
+    # Paginas sin meta CSP no se verifican y no fallan. Los detalles van en
+    # ASCII puro (mismo criterio que el resto del script).
+    fallas_csp = []
+    paginas_style_verif = set()
+    paginas_script_verif = set()
+    htmls_raiz = sorted(
+        os.fsdecode(n) for n in os.listdir(raiz)
+        if n.lower().endswith(".html"))
+    for nombre_grid in htmls_raiz:
+        try:
+            with open(os.path.join(raiz, nombre_grid), "rb") as f:
+                crudo = f.read()
+        except OSError:
+            fallas_csp.append(nombre_grid + ": no se pudo leer")
+            continue
+
+        def _linea_de(indice):
+            return str(crudo.count(b"\n", 0, indice) + 1)
+
+        # Hashes reales: bloques <style> y scripts INLINE (los <script src>
+        # externos no llevan hash). Sobre bytes crudos, sin normalizar.
+        hash_estilos = {}
+        for m_est in re.finditer(rb"<style\b[^>]*>(.*?)</style>", crudo, re.S):
+            h = base64.b64encode(hashlib.sha256(m_est.group(1)).digest()).decode()
+            hash_estilos.setdefault(h, []).append(_linea_de(m_est.start(1)))
+        hash_scripts = {}
+        for m_scr in re.finditer(b"<script\\b([^>]*)>(.*?)</script>", crudo, re.S):
+            if re.search(rb"\ssrc\s*=", m_scr.group(1)):
+                continue  # script externo: sin hash
+            if not m_scr.group(2).strip():
+                continue  # script vacio: no aporta contenido hasheable
+            h = base64.b64encode(hashlib.sha256(m_scr.group(2)).digest()).decode()
+            hash_scripts.setdefault(h, []).append(_linea_de(m_scr.start(2)))
+
+        for m_meta in re.finditer(rb"<meta\b[^>]*>", crudo, re.I):
+            tag = m_meta.group(0)
+            if not re.search(rb"http-equiv\s*=\s*['\"]?content-security-policy['\"]?",
+                             tag, re.I):
+                continue
+            m_cont = re.search(rb"content\s*=\s*(?P<q>['\"])(?P<val>.*?)(?P=q)",
+                               tag, re.I)
+            if not m_cont:
+                fallas_csp.append(nombre_grid + ":" + _linea_de(m_meta.start())
+                                  + " meta CSP sin atributo content interpretable")
+                continue
+            # Parse de directivas: separa por ';' y tokeniza.
+            declaradas = {}
+            for parte in m_cont.group("val").decode("utf-8", "replace").split(";"):
+                tokens = [t.strip().strip("'") for t in parte.split()]
+                tokens = [t for t in tokens if t]
+                if tokens:
+                    declaradas.setdefault(tokens[0].lower(), tokens[1:])
+            for directiva, hash_reales in (("style-src", hash_estilos),
+                                           ("script-src", hash_scripts)):
+                tokens_dir = declaradas.get(directiva, [])
+                if "unsafe-inline" in [t.lower().strip("'") for t in tokens_dir]:
+                    continue  # 'unsafe-inline' permite todo el inline: no aplica
+                declarados = [t[7:] for t in tokens_dir
+                              if t.lower().startswith("sha256-")]
+                if not declarados and not hash_reales:
+                    continue
+                if set(declarados) != set(hash_reales):
+                    for d in declarados:
+                        if d not in hash_reales:
+                            fallas_csp.append(
+                                nombre_grid + ":" + _linea_de(m_meta.start())
+                                + " " + directiva + ": hash declarado 'sha256-"
+                                + d + "' no corresponde a ningun bloque real ("
+                                + "pagina con " + str(len(hash_reales))
+                                + " bloque(s) hasheable(s))")
+                    for h_real, lineas_bloque in sorted(hash_reales.items()):
+                        if h_real not in declarados:
+                            fallas_csp.append(
+                                nombre_grid + ":" + ",".join(lineas_bloque)
+                                + " " + directiva + ": bloque real sin hash "
+                                + "declarado (calculado 'sha256-" + h_real
+                                + "')")
+                elif set(hash_reales):
+                    paginas_ok = paginas_style_verif if directiva == "style-src" \
+                        else paginas_script_verif
+                    paginas_ok.add(nombre_grid)
+    if fallas_csp:
+        marca("FALLA", "hashes CSP",
+              str(len(fallas_csp)) + " desajuste(s) hash-declarado vs contenido")
+        for f in fallas_csp:
+            detalle_extra(_a_ascii(f))
+    else:
+        marca("OK", "hashes CSP",
+              str(len(paginas_style_verif)) + " paginas con style-src verificado"
+              + (", " + str(len(paginas_script_verif)) + " con script-src"
+                 if paginas_script_verif else ""))
 
     # k. parametros de url documentados ------------------------------------
     avisos_params = []
