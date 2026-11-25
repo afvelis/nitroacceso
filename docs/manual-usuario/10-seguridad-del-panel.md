@@ -65,4 +65,10 @@ La app tiene un **tercer PIN**, además del de administrador y el de puerta: el 
 - **No dejes el PIN escrito** en notas del teléfono ni pantallas pegadas cerca del puesto. (Excepción acordada: el PIN de supervisor se custodia impreso, en lugar cerrado y bajo llave — ver "El PIN de supervisor".)
 - **No dejes de rotar los PIN después de restaurar un respaldo**: cualquier restauración de la base devuelve los PIN que existían cuando se hizo el respaldo. Después de restaurar, rota los tres PIN de inmediato, incluyendo el de supervisor si ya tiene uno.
 
+## La privacidad de los datos del evento
+
+- **Que alguien no lea la cédula sobre tu hombro:** en los listados la cédula se ve enmascarada (`123•••78`), para que quien camine cerca de la pantalla no pueda copiarla. Solo se ve completa en las pantallas de puerta donde hay que comparar a la persona contra su documento físico.
+- **Existe un aviso de privacidad público** (`privacidad.html`), enlazado desde las pantallas de reclamo (la de consulta y la del aliado) y desde el pie de la pantalla de ingreso. Allí se explica, en español llano, qué datos se recogen, quién los ve, que la cédula se enmascara y cómo pedir acceso, corrección o borrado.
+- **Cuánto tiempo se conservan y cómo se borran:** hay una política de retención documentada en el repositorio (`docs/privacidad-retencion.md`, PROPUESTA pendiente de aprobación del organizador). El borrado de datos personales **no lo hace la app**: se hace con SQL desde el SQL Editor del proyecto, lo ejecuta el organizador cuando él decide.
+
 *Pendiente de probar en el entorno de pruebas.*

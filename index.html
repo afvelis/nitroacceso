@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://exrbwctegkzxurzwihvh.supabase.co; font-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'; style-src 'self' 'sha256-pdMlgnVtG795DLpzdYUOLcxCF2c+ii/6LmDk8zWbJ00='">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://exrbwctegkzxurzwihvh.supabase.co; font-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'; style-src 'self' 'sha256-RgrkmtU3Q0C3njkZZDP/cxIWTpGuXB3GNfaJk6LOduo='">
 <meta name="referrer" content="no-referrer">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -31,6 +31,9 @@ input:focus{outline:2px solid var(--acento2);border-color:var(--acento2)}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 .aviso-error{margin-top:14px;padding:10px;border-radius:8px;background:rgba(224,82,82,.12);border:1px solid var(--rojo);color:var(--rojo);font-size:15px;display:none}
   .etiqueta-pin{display:block;margin-bottom:10px;color:var(--suave);font-size:15px;}
+/* ===== P1-03 (25/11/2026): enlace al aviso de privacidad en el pie ===== */
+.pie-privacidad{margin:14px 0 10px 0;padding:0 16px;text-align:center;font-size:13px;color:var(--suave)}
+.pie-privacidad a{color:var(--acento2)}
 </style>
 </head>
 <body>
@@ -52,6 +55,11 @@ input:focus{outline:2px solid var(--acento2);border-color:var(--acento2)}
     <div class="aviso-error" id="msgError"></div>
   </div>
 </main>
+
+<!-- P1-03 (25/11/2026): enlace al aviso de privacidad en el pie de página -->
+<footer class="pie-privacidad">
+  <a href="privacidad.html">Aviso de privacidad · cómo tratamos tus datos</a>
+</footer>
 
 <script src="js/index.js"></script>
 </body>
