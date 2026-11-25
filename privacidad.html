@@ -2,11 +2,13 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; img-src 'self' data: blob:; font-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'; style-src 'self' 'sha256-6H7yrzRhOYi6njhGRp7pJuQ6YjkRRduGAM+y3DNt0ho='">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'none'; img-src 'none'; font-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'; style-src 'self' 'sha256-6H7yrzRhOYi6njhGRp7pJuQ6YjkRRduGAM+y3DNt0ho='">
 <!-- P1-03 (25/11/2026): página pública SIN la meta robots de indexación que llevan
      el resto de páginas. Es el aviso de privacidad del evento y los formularios
      (reclamo.html, aliado.html, index.html) lo enlazan: debe poder enlazarse y
-     compartirse. Decisión en DECISIONES.md. -->
+     compartirse. Decisión en DECISIONES.md. CSP apretada: script-src 'none' e
+     img-src 'none' (la página no tiene ni un script ni una imagen); el hash de
+     style-src cubre el bloque de estilos inline. -->
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NitroSystem - Aviso de privacidad</title>
@@ -77,8 +79,8 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;backgr
 
   <div class="tarjeta">
     <h2>🪶 Mostramos lo mínimo</h2>
-    <p>En las pantallas de listado la cédula aparece <strong>enmascarada</strong> (por ejemplo, <code>123•••78</code>), para que quien camine cerca de la pantalla no pueda leerla completa.</p>
-    <p>La cédula completa solo se ve en la pantalla de la puerta donde hay que cotejar la persona contra su cédula física. Fue una decisión de diseño: si hay que comparar documento contra documento, ahí sí hace falta el dato completo, y solo ahí.</p>
+    <p>En las pantallas de listado la cédula aparece <strong>enmascarada</strong> (por ejemplo, <code>123•••78</code>): es lo que se muestra en pantalla; el dato completo no se exhibe en los listados.</p>
+    <p>El valor completo de la cédula solo se muestra en la pantalla de la puerta, al operador de puerta, para cotejar a la persona contra su cédula física. Fue una decisión de diseño: si hay que comparar documento contra documento, ahí sí hace falta ver el dato completo, y solo ahí.</p>
   </div>
 
   <div class="tarjeta">
@@ -90,7 +92,7 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;backgr
   <div class="tarjeta">
     <h2>📬 Cómo pedir acceso, corrección o borrado de tus datos</h2>
     <p>Puedes pedir ver tus datos, corregirlos o que se borren. Para eso, <strong>solicítalo al organizador del evento</strong> (la persona o la mesa que te invitaron o donde te registraste).</p>
-    <p>Si escribes un reclamo, usa el mismo asunto: el organizador del evento lo recibirá y te responderá por el dato de contacto que dejes ahí.</p>
+    <p>Si escribes un reclamo, usa el mismo asunto: el organizador del evento lo recibirá y te responderá por tu dato de contacto o con el código de tu reclamo.</p>
   </div>
 
   <p class="pie-privacidad">NitroSystem · Aviso de privacidad del evento · actualizado el 25/11/2026</p>

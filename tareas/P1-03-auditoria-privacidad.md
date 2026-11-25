@@ -39,7 +39,7 @@ Poder responder “quién hizo qué y cuándo” para las acciones críticas, y 
 - [ ] Añadir una vista de auditoría en admin, con filtros por fecha, acción y operador.
 - [ ] Enmascarar cédula en listados (`V-123****`) y mostrar el valor completo solo en la vista de detalle que lo requiera.  <!-- código listo, PENDIENTE DE PRUEBA EN PANTALLA -->
 - [ ] Revisar qué campos ve el aliado: limitar a nombre, cédula enmascarada y contacto necesario; no exponer más de lo necesario.
-- [x] Añadir aviso de privacidad/finalidad y consentimiento en formularios públicos. <!-- 25/11/2026: con finalidad + enlace, SIN casilla obligatoria (decisión en DECISIONES.md); documented in unidad 1a-2 -->
+- [x] Añadir aviso de privacidad/finalidad en formularios públicos (la casilla de consentimiento bloqueante se descarta por decisión: rompería el envío). <!-- 25/11/2026: finalidad + enlace, SIN casilla (decisión en DECISIONES.md); ver unidad 1a-2 -->
 - [x] Definir retención: qué se conserva al cerrar el evento, por cuánto tiempo y cómo se borra. <!-- 25/11/2026: docs/privacidad-retencion.md se deja como PROPUESTA; números pendientes de aprobación del organizador -->
 - [x] Añadir `noindex` y `Referrer-Policy` en páginas de pases, admin y puerta. <!-- hecho por P0-06 (31/10/2026); re-verificado el 25/11/2026 con la tabla de metas de la unidad 1a-2. Excepciones documentadas: index/acceso-denegado neutras, privacidad.html aviso público sin noindex -->
 - [ ] Revisar que la auditoría no guarde tokens, contraseñas ni datos excesivos.

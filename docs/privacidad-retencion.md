@@ -40,6 +40,7 @@ cómo se borra.
 | `acciones_supervisor`, `reaperturas_puerta` | Auditoría de acciones delicadas: acción, motivo, hash de sesión | 12 meses | `DELETE FROM … WHERE creada_at < now() - interval '12 months';` |
 | `cedulas_duplicadas_log` | Registro antifraude de **cédulas duplicadas** detectadas (P1-01) | Caso especial de minimización: es la misma cédula que la persona ya entregó; se conserva 12 meses y después se borra con la auditoría | `DELETE FROM cedulas_duplicadas_log WHERE creada_at < now() - interval '12 months';` |
 | `config` | Codigo del evento y PINs (bcrypt). No contiene datos personales | No se borra; los PIN se rotan (manual, capítulo 10) | — |
+| Resto de tablas de trabajo del evento: `listas`, `cortesia_listas`, `eventos`, `aliado_ampliaciones` (nombres verificados en `supabase/migrations/0001_esquema_inicial.sql:51,75,87,91`) | Datos operativos (grupos por día, códigos cortos, estadísticas guardadas, ampliaciones de cupones). Sin datos personales propios: la cédula vive en `personas`, `vendedores` y `cortesia_personas` | Se conservan con el evento | Se borran con el cierre del evento vía la RPC `f_admin_limpiar_todo` (con sus protecciones del manual capítulo 02 y `docs/seguridad-garantias.md` G6), o `DELETE` manual por SQL del organizador |
 
 **Por qué 90 días:** es una propuesta. Cubre la cola post-evento real del sistema:
 reclamos que se responden con días de retraso, premios que se reclaman después del
