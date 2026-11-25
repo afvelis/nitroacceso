@@ -187,7 +187,7 @@ function renderTabla() {
       tr.innerHTML = '<td></td><td></td><td></td><td class="celd-acciones"></td>';
       tr.children[0].textContent = p.nombre;
       tr.children[1].textContent = p.apellido;
-      tr.children[2].textContent = p.cedula;
+      tr.children[2].textContent = cedulaMascara(p.cedula);
       const td = tr.children[3];
       const bM = document.createElement('button');
       bM.className = 'btn btn-gris btn-mini';
@@ -342,7 +342,7 @@ function mostrarResultados(soloLectura) {
     card.querySelector('.braz-titulo').textContent = per.nombre + ' ' + per.apellido;
     card.querySelector('.braz-stand').textContent = nombreStand();
     const vals = card.querySelectorAll('.braz-valor');
-    vals[0].textContent = per.cedula;
+    vals[0].textContent = cedulaMascara(per.cedula);
     vals[1].textContent = per.empresa || '—';
     vals[2].textContent = per.vende || '—';
 

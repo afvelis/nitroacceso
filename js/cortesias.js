@@ -618,7 +618,7 @@ async function abrirModalEdicion(c){
       if (!personas.length){ html += '<p class="suave">Sin personas.</p>'; }
       else {
         personas.forEach(function(p){
-          html += '<div class="persona-lista">' + esc(p.nombre) + ' ' + esc(p.apellido) + ' — CI ' + esc(p.cedula) + ' <span class="estado-mini">(' + esc(p.estado) + ')</span></div>';
+          html += '<div class="persona-lista">' + esc(p.nombre) + ' ' + esc(p.apellido) + ' — CI ' + esc(cedulaMascara(p.cedula)) + ' <span class="estado-mini">(' + esc(p.estado) + ')</span></div>';
         });
       }
       if (cerrado){ html += '<p class="aviso-dia-cerrado">🔒 Día ' + l.dia + ' cerrado. No admite cambios.</p>'; }

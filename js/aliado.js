@@ -543,8 +543,7 @@ function abrirModalDetallesGanador(concurso){
       '<div class="bloque-datos">' +
         '<div class="bloque-titulo">👤 Datos del ganador</div>' +
         '<div class="dato-gan"><strong>Nombre</strong><span>' + esc(g.nombre) + ' ' + esc(g.apellido) + '</span></div>' +
-        '<div class="dato-gan"><strong>Cédula</strong><span>' + esc(g.cedula) + '</span></div>' +
-        '<div class="dato-gan"><strong>Correo</strong><span>' + (g.correo ? esc(g.correo) : '—') + '</span></div>' +
+        '<div class="dato-gan"><strong>Cédula</strong><span>' + esc(cedulaMascara(g.cedula)) + '</span></div>' +
         '<div class="dato-gan"><strong>Teléfono</strong><span>' + (g.telefono ? esc(g.telefono) : '—') + '</span></div>' +
       '</div>' +
       '<div class="bloque-datos">' +
@@ -612,9 +611,8 @@ function abrirModalColaEnvios(){
           '<div class="cola-item">' +
             '<div class="cola-cab">🏆 ' + esc(c.nombre) + '</div>' +
             '<div class="dato-gan"><strong>Ganador</strong><span>' + esc(g.nombre) + ' ' + esc(g.apellido) + '</span></div>' +
-            '<div class="dato-gan"><strong>Cédula</strong><span>' + esc(g.cedula) + '</span></div>' +
+            '<div class="dato-gan"><strong>Cédula</strong><span>' + esc(cedulaMascara(g.cedula)) + '</span></div>' +
             '<div class="dato-gan"><strong>Teléfono</strong><span>' + (g.telefono ? esc(g.telefono) : '—') + '</span></div>' +
-            '<div class="dato-gan"><strong>Correo</strong><span>' + (g.correo ? esc(g.correo) : '—') + '</span></div>' +
             '<div class="dato-gan"><strong>Premio</strong><span>' + diasTxt + ' · ' + g.cupones_total + ' entrada(s)</span></div>' +
             '<div class="cola-acciones">' +
               '<button class="btn btn-azul btn-mini" data-copiar="' + c.id + '">📋 Copiar link</button>' +
