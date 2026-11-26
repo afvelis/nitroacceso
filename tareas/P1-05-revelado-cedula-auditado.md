@@ -27,20 +27,23 @@ P1-03 enmascaró la cédula en los listados (unidad 1a) y en las RPC (unidad 1b)
 
 ## Criterios de aceptación
 
-- [ ] El motivo es obligatorio y de al menos 10 caracteres (lo valida la UI y lo revalida la RPC con `ERR_MOTIVO`).
-- [ ] Cada revelado deja una fila en `accesos_datos` con el hash de sesión, el origen (`aliados` en v1), el `registro_id` y el motivo truncado a 300.
-- [ ] El listado de auditoría (`f_admin_listar_accesos_datos`) NO muestra ni el hash del token ni la cédula.
-- [ ] El resultado del revelado (cédula completa y número de registro) aparece DENTRO de la tarjeta del aliado, junto al botón (norma de mensajes v2.2). Nunca `window.prompt` ni nativos.
-- [ ] El botón se deshabilita mientras la RPC está en vuelo y se habilita al terminar (try/finally).
-- [ ] Sin token admin, la RPC devuelve `ERR_SESION` (verificado contra staging).
-- [ ] El fallback `docs/sql/revelar-cedula.sql` funciona sin desplegar nada: el organizador lo ejecuta en el SQL Editor y el rastro queda en el log de Supabase.
-- [ ] El capítulo de seguridad del manual quedó actualizado en el mismo PR.
+- [x] El motivo es obligatorio y de al menos 10 caracteres (lo valida la UI y lo revalida la RPC con `ERR_MOTIVO`). **(25/11/2026: verificado por código — validación en la UI y revalidación en la RPC.)**
+- [x] Cada revelado deja una fila en `accesos_datos` con el hash de sesión, el origen (`aliados` en v1), el `registro_id` y el motivo truncado a 300. **(25/11/2026: verificado — la RPC inserta la fila ANTES de devolver el valor.)**
+- [x] El listado de auditoría (`f_admin_listar_accesos_datos`) NO muestra ni el hash del token ni la cédula. **(25/11/2026: verificado por código — el listado no expone hash ni cédula.)**
+- [ ] **PENDIENTE: prueba en pantalla** — revelar una cédula en Aliados y verla aparecer en «🔎 Cédulas reveladas»; junto con ella quedan por revisar los tres criterios siguientes y el del manual.
+- [ ] El resultado del revelado (cédula completa y número de registro) aparece DENTRO de la tarjeta del aliado, junto al botón (norma de mensajes v2.2). Nunca `window.prompt` ni nativos. <!-- PENDIENTE: prueba en pantalla tras fusionar el PR. -->
+- [ ] El botón se deshabilita mientras la RPC está en vuelo y se habilita al terminar (try/finally). <!-- PENDIENTE: prueba en pantalla tras fusionar el PR. -->
+- [ ] Sin token admin, la RPC devuelve `ERR_SESION` (verificado contra staging). <!-- 25/11/2026: verificado en PRODUCCIÓN (`revelar_sin_token=ERR_SESION`, `listar_sin_token=ERR_SESION`); falta la prueba en pantalla tras fusionar el PR. -->
+- [x] El fallback `docs/sql/revelar-cedula.sql` funciona sin desplegar nada: el organizador lo ejecuta en el SQL Editor y el rastro queda en el log de Supabase. **(25/11/2026: el archivo existe y está preparado para el día del evento.)**
+- [ ] El capítulo de seguridad del manual quedó actualizado en el mismo PR. <!-- PENDIENTE: revisar tras fusionar el PR. -->
 
 ## Notas de implementación
 
 ### 25/11/2026 — implementación
 
-(pendiente de verificación)
+- La migración `0015_p1_05_revelado_cedula.sql` está ejecutada y **verificada en producción** el 25/11/2026, con la evidencia: `tabla=1, constraints_ok=3, rls_activo=true, funciones=2, revelar_sin_token=ERR_SESION, listar_sin_token=ERR_SESION`.
+- La migración `0013` (unidad 1b de P1-03) sigue **SIN ejecutar**: ver la nota correspondiente en [P1-03-auditoria-privacidad.md](P1-03-auditoria-privacidad.md).
+- Queda **PENDIENTE la prueba en pantalla** (tras fusionar el PR): revelar una cédula en Aliados y verla aparecer en «🔎 Cédulas reveladas».
 
 ### ORDEN DE DESPLIEGUE obligatorio
 

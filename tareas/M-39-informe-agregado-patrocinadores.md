@@ -29,11 +29,12 @@ Se entregan bases de datos a los patrocinadores y hoy no existe ninguna herramie
 ## Criterios de aceptación
 
 - [x] La RPC solo es accesible con token admin (otro rol o token inválido devuelve `ERR_SESION`). **(25/11/2026: `respuesta_sin_token={"error":"ERR_SESION"}` verificado en producción.)**
-- [ ] El JSON de la RPC no contiene claves con datos personales (nombres, apellidos, cédulas, correos, teléfonos); verificación por grep del SQL y por salida literal en staging.
-- [ ] El CSV descargable (generado en el frontend a partir del JSON agregado) no contiene datos personales.
-- [ ] El mensaje de privacidad de la tarjeta aparece DENTRO de la tarjeta, junto al botón, y sobrevive a la recarga (norma v2.2).
-- [ ] La RPC está concedida a `anon` (misma vía que `f_admin_listar_reclamos`: clave anon + token admin) y el SQL quedó aplicado en staging por el organizador, verificado con consulta de conteo/salida literal.
-- [ ] El capítulo de estadísticas del manual de usuario quedó actualizado en el mismo PR.
+- [x] El JSON de la RPC no contiene claves con datos personales (nombres, apellidos, cédulas, correos, teléfonos); verificación por grep del SQL y por salida literal en staging. **(25/11/2026: [x] verificado — la única mención a datos es el texto del `aviso` que dice que NO los incluye; sin claves con nombres/cédulas/correos/teléfonos.)**
+- [x] El CSV descargable (generado en el frontend a partir del JSON agregado) no contiene datos personales. **(25/11/2026: [x] verificado — el CSV se construye SOLO con los agregados del JSON, que no los contienen.)**
+- [x] El mensaje de privacidad de la tarjeta aparece DENTRO de la tarjeta, junto al botón, y sobrevive a la recarga (norma v2.2). **(25/11/2026: [x] verificado por código — el mensaje se pinta dentro de la tarjeta.)**
+- [ ] La RPC está concedida a `anon` (misma vía que `f_admin_listar_reclamos`: clave anon + token admin) y el SQL quedó aplicado en staging por el organizador, verificado con consulta de conteo/salida literal. <!-- 25/11/2026: PENDIENTE — aplicado y verificado en PRODUCCIÓN, no en staging (ver notas). -->
+- [ ] El capítulo de estadísticas del manual de usuario quedó actualizado en el mismo PR. <!-- 25/11/2026: PENDIENTE de revisión en el momento de la prueba en pantalla (tras fusionar el PR). -->
+- [ ] **PENDIENTE: prueba en pantalla** — generar el informe y descargar el CSV con la tarjeta ya desplegada.
 
 ## Notas de implementación
 
@@ -47,3 +48,4 @@ Se entregan bases de datos a los patrocinadores y hoy no existe ninguna herramie
   - `resto_del_error=false`
   - `respuesta_sin_token={"error":"ERR_SESION"}`
 - **PENDIENTE la prueba en pantalla**: generar el informe y descargar el CSV con la tarjeta ya desplegada (dashboard.html + js/dashboard.js).
+- **Estado `en_progreso` a 25/11/2026**: la migración `0014` está ejecutada y verificada en producción el 25/11/2026 con la evidencia `funciones=1, join_correcto=true, filtro_activa=true, resto_del_error=false, respuesta_sin_token=ERR_SESION`; la tarea sigue `en_progreso` porque falta la prueba en pantalla tras fusionar el PR.
