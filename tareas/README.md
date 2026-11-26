@@ -67,6 +67,7 @@ Usa [PLANTILLA.md](PLANTILLA.md) para crear tareas nuevas. No renombres los IDs 
 | [P1-02](P1-02-roles-estado-puerta.md) | Rol supervisor y revalidación de estado en puerta | P1 | pendiente | P0-02 |
 | [P1-03](P1-03-auditoria-privacidad.md) | Auditoría de acciones y privacidad de datos | P1 | **en_progreso** (25/11/2026: unidad 1a — cédula enmascarada en 15 renders con `cedulaMascara()` en `config.js`, correo del ganador quitado de aliado, aviso de privacidad y propuesta de retención hechos; prueba en pantalla en producción; queda unidad 1b: enmascarar la cédula en las RPC, requiere SQL del usuario — lista en las notas de la tarea) | P0-02 |
 | [P1-04](P1-04-staging-migraciones-tests.md) | Staging, migraciones, tests y CI | P1 | **en_progreso** (Fases A, B y C-vía-A hechas, PR #20; vía B probada en pantalla 14/11, nota (x); quedan tests E2E automatizados y lint, decisión del usuario) | P0-02 |
+| [P1-05](P1-05-revelado-cedula-auditado.md) | Revelado auditado de cédula (admin) y fallback manual | P1 | **en_progreso** (SQL 0015 y fallback docuado; pendiente probar en pantalla tras aplicar la migración) | P1-03 |
 | [P2-01](P2-01-offline-pwa.md) | Modo offline y cola de escaneos para el día del evento | P2 | pendiente | P0-04 |
 | [P2-02](P2-02-refactor-accesibilidad.md) | Refactor a módulos compartidos y accesibilidad | P2 | pendiente | P1-04 |
 | [P2-03](P2-03-observabilidad-runbook.md) | Observabilidad y runbook de incidentes | P2 | pendiente | P1-03 |

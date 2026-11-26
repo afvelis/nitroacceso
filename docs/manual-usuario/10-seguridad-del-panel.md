@@ -72,3 +72,37 @@ La app tiene un **tercer PIN**, además del de administrador y el de puerta: el 
 - **Cuánto tiempo se conservan y cómo se borran:** hay una política de retención documentada en el repositorio (`docs/privacidad-retencion.md`, PROPUESTA pendiente de aprobación del organizador). El borrado de datos personales **no lo hace la app**: se hace con SQL desde el SQL Editor del proyecto, lo ejecuta el organizador cuando él decide.
 
 *Pendiente de probar en el entorno de pruebas.*
+
+## Ver una cédula completa (con registro)
+
+### Que es
+
+En los listados la cédula se ve enmascarada (`123•••78`). Pero hay casos legítimos en los que necesitas verla **completa**: reclamación, duplicado, entrega de premio. Para eso existe el botón **"👁 Ver"** en la tarjeta de cada aliado: revela **UNA** cédula a la vez, pide un **motivo escrito** (mínimo 10 caracteres) y deja **rastro** en la base: quién la vio, cuándo, qué registro y por qué.
+
+### Cuando usarlo y cuando NO
+
+- **Sí:** una reclamación de la persona, comprobar un duplicado, entregar un premio.
+- **No:** curiosidad, o pedir el dato a alguien que no lo dio. Cada revelado queda registrado con tu sesión y es revisable por el organizador: si no tienes un motivo real, no lo uses.
+
+### Paso a paso
+
+1. En **aliados.html**, busca la tarjeta de la persona/organización.
+2. Junto a la cédula enmascarada, pulsa **"👁 Ver"**.
+3. En la ventana que se abre, **escribe el motivo** (al menos 10 caracteres; por ejemplo: "Reclamo del aliado por cobro duplicado del 25/11"). Sin motivo no se revela nada.
+4. Al confirmar, la cédula completa aparece **dentro de la tarjeta**, junto al botón.
+
+### Que debes ver
+
+- El mensaje **"Revelado registrado (#N)"** (con el número de registro) dentro de la tarjeta, junto a la cédula completa.
+- Si escribes un motivo de menos de 10 caracteres: **"Escribe un motivo de al menos 10 caracteres."** y NO se revela nada ni se registra nada.
+- Si tu sesión caducó: **"Tu sesión caducó. Vuelve a entrar."**
+
+### Donde se audita
+
+En **admin.html**, tarjeta **"🔎 Cédulas reveladas"**: pulsa **"Ver últimos 50"** y verás la lista de revelados (fecha, origen, motivo y número de registro). La cédula **nunca** aparece en esa lista y tampoco el hash de la sesión: solo el motivo que se escribió.
+
+### Camino de emergencia (sin despliegue)
+
+Para el día del evento, si no hay tiempo de entrar al panel: `docs/sql/revelar-cedula.sql` es una consulta que el **organizador** ejecuta en el SQL Editor de Supabase para buscar una cédula (normalizada, sin guiones) en las cuatro tablas donde puede vivir. La traza de esa consulta queda en el **log de Supabase**, no en `accesos_datos`: úsalo solo en emergencia.
+
+*Pendiente de probar en el entorno de pruebas.*

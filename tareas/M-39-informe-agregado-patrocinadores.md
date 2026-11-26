@@ -28,7 +28,7 @@ Se entregan bases de datos a los patrocinadores y hoy no existe ninguna herramie
 
 ## Criterios de aceptación
 
-- [ ] La RPC solo es accesible con token admin (otro rol o token inválido devuelve `ERR_SESION`).
+- [x] La RPC solo es accesible con token admin (otro rol o token inválido devuelve `ERR_SESION`). **(25/11/2026: `respuesta_sin_token={"error":"ERR_SESION"}` verificado en producción.)**
 - [ ] El JSON de la RPC no contiene claves con datos personales (nombres, apellidos, cédulas, correos, teléfonos); verificación por grep del SQL y por salida literal en staging.
 - [ ] El CSV descargable (generado en el frontend a partir del JSON agregado) no contiene datos personales.
 - [ ] El mensaje de privacidad de la tarjeta aparece DENTRO de la tarjeta, junto al botón, y sobrevive a la recarga (norma v2.2).
@@ -39,4 +39,11 @@ Se entregan bases de datos a los patrocinadores y hoy no existe ninguna herramie
 
 ### 25/11/2026 — implementación
 
-(pendiente de verificación)
+- La RPC de la migración `0014_m39_informe_patrocinadores.sql` se ejecutó en **producción** el 25/11/2026 (el SQL lo corre el organizador en el SQL Editor).
+- Evidencia literal de la verificación post-ejecución, dato a dato:
+  - `funciones=1`
+  - `join_correcto=true`
+  - `filtro_activa=true`
+  - `resto_del_error=false`
+  - `respuesta_sin_token={"error":"ERR_SESION"}`
+- **PENDIENTE la prueba en pantalla**: generar el informe y descargar el CSV con la tarjeta ya desplegada (dashboard.html + js/dashboard.js).
