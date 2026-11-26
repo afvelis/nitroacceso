@@ -67,6 +67,7 @@ Usa [PLANTILLA.md](PLANTILLA.md) para crear tareas nuevas. No renombres los IDs 
 | [P1-02](P1-02-roles-estado-puerta.md) | Rol supervisor y revalidación de estado en puerta | P1 | pendiente | P0-02 |
 | [P1-03](P1-03-auditoria-privacidad.md) | Auditoría de acciones y privacidad de datos | P1 | **en_progreso** (25/11/2026: unidad 1a — cédula enmascarada en 15 renders con `cedulaMascara()` en `config.js`, correo del ganador quitado de aliado, aviso de privacidad y propuesta de retención hechos; prueba en pantalla en producción; queda unidad 1b: enmascarar la cédula en las RPC, requiere SQL del usuario — lista en las notas de la tarea) | P0-02 |
 | [P1-04](P1-04-staging-migraciones-tests.md) | Staging, migraciones, tests y CI | P1 | **en_progreso** (Fases A, B y C-vía-A hechas, PR #20; vía B probada en pantalla 14/11, nota (x); quedan tests E2E automatizados y lint, decisión del usuario) | P0-02 |
+| [P1-05](P1-05-revelado-cedula-auditado.md) | Revelado auditado de cédula (admin) y fallback manual | P1 | **en_progreso** (SQL 0015 y fallback docuado; pendiente probar en pantalla tras aplicar la migración) | P1-03 |
 | [P2-01](P2-01-offline-pwa.md) | Modo offline y cola de escaneos para el día del evento | P2 | pendiente | P0-04 |
 | [P2-02](P2-02-refactor-accesibilidad.md) | Refactor a módulos compartidos y accesibilidad | P2 | pendiente | P1-04 |
 | [P2-03](P2-03-observabilidad-runbook.md) | Observabilidad y runbook de incidentes | P2 | pendiente | P1-03 |
@@ -87,6 +88,7 @@ Usa [PLANTILLA.md](PLANTILLA.md) para crear tareas nuevas. No renombres los IDs 
 | [M-36](M-36-modulo-reclamos.md) | Módulo de reclamos | P2 | **en_progreso** (fase 1 construida y probada 24/11/2026; pendientes: envío vacío y contador; fases 2 y 3 sin empezar) | — |
 | [M-37](M-37-multi-evento.md) | Multi-evento: gestionar hasta 3 eventos simultáneos desde el dashboard | P2 | pendiente | P1-04 |
 | [M-38](M-38-aprobacion-coordinadores.md) | Aprobación de coordinadores desde el dashboard (solicitar → aprobar/rechazar) | P2 | pendiente | — |
+| [M-39](M-39-informe-agregado-patrocinadores.md) | Informe agregado para patrocinadores (sin datos personales) | P1 | **en_progreso** | — |
 | [P0-08](P0-08-desbloqueo-puerta.md) | Desbloqueo de puerta y rediseño del bloqueo de login | P0 | **hecho** (20/11/2026: RPC de reapertura con auditoría, contadores separados por rol, ventanas 90 s / 15 min, botón en el panel; batería de 10 pruebas en staging; incidente PGRST202/PGRST203 resuelto con la 0006) | P0-07 |
 | [F-13](F-13-pin-8-digitos-bcrypt-12.md) | PIN de 8 dígitos y bcrypt coste 12 (más capítulo de manual) | P1 | **hecho** (17/11/2026: migración 0004 aplicada y verificada con los cinco booleanos en staging y en PRODUCCIÓN; PIN rotados a 8 dígitos y entrada real verificada a las dos pantallas) | P0-07 |
 | [P2-04](P2-04-ci-depende-de-pin-de-staging.md) | El CI depende de los PIN de demo de staging: rotar un PIN tumba la suite de todo el repo | P2 | **hecho** (22/11/2026: preflight del entorno en `tests/preflight-entorno.mjs` + paso en el CI; `docs/dev-local.md` §6 documenta restaurar los PINs de demo tras rotar) · PR #44 | — |

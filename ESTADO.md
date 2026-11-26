@@ -1,6 +1,6 @@
 # ESTADO.md — NitroSystem (control de acceso)
 
-Versión del archivo: **39** · Última actualización: **25/11/2026** · Vuelta atrás (P0-07) probada A VOLUMEN: el volcado de producción (15 tablas, 317 filas) se restauró íntegro sobre staging con huella de contenido idéntica (`e3c3141c1914c4820cd9e4075da86166`), sello probado en ambos sentidos y pruebas destructiva controlada + re-restauración; huella reutilizable en `docs/sql/huella-contenido.sql`; segunda copia del volcado en el disco externo del usuario · P0-07 queda con solo dos criterios del generador en PENDIENTE · INCIDENTE cerrado: filtración del volcado en un chat → PINs de admin y puerta de producción ROTADOS el 17/11/2026 (ambos verificados funcionando)
+Versión del archivo: **40** · Última actualización: **25/11/2026** · Vuelta atrás (P0-07) probada A VOLUMEN: el volcado de producción (15 tablas, 317 filas) se restauró íntegro sobre staging con huella de contenido idéntica (`e3c3141c1914c4820cd9e4075da86166`), sello probado en ambos sentidos y pruebas destructiva controlada + re-restauración; huella reutilizable en `docs/sql/huella-contenido.sql`; segunda copia del volcado en el disco externo del usuario · P0-07 queda con solo dos criterios del generador en PENDIENTE · INCIDENTE cerrado: filtración del volcado en un chat → PINs de admin y puerta de producción ROTADOS el 17/11/2026 (ambos verificados funcionando)
 <!-- verificador:main-medido = d963e123eaea1a57b4b98c6432083a148afd0054 · 2026-11-14 -->
 
 > Este archivo SOLO lleva el ESTADO del proyecto. Las reglas de trabajo viven en `AGENTS.md` (+ sus anexos: continuidad v3 y estilo de trato). La arquitectura técnica vive en `ARQUITECTURA.md`. Los "por qués" viven en `DECISIONES.md`. Las tareas ejecutables viven en `tareas/`. Si este archivo contradice a `AGENTS.md`, manda `AGENTS.md`. Si contradice al repo, manda el repo.
@@ -144,14 +144,14 @@ Al iniciar cualquier sesión, se verifica en este orden. Cada punto dice quién 
 
 ## 4 · Siguiente paso inmediato
 
-**25/11/2026 (cierre de sesión): P0-10 cerrada y unidad 1a de P1-03 cerrada y desplegadas.**
+**25/11/2026 (sesión): M-39 y P1-05 implementados; su SQL verificado en producción.**
 
-1. **P0-10 cerrada y desplegada:** la puerta se veía sin estilos desde el 20/11/2026 por un hash `style-src` desfasado en `puerta.html:5`; corregido, verificado en pantalla por el usuario en producción, y `scripts/verificar-arranque.py` ahora comprueba los hashes CSP (`style-src` y `script-src` inline) en cada arranque, con prueba de que detecta un desajuste introducido a propósito.
-2. **P1-03 unidad 1a cerrada y desplegada:** helper `cedulaMascara()` en `config.js` y 15 renders de listado enmascarados; el aliado ya no ve el correo del ganador. Criterio de pantalla verificado en `dashboard.html` → Aliados (la tarjeta del aliado lee la cédula enmascarada y el resto de datos sigue visible).
-3. **Lo siguiente es la unidad 1b de P1-03**, que necesita SQL ejecutado por el usuario: enmascarar la cédula en las RPC que la devuelven completa al navegador (lista en las notas de la tarea). Orden de despliegue obligatorio: migración primero (staging y producción), frontend después.
-4. **Aviso de producción antes del evento:** `config` tiene `dia_activo = 2`; desde `0011` la puerta solo autoriza el día que diga `dia_activo`. Si el evento arranca por el Día 1, ponerlo en 1 a propósito y ANTES de abrir la puerta.
-5. Pruebas de pantalla que quedan pendientes de M-36 fase 1 (formulario vacío y contador con N>0), sin cambios.
-6. Recordatorio: los hashes de CSP de los `<style>` inline deben recalcularse al cambiar CSS; el verificador lo detecta y da FALLA.
+1. **Dos migraciones nuevas aplicadas y verificadas en producción:** `0014` (informe agregado para patrocinadores) y `0015` (revelado auditado de cédula + tabla `accesos_datos`). Ambas comprobadas comparando `prosrc` y ejecutándolas con un token inválido, no con el "Success" del editor.
+2. **Pendiente e inmediato: PR de la rama y prueba en pantalla.** Al fusionar se despliegan tres cosas nuevas: la tarjeta «🤝 Informe para patrocinadores» del panel, el botón «👁 Ver» de las tarjetas de Aliados y la sección «🔎 Cédulas reveladas» de la gestión completa. Hay que probar las tres y anotar la evidencia.
+3. **`0013` (unidad 1b de P1-03) sigue sin ejecutar.** Antes de ejecutarla, pedir su `pg_get_functiondef` en producción. Quedan cuatro RPC enmascarables más, cada una con su `pg_get_functiondef` previo.
+4. **Patrocinadores con datos personales: no se puede todavía.** El aviso de privacidad publicado prohíbe ceder datos a terceros y no hay consentimiento registrado. Si se quiere, hay que hacer P1-06 (política v2, columnas de consentimiento, exportación auditada) y solo aplicará a quien lo autorice después.
+5. **Aviso de producción antes del evento:** `config` tiene `dia_activo = 2`; desde `0011` la puerta solo autoriza el día que diga `dia_activo`. Si el evento arranca por el Día 1, ponerlo en 1 a propósito y ANTES de abrir la puerta.
+6. Recordatorio: los hashes de CSP de los `<style>` inline deben recalcularse al cambiar CSS; el verificador lo detecta y da FALLA. En esta sesión no se tocó ningún `<style>`.
 
 ## 5 · Transición v2.4 → v3 (histórico)
 

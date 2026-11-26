@@ -168,3 +168,10 @@ se muestra la cédula COMPLETA a propósito (comparación contra documento físi
 `js/puerta.js:673/876/959`) podrían seguir necesitando el valor completo; si se decide
 así, esas RPC se enmascaran de otra forma o se consulta el dato puntual. Orden de
 despliegue obligatorio: migración primero (staging y producción), frontend después.
+
+### 25/11/2026 — Unidad 1b (SQL preparado, no desplegado)
+
+- La migración `supabase/migrations/0013_p1_03_mascarar_cedula_rpc.sql` está **escrita y commiteada** con el helper `f_cedula_mascara` y `f_aliado_ver` enmascarando la cédula del ganador y eliminando `correo` (cero lecturas de `.correo` en `js/aliado.js`); **NO se ha ejecutado** en ninguna base.
+- Al ejecutarla, hay que pedir antes su `pg_get_functiondef` en producción y comparar (regla vigente: nunca sobrescribir una RPC sin ver su definición actual).
+- Las otras cuatro RPC enmascarables (`f_admin_listar_aliados`, `f_admin_ver_concursos_aliado`, `f_puerta_personas_de_lista`, `f_puerta_cortesia_lista`) siguen **pendientes**, cada una con su `pg_get_functiondef` previo.
+- No se cambia el estado de la tarea: sigue `en_progreso`.

@@ -256,3 +256,206 @@ btnSalir.addEventListener('click', async () => {
     contador.textContent = 'No se pudo cargar el contador';
   }
 })();
+
+// ===== M-39: informe agregado para patrocinadores =====
+// Tarjeta "🤝 Informe para patrocinadores" del panel. Llama a la RPC
+// f_admin_informe_patrocinadores (supabase/migrations/0014) que devuelve SOLO
+// AGREGADOS: contadores y nombres de catálogo (stand, talento, empresa, cargo,
+// razón). Nunca hay datos de personas (ni nombres, ni cédulas, ni correos, ni
+// teléfonos). El resultado y los errores se pintan dentro de la propia tarjeta
+// (norma v2.2); los errores que impiden continuar van además en modal.
+
+function fechaInformeFormateada(valor){
+  const dt = valor ? new Date(valor) : null;
+  return (dt && !isNaN(dt.getTime())) ? dt.toLocaleString() : String(valor || '');
+}
+
+function contadorInformeHtml(valor, etiqueta){
+  return '<div class="contador">'
+    + '<span class="numero">' + escaparHtml(valor) + '</span>'
+    + '<span class="etiqueta">' + escaparHtml(etiqueta) + '</span>'
+    + '</div>';
+}
+
+// Tabla simple (sin clases nuevas: evita tocar el CSS inline y el hash CSP).
+// Cabecera y celdas SIEMPRE con escaparHtml. Array vacío => "Sin datos".
+function tablaInformeHtml(titulo, cabeceras, filas){
+  if(!filas || filas.length === 0){
+    return '<h3>' + escaparHtml(titulo) + '</h3><p class="suave-15 mb-8">Sin datos</p>';
+  }
+  let html = '<table>';
+  html += '<caption>' + escaparHtml(titulo) + '</caption>';
+  html += '<tr>' + cabeceras.map(c => '<th>' + escaparHtml(c) + '</th>').join('') + '</tr>';
+  html += filas.map(fila =>
+    '<tr>' + fila.map(c => '<td>' + escaparHtml(c == null ? '' : c) + '</td>').join('') + '</tr>'
+  ).join('');
+  return html + '</table>';
+}
+
+// Catálogo: empresa vacía o nula se pinta como "—" (pantalla y CSV iguales).
+function valorVis(valor){
+  return (valor && String(valor).trim()) ? valor : '—';
+}
+
+function pintarInforme(d){
+  const contenedor = document.getElementById('informePatrocinadores');
+  if(!contenedor) return;
+  const t = d.totales || {};
+  let html = '';
+  html += '<div class="grid-contadores">'
+    + contadorInformeHtml(t.registros, 'Registros')
+    + contadorInformeHtml(t.personas_distintas, 'Personas distintas')
+    + contadorInformeHtml(t.asistieron_dia1, 'Asistieron Día 1')
+    + contadorInformeHtml(t.asistieron_dia2, 'Asistieron Día 2')
+    + '</div>';
+  html += tablaInformeHtml('Por segmento', ['Segmento', 'Registros', 'Asistieron Día 1', 'Asistieron Día 2'],
+    (d.segmentos || []).map(s => [s.segmento, s.registros, s.asistieron_dia1, s.asistieron_dia2]));
+  html += tablaInformeHtml('Stands', ['Tipo', 'Número', 'Nombre', 'Empresa', 'Personas', 'Asistieron Día 1', 'Asistieron Día 2'],
+    (d.stands || []).map(s => [s.tipo, s.numero, s.nombre, valorVis(s.empresa), s.personas, s.asistieron_dia1, s.asistieron_dia2]));
+  html += tablaInformeHtml('Talentos', ['Nombre', 'Personas Día 1', 'Asistieron Día 1', 'Personas Día 2', 'Asistieron Día 2'],
+    (d.talentos || []).map(x => [x.nombre, x.personas_dia1, x.asistieron_dia1, x.personas_dia2, x.asistieron_dia2]));
+  html += tablaInformeHtml('Empresas', ['Empresa', 'Personas', 'Asistieron Día 1', 'Asistieron Día 2'],
+    (d.empresas || []).map(e => [e.empresa, e.personas, e.asistieron_dia1, e.asistieron_dia2]));
+  html += tablaInformeHtml('Cargos', ['Cargo', 'Personas'],
+    (d.cargos || []).map(c => [c.cargo, c.personas]));
+  html += tablaInformeHtml('Cortesías por motivo', ['Razón', 'Personas', 'Asistieron Día 1', 'Asistieron Día 2'],
+    (d.cortesias_por_razon || []).map(r => [r.razon, r.personas, r.asistieron_dia1, r.asistieron_dia2]));
+  html += '<p class="suave-15 mb-8">'
+    + escaparHtml(d.aviso || '')
+    + (d.aviso ? ' ' : '')
+    + 'Generado: ' + escaparHtml(fechaInformeFormateada(d.generado_at))
+    + '</p>';
+  contenedor.innerHTML = html;
+  // Botones creados por código (la CSP bloquea onclick=). "Copiar resumen"
+  // usa copiarTexto(texto, btn) que ya existe más arriba en este archivo.
+  const btnCsv = document.createElement('button');
+  btnCsv.type = 'button';
+  btnCsv.className = 'btn btn-gris';
+  btnCsv.textContent = '⬇️ Descargar CSV';
+  btnCsv.addEventListener('click', () => descargarCSVInforme(d));
+  const btnCopiar = document.createElement('button');
+  btnCopiar.type = 'button';
+  btnCopiar.className = 'btn btn-gris';
+  btnCopiar.textContent = '📋 Copiar resumen';
+  btnCopiar.addEventListener('click', () => copiarTexto(textoResumenInforme(d), btnCopiar));
+  contenedor.appendChild(btnCsv);
+  contenedor.appendChild(btnCopiar);
+}
+
+function textoResumenInforme(d){
+  const t = d.totales || {};
+  const ev = d.evento || {};
+  const lineas = [];
+  lineas.push('Informe para patrocinadores - ' + (ev.nombre || 'Evento') + ' - generado ' + fechaInformeFormateada(d.generado_at));
+  lineas.push('Registros: ' + (t.registros == null ? 0 : t.registros)
+    + ' · Personas distintas: ' + (t.personas_distintas == null ? 0 : t.personas_distintas)
+    + ' · Asistieron Día 1: ' + (t.asistieron_dia1 == null ? 0 : t.asistieron_dia1)
+    + ' · Asistieron Día 2: ' + (t.asistieron_dia2 == null ? 0 : t.asistieron_dia2));
+  lineas.push('Por segmento:');
+  (d.segmentos || []).forEach(s => {
+    lineas.push('- ' + s.segmento + ': ' + (s.registros == null ? 0 : s.registros)
+      + ' registros, ' + (s.asistieron_dia1 == null ? 0 : s.asistieron_dia1) + ' asistieron Día 1, '
+      + (s.asistieron_dia2 == null ? 0 : s.asistieron_dia2) + ' asistieron Día 2');
+  });
+  return lineas.join('\r\n');
+}
+
+// Celda CSV: si trae ; comillas o salto de línea, va entre comillas con las
+// comillas internas duplicadas.
+function celdaCSV(v){
+  const s = String(v == null ? '' : v);
+  return /[;\r\n"]/.test(s)
+    ? '"' + s.replace(/"/g, '""') + '"'
+    : s;
+}
+
+function bloqueCSV(lineas, titulo, cabeceras, filas){
+  lineas.push('');
+  lineas.push(titulo);
+  // Array vacío => una sola línea "Sin datos" (igual que en pantalla), sin cabecera.
+  if(!filas || filas.length === 0){
+    lineas.push('Sin datos');
+    return;
+  }
+  lineas.push(cabeceras.map(celdaCSV).join(';'));
+  filas.forEach(fila => lineas.push(fila.map(celdaCSV).join(';')));
+}
+
+// CSV a partir del MISMO objeto `d` que se pinta en pantalla (el closure de
+// pintarInforme). Separador ;, fin de línea CRLF y BOM para que
+// Excel respete las tildes. Descarga con el patrón Blob de js/admin.js.
+function descargarCSVInforme(d){
+  const t = d.totales || {};
+  const ev = d.evento || {};
+  const lineas = [];
+  lineas.push(celdaCSV('Informe para patrocinadores - ' + (ev.nombre || 'Evento') + ' - generado ' + fechaInformeFormateada(d.generado_at)));
+  lineas.push(celdaCSV(d.aviso || 'Solo datos agregados: no contiene nombres, cédulas, correos ni teléfonos.'));
+  bloqueCSV(lineas, 'Totales', ['Métrica', 'Valor'], [
+    ['Registros', t.registros],
+    ['Personas distintas', t.personas_distintas],
+    ['Asistieron Día 1', t.asistieron_dia1],
+    ['Asistieron Día 2', t.asistieron_dia2]
+  ]);
+  bloqueCSV(lineas, 'Por segmento', ['Segmento', 'Registros', 'Asistieron Día 1', 'Asistieron Día 2'],
+    (d.segmentos || []).map(s => [s.segmento, s.registros, s.asistieron_dia1, s.asistieron_dia2]));
+  bloqueCSV(lineas, 'Stands', ['Tipo', 'Número', 'Nombre', 'Empresa', 'Personas', 'Asistieron Día 1', 'Asistieron Día 2'],
+    (d.stands || []).map(s => [s.tipo, s.numero, s.nombre, valorVis(s.empresa), s.personas, s.asistieron_dia1, s.asistieron_dia2]));
+  bloqueCSV(lineas, 'Talentos', ['Nombre', 'Personas Día 1', 'Asistieron Día 1', 'Personas Día 2', 'Asistieron Día 2'],
+    (d.talentos || []).map(x => [x.nombre, x.personas_dia1, x.asistieron_dia1, x.personas_dia2, x.asistieron_dia2]));
+  bloqueCSV(lineas, 'Empresas', ['Empresa', 'Personas', 'Asistieron Día 1', 'Asistieron Día 2'],
+    (d.empresas || []).map(e => [e.empresa, e.personas, e.asistieron_dia1, e.asistieron_dia2]));
+  bloqueCSV(lineas, 'Cargos', ['Cargo', 'Personas'],
+    (d.cargos || []).map(c => [c.cargo, c.personas]));
+  bloqueCSV(lineas, 'Cortesías por motivo', ['Razón', 'Personas', 'Asistieron Día 1', 'Asistieron Día 2'],
+    (d.cortesias_por_razon || []).map(r => [r.razon, r.personas, r.asistieron_dia1, r.asistieron_dia2]));
+  const texto = '\uFEFF' + lineas.join('\r\n') + '\r\n';
+  const hoy = new Date().toISOString().slice(0, 10);
+  const bola = new Blob([texto], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(bola);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'informe-patrocinadores-' + hoy + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 5000);
+}
+
+// M-39: arranque autocontenido; si la tarjeta no existe (otra página
+// reutiliza js/dashboard.js) no hace nada.
+(async function iniciarInformePatrocinadores(){
+  const btn = document.getElementById('btnInformePatrocinadores');
+  const aviso = document.getElementById('avisoInformePatrocinadores');
+  const contenedor = document.getElementById('informePatrocinadores');
+  if(!btn || !aviso || !contenedor) return;
+  btn.addEventListener('click', async () => {
+    btn.disabled = true;
+    btn.textContent = 'Generando...';
+    aviso.textContent = '';
+    aviso.className = 'suave-15 mb-8';
+    contenedor.textContent = '';
+    contenedor.classList.add('oculto');
+    try{
+      const d = await llamar('f_admin_informe_patrocinadores', { p_token: token });
+      if(!d || d.error === 'ERR_SESION'){
+        const mensaje = 'No se pudo generar el informe. Vuelve a entrar al panel.';
+        aviso.textContent = mensaje;
+        aviso.className = 'alerta alerta-roja';
+        await NA.avisar(mensaje);
+        return;
+      }
+      pintarInforme(d);
+      contenedor.classList.remove('oculto');
+      aviso.textContent = 'Informe generado. Puedes descargarlo en CSV.';
+      aviso.className = 'alerta alerta-verde';
+    }catch(e){
+      const msg = (e && e.message) ? e.message : e;
+      aviso.innerHTML = 'No se pudo generar el informe: ' + escaparHtml(msg);
+      aviso.className = 'alerta alerta-roja';
+      await NA.avisar('No se pudo generar el informe: ' + msg);
+    }finally{
+      btn.disabled = false;
+      btn.textContent = 'Generar informe';
+    }
+  });
+})();

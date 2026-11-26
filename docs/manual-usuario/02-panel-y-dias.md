@@ -109,3 +109,11 @@ El panel tiene una tarjeta nueva, **"📮 Reclamos"** (después de las tarjetas 
 - El botón **"Ver la bandeja de reclamos"** te lleva a la bandeja para revisarlos y responderlos (capítulo 11).
 
 *(Probado en el entorno de pruebas el 24/11/2026: la bandeja se abre desde la tarjeta. El contador con cada texto literal quedó pendiente de comprobar en pantalla.)*
+
+## Nota (25/11/2026) — tarjeta 🤝 Informe para patrocinadores del panel
+
+El panel tiene una tarjeta nueva, **"🤝 Informe para patrocinadores"** (entre "📮 Reclamos" y "⚡ Accesos rápidos"):
+
+- Es un resumen **solo de números** para compartir con patrocinadores: **no contiene nombres, cédulas, correos ni teléfonos**.
+- **"Generar informe"** pinta los totales y las tablas (por segmento, stands, talentos, empresas, cargos y motivos de cortesía) dentro de la misma tarjeta, con **"⬇️ Descargar CSV"** y **"📋 Copiar resumen"**.
+- El detalle completo está en el capítulo 08 ("🤝 Informe agregado para patrocinadores").

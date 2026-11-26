@@ -28,6 +28,34 @@ Solo el **administrador**, con su sesión de PIN abierta.
 - **"🏆 Premiaciones"**: resumen de los premios entregados: cupones obsequiados, consumidos y sin usar, canjeadas y pendientes, todo separado por concurso y por aliado.
 - **"👥 Coordinadores"**: la lista con su tipo, código y estado (Activo / Revocado).
 
+## 🤝 Informe agregado para patrocinadores
+
+**Qué es**: un resumen solo de números, preparado para compartir con los patrocinadores del evento. Está en el panel principal, en la tarjeta **"🤝 Informe para patrocinadores"**.
+
+**Qué NO contiene** (y no es opcional, es un requisito de privacidad): **ni nombres, ni apellidos, ni cédulas, ni correos, ni teléfonos**. Solo totales y nombres de catálogo (número y nombre de stand, nombre de talento, empresa, cargo y motivo de cortesía). No hay ninguna lista de personas en este informe.
+
+Además, en la tabla de **Cargos**, los cargos o grupos con menos de 3 personas se muestran agrupados en una sola fila como **"(grupos de menos de 3)"**: con 1 o 2 personas, el grupo permitiría identificar a una persona concreta, y eso el informe no lo permite.
+
+**Paso a paso**:
+
+1. Entra al **panel principal** del administrador.
+2. Busca la tarjeta **"🤝 Informe para patrocinadores"**.
+3. Pulsa **"Generar informe"**. Mientras calcula, el botón dice **"Generando..."**.
+4. Revisa los números: cuatro totales arriba y luego las tablas por segmento, stands, talentos, empresas, cargos y motivos de cortesía.
+5. Pulsa **"⬇️ Descargar CSV"** (archivo listo para Excel) o **"📋 Copiar resumen"** (totales y por segmento en texto plano, listo para pegar en un chat o correo). El botón pulsado cambia a **"¡Copiado!"**.
+
+**Qué debes ver**: dentro de la propia tarjeta, cuatro casillas con los totales (**Registros**, **Personas distintas**, **Asistieron Día 1**, **Asistieron Día 2**), la tabla **Por segmento** y la de **Stands**; y el aviso verde **"Informe generado. Puedes descargarlo en CSV."** dentro de la misma tarjeta.
+
+**Errores comunes**:
+
+- **"No se pudo generar el informe. Vuelve a entrar al panel."**: tu sesión de PIN caducó. Vuelve a entrar con tu PIN y prueba de nuevo.
+- **El CSV se abre desordenado en Excel**: usa **Datos → Desde texto/CSV** en Excel y elige como separador el punto y coma (**;**).
+
+**Qué no hacer**:
+
+- **No compartas el CSV como si fuera la lista de asistentes**: no lo es; es un resumen solo de números.
+- **No uses este informe para contactar a nadie**: no contiene datos personales y no debe usarse para eso.
+
 **2. Guardar el informe del evento**
 
 Las estadísticas en pantalla se pierden al limpiar el sistema para el próximo evento; el informe es la copia que queda:

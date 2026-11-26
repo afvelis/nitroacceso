@@ -447,3 +447,36 @@
 - Defecto P0 confirmado en pantalla: `puerta.html` se veía SIN estilos en producción. Su meta CSP declaraba en `style-src` un hash (`sha256-ijztkVW...`) que no correspondía al contenido real de su único bloque `<style>` (`sha256-No2qdSo38EbkKjiSSCIvfL3K8i1CUlBEs552Pj3cgIM=`, roto por el commit `18e0c95` del 20/11/2026 al añadir `.aviso-error{...}` sin recalcular). El navegador descartó el bloque entero y la página, que no tiene ningún otro CSS, quedó sin estilos.
 - Por qué nadie lo vio: fallo silencioso. Sin error visible en consola para el usuario (solo el mensaje de CSP, que nadie mira), sin prueba automática, y el único síntoma era estético. Fue el usuario el que avisó mirando la pantalla, no ninguna verificación.
 - Decisión: a partir de hoy los hashes CSP se verifican AUTOMÁTICAMENTE en `scripts/verificar-arranque.py` (sección j3): para cada .html de la raíz, cada `sha256-` declarado en `style-src` y `script-src` de cada meta CSP debe coincidir con el hash real de los bloques `<style>` y scripts inline (bytes exactos entre etiquetas, como los hashea el navegador). Un desajuste es `[FALLA]` con `archivo:línea`; páginas sin meta CSP no se verifican. Regla operativa derivada: al editar CUALQUIER byte dentro de un bloque `<style>` o de un script inline que lleve hash declarado, el hash de la línea del meta CSP se recalcula en el mismo cambio, sin excepción.
+
+---
+
+## 25/11/2026 M-39 · Informe a patrocinadores: solo AGREGADO, nunca datos personales
+
+- Decisión: a patrocinadores solo se les entrega AGREGADO (totales por segmento, día, stand, empresa, cargo y motivo de cortesía). Nunca nombres, cédulas, correos ni teléfonos.
+- Por qué: el aviso de privacidad publicado dice literalmente que la app "no los vende ni los entrega a empresas de publicidad ni a otras organizaciones" (`privacidad.html:78-79`). Entregar datos personales hoy rompería lo ya prometido a las personas registradas, y el consentimiento no es retroactivo: no hay ni una columna de consentimiento en el esquema.
+- Regla derivada: los grupos con menos de 3 personas se publican agrupados como "(grupos de menos de 3)" para impedir la reidentificación. Aplicado en `cargos`.
+- Consecuencia abierta: para entregar datos personales a un patrocinador hace falta P1-06 (política v2 + consentimiento explícito + exportación auditada), y solo para quienes lo autoricen DESPUÉS de la nueva política.
+
+---
+
+## 25/11/2026 P1-05 · Revelar una cédula por vez, con motivo y rastro
+
+- Decisión: la máscara no se quita. Se revela UNA cédula por vez, con motivo escrito obligatorio (≥10 caracteres) y con fila en `accesos_datos` ANTES de devolver el valor. Solo rol admin.
+- Por qué: enmascarar del todo impediría casos legítimos (una reclamación, un duplicado, un premio); quitar la máscara de forma general haría imposible saber quién miró qué. El registro previo garantiza que no existe revelado sin rastro.
+- Alcance v1: pantalla de Aliados. Las demás pantallas (talento, stands, cortesías) necesitan primero que sus RPC devuelvan el `id` del registro.
+- Fallback aprobado: `docs/sql/revelar-cedula.sql`, ejecutado por el organizador en el SQL Editor, para el día del evento cuando no hay tiempo de desplegar; su traza queda en el log de Supabase, no en `accesos_datos`.
+
+---
+
+## 25/11/2026 · Incidente: SQL entregado a mano en el chat
+
+- Qué pasó: al entregar la migración `0014` en el chat, el SQL se recompuso a mano y se perdieron dos líneas del bloque `cortesias_por_razon` (el join quedó como `on x.x = x.x` y desaparecieron el `where estado='activa'` y el `group by`). El SQL Editor respondió `Success`, que no prueba nada. El error se detectó al revisar el mensaje contra el archivo del repo, no por la herramienta.
+- Regla derivada (1): el SQL se entrega SIEMPRE leído del archivo del repo, nunca recompuesto en el mensaje.
+- Regla derivada (2): todo `create or replace` se verifica comparando `prosrc` en la base con la versión correcta y ejecutando la función con un token inválido, no con el "Success".
+
+---
+
+## 25/11/2026 · Juez sustituido durante la sesión
+
+- El agente `reviewer` (modelo `apts/slave`) falló dos veces seguidas con "Stream ended without finish_reason", sin llegar a emitir veredicto. Se sustituyó por `oracle` en cuatro revisiones acotadas (SQL de M-39, frontend de M-39, re-revisión de conteos, P1-05).
+- Queda anotado que el juez usado fue `oracle` y no `apts/slave`.
