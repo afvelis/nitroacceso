@@ -935,47 +935,6 @@ async function limpiarTodo(){
   } catch (e) { alert('Fallo al limpiar: ' + e.message); }
 }
 
-// ===== P1-05 · Auditoria de cedulas reveladas (accesos_datos) =====
-// La RPC nunca devuelve el hash del token ni la cedula: solo fecha, origen,
-// registro_id y motivo. Todo se pinta con esc() (no hay datos sin escapar).
-async function cargarAccesos(){
-  var cont = $('listaAccesos');
-  var av = $('avisoAccesos');
-  cont.innerHTML = '<p class="suave">Consultando...</p>';
-  av.textContent = '';
-  try {
-    var datos = await llamar('f_admin_listar_accesos_datos', { p_token: ses.token, p_limite: 50 });
-    if (datos && datos.error) {
-      cont.innerHTML = '';
-      if (datos.error === 'ERR_SESION') { av.textContent = 'Tu sesión caducó. Vuelve a entrar.'; }
-      else { av.textContent = 'No se pudo cargar: el sistema respondió ' + datos.error + '.'; }
-      return;
-    }
-    if (!datos || !datos.length) {
-      cont.innerHTML = '<p class="suave">Sin revelados todavía.</p>';
-      return;
-    }
-    var nombresOrigen = { personas: 'Persona (talento)', vendedores: 'Vendedor (stand)', cortesia_personas: 'Cortesía', aliados: 'Aliado' };
-    var h = '<table><thead><tr><th>Fecha</th><th>Origen</th><th>Acceso #</th><th>Registro</th><th>Motivo</th></tr></thead><tbody>';
-    datos.forEach(function(a){
-      h +=
-        '<tr>' +
-          '<td>' + esc(fechaBonita(a.creada_at)) + '</td>' +
-          '<td>' + esc(nombresOrigen[a.origen] || a.origen) + '</td>' +
-          '<td>#' + esc(String(a.id)) + '</td>' +
-          '<td>' + esc(String(a.registro_id).slice(0, 8)) + '</td>' +
-          '<td>' + esc(a.motivo) + '</td>' +
-        '</tr>';
-    });
-    h += '</tbody></table>';
-    cont.innerHTML = h;
-    av.textContent = 'Se muestran los últimos ' + datos.length + ' revelado(s). Aquí no se muestra ni la cédula ni la sesión, solo el motivo escrito.';
-  } catch (e) {
-    cont.innerHTML = '';
-    av.textContent = 'No se pudo cargar: ' + (e.message || 'fallo de red');
-  }
-}
-
 if (!ses || ses.rol !== 'admin') {
   location.replace('index.html');
 } else {
@@ -986,7 +945,6 @@ if (!ses || ses.rol !== 'admin') {
   $('btnGuardarInforme').onclick = guardarInforme;
   $('btnExportarRespaldo').onclick = exportarRespaldo;
   $('btnLimpiarTodo').onclick = limpiarTodo;
-  $('btnVerAccesos').onclick = cargarAccesos;
   $('btnVerSesiones').onclick = cargarSesiones;
   $('btnRevocarSesiones').onclick = revocarSesiones;
   $('btnReabrirPuerta').onclick = reabrirPuerta;

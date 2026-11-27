@@ -121,16 +121,6 @@ li{margin:4px 0;}
     <p id="notaLimpieza" class="suave"></p>
   </section>
 
-  <section class="tarjeta" id="accesos-datos">
-    <h2>🔎 Cédulas reveladas</h2>
-    <p class="suave">Cada vez que alguien del panel ve una cedula completa, queda registrado aqui: cuando, que registro y por qué. La cedula nunca aparece en esta lista; solo el motivo que se escribio.</p>
-    <div class="fila">
-      <button class="btn btn-gris" id="btnVerAccesos">Ver últimos 50</button>
-    </div>
-    <p class="suave" id="avisoAccesos" role="status" aria-live="polite"></p>
-    <div id="listaAccesos"></div>
-  </section>
-
   <section class="tarjeta" id="sesiones">
     <h2>Sesiones y seguridad</h2>
     <p class="suave">Aqui ves las sesiones activas del sistema (panel y puerta). "Revocar" cierra TODAS las demas sesiones menos esta. La rotacion cambia un PIN por uno nuevo de exactamente 8 digitos: el nuevo queda guardado cifrado (bcrypt) y el anterior deja de servir. "Reabrir puerta" borra los intentos fallidos de la pantalla de puerta de los últimos 90 segundos y queda registrado con su motivo: sirve cuando la puerta se bloquea en pleno evento.</p>
