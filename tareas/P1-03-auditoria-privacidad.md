@@ -171,7 +171,12 @@ despliegue obligatorio: migración primero (staging y producción), frontend des
 
 ### 25/11/2026 — Unidad 1b (SQL preparado, no desplegado)
 
-- La migración `supabase/migrations/0013_p1_03_mascarar_cedula_rpc.sql` está **escrita y commiteada** con el helper `f_cedula_mascara` y `f_aliado_ver` enmascarando la cédula del ganador y eliminando `correo` (cero lecturas de `.correo` en `js/aliado.js`); **NO se ha ejecutado** en ninguna base.
-- Al ejecutarla, hay que pedir antes su `pg_get_functiondef` en producción y comparar (regla vigente: nunca sobrescribir una RPC sin ver su definición actual).
-- Las otras cuatro RPC enmascarables (`f_admin_listar_aliados`, `f_admin_ver_concursos_aliado`, `f_puerta_personas_de_lista`, `f_puerta_cortesia_lista`) siguen **pendientes**, cada una con su `pg_get_functiondef` previo.
-- No se cambia el estado de la tarea: sigue `en_progreso`.
+- La migración `supabase/migrations/0013_p1_03_mascarar_cedula_rpc.sql` fue escrita y commiteada con el helper `f_cedula_mascara` y `f_aliado_ver` enmascarando la cédula del ganador y eliminando `correo` (cero lecturas de `.correo` en `js/aliado.js`).
+
+### 26/11/2026 — Unidad 1b (desplegada en producción)
+
+- La migración `0013_p1_03_mascarar_cedula_rpc.sql` se ejecutó en **producción** el 26/11/2026.
+- Evidencia: `SELECT public.f_cedula_mascara('1234567890');` devuelve `123•••90`.
+- `f_aliado_ver` fue actualizada: ya no devuelve la cédula completa del ganador ni su correo.
+- Las otras cuatro RPC enmascarables (`f_admin_listar_aliados`, `f_admin_ver_concursos_aliado`, `f_puerta_personas_de_lista`, `f_puerta_cortesia_lista`) siguen **pendientes**, cada una con su `pg_get_functiondef` previo. **Se harán en la siguiente sesión.**
+- El estado de la tarea sigue `en_progreso` hasta que se enmascaren las 4 RPC restantes.

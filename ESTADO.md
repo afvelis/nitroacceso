@@ -1,6 +1,6 @@
 # ESTADO.md — NitroSystem (control de acceso)
 
-Versión del archivo: **40** · Última actualización: **25/11/2026** · Vuelta atrás (P0-07) probada A VOLUMEN: el volcado de producción (15 tablas, 317 filas) se restauró íntegro sobre staging con huella de contenido idéntica (`e3c3141c1914c4820cd9e4075da86166`), sello probado en ambos sentidos y pruebas destructiva controlada + re-restauración; huella reutilizable en `docs/sql/huella-contenido.sql`; segunda copia del volcado en el disco externo del usuario · P0-07 queda con solo dos criterios del generador en PENDIENTE · INCIDENTE cerrado: filtración del volcado en un chat → PINs de admin y puerta de producción ROTADOS el 17/11/2026 (ambos verificados funcionando)
+Versión del archivo: **41** · Última actualización: **26/11/2026** · Vuelta atrás (P0-07) probada A VOLUMEN: el volcado de producción (15 tablas, 317 filas) se restauró íntegro sobre staging con huella de contenido idéntica (`e3c3141c1914c4820cd9e4075da86166`), sello probado en ambos sentidos y pruebas destructiva controlada + re-restauración; huella reutilizable en `docs/sql/huella-contenido.sql`; segunda copia del volcado en el disco externo del usuario · P0-07 queda con solo dos criterios del generador en PENDIENTE · INCIDENTE cerrado: filtración del volcado en un chat → PINs de admin y puerta de producción ROTADOS el 17/11/2026 (ambos verificados funcionando)
 <!-- verificador:main-medido = d963e123eaea1a57b4b98c6432083a148afd0054 · 2026-11-14 -->
 
 > Este archivo SOLO lleva el ESTADO del proyecto. Las reglas de trabajo viven en `AGENTS.md` (+ sus anexos: continuidad v3 y estilo de trato). La arquitectura técnica vive en `ARQUITECTURA.md`. Los "por qués" viven en `DECISIONES.md`. Las tareas ejecutables viven en `tareas/`. Si este archivo contradice a `AGENTS.md`, manda `AGENTS.md`. Si contradice al repo, manda el repo.
@@ -144,14 +144,17 @@ Al iniciar cualquier sesión, se verifica en este orden. Cada punto dice quién 
 
 ## 4 · Siguiente paso inmediato
 
-**25/11/2026 (sesión): M-39 y P1-05 implementados; su SQL verificado en producción.**
+**26/11/2026 (sesión): M-39 trasladado a estadísticas, P1-05 hover-reveal, botón volver arriba/abajo, 0013 aplicado.**
 
-1. **Dos migraciones nuevas aplicadas y verificadas en producción:** `0014` (informe agregado para patrocinadores) y `0015` (revelado auditado de cédula + tabla `accesos_datos`). Ambas comprobadas comparando `prosrc` y ejecutándolas con un token inválido, no con el "Success" del editor.
-2. **Pendiente e inmediato: PR de la rama y prueba en pantalla.** Al fusionar se despliegan tres cosas nuevas: la tarjeta «🤝 Informe para patrocinadores» del panel, el botón «👁 Ver» de las tarjetas de Aliados y la sección «🔎 Cédulas reveladas» de la gestión completa. Hay que probar las tres y anotar la evidencia.
-3. **`0013` (unidad 1b de P1-03) sigue sin ejecutar.** Antes de ejecutarla, pedir su `pg_get_functiondef` en producción. Quedan cuatro RPC enmascarables más, cada una con su `pg_get_functiondef` previo.
-4. **Patrocinadores con datos personales: no se puede todavía.** El aviso de privacidad publicado prohíbe ceder datos a terceros y no hay consentimiento registrado. Si se quiere, hay que hacer P1-06 (política v2, columnas de consentimiento, exportación auditada) y solo aplicará a quien lo autorice después.
-5. **Aviso de producción antes del evento:** `config` tiene `dia_activo = 2`; desde `0011` la puerta solo autoriza el día que diga `dia_activo`. Si el evento arranca por el Día 1, ponerlo en 1 a propósito y ANTES de abrir la puerta.
-6. Recordatorio: los hashes de CSP de los `<style>` inline deben recalcularse al cambiar CSS; el verificador lo detecta y da FALLA. En esta sesión no se tocó ningún `<style>`.
+1. **M-39:** tarjeta movida de dashboard a estadísticas (PR #60 fusionado). La tarjeta ya se ve en estadísticas.html con botón "Generar informe".
+2. **P1-05:** hover-reveal de cédula en Aliados (PR #61 fusionado), sección "🔎 Cédulas reveladas" eliminada de admin.
+3. **Cosmético:** botón "← Volver al dashboard" arriba y abajo en admin y reclamos (PR #62 fusionado).
+4. **0013 aplicado en producción:** `f_cedula_mascara('1234567890')` → `123•••90`. `f_aliado_ver` ya no devuelve cédula completa ni correo del ganador.
+5. **Siguiente paso:** `f_admin_listar_aliados` → pedir `pg_get_functiondef` en producción y enmascarar cédulas (unidad 1b resto). Repetir con `f_admin_ver_concursos_aliado`, `f_puerta_personas_de_lista`, `f_puerta_cortesia_lista`.
+6. **Pendiente futuro:** borrar migración 0015 (`f_admin_revelar_cedula`, `f_admin_listar_accesos_datos`, tabla `accesos_datos`) — no urgente, ya aplicada no hace daño.
+7. **Patrocinadores con datos personales:** no se puede todavía (aviso de privacidad prohíbe). Se haría con P1-06 (política v2, columnas de consentimiento, exportación auditada).
+8. **Aviso de producción:** `config` tiene `dia_activo = 2`; desde `0011` la puerta solo autoriza el día que diga `dia_activo`. Si el evento arranca por el Día 1, ponerlo en 1 a propósito y ANTES de abrir la puerta.
+9. Recordatorio: los hashes de CSP de los `<style>` inline deben recalcularse al cambiar CSS; el verificador lo detecta y da FALLA.
 
 ## 5 · Transición v2.4 → v3 (histórico)
 

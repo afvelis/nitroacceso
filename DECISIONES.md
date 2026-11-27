@@ -480,3 +480,27 @@
 
 - El agente `reviewer` (modelo `apts/slave`) falló dos veces seguidas con "Stream ended without finish_reason", sin llegar a emitir veredicto. Se sustituyó por `oracle` en cuatro revisiones acotadas (SQL de M-39, frontend de M-39, re-revisión de conteos, P1-05).
 - Queda anotado que el juez usado fue `oracle` y no `apts/slave`.
+
+---
+
+## 26/11/2026 · M-39: traslado de dashboard a estadísticas
+
+- Decisión: la tarjeta "🤝 Informe para patrocinadores" se movió de dashboard.html a estadísticas.html.
+- Por qué: el usuario pidió moverla al módulo de estadísticas. Dashboard debe mantenerse limpio; las estadísticas ya son la pantalla de datos y reportes.
+- Consecuencia: se reescribió dashboard.html (quitar tarjeta), estadísticas.html (agregar tarjeta), js/estadisticas.js (agregar funciones M-39), js/dashboard.js (quitar listener M-39). PR #60 fusionado.
+
+---
+
+## 26/11/2026 · P1-05: hover-reveal en lugar de modal+motivo, eliminación de auditoría
+
+- Decisión: la cédula en Aliados se revela al pasar el mouse sobre ella (hover-reveal), sin botón, sin modal, sin motivo, sin rastro auditado. Se eliminó la sección "🔎 Cédulas reveladas" de admin.
+- Por qué: "es un completo despropósito, admin está sobresaturada". El administrador tiene acceso a todos los datos de todos modos, la auditoría no añade valor en este contexto.
+- Consecuencia: se eliminó el botón "👁 Ver" de aliados.html, la sección "🔎 Cédulas reveladas" de admin.html, las funciones `revelarCedulaAliado`, `modalPromptTexto` y `cargarAccesos`. Se dejó pendiente borrar la migración 0015 (`f_admin_revelar_cedula`, `f_admin_listar_accesos_datos`, tabla `accesos_datos`) — no es urgente, la migración ya aplicada no hace daño. PR #61 fusionado.
+
+---
+
+## 26/11/2026 · Cosmético: botón "volver al dashboard" arriba y abajo en todas las páginas
+
+- Decisión: todas las páginas que se abren desde dashboard (admin, estadísticas, aliados, cortesias, reclamos) deben tener el botón/enlace "← Volver al dashboard" tanto arriba como abajo.
+- Por qué: coherencia visual y usabilidad — el usuario no debería tener que hacer scroll para volver al dashboard.
+- Consecuencia: admin.html y reclamos.html ganaron un botón arriba (ya tenían uno abajo). Se actualizó el hash CSP de admin.html por el CSS nuevo. PR #62 fusionado.
