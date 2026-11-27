@@ -466,8 +466,7 @@ function textoResumenInforme(d){
 
 function celdaCSV(v){
   var s = String(v == null ? '' : v);
-  return /[;\r
-"]/.test(s)
+  return /[;\r\n"]/.test(s)
     ? '"' + s.replace(/"/g, '""') + '"'
     : s;
 }
