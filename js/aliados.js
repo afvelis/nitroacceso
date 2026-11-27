@@ -282,22 +282,26 @@ function renderAliado(a){
     '<p class="asig-linea">Creado: ' + fechaCorta(a.creada_at) + '</p>';
   div.appendChild(info);
 
-  // P1-05: la cédula llega enmascarada desde la RPC (cedulaMascara + f_cedula_mascara
-  // en la RPC). El botón revela UNA cédula con motivo obligatorio y deja rastro en
-  // accesos_datos; el resultado se pinta DENTRO de la tarjeta (norma de mensajes v2.2).
-  // Sin CSS nuevo: usa las clases existentes (asig-linea, suave, btn, btn-mini).
+  // P1-05: la cédula se muestra oculta y se revela al pasar el mouse por encima.
+  // Sin CSS nuevo: usa las clases existentes (asig-linea, suave).
   var filaCed = document.createElement('p');
   filaCed.className = 'asig-linea';
-  filaCed.innerHTML = 'Cédula: <b>' + esc(cedulaMascara(a.cedula) || '-') + '</b> ';
-  var bVer = botonMini('👁 Ver', 'btn-gris', function(){
-    revelarCedulaAliado(a, bVer, avisoCed);
-  });
-  filaCed.appendChild(bVer);
-  var avisoCed = document.createElement('p');
-  avisoCed.className = 'suave';
-  avisoCed.setAttribute('data-aviso-cedula', '');
+  var cedulaEnmascarada = cedulaMascara(a.cedula) || '-';
+  var spanCedula = document.createElement('b');
+  spanCedula.textContent = cedulaEnmascarada;
+  spanCedula.style.cursor = 'help';
+  spanCedula.title = 'Pasa el mouse para ver la cédula completa';
+  var mostrarCedula = function(){
+    spanCedula.textContent = a.cedula || '-';
+  };
+  var ocultarCedula = function(){
+    spanCedula.textContent = cedulaEnmascarada;
+  };
+  spanCedula.addEventListener('mouseenter', mostrarCedula);
+  spanCedula.addEventListener('mouseleave', ocultarCedula);
+  filaCed.textContent = 'Cédula: ';
+  filaCed.appendChild(spanCedula);
   div.appendChild(filaCed);
-  div.appendChild(avisoCed);
 
   if (a.activo){
     var filaAdmin = document.createElement('div');
@@ -425,89 +429,6 @@ async function cargarAliados(){
     renderAliados(arr);
   } catch (e) {
     $('contenedorAliados').innerHTML = '<p class="suave centrado">No se pudo cargar la lista: ' + esc(e.message) + '</p>';
-  }
-}
-
-// ─────────────────────────────────────────────────────────────
-// P1-05: revelado auditado de la cédula de un aliado (f_admin_revelar_cedula)
-// ─────────────────────────────────────────────────────────────
-// Modal de entrada de texto PROPIO (no existe prompt en este archivo; regla v2.1:
-// JAMAS window.prompt). Patrón de los modales del repo (abrirModal / abrirModalAmpliar):
-// fondo → caja → Cancelar/Revelar; sin CSS nuevo. Resuelve el texto o null si cancela.
-function modalPromptTexto(mensaje, titulo, textoOk){
-  return new Promise(function(resolve){
-    var fondo = document.createElement('div');
-    fondo.className = 'modal-fondo';
-    var caja = document.createElement('div');
-    caja.className = 'modal-caja';
-    caja.innerHTML =
-      '<h3 class="modal-titulo">' + esc(titulo || '') + '</h3>' +
-      '<p class="asig-linea suave mb-12">' + esc(mensaje) + '</p>' +
-      '<input id="modalPromptTextoInput" type="text">' +
-      '<div class="modal-botones"></div>';
-    var inp = caja.querySelector('#modalPromptTextoInput');
-    var contB = caja.querySelector('.modal-botones');
-    var bCancel = document.createElement('button');
-    bCancel.className = 'btn btn-gris';
-    bCancel.textContent = 'Cancelar';
-    bCancel.onclick = function(){
-      if (fondo.parentNode) fondo.parentNode.removeChild(fondo);
-      resolve(null);
-    };
-    contB.appendChild(bCancel);
-    var bOk = document.createElement('button');
-    bOk.className = 'btn btn-verde';
-    bOk.textContent = textoOk || 'Aceptar';
-    bOk.onclick = function(){
-      if (fondo.parentNode) fondo.parentNode.removeChild(fondo);
-      resolve(inp.value);
-    };
-    contB.appendChild(bOk);
-    fondo.appendChild(caja);
-    document.body.appendChild(fondo);
-    setTimeout(function(){ inp.focus(); }, 50);
-  });
-}
-
-// Revela la cédula completa de UN aliado: pide motivo (10+ caracteres), llama a la
-// RPC y pinta el resultado DENTRO de la tarjeta, junto al botón. El botón queda
-// deshabilitado mientras está en vuelo y se rehabilita al terminar (try/finally).
-async function revelarCedulaAliado(a, btn, avisoEl){
-  var motivo = await modalPromptTexto(
-    'Solo si hay un caso legítimo (reclamación, duplicado o entrega de premio). Escribe el motivo; queda registrado con tu sesión.',
-    '👁 Ver cédula completa de ' + (a.nombre_organizacion || 'este aliado'),
-    'Revelar'
-  );
-  if (motivo === null) return;
-  motivo = motivo.trim();
-  if (motivo.length < 10) {
-    avisoEl.textContent = 'Escribe un motivo de al menos 10 caracteres.';
-    return;
-  }
-
-  btn.disabled = true;
-  try {
-    var datos = await llamar('f_admin_revelar_cedula', {
-      p_token: ses.token,
-      p_origen: 'aliados',
-      p_id: a.id,
-      p_motivo: motivo
-    });
-    if (datos && datos.ok) {
-      avisoEl.innerHTML = 'Cédula completa: <b>' + esc(datos.cedula) + '</b> · Revelado registrado (#' + esc(datos.acceso_id) + ')';
-    } else if (datos && datos.error === 'ERR_SESION') {
-      avisoEl.textContent = 'Tu sesión caducó. Vuelve a entrar.';
-    } else if (datos && datos.error === 'ERR_MOTIVO') {
-      avisoEl.textContent = 'Escribe un motivo de al menos 10 caracteres.';
-    } else if (datos && datos.error === 'ERR_NO_ENCONTRADO') {
-      avisoEl.textContent = 'Ese aliado ya no existe.';
-    } else {
-      avisoEl.textContent = 'No se pudo revelar: ' + ((datos && datos.error) ? datos.error : 'respuesta inesperada del servidor');
-    }
-  } catch (e) {
-    avisoEl.textContent = 'No se pudo revelar: ' + (e.message || 'fallo de red');
-  } finally {
-    btn.disabled = false;
   }
 }
 

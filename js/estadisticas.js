@@ -368,6 +368,160 @@ function renderizar(d){
   document.getElementById('contenido').style.display = 'block';
 }
 
+// ===== M-39: informe agregado para patrocinadores =====
+// Tarjeta "🤝 Informe para patrocinadores". Llama a la RPC
+// f_admin_informe_patrocinadores que devuelve SOLO AGREGADOS.
+// Nunca hay datos de personas (ni nombres, ni cédulas, ni correos, ni teléfonos).
+// Los errores que impiden continuar van además en modal (norma v2.2).
+
+function fechaInformeFormateada(valor){
+  const dt = valor ? new Date(valor) : null;
+  return (dt && !isNaN(dt.getTime())) ? dt.toLocaleString() : String(valor || '');
+}
+
+function contadorInformeHtml(valor, etiqueta){
+  return '<div class="contador"'
+    + '<span class="numero">' + esc(valor) + '</span>'
+    + '<span class="etiqueta">' + esc(etiqueta) + '</span>'
+    + '</div>';
+}
+
+function tablaInformeHtml(titulo, cabeceras, filas){
+  if(!filas || filas.length === 0){
+    return '<h3>' + esc(titulo) + '</h3><p class="suave">Sin datos</p>';
+  }
+  var html = '<table>';
+  html += '<caption>' + esc(titulo) + '</caption>';
+  html += '<tr>' + cabeceras.map(function(c){ return '<th>' + esc(c) + '</th>'; }).join('') + '</tr>';
+  html += filas.map(function(fila){
+    return '<tr>' + fila.map(function(c){ return '<td>' + esc(c == null ? '' : c) + '</td>'; }).join('') + '</tr>';
+  }).join('');
+  return html + '</table>';
+}
+
+function valorVis(valor){
+  return (valor && String(valor).trim()) ? valor : '—';
+}
+
+function pintarInforme(d){
+  var contenedor = document.getElementById('informePatrocinadores');
+  if(!contenedor) return;
+  var t = d.totales || {};
+  var html = '';
+  html += '<div class="grid-contadores"'
+    + contadorInformeHtml(t.registros, 'Registros')
+    + contadorInformeHtml(t.personas_distintas, 'Personas distintas')
+    + contadorInformeHtml(t.asistieron_dia1, 'Asistieron Día 1')
+    + contadorInformeHtml(t.asistieron_dia2, 'Asistieron Día 2')
+    + '</div>';
+  html += tablaInformeHtml('Por segmento', ['Segmento', 'Registros', 'Asistieron Día 1', 'Asistieron Día 2'],
+    (d.segmentos || []).map(function(s){ return [s.segmento, s.registros, s.asistieron_dia1, s.asistieron_dia2]; }));
+  html += tablaInformeHtml('Stands', ['Tipo', 'Número', 'Nombre', 'Empresa', 'Personas', 'Asistieron Día 1', 'Asistieron Día 2'],
+    (d.stands || []).map(function(s){ return [s.tipo, s.numero, s.nombre, valorVis(s.empresa), s.personas, s.asistieron_dia1, s.asistieron_dia2]; }));
+  html += tablaInformeHtml('Talentos', ['Nombre', 'Personas Día 1', 'Asistieron Día 1', 'Personas Día 2', 'Asistieron Día 2'],
+    (d.talentos || []).map(function(x){ return [x.nombre, x.personas_dia1, x.asistieron_dia1, x.personas_dia2, x.asistieron_dia2]; }));
+  html += tablaInformeHtml('Empresas', ['Empresa', 'Personas', 'Asistieron Día 1', 'Asistieron Día 2'],
+    (d.empresas || []).map(function(e){ return [e.empresa, e.personas, e.asistieron_dia1, e.asistieron_dia2]; }));
+  html += tablaInformeHtml('Cargos', ['Cargo', 'Personas'],
+    (d.cargos || []).map(function(c){ return [c.cargo, c.personas]; }));
+  html += tablaInformeHtml('Cortesías por motivo', ['Razón', 'Personas', 'Asistieron Día 1', 'Asistieron Día 2'],
+    (d.cortesias_por_razon || []).map(function(r){ return [r.razon, r.personas, r.asistieron_dia1, r.asistieron_dia2]; }));
+  html += '<p class="suave"'
+    + esc(d.aviso || '')
+    + (d.aviso ? ' ' : '')
+    + 'Generado: ' + esc(fechaInformeFormateada(d.generado_at))
+    + '</p>';
+  contenedor.innerHTML = html;
+  var btnCsv = document.createElement('button');
+  btnCsv.type = 'button';
+  btnCsv.className = 'btn btn-gris';
+  btnCsv.textContent = '⬇️ Descargar CSV';
+  btnCsv.addEventListener('click', function(){ descargarCSVInforme(d); });
+  var btnCopiar = document.createElement('button');
+  btnCopiar.type = 'button';
+  btnCopiar.className = 'btn btn-gris';
+  btnCopiar.textContent = '📋 Copiar resumen';
+  btnCopiar.addEventListener('click', function(){ copiarTexto(textoResumenInforme(d), btnCopiar); });
+  contenedor.appendChild(btnCsv);
+  contenedor.appendChild(btnCopiar);
+}
+
+function textoResumenInforme(d){
+  var t = d.totales || {};
+  var ev = d.evento || {};
+  var lineas = [];
+  lineas.push('Informe para patrocinadores - ' + (ev.nombre || 'Evento') + ' - generado ' + fechaInformeFormateada(d.generado_at));
+  lineas.push('Registros: ' + (t.registros == null ? 0 : t.registros)
+    + ' · Personas distintas: ' + (t.personas_distintas == null ? 0 : t.personas_distintas)
+    + ' · Asistieron Día 1: ' + (t.asistieron_dia1 == null ? 0 : t.asistieron_dia1)
+    + ' · Asistieron Día 2: ' + (t.asistieron_dia2 == null ? 0 : t.asistieron_dia2));
+  lineas.push('Por segmento:');
+  (d.segmentos || []).forEach(function(s){
+    lineas.push('- ' + s.segmento + ': ' + (s.registros == null ? 0 : s.registros)
+      + ' registros, ' + (s.asistieron_dia1 == null ? 0 : s.asistieron_dia1) + ' asistieron Día 1, '
+      + (s.asistieron_dia2 == null ? 0 : s.asistieron_dia2) + ' asistieron Día 2');
+  });
+  return lineas.join('\r\n');
+}
+
+function celdaCSV(v){
+  var s = String(v == null ? '' : v);
+  return /[;\r
+"]/.test(s)
+    ? '"' + s.replace(/"/g, '""') + '"'
+    : s;
+}
+
+function bloqueCSV(lineas, titulo, cabeceras, filas){
+  lineas.push('');
+  lineas.push(titulo);
+  lineas.push(cabeceras.join(','));
+  filas.forEach(function(fila){ lineas.push(fila.map(function(f){ return celdaCSV(f); }).join(',')); });
+}
+
+function descargarCSVInforme(d){
+  var lineas = [];
+  var ev = d.evento || {};
+  lineas.push('Informe para patrocinadores - ' + (ev.nombre || 'Evento') + ' - generado ' + fechaInformeFormateada(d.generado_at));
+  var t = d.totales || {};
+  lineas.push('Registros: ' + (t.registros || 0)
+    + ', Personas distintas: ' + (t.personas_distintas || 0)
+    + ', Asistieron Día 1: ' + (t.asistieron_dia1 || 0)
+    + ', Asistieron Día 2: ' + (t.asistieron_dia2 || 0));
+  bloqueCSV(lineas, 'Por segmento', ['Segmento','Registros','Asistieron D1','Asistieron D2'],
+    (d.segmentos || []).map(function(s){ return [s.segmento, s.registros, s.asistieron_dia1, s.asistieron_dia2]; }));
+  bloqueCSV(lineas, 'Stands', ['Tipo','Número','Nombre','Empresa','Personas','Asistieron D1','Asistieron D2'],
+    (d.stands || []).map(function(s){ return [s.tipo, s.numero, s.nombre, valorVis(s.empresa), s.personas, s.asistieron_dia1, s.asistieron_dia2]; }));
+  bloqueCSV(lineas, 'Talentos', ['Nombre','Personas D1','Asistieron D1','Personas D2','Asistieron D2'],
+    (d.talentos || []).map(function(x){ return [x.nombre, x.personas_dia1, x.asistieron_dia1, x.personas_dia2, x.asistieron_dia2]; }));
+  bloqueCSV(lineas, 'Empresas', ['Empresa','Personas','Asistieron D1','Asistieron D2'],
+    (d.empresas || []).map(function(e){ return [e.empresa, e.personas, e.asistieron_dia1, e.asistieron_dia2]; }));
+  bloqueCSV(lineas, 'Cargos', ['Cargo','Personas'],
+    (d.cargos || []).map(function(c){ return [c.cargo, c.personas]; }));
+  bloqueCSV(lineas, 'Cortesías por motivo', ['Razón','Personas','Asistieron D1','Asistieron D2'],
+    (d.cortesias_por_razon || []).map(function(r){ return [r.razon, r.personas, r.asistieron_dia1, r.asistieron_dia2]; }));
+  var blob = new Blob([lineas.join('\r\n')], {type: 'text/csv;charset=utf-8;'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  var hoy = new Date();
+  var m = hoy.getMonth() + 1;
+  a.download = 'informe-patrocinadores-' + hoy.getFullYear() + '-' + (m < 10 ? '0' : '') + m + '-' + (hoy.getDate() < 10 ? '0' : '') + hoy.getDate() + '.csv';
+  a.href = url;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function copiarTexto(texto, btn){
+  navigator.clipboard.writeText(texto).then(function(){
+    btn.textContent = '✅ Copiado';
+    setTimeout(function(){ btn.textContent = '📋 Copiar resumen'; }, 2000);
+  });
+}
+
+function $(id){ return document.getElementById(id); }
+
 (async () => {
   try{
     const d = await llamar('f_admin_segmentacion', { p_token: token });
@@ -389,7 +543,42 @@ function renderizar(d){
   }catch(e){
     document.getElementById('panelCarga').innerHTML = `<p class="suave texto-error">Error al cargar: ${esc(e.message || e)}</p>`;
   }
+
+  // M-39: informe patrocinadores (no bloquea si falla)
+  try{
+    $('btnInformePatrocinadores').onclick = function(){ cargarInformePatrocinadores(); };
+  }catch(e){}
 })();
+
+async function cargarInformePatrocinadores(){
+  var aviso = $('avisoInformePatrocinadores');
+  aviso.textContent = '';
+  var btn = $('btnInformePatrocinadores');
+  btn.disabled = true;
+  btn.textContent = 'Generando...';
+  try {
+    var datos = await llamar('f_admin_informe_patrocinadores', { p_token: token });
+    if (datos && datos.error) {
+      if (datos.error === 'ERR_SESION') {
+        await NA.avisar('Tu sesión caducó. Vuelve a entrar.');
+        borrarSesion();
+        location.href = 'index.html';
+        return;
+      }
+      aviso.textContent = 'No se pudo generar el informe: ' + datos.error;
+    } else if (datos) {
+      pintarInforme(datos);
+      document.getElementById('informePatrocinadores').classList.remove('oculto');
+    } else {
+      aviso.textContent = 'Respuesta inesperada del servidor.';
+    }
+  } catch (e) {
+    aviso.textContent = 'No se pudo generar el informe: ' + (e.message || 'fallo de red');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Generar informe';
+  }
+}
 // P0-04: los anchos de las barras se aplican por CSSOM (propiedad), no con el atributo style
 // inline, para poder cerrar style-src en la CSP. Un MutationObserver los refresca
 // cada vez que se repinta un panel.
