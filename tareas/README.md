@@ -85,7 +85,7 @@ Usa [PLANTILLA.md](PLANTILLA.md) para crear tareas nuevas. No renombres los IDs 
 | [M-33](M-33-vista-anulada-aliado.md) | Humanizar la vista «anulada» del aliado | P2 | **hecho** (23/11/2026) | — |
 | [M-34](M-34-fecha-creacion-tarjeta-admin.md) | Mostrar la fecha de creación en la tarjeta del aliado (aliados.html) | P2 | **hecho** (23/11/2026) | — |
 | [M-35](M-35-nombres-premios-anulados.md) | Mostrar nombres de premios anulados (requiere cambio de RPC) | P2 | **hecho** (28/11: migración 0021 ejecutada en staging y producción, `pg_get_functiondef` verificado en ambos entornos; `js/aliado.js` muestra razon_anulacion con ⚠️ rojo) | — |
-| [M-36](M-36-modulo-reclamos.md) | Módulo de reclamos | P2 | **en_progreso** (fase 1 construida y probada 24/11/2026; pendientes: envío vacío y contador; fases 2 y 3 sin empezar) | — |
+| [M-36](M-36-modulo-reclamos.md) | Módulo de reclamos | P2 | **hecho** (28/11: fase 1 completa — formulario en aliado.html, código REC-XXXXXX, consulta pública, bandeja admin con filtros, contador dashboard 1 reclamo nuevo, validación campo a campo probada en staging) | — |
 | [M-37](M-37-multi-evento.md) | Multi-evento: gestionar hasta 3 eventos simultáneos desde el dashboard | P2 | pendiente | P1-04 |
 | [M-38](M-38-aprobacion-coordinadores.md) | Aprobación de coordinadores desde el dashboard (solicitar → aprobar/rechazar) | P2 | pendiente | — |
 | [M-39](M-39-informe-agregado-patrocinadores.md) | Informe agregado para patrocinadores (sin datos personales) | P1 | **en_progreso** | — |
