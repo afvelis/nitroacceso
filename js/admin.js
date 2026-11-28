@@ -113,8 +113,6 @@ function fechaBonita(iso){
     return new Date(iso).toLocaleDateString('es-VE', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
   } catch (e) { return ''; }
 }
-function urlWA(texto){ return 'https://wa.me/?text=' + encodeURIComponent(texto); }
-function urlMail(asunto, cuerpo){ return 'mailto:?subject=' + encodeURIComponent(asunto) + '&body=' + encodeURIComponent(cuerpo); }
 function razonLegible(r, causa){
   var map = { prensa:'Prensa', vinculo_familiar:'Vinculo familiar', premio:'Premio', autoridad:'Autoridad', otros:'Otros' };
   var t = map[r] || r;
@@ -273,160 +271,6 @@ async function cambiarEdicion(abierta){
   } catch (e) {
     aviso('estadoEdicion', 'Fallo al cambiar la edicion: ' + e.message, false);
   }
-}
-
-async function crearCoord(){
-  var tipo = $('cTipo').value;
-  var nombre = $('cNombre').value.trim();
-  var correo = $('cCorreo').value.trim();
-  if (!nombre) { aviso('msgCrear', 'Escribe primero el nombre y apellido.', false); return; }
-  try {
-    var codigo = await llamar('f_admin_crear_coordinador', {
-      p_token: ses.token, p_tipo: tipo, p_nombre: nombre, p_correo: correo || null
-    });
-    if (!codigo) { aviso('msgCrear', 'No se pudo crear el coordinador. Intenta de nuevo.', false); return; }
-    var cont = $('resultadoCoord');
-    cont.innerHTML = '';
-    var caja = document.createElement('div');
-    caja.className = 'codigo';
-    caja.textContent = codigo;
-    var fila = document.createElement('div');
-    fila.className = 'fila';
-    fila.appendChild(boton('Copiar codigo', 'btn-gris', function(btn){ copiarTexto(codigo, btn); }));
-    var nota = document.createElement('p');
-    nota.className = 'suave';
-    nota.textContent = 'Entregale este codigo a tu coordinador: con el entra en coord.html y crea los links de registro.';
-    cont.appendChild(caja);
-    cont.appendChild(fila);
-    cont.appendChild(nota);
-    $('cNombre').value = '';
-    $('cCorreo').value = '';
-    aviso('msgCrear', 'Coordinador creado correctamente.', true);
-    await cargarLista();
-  } catch (e) {
-    aviso('msgCrear', 'Fallo al crear: ' + e.message, false);
-  }
-}
-
-async function cargarLista(){
-  var cont = $('listaCoords');
-  try {
-    var arr = await llamar('f_admin_listar_coordinadores', { p_token: ses.token });
-    if (!arr) { cont.innerHTML = '<p class="suave">Tu sesion expiro: entra de nuevo con tu PIN.</p>'; return; }
-    cont.innerHTML = '';
-    if (!arr.length) { cont.innerHTML = '<p class="suave">Todavia no hay coordinadores creados.</p>'; return; }
-    arr.forEach(function(c){ cont.appendChild(tarjetaCoord(c)); });
-  } catch (e) {
-    cont.innerHTML = '<p class="suave">No se pudo cargar la lista: ' + esc(e.message) + '</p>';
-  }
-}
-
-function tarjetaCoord(c){
-  var div = document.createElement('div');
-  div.className = 'item';
-  var tipoTxt = (c.tipo === 'talentos') ? 'Talentos' : 'Stands';
-  var fecha = fechaBonita(c.creada_at);
-  var linkEntrada = BASE + 'coord.html?c=' + c.codigo;
-  
-  div.innerHTML =
-    '<div><strong>' + esc(c.nombre) + '</strong>' +
-    '<span class="badge badge-tipo">' + tipoTxt + '</span>' +
-    '<span class="badge ' + (c.activo ? 'badge-ok">Activo' : 'badge-no">Revocado') + '</span></div>' +
-    '<div class="codigo">' + esc(c.codigo) + '</div>' +
-    '<p class="suave">' + (c.correo ? esc(c.correo) : 'Sin correo registrado') + (fecha ? ' · Creado el ' + fecha : '') + '</p>' +
-    '<div class="fila fila-compacta"></div>' +
-    '<div class="codigo codigo-enlace">' + esc(linkEntrada) + '</div>' +
-    '<div class="fila"></div>';
-    
-  var fila1 = div.querySelectorAll('.fila')[0];
-  fila1.appendChild(boton('Copiar código', 'btn-gris', function(btn){ copiarTexto(c.codigo, btn); }));
-  fila1.appendChild(boton('Editar', 'btn-gris', function(){ mostrarEdicion(div, c); }));
-  if (c.activo) {
-    fila1.appendChild(boton('Revocar', 'btn-rojo', function(){ revocar(c, false); }));
-  } else {
-    fila1.appendChild(boton('Reactivar', 'btn-verde', function(){ revocar(c, true); }));
-    fila1.appendChild(boton('Eliminar definitivamente', 'btn-rojo', function(){ borrarDefinitivo(c); }));
-  }
-
-  var fila2 = div.querySelectorAll('.fila')[1];
-  fila2.appendChild(boton('📋 Copiar link', 'btn-gris', function(btn){ copiarTexto(linkEntrada, btn); }));
-  
-  var wa = document.createElement('a');
-  wa.className = 'btn btn-gris';
-  wa.target = '_blank';
-  wa.rel = 'noopener';
-  wa.textContent = '📱 WhatsApp';
-  wa.href = urlWA('Hola ' + esc(c.nombre) + ', aquí tienes tu link de acceso para coordinar ' + tipoTxt + ' en NitroSystem: ' + linkEntrada);
-  fila2.appendChild(wa);
-  
-  var ml = document.createElement('a');
-  ml.className = 'btn btn-gris';
-  ml.textContent = '✉️ Correo';
-  ml.href = urlMail('Link de acceso NitroSystem - Coordinación de ' + tipoTxt, 'Hola ' + esc(c.nombre) + ',\n\nAquí tienes tu link de acceso para coordinar ' + tipoTxt + ' en NitroSystem:\n\n' + linkEntrada + '\n\nTu código es: ' + c.codigo);
-  fila2.appendChild(ml);
-
-  return div;
-}
-
-function mostrarEdicion(div, c){
-  var existente = div.querySelector('.panel-edit');
-  if (existente) { existente.remove(); return; }
-  var panel = document.createElement('div');
-  panel.className = 'panel-edit';
-  var l1 = document.createElement('label');
-  l1.textContent = 'Nombre y apellido';
-  var i1 = document.createElement('input');
-  i1.value = c.nombre || '';
-  l1.appendChild(i1);
-  var l2 = document.createElement('label');
-  l2.textContent = 'Correo (opcional)';
-  var i2 = document.createElement('input');
-  i2.value = c.correo || '';
-  l2.appendChild(i2);
-  var fila = document.createElement('div');
-  fila.className = 'fila';
-  fila.appendChild(boton('Guardar cambios', 'btn-verde', async function(){
-    var nom = i1.value.trim();
-    var cor = i2.value.trim();
-    if (!nom) { alert('El nombre no puede quedar vacio.'); return; }
-    try {
-      var ok = await llamar('f_admin_editar_coordinador', {
-        p_token: ses.token, p_id: c.id, p_nombre: nom, p_correo: cor || null
-      });
-      if (!ok) { alert('No se pudo guardar el cambio.'); return; }
-      await cargarLista();
-    } catch (e) { alert('Fallo al guardar: ' + e.message); }
-  }));
-  fila.appendChild(boton('Cancelar', 'btn-gris', function(){ panel.remove(); }));
-  panel.appendChild(l1);
-  panel.appendChild(l2);
-  panel.appendChild(fila);
-  div.appendChild(panel);
-}
-
-async function revocar(c, activo){
-  var pregunta = activo
-    ? 'Reactivar el codigo de ' + c.nombre + '? Podra volver a entrar y crear links nuevos.'
-    : 'Revocar la llave de ' + c.nombre + '? Ya no podra entrar ni crear links nuevos. Lo que ya creo queda intacto.';
-  if (!await modalConfirm(pregunta, 'Confirmar')) return;
-  try {
-    var ok = await llamar('f_admin_activar_coordinador', { p_token: ses.token, p_id: c.id, p_activo: activo });
-    if (!ok) { alert('No se pudo completar la accion.'); return; }
-    await cargarLista();
-  } catch (e) { alert('Fallo: ' + e.message); }
-}
-
-async function borrarDefinitivo(c){
-  if (!await modalConfirm('Borrar DEFINITIVAMENTE a ' + c.nombre + ' de la lista? Esta accion no se puede deshacer. Si ya creo talentos o stands, el sistema no lo dejara borrar para proteger el evento.', 'Eliminar definitivamente')) return;
-  try {
-    var r = await llamar('f_admin_borrar_coordinador', { p_token: ses.token, p_id: c.id });
-    if (r === 'ok') { await cargarLista(); return; }
-    if (r === 'protegido') {
-      alert('No se pudo borrar definitivamente: este coordinador ya creo talentos o stands. Dejalo como revocado: asi su llave queda inutil y los datos del evento quedan protegidos.');
-      return;
-    }
-    alert('No se pudo borrar. Puede que tu sesion expirara o que el coordinador ya no exista. Recarga la pagina.');
-  } catch (e) { alert('Fallo al borrar: ' + e.message); }
 }
 
 function htmlStats(s){
@@ -941,7 +785,6 @@ if (!ses || ses.rol !== 'admin') {
   activarAutoBloqueo();
   $('btnCerrarEdicion').onclick = function(){ cambiarEdicion(false); };
   $('btnAbrirEdicion').onclick = function(){ cambiarEdicion(true); };
-  $('btnCrearCoord').onclick = crearCoord;
   $('btnGuardarInforme').onclick = guardarInforme;
   $('btnExportarRespaldo').onclick = exportarRespaldo;
   $('btnLimpiarTodo').onclick = limpiarTodo;
@@ -954,6 +797,5 @@ if (!ses || ses.rol !== 'admin') {
   $('btnRotarSupervisor').onclick = function(){ rotarPin('supervisor'); };
   $('btnVolver').onclick = function(){ location.replace('dashboard.html'); };
   cargarEstado();
-  cargarLista();
   cargarHistorial();
 }

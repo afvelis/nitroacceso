@@ -53,7 +53,7 @@ Está escrito para gente no técnica, con prisa el día del evento: te dice qué
 | [04 - Stand](04-stand.md) | El link de registro y brazaletes del stand | Coordinador de stands y responsable de stand |
 | [05 - Cortesías](05-cortesias.md) | Crear, editar y anular pases de cortesía | Administrador |
 | [06 - Puerta](06-puerta.md) | Escanear, buscar y autorizar entradas | Personal de puerta |
-| [07 - Aliados y coordinadores](07-aliados-y-coordinadores.md) | Crear coordinadores y gestionar aliados y concursos | Administrador y coordinadores |
+| [07 - Aliados y coordinadores](07-aliados-y-coordinadores.md) | Invitar coordinadores y gestionar aliados y concursos | Administrador y coordinadores |
 | [08 - Estadísticas](08-estadisticas.md) | Los números del evento y el informe final | Administrador |
 | [09 - Problemas frecuentes](09-problemas-frecuentes.md) | Síntoma, causa y qué hacer | Todos |
 | [10 - Seguridad del panel](10-seguridad-del-panel.md) | Rotar PIN y revocar sesiones | Administrador |

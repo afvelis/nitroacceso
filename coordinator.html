@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://exrbwctegkzxurzwihvh.supabase.co; font-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'; style-src 'self' 'sha256-LYk8bW4yYgGNlYx9Vs9zPeb8Li5hWImV2xhPvGivJ94='">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NitroSystem · Invitación para coordinar</title>
+<script src="config.js"></script>
+<style>
+:root{
+  --fondo:#0b1220;--tarjeta:#121c2e;--borde:#24344d;--texto:#eef3f8;
+  --suave:#9fb0c3;--acento:#35d07f;--acento2:#1fa2ff;--aviso:#ffd33d;
+  --rojo:#e05252;--rojo2:#c73e3e;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--fondo);color:var(--texto);font-size:17px;line-height:1.5;min-height:100vh;display:flex;flex-direction:column}
+.franja{height:6px;background:linear-gradient(90deg,var(--acento),var(--acento2))}
+.cabecera{display:flex;align-items:center;gap:14px;padding:18px 20px;background:var(--tarjeta);border-bottom:1px solid var(--borde)}
+.logo{font-size:28px;background:linear-gradient(135deg,var(--acento),var(--acento2));width:48px;height:48px;display:flex;align-items:center;justify-content:center;border-radius:10px}
+.titulo{font-size:20px;font-weight:700}
+.subtitulo{font-size:14px;color:var(--suave)}
+.contenedor{flex:1;display:flex;align-items:center;justify-content:center;padding:20px}
+.tarjeta{background:var(--tarjeta);border:1px solid var(--borde);border-radius:16px;padding:30px;width:100%;max-width:480px;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.tarjeta h2{font-size:20px;margin-bottom:12px;color:var(--acento)}
+.tarjeta .intro{font-size:15px;color:var(--suave);margin-bottom:14px}
+label{display:block;margin:12px 0;font-size:16px}
+label .etiqueta{display:block;color:var(--suave);font-size:14px;margin-bottom:4px}
+input{width:100%;padding:12px;border:1px solid var(--borde);border-radius:10px;background:#0d1626;color:var(--texto);font-size:17px}
+input:focus{outline:2px solid var(--acento2);border-color:var(--acento2)}
+.btn{width:100%;padding:14px;border:none;border-radius:10px;font-size:17px;font-weight:700;cursor:pointer;color:white;background:linear-gradient(135deg,var(--acento),#26a866);margin-top:16px;transition:transform .1s}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.error-campo{display:block;color:var(--rojo);font-size:13px;margin-top:4px;min-height:18px}
+.aviso-error{margin-top:14px;padding:10px;border-radius:8px;background:rgba(224,82,82,.12);border:1px solid var(--rojo);color:var(--rojo);font-size:15px}
+.estado-pill{display:inline-block;padding:6px 14px;border-radius:999px;font-size:15px;font-weight:700;background:rgba(31,162,255,.18);color:var(--acento2);margin-bottom:12px}
+.codigo-grande{background:#0d1526;border:1px solid var(--borde);border-radius:10px;padding:14px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:24px;letter-spacing:2px;text-align:center;margin:12px 0;word-break:break-all}
+.btn-secundario{background:#2a3648}
+.contador-redirigir{font-size:14px;color:var(--suave);margin-top:10px;text-align:center}
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header class="cabecera">
+  <div class="logo">🚀</div>
+  <div>
+    <div class="titulo">NitroSystem</div>
+    <div class="subtitulo">Invitación para coordinar</div>
+  </div>
+</header>
+
+<main class="contenedor">
+  <section class="tarjeta" id="cardCarga">
+    <h2>Verificando tu invitación...</h2>
+    <p class="intro">Un momento, por favor.</p>
+  </section>
+
+  <section class="tarjeta" id="cardInvitacion" hidden>
+    <span id="pillTipo" class="estado-pill">Invitación</span>
+    <h2>Tu invitación para coordinar</h2>
+    <p class="intro" id="textoInvitacion">Confirma tus datos para activar tu acceso. Solo cambia lo escrito y pulsa el botón de abajo.</p>
+    <label for="inNombre">
+      <span class="etiqueta">Tu nombre y apellido (obligatorio)</span>
+      <input type="text" id="inNombre" autocomplete="name" placeholder="Ej.: Maria Perez" style="margin-top:0;">
+      <span class="error-campo" id="errNombre" aria-live="polite"></span>
+    </label>
+    <label for="inCorreo">
+      <span class="etiqueta">Tu correo (opcional)</span>
+      <input type="email" id="inCorreo" autocomplete="email" placeholder="Ej.: maria@correo.com" style="margin-top:0;">
+      <span class="error-campo" id="errCorreo" aria-live="polite"></span>
+    </label>
+    <label for="inTelefono">
+      <span class="etiqueta">Tu teléfono (opcional)</span>
+      <input type="tel" id="inTelefono" autocomplete="tel" placeholder="Ej.: 0414 123 4567" style="margin-top:0;">
+      <span class="error-campo" id="errTelefono" aria-live="polite"></span>
+    </label>
+    <button class="btn" id="btnConfirmar">Confirmar mi acceso</button>
+    <div class="aviso-error" id="msgAviso" hidden></div>
+  </section>
+
+  <section class="tarjeta centro-mio" id="cardListo" style="text-align:center" hidden>
+    <h2>¡Listo, ya eres coordinador!</h2>
+    <p class="intro" id="textoListo">Tu acceso quedó activo. Este es tu código: guárdalo, es tu llave para entrar.</p>
+    <div class="codigo-grande" id="codigoCoord"></div>
+    <button class="btn" id="btnIrPanel">Entrar a mi panel ahora</button>
+    <button class="btn btn-secundario" id="btnCopiarCodigo">Copiar mi código</button>
+    <p class="contador-redirigir" id="mensajeRedir"></p>
+  </section>
+</main>
+
+<script src="js/modales.js"></script>
+<script src="js/coordinator.js"></script>
+</body>
+</html>
