@@ -131,7 +131,6 @@ Los IDs de proyecto se leen de `config.js`; los códigos de demo, de `supabase/s
 | --- | --- | --- |
 | `stand.html` | `?s=` | `js/stand.js:2` |
 | `cortesia.html` | `?c=` | `js/cortesia.js:3` |
-| `coord.html` | `?c=` | `js/coord.js:355` |
 | `aliado.html` | `?a=` | `js/aliado.js:2` |
 | `aliados-concursos.html` | `?asig=` | `js/aliados-concursos.js:209` |
 | `talento.html` | `?t=` (lector generico) | `js/talento.js:39` |

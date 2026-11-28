@@ -215,6 +215,9 @@ function pintarConcursos(){
     const pillEstado = abierto
       ? '<span class="pill pill-verde">Abierto · sin ganador</span>'
       : '<span class="pill pill-morado">Cerrado · ganador asignado</span>';
+    const razonAnulTxt = c.razon_anulacion
+      ? '<div class="desc-suave13 rojo">⚠️ ' + esc(c.razon_anulacion) + '</div>'
+      : '';
     const fechaCreaTxt = c.creada_at ? fmtFecha(c.creada_at.substring(0, 10)) : '-';
     const fechaEjecTxt = c.fecha_concurso ? fmtFecha(c.fecha_concurso) : '—';
     const descTxt = c.descripcion ? '<div class="desc-suave13">' + esc(c.descripcion) + '</div>' : '';
@@ -236,6 +239,8 @@ function pintarConcursos(){
             (yaEnviado ? '🔁 Reenviar premio' : '📨 Enviar premio al ganador') +
           '</button>' +
         '</div>';
+    }else if(c.razon_anulacion){
+      botones = '<div class="acciones"><span class="suave">Concurso anulado.</span></div>';
     }
 
     html +=
@@ -246,6 +251,7 @@ function pintarConcursos(){
             '<div class="meta">' + c.cupones_reservados + (abierto ? ' entrada(s) reservada(s)' : ' entrada(s) asignada(s)') + '</div>' +
             '<div class="meta">📅 Creado: ' + fechaCreaTxt + ' · 🎯 Ejecución: ' + fechaEjecTxt + '</div>' +
             descTxt +
+            razonAnulTxt +
           '</div>' +
           '<div>' + pillEstado + '</div>' +
         '</div>' +

@@ -36,7 +36,7 @@ async function copiarTexto(txt){
 
 var coord = null;
 var misLinks = [];
-var linksRenovados = {}; // guarda los codigos viejos que ya fueron renovados en esta sesion
+var linksRenovados = {};
 
 function leerCoordGuardado(){
   try { return JSON.parse(sessionStorage.getItem('na_coord') || 'null'); } catch (e) { return null; }
@@ -110,70 +110,119 @@ function msgError(r, esTalento){
   return 'No se pudo completar. Intenta de nuevo o avisa al administrador.';
 }
 
+// ── Renderizado de links: solo 2 visibles, resto colapsable ──
+
 function renderLinks(){
   var cont = $('listaLinks');
   if (!misLinks.length) { $('cardLinks').hidden = true; cont.innerHTML = ''; return; }
   $('cardLinks').hidden = false;
   cont.innerHTML = '';
-  misLinks.forEach(function(item, idx){
-    var link = linkCompleto(item);
-    var textoWA = 'Hola, te comparto el link de registro de ' + item.titulo + ' para NitroSystem: ' + link;
-    var div = document.createElement('div');
-    div.className = 'item';
-    var renovado = !!linksRenovados[item.codigo];
-    div.innerHTML =
-      '<div><strong>' + esc(item.titulo) + '</strong>' +
-      (renovado ? '<span class="badge-renov">Renovado</span>' : '') + '</div>' +
-      '<div class="codigo">' + esc(link) + '</div>' +
-      (renovado ? '<p class="suave nota-renovado">El link anterior de este registro quedo anulado: usa y reenvia solo este.</p>' : '') +
-      '<div class="fila"></div>' +
-      '<div class="panel-edit" hidden></div>';
-    var fila = div.querySelector('.fila');
-    var panel = div.querySelector('.panel-edit');
 
-    var bCop = document.createElement('button');
-    bCop.className = 'btn btn-gris';
-    bCop.textContent = 'Copiar';
-    bCop.onclick = async function(){
-      var ok = await copiarTexto(link);
-      if (ok) {
-        bCop.textContent = '¡Copiado!';
-        avisoMsg('msgLinks', 'Link copiado. Pegalo donde quieras.', true);
-        setTimeout(function(){ bCop.textContent = 'Copiar'; }, 2000);
+  // Ordenar por created_at descendente (más nuevo primero)
+  misLinks.sort(function(a, b){
+    if (!a.creada_at && !b.creada_at) return 0;
+    if (!a.creada_at) return 1;
+    if (!b.creada_at) return -1;
+    return new Date(b.creada_at) - new Date(a.creada_at);
+  });
+
+  var total = misLinks.length;
+  var visible = Math.min(2, total);
+  var ocultos = total - visible;
+
+  // Renderizar los primeros 2
+  for (var i = 0; i < visible; i++) {
+    renderLinkItem(misLinks[i], cont, i);
+  }
+
+  // Botón colapsable si hay ocultos
+  if (ocultos > 0) {
+    var btn = document.createElement('button');
+    btn.className = 'btn btn-gris';
+    btn.style.marginTop = '12px';
+    btn.style.width = '100%';
+    var expanded = false;
+    btn.onclick = function(){
+      if (!expanded) {
+        // Mostrar todos los ocultos
+        for (var k = 2; k < total; k++) {
+          renderLinkItem(misLinks[k], cont, k);
+        }
+        btn.textContent = 'Ocultar ' + ocultos + ' links';
+        expanded = true;
       } else {
-        avisoMsg('msgLinks', 'Tu navegador no dejo copiar solo. Selecciona el link con el mouse o el dedo y copialo manual.', false);
+        // Ocultar todos excepto los 2 primeros
+        var items = cont.querySelectorAll('.item');
+        for (var j = 2; j < items.length; j++) {
+          items[j].style.display = 'none';
+        }
+        btn.textContent = 'Mostrar ' + ocultos + ' más';
+        expanded = false;
       }
     };
+    cont.appendChild(btn);
+  }
+}
 
-    var aWA = document.createElement('a');
-    aWA.className = 'btn';
-    aWA.textContent = 'WhatsApp';
-    aWA.target = '_blank';
-    aWA.href = urlWA(textoWA);
+function renderLinkItem(item, cont, idx){
+  var link = linkCompleto(item);
+  var textoWA = 'Hola, te comparto el link de registro de ' + item.titulo + ' para NitroSystem: ' + link;
+  var div = document.createElement('div');
+  div.className = 'item';
+  var renovado = !!linksRenovados[item.codigo];
+  div.innerHTML =
+    '<div><strong>' + esc(item.titulo) + '</strong>' +
+    (renovado ? '<span class="badge-renov">Renovado</span>' : '') + '</div>' +
+    '<div class="codigo">' + esc(link) + '</div>' +
+    (renovado ? '<p class="suave nota-renovado">El link anterior de este registro quedo anulado: usa y reenvia solo este.</p>' : '') +
+    '<div class="fila"></div>' +
+    '<div class="panel-edit" hidden></div>';
+  var fila = div.querySelector('.fila');
+  var panel = div.querySelector('.panel-edit');
 
-    var bMail = document.createElement('button');
-    bMail.className = 'btn btn-azul';
-    bMail.textContent = 'Correo';
-    bMail.onclick = async function(){
-      await copiarTexto(textoWA);
-      avisoMsg('msgLinks', 'Intentamos abrir tu aplicacion de correo. Si no se abrio nada, no te preocupes: el mensaje ya quedo copiado, pegalo en tu correo o en WhatsApp.', true);
-      window.location.href = urlMail('NitroSystem - link de registro', textoWA);
-    };
+  var bCop = document.createElement('button');
+  bCop.className = 'btn btn-gris';
+  bCop.textContent = 'Copiar';
+  bCop.onclick = async function(){
+    var ok = await copiarTexto(link);
+    if (ok) {
+      bCop.textContent = '¡Copiado!';
+      avisoMsg('msgLinks', 'Link copiado. Pegalo donde quieras.', true);
+      setTimeout(function(){ bCop.textContent = 'Copiar'; }, 2000);
+    } else {
+      avisoMsg('msgLinks', 'Tu navegador no dejo copiar solo. Selecciona el link con el mouse o el dedo y copialo manual.', false);
+    }
+  };
 
-    var bEdit = document.createElement('button');
-    bEdit.className = 'btn btn-gris';
-    bEdit.textContent = '✏️ Edicion del link';
-    bEdit.onclick = function(){
-      if (panel.hidden) { abrirPanelEdit(panel, item, idx); }
-      else { panel.hidden = true; panel.innerHTML = ''; }
-    };
+  var aWA = document.createElement('a');
+  aWA.className = 'btn';
+  aWA.textContent = 'WhatsApp';
+  aWA.target = '_blank';
+  aWA.href = urlWA(textoWA);
 
-    fila.appendChild(bCop);
-    fila.appendChild(aWA);
-    fila.appendChild(bMail);
-    fila.appendChild(bEdit);
-    cont.appendChild(div);
-  });
+  var bMail = document.createElement('button');
+  bMail.className = 'btn btn-azul';
+  bMail.textContent = 'Correo';
+  bMail.onclick = async function(){
+    await copiarTexto(textoWA);
+    avisoMsg('msgLinks', 'Intentamos abrir tu aplicacion de correo. Si no se abrio nada, no te preocupes: el mensaje ya quedo copiado, pegalo en tu correo o en WhatsApp.', true);
+    window.location.href = urlMail('NitroSystem - link de registro', textoWA);
+  };
+
+  var bEdit = document.createElement('button');
+  bEdit.className = 'btn btn-gris';
+  bEdit.textContent = '✏️ Edicion del link';
+  bEdit.onclick = function(){
+    if (panel.hidden) { abrirPanelEdit(panel, item, idx); }
+    else { panel.hidden = true; panel.innerHTML = ''; }
+  };
+
+  fila.appendChild(bCop);
+  fila.appendChild(aWA);
+  fila.appendChild(bMail);
+  fila.appendChild(bEdit);
+  if (cont) cont.appendChild(div);
+  return div;
 }
 
 async function abrirPanelEdit(panel, item, idx){
@@ -343,24 +392,13 @@ function salir(){
   sessionStorage.removeItem('na_coord');
   coord = null;
   misLinks = [];
+  linksRenovados = {};
   $('cardTrabajo').hidden = true;
   $('cardLinks').hidden = true;
   $('cardEntrada').hidden = false;
   $('inCodigo').value = '';
   avisoMsg('msgEntrada', '', true);
+  avisoMsg('msgTalento', '', true);
+  avisoMsg('msgStand', '', true);
+  avisoMsg('msgLinks', '', true);
 }
-
-var guardado = leerCoordGuardado();
-var codigoUrl = '';
-try { codigoUrl = (new URLSearchParams(window.location.search).get('c') || '').toUpperCase().trim(); } catch (e) {}
-if (codigoUrl) {
-  $('inCodigo').value = codigoUrl;
-  entrarConCodigo(codigoUrl);
-} else if (guardado && guardado.codigo) {
-  entrarConCodigo(guardado.codigo);
-}
-$('btnEntrar').onclick = entrar;
-$('btnCrearTalento').onclick = crearTalento;
-$('btnCrearStand').onclick = crearStand;
-$('btnSalirCoord').onclick = salir;
-

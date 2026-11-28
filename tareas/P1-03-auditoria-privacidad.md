@@ -11,6 +11,10 @@ archivos:
   - "puerta.html"
   - "aliado.html"
   - "config.js"
+  - "supabase/migrations/0013_p1_03_mascarar_cedula_rpc.sql"
+  - "supabase/migrations/0016_p1_03_mascarar_cedula_rpc_resto.sql"
+  - "supabase/migrations/0017_p1_03_tabla_auditoria.sql"
+  - "supabase/migrations/0018_p1_03_integrar_auditoria_en_rpc.sql"
 ---
 
 # P1-03 · Auditoría de acciones y privacidad de datos
@@ -171,7 +175,49 @@ despliegue obligatorio: migración primero (staging y producción), frontend des
 
 ### 25/11/2026 — Unidad 1b (SQL preparado, no desplegado)
 
-- La migración `supabase/migrations/0013_p1_03_mascarar_cedula_rpc.sql` está **escrita y commiteada** con el helper `f_cedula_mascara` y `f_aliado_ver` enmascarando la cédula del ganador y eliminando `correo` (cero lecturas de `.correo` en `js/aliado.js`); **NO se ha ejecutado** en ninguna base.
-- Al ejecutarla, hay que pedir antes su `pg_get_functiondef` en producción y comparar (regla vigente: nunca sobrescribir una RPC sin ver su definición actual).
-- Las otras cuatro RPC enmascarables (`f_admin_listar_aliados`, `f_admin_ver_concursos_aliado`, `f_puerta_personas_de_lista`, `f_puerta_cortesia_lista`) siguen **pendientes**, cada una con su `pg_get_functiondef` previo.
-- No se cambia el estado de la tarea: sigue `en_progreso`.
+- La migración `supabase/migrations/0013_p1_03_mascarar_cedula_rpc.sql` fue escrita y commiteada con el helper `f_cedula_mascara` y `f_aliado_ver` enmascarando la cédula del ganador y eliminando `correo` (cero lecturas de `.correo` en `js/aliado.js`).
+
+### 26/11/2026 — Unidad 1b (desplegada en producción)
+
+- La migración `0013_p1_03_mascarar_cedula_rpc.sql` se ejecutó en **producción** el 26/11/2026.
+- Evidencia: `SELECT public.f_cedula_mascara('1234567890');` devuelve `123•••90`.
+- `f_aliado_ver` fue actualizada: ya no devuelve la cédula completa del ganador ni su correo.
+- Las otras cuatro RPC enmascarables (`f_admin_listar_aliados`, `f_admin_ver_concursos_aliado`, `f_puerta_personas_de_lista`, `f_puerta_cortesia_lista`) siguen **pendientes**, cada una con su `pg_get_functiondef` previo. **Se harán en la siguiente sesión.**
+- El estado de la tarea sigue `en_progreso` hasta que se enmascaren las 4 RPC restantes.
+
+### 27/11/2026 — Unidad 1b (resto): migración preparada
+
+- Se obtuvieron las 4 definiciones con `pg_get_functiondef` en producción y se reescribió la migración `0016_p1_03_mascarar_cedula_rpc_resto.sql`.
+- La migración incluye `CREATE OR REPLACE` para las 4 RPC, envolviendo `cedula` con `public.f_cedula_mascara()`:
+  - `f_admin_listar_aliados`: `'cedula', a.cedula` → `public.f_cedula_mascara(a.cedula)`
+  - `f_admin_ver_concursos_aliado`: `'cedula', a.cedula` y `'cedula', cp.cedula` → envueltas
+  - `f_puerta_personas_de_lista`: `'cedula', p.cedula` → `public.f_cedula_mascara(p.cedula)`
+  - `f_puerta_cortesia_lista`: `'cedula', cp.cedula` → `public.f_cedula_mascara(cp.cedula)`
+- El helper `f_cedula_mascara` ya existe (creado en 0013), no hay dependencia circular.
+- Se mantuvieron intactas las 3 RPC que NO se enmascaran a propósito (comparación física en puerta y deduplicación en stand).
+- Commit `fa760df` en rama `agente/2026-11-25-cierre-sesion`.
+- **PENDIENTE: ejecutar esta migración en staging primero, verificar, luego producción.**
+- **El estado de la tarea sigue `en_progreso` hasta que el usuario ejecute la migración.**
+
+### 27/11/2026 — Unidad 2: tabla de auditoría (0017)
+
+- Migración `0017_p1_03_tabla_auditoria.sql` preparada con:
+  - Tabla `audit_log` con columnas: id, evento_id, actor_tipo, actor_id, actor_label, accion, entidad, entidad_id, antes, despues, ip, user_agent, created_at
+  - RLS: INSERT permitido, NO SELECT/UPDATE/DELETE para la app (append-only)
+  - Función `registrar_auditoria()` (SECURITY DEFINER, no expuesta)
+  - Funciones helper `audit_get_ip()` y `audit_get_user_agent()` para obtener metadatos del request (PostgREST)
+  - Funciones `f_audit_login_ok`, `f_audit_login_fail`, `f_audit_logout` para acciones comunes
+- **PENDIENTE: ejecutar en staging, verificar creación de tabla y functions**
+
+### 27/11/2026 — Unidad 2b: integración en RPC (0018)
+
+- Migración `0018_p1_03_integrar_auditoria_en_rpc.sql` preparada con `CREATE OR REPLACE` de 8 RPC críticas, integrando calls a `registrar_auditoria()`:
+  - `f_login`: registra `login_ok` (éxito) y `login_fail` (PIN incorrecto / BLOQUEADO)
+  - `f_logout`: registra `logout` con rol y dispositivo
+  - `f_puerta_marcar_persona`: registra `autorizar_entrada` o `marcar_pendiente` con snapshot antes/después
+  - `f_puerta_marcar_vendedor`: registra `autorizar_entrada` o `marcar_pendiente` con snapshot antes/después
+  - `f_puerta_cerrar_lista`: registra `cerrar_edicion` o `reabrir_edicion`
+  - `f_admin_limpiar_todo`: registra `limpieza_total_iniciada` y `limpieza_total_completada` con conteos
+  - `f_admin_anular_cortesia`: registra `anular_cortesia` con snapshot
+  - `f_puerta_canjear_premiacion`: registra `canje_premiacion` con cupones antes/después
+- **PENDIENTE: ejecutar en staging, verificar que se crean las funciones y los logs se escriben**

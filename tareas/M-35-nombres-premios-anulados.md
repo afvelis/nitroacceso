@@ -2,12 +2,14 @@
 id: "M-35"
 titulo: "Mostrar nombres de premios anulados (requiere cambio de RPC)"
 prioridad: "P2"
-estado: "pendiente"
+estado: "en_progreso"
 area: "datos"
 depende_de: []
 archivos:
   - "aliado.html"
   - "aliados-concursos.html"
+  - "js/aliado.js"
+  - "supabase/migrations/0021_m35_mostrar_concursos_anulados.sql"
 ---
 
 # M-35 · Mostrar nombres de premios anulados (requiere cambio de RPC)
@@ -53,4 +55,10 @@ Prueba manual con datos de prueba: anular un premio y verificar las dos vistas; 
 
 ## Notas de implementación
 
-> Pendiente.
+### 27/11/2026 — Implementación completa
+
+- **RPC (migración 0021):** `f_aliado_ver` ya no excluye los concursos cerrados (se eliminó el `NOT EXISTS` que filtraba por `dias_cerrados`). Se añade `razon_anulacion` al JSON de cada concurso y un boolean `cerrado`. La cédula se enmascara con `f_cedula_mascara` (heredado de 0013).
+- **Frontend (js/aliado.js):** `pintarConcursos()` ahora muestra el `razon_anulacion` de cada concurso (texto rojo ⚠️), y cuando un concurso está cerrado sin ganador pero tiene razón de anulación, muestra "Concurso anulado." en el bloque de botones.
+- **Regresión:** el flujo normal (asignar, editar, eliminar, enviar) se mantiene intacto. Los concursos activos siguen mostrando `pill-verde`.
+- **CSP:** `js/aliado.js` se carga como script externo (`<script src>`), no afecta el hash CSP de `aliado.html`.
+- **Verificación:** `node --check js/aliado.js` → OK.
