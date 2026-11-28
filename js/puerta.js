@@ -121,6 +121,393 @@ function pintarAviso(el, msg, clase){
   el.hidden = false;
 }
 
+// ===== P2-01 · OFFLINE: cola de escaneos + indicador de red + respaldo CSV =====
+// Origen: tareas/P2-01-offline-pwa.md. Problema: el WiFi del venue puede caer
+// en plena puerta; hasta hoy cada autorización fallaba y se perdía en un alert.
+// Proyecto:
+//   · Los códigos de un solo dato (V-/CI-/PR-) se ENCOLAN en IndexedDB cuando
+//     no hay red y se envían solos al volver (la verificación real sigue en el
+//     servidor: si el pase ya estaba consumido, la cola no duplica).
+//   · Las listas (L-/CL-, búsquedas por nombre) NO se encolan: exigen ver y
+//     elegir a cada persona.
+//   · El operador SIEMPRE ve la banda de estado (conectado / N en cola / sin
+//     conexión) y puede exportar un CSV de respaldo del día.
+//   · Todo depende de window.NAOfflineDB (js/offline-db.js). Si no existe o
+//     IndexedDB falla, la puerta sigue operando como hasta hoy: fail-open.
+const NAOffline = (typeof window.NAOfflineDB === 'object') ? window.NAOfflineDB : null;
+
+// Solo códigos de un solo dato: el QR ES la decisión, en la sincronización se
+// resuelven con el servidor y no hay posibilidad de duplicar autorización.
+const NA_CODIGO_UN_DATO = /^(V-|CI-|PR-)/;
+
+// Contratos verificados en supabase/migrations: f_puerta_marcar_vendedor,
+// f_puerta_marcar_cortesia y f_puerta_marcar_persona devuelven BOOLEAN
+// (migración 0018); f_puerta_canjear_premiacion devuelve texto de resultado
+// ('ok' / 'ERR_*'). La cola no depende de interpretar booleanos raros: OK es
+// true/'ok'; todo lo demás es rechazo y queda a la vista del operador (si una
+// RPC cambia a códigos de texto, se revisa NA_RES_* aquí abajo).
+
+// Id de fila local (crypto.randomUUID) para trazabilidad: NO viaja al
+// servidor. La idempotencia real es del servidor: marcar un pase ya consumido
+// no lo duplica (devuelve false, y canjear dos veces devuelve ERR_USADA).
+function naId(){
+  try{
+    if(window.crypto && window.crypto.randomUUID) return crypto.randomUUID();
+  }catch(e){}
+  return 'na-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+}
+
+// ¿Es un fallo de RED (encolable) o un rechazo del servidor (no encolable)?
+// Con navigator.onLine inestable en escritorio, miramos además el texto del
+// error: fetch cae con 'Failed to fetch' (Chrome), 'NetworkError' (Fx),
+// 'Load failed' (Safari). Un error PostgREST no viaja por aquí.
+function esErrorRed(e){
+  const m = String((e && e.message) || e || '').toLowerCase();
+  return navigator.onLine === false
+    || m.indexOf('failed to fetch') !== -1
+    || m.indexOf('networkerror') !== -1
+    || m.indexOf('network request failed') !== -1
+    || m.indexOf('load failed') !== -1;
+}
+
+/** Mete un pedido en la cola y devuelve el total pendiente tras guardar. */
+function naEncolar(tipo, pedido){
+  if(!NAOffline) return Promise.resolve(null);
+  return NAOffline.guardarEnCola(naId(), tipo, pedido)
+    .then(() => NAOffline.contarPendientes())
+    .then(n => { actualizarIndicadorRed(); return n; })
+    .catch(() => null);
+}
+
+function naAvisoEncolado(n){
+  if(n === null){
+    return 'Offline SIN cola local: no se pudo guardar la autorización (IndexedDB no disponible). ' +
+      'Apunta el código en el CSV de respaldo y lo autorizas a mano al volver la red.';
+  }
+  return '📴 Sin conexión. La autorización quedó GUARDADA en la cola local (' + n + ' pendientes) ' +
+    'y se enviará sola al volver la red. No repetir el escaneo: está en cola.';
+}
+
+// Camino offline del campo manual Y de la cámara: SOLO códigos de un solo dato.
+function naManejarCodigoSinRed(codigo){
+  const limpio = String(codigo || '').toUpperCase();
+  inputManual.value = limpio;
+  if(NA_CODIGO_UN_DATO.test(limpio)){
+    const dia = diaSeleccionado || diaActivo;
+    naEncolar('escaneo', { codigo: limpio, dia: dia })
+      .then(n => {
+        inputManual.value = '';
+        mostrarPanel(
+          '<div class="resultado">' +
+          '<div class="dato"><strong>Tipo</strong><span class="pill pill-azul">Escaneo en cola (offline)</span></div>' +
+          '<div class="dato"><strong>Código</strong><span class="mono">' + escaparHtml(limpio) + '</span></div>' +
+          '<div class="dato"><strong>Día</strong><span>Día ' + escaparHtml(String(dia)) + '</span></div>' +
+          '<div class="aviso">' + escaparHtml(naAvisoEncolado(n)) + '</div>' +
+          '<div class="aviso">En la sincronización el servidor dice el estado del pase: si ya estaba consumido, la cola NO lo vuelve a autorizar.</div>' +
+          '</div>');
+      });
+    return;
+  }
+  mostrarError('📴 Sin conexión: consultar "' + limpio + '" exige red y NO entra en la cola (hay que ver la ficha para elegir a quién marcar). Escanea códigos V-/CI-/PR- o espera a que el indicador vuelva a verde.');
+}
+
+// ===== Indicador fijo de conexión (banda verde/amarilla/roja de puerta.html) ===
+const elIndicadorRed = document.getElementById('estadoRed');
+function actualizarIndicadorRed(){
+  if(!elIndicadorRed || !NAOffline) return;
+  NAOffline.contarPendientes()
+    .then(n => {
+      elIndicadorRed.className = 'estado-red ' + (
+        (navigator.onLine === false) ? 'estado-red-rojo'
+          : (n > 0 ? 'estado-red-amarillo' : 'estado-red-verde'));
+      elIndicadorRed.textContent = (navigator.onLine === false)
+        ? '🔴 Sin conexión' + (n > 0 ? ' · ' + n + ' escaneo(s) en cola' : '')
+        : '🟢 Conectado' + (n > 0 ? ' · ' + n + ' escaneo(s) en cola' : ' · control al día');
+    })
+    .catch(() => {
+      if(navigator.onLine === false){
+        elIndicadorRed.className = 'estado-red estado-red-rojo';
+        elIndicadorRed.textContent = '🔴 Sin conexión';
+      }
+    });
+}
+
+// ===== Envío de la cola =====
+// Devuelve: NA_RES_SYNC (servidor aceptó antes o RECHAZA como ya-consumido →
+// se borra de la cola para no volver a intentarlo) · NA_RES_ERROR (rechazo real
+// del servidor, ej. lista cerrada → NO se reintenta, queda en la cola con
+// estado 'error') · Promise.resolve(null) (fallo de red: PAUSA la cola para
+// que se reintente en el próximo evento online). Esto es lo que impide
+// autorizar 2 veces: una fila solo sale de la cola si se RESOLVIÓ en el
+// servidor o si el servidor la rechazó definitivamente para ese pase.
+const NA_RES_SYNC = { estado: 'synced' };
+const NA_RES_ERROR = { estado: 'error' };
+
+async function naEjecutarFila(fila){
+  const p = fila.data || {};
+  const dia = p.dia || diaActivo;
+  try{
+    if(fila.tipo === 'vendedor' && p.vendedor_id){
+      const ok = await llamar('f_puerta_marcar_vendedor', {
+        p_token: tokenSesion, p_vendedor_id: p.vendedor_id, p_dia: dia, p_estado: 'autorizado'
+      });
+      return ok ? NA_RES_SYNC : NA_RES_ERROR;
+    }
+    if(fila.tipo === 'cortesia' && p.persona_id && p.dia){
+      const ok = await llamar('f_puerta_marcar_cortesia', {
+        p_token: tokenSesion, p_persona_id: p.persona_id, p_dia: p.dia, p_estado: 'autorizado'
+      });
+      return ok ? NA_RES_SYNC : NA_RES_ERROR;
+    }
+    if(fila.tipo === 'persona' && p.persona_id){
+      const ok = await llamar('f_puerta_marcar_persona', {
+        p_token: tokenSesion, p_persona_id: p.persona_id, p_estado: 'autorizado'
+      });
+      return ok ? NA_RES_SYNC : NA_RES_ERROR;
+    }
+    if(fila.tipo === 'premiacion' && p.codigo_qr){
+      const r = await llamar('f_puerta_canjear_premiacion', {
+        p_token: tokenSesion, p_codigo_qr: p.codigo_qr, p_cupones_usados: p.cupones_usados
+      });
+      return (r === 'ok') ? NA_RES_SYNC : NA_RES_ERROR;
+    }
+    // ===== Códigos leídos por la cámara SIN datos a la vista ('escaneo') =====
+    if(fila.tipo === 'escaneo' && NA_CODIGO_UN_DATO.test(p.codigo || '')){
+      return await naResolverEscaneo(p);
+    }
+    return NA_RES_ERROR; // fila no representable: queda a la vista del operador
+  }catch(e){
+    return esErrorRed(e) ? { estado: 'pendiente', detalle: e && e.message } : NA_RES_ERROR;
+  }
+}
+
+// Un escaneo por QR leído sin conexión: el servidor dice el estado AHORA
+// (idempotencia) y solo marca si el pase está completo SIN CONSUMIR.
+async function naResolverEscaneo(p){
+  const codigo = String(p.codigo || '').toUpperCase();
+  const dia = p.dia || diaActivo;
+  if(codigo.indexOf('V-') === 0){
+    const v = await llamar('f_puerta_vendedor_por_qr', { p_token: tokenSesion, p_codigo_qr: codigo });
+    if(!v) return NA_RES_ERROR;
+    const estadoDia = dia === 1 ? v.estado_dia1 : v.estado_dia2;
+    if(estadoDia === 'autorizado') return NA_RES_SYNC;
+    const ok = await llamar('f_puerta_marcar_vendedor', {
+      p_token: tokenSesion, p_vendedor_id: v.vendedor_id, p_dia: dia, p_estado: 'autorizado'
+    });
+    return ok ? NA_RES_SYNC : NA_RES_ERROR;
+  }
+  if(codigo.indexOf('CI-') === 0){
+    const d = await llamar('f_puerta_cortesia_individual', { p_token: tokenSesion, p_codigo_qr: codigo });
+    if(!d) return NA_RES_ERROR;
+    if(d.anulada) return NA_RES_ERROR;
+    if(!(dia === 1 ? d.dia1 : d.dia2)) return NA_RES_ERROR;
+    const estadoDia = dia === 1 ? d.estado_dia1 : d.estado_dia2;
+    if(estadoDia === 'autorizado') return NA_RES_SYNC;
+    const ok = await llamar('f_puerta_marcar_cortesia', {
+      p_token: tokenSesion, p_persona_id: d.persona_id, p_dia: dia, p_estado: 'autorizado'
+    });
+    return ok ? NA_RES_SYNC : NA_RES_ERROR;
+  }
+  if(codigo.indexOf('PR-') === 0){
+    const d = await llamar('f_puerta_premiacion_por_qr', { p_token: tokenSesion, p_codigo_qr: codigo });
+    if(!d) return NA_RES_ERROR;
+    if(d.anulada) return NA_RES_ERROR;
+    if(d.canjeado_at) return NA_RES_SYNC; // ERR_USADA del servidor: no duplica
+    if(!(dia === 1 ? d.dia1 : d.dia2)) return NA_RES_ERROR;
+    const cupones = d.cupones_total || 0;
+    if(cupones < 1) return NA_RES_ERROR;
+    const r = await llamar('f_puerta_canjear_premiacion', {
+      p_token: tokenSesion, p_codigo_qr: codigo, p_cupones_usados: cupones
+    });
+    return (r === 'ok') ? NA_RES_SYNC : NA_RES_ERROR;
+  }
+  return NA_RES_ERROR;
+}
+
+// Vuelca la cola SOLO cuando hay red. La cuenta y el estado del operador
+// viven en la banda de conexión; aquí solo se ejecuta. Cada fila sale de la
+// cola SOLO por synced (borrado) o rechazo del servidor (estado 'error'); una
+// fila con fallo de red deja el resto de la ronda pendiente (contrato).
+let naSincronizando = false;
+async function naSincronizarCola(){
+  if(!NAOffline || naSincronizando || !tokenSesion || navigator.onLine === false) return;
+  naSincronizando = true;
+  try{
+    while(navigator.onLine !== false){
+      const pendientes = (await NAOffline.obtenerCola()).filter(f => f.estado === 'pendiente');
+      if(pendientes.length === 0) break;
+      // Sin bajar la fila: resuelve TODAS o pausa. Cada fila se resuelve igual:
+      // synced → id al borrado ('limpiarCola' SOLO borra synced; quedan las
+      // 'error' con el motivo para el operador) · estado 'pendiente' → ficha a
+      // mitad de ronda: SIN reintentar en el mismo ciclo ni en-loop: se pausa.
+      const resueltas = [];
+      const rechazadas = [];
+      let cortada = false;
+      for(const fila of pendientes){
+        if(navigator.onLine === false){ cortada = true; break; }
+        const res = await naEjecutarFila(fila);
+        if(res && res.estado === 'synced') resueltas.push(fila.id);
+        else if(res && res.estado === 'error') rechazadas.push(fila.id);
+        else { cortada = true; break; } // red caída a mitad: pausa toda la ronda
+      }
+      if(resueltas.length) await NAOffline.limpiarCola(resueltas);
+      for(const fila of pendientes){
+        if(rechazadas.indexOf(String(fila.id)) !== -1){
+          // Rechazo real del servidor (lista cerrada, ticket ya tomado…):
+          // NO se reintenta solo: queda en la cola con estado 'error' para que
+          // el operador decida si lo reproducen a mano.
+          await NAOffline.marcarCola(fila.id, 'error');
+        }
+      }
+      if(cortada) break;
+    }
+  }catch(e){ console.warn('Cola de escaneos (P2-01):', e); }
+  naSincronizando = false;
+  actualizarIndicadorRed();
+}
+// ===== Copia local de los pases del día (para el CSV de respaldo sin red) ====
+// Con red: guarda filas planas (lista + persona) en IndexedDB; la vista del
+// operador no depende de esto. Sin red: escribe un aviso y NO intenta.
+let naCacheoPases = false;
+async function naRefrescarCachePases(){
+  if(!NAOffline || naCacheoPases || !tokenSesion || navigator.onLine === false) return;
+  naCacheoPases = true;
+  const dia = diaActivo;
+  try{
+    const listas = await llamar('f_puerta_lista', { p_token: tokenSesion, p_dia: dia, p_buscar: '' });
+    const filas = [];
+    for(const l of (listas || [])){
+      try{
+        const personas = await llamar('f_puerta_personas_de_lista', { p_token: tokenSesion, p_lista_id: l.lista_id });
+        (personas || []).forEach(p => filas.push({
+          dia: dia, codigo_corto: l.codigo_corto, talento: l.talento,
+          lista_estado: l.estado, nombre: p.nombre, apellido: p.apellido,
+          cedula: p.cedula, cargo: p.cargo, estado: p.estado, marcado_at: p.marcado_at
+        }));
+      }catch(e){ console.warn('P2-01: no se pudo cachear una lista'); }
+    }
+    await NAOffline.guardarPases(dia, filas);
+  }catch(e){ console.warn('P2-01: caché de pases', e); }
+  naCacheoPases = false;
+}
+
+// ===== Eventos de red e inicio del monitor offline =====
+// Al volver la conexión: vuelca la cola (una sola ronda; si algo se rechaza
+// queda 'error' visible en el aviso) y refresca la copia de pases para el CSV.
+// ===== P2-01 · Vista local de la cola (pendientes + rechazados) y reintento ===
+// El botón vivo del panel principal. La cola JAMÁS reenvía sola una fila que
+// el servidor rechazó: aquí el operador ve el contenido decidir (el reintento
+// es idempotente: volver a marcar un pase consumido no lo duplica).
+async function naMostrarCola(){
+  if(!NAOffline){
+    modalAlert('Este navegador no tiene memoria local (IndexedDB): no hay cola que mostrar. La puerta seguirá operando con red como siempre.', 'Cola de escaneos pendientes');
+    return;
+  }
+  let filas = [];
+  try{ filas = await NAOffline.obtenerCola(); }
+  catch(e){ modalAlert('No se pudo leer la cola local: ' + ((e && e.message) || e), 'Cola de escaneos pendientes'); return; }
+  if(filas.length === 0){
+    modalAlert('La cola está vacía: no hay escaneos pendientes ni rechazados.', 'Cola de escaneos pendientes');
+    return;
+  }
+  const pendientes = filas.filter(f => f.estado === 'pendiente').length;
+  const rechazados = filas.length - pendientes;
+  let detalle = '⏳ Pendientes de enviar: ' + pendientes + '\n' +
+    (rechazados ? '⚠️ Con rechazo del servidor (NO se reenvían solos): ' + rechazados + '\n' : '');
+  detalle += '\n' + filas.map(f => {
+    const d = f.data || {};
+    const codigo = d.codigo || d.vendedor_id || d.persona_id || '—';
+    return '· ' + codigo + (d.dia ? ' (Día ' + d.dia + ')' : '') + ' → ' + f.estado;
+  }).join('\n');
+  if(!pendientes){
+    modalAlert(detalle + '\n\nLos rechazados NO se reintentan solos: el servidor ya respondió que no entran. Para limpiar la cola, borra la sesión (🚪).', 'Cola de escaneos pendientes');
+    return;
+  }
+  if(await modalConfirm(detalle + '\n\n¿Volver a intentar el envío ahora (requiere conexión)?', 'Cola de escaneos pendientes')){
+    naSincronizarCola();
+  }
+}
+document.getElementById('btnVerCola').addEventListener('click', naMostrarCola);
+
+function naIniciarMonitorRed(){
+  actualizarIndicadorRed();
+  window.addEventListener('online', () => {
+    actualizarIndicadorRed();
+    naSincronizarCola();
+  });
+  window.addEventListener('offline', () => {
+    actualizarIndicadorRed();
+  });
+}
+
+// ===== P2-01 · CSV de respaldo (botón del panel principal) =====
+function naCSVValor(v){
+  return '"' + String((v === undefined || v === null) ? '' : v).replace(/"/g, '""') + '"';
+}
+function naCSVFila(arr){ return arr.map(naCSVValor).join(','); }
+
+// Filas con la MISMA forma en vivo y en la copia local (las que guarda
+// naRefrescarCachePases): dia · codigo_corto · talento · lista_estado ·
+// nombre · apellido · cedula · cargo · estado · marcado_at. Sin red usa solo
+// la copia local y lo avisa: las marcas offline posteriores al refresco no
+// están hasta que vuelva la conexión.
+function naExportarCSVDia(){
+  const msg = document.getElementById('msgCSV');
+  const pintar = (t, c) => { if(msg) pintarAviso(msg, t, c); };
+  const dia = diaSeleccionado || diaActivo;
+  const nombre = 'puerta-dia' + dia + '-' + new Date().toISOString().slice(0, 10) + '.csv';
+  const encabezado = ['Día', 'Código de lista', 'Talento', 'Estado de lista', 'Nombre', 'Apellido', 'Cédula', 'Cargo', 'Estado del pase', 'Hora de la marca'];
+  const descargar = (filas, fuente) => {
+    const lineas = [naCSVFila(encabezado)];
+    filas.forEach(f => lineas.push(naCSVFila([
+      f.dia, f.codigo_corto, f.talento, f.lista_estado, f.nombre, f.apellido,
+      f.cedula, f.cargo, f.estado, f.marcado_at || ''
+    ])));
+    const blob = new Blob(['\ufeff' + lineas.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = nombre;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
+    pintar('✅ CSV del Día ' + dia + ' descargado (' + filas.length + ' personas · fuente: ' + fuente + ').', 'aviso aviso-verde');
+  };
+  if(navigator.onLine !== false && NAOffline){
+    // Con red: refresca la copia local y exporta DESDE ella (un solo camino,
+    // misma fuente para el operador con red o sin red).
+    naRefrescarCachePases()
+      .then(() => NAOffline.obtenerPases(dia))
+      .then(filas => {
+        if(!filas){ pintar('Sin filas para el Día ' + dia + '.', 'aviso'); return; }
+        if(filas.length === 0){ pintar('La copia del Día ' + dia + ' no tiene personas.', 'aviso'); return; }
+        descargar(filas, 'copia local recién refrescada');
+      })
+      .catch(e => pintar('No se pudo exportar: ' + ((e && e.message) || e), 'aviso aviso-rojo'));
+    return;
+  }
+  if(!NAOffline){ pintar('📴 Sin conexión y sin memoria local: no se puede generar el CSV en este equipo.', 'aviso aviso-rojo'); return; }
+  NAOffline.obtenerPases(dia)
+    .then(filas => {
+      if(!filas){ pintar('📴 Sin conexión y SIN copia local del Día ' + dia + '. Se genera al entrar con red: cuando vuelva la conexión, vuelve a pulsar Exportar CSV.', 'aviso aviso-rojo'); return; }
+      if(filas.length === 0){ pintar('La copia local del Día ' + dia + ' no tiene personas.', 'aviso'); return; }
+      descargar(filas, 'copia local (puede estar desactualizada)');
+    })
+    .catch(e => pintar('No se pudo leer la copia local: ' + ((e && e.message) || e), 'aviso aviso-rojo'));
+}
+document.getElementById('btnExportarCSV').addEventListener('click', naExportarCSVDia);
+
+// Guarda el día activo CONFIRMADO POR EL SERVIDOR en localStorage, para poder
+// retomarlo en modo respaldo sin conexión (el día REAL lo revalida el servidor
+// en cuanto vuelve la red).
+function naGuardarDiaActivo(dia){
+  try{ localStorage.setItem('na_puerta_dia_activo', String(dia)); }catch(e){}
+}
+function naLeerDiaActivo(){
+  try{ return parseInt(localStorage.getItem('na_puerta_dia_activo') || '1', 10) || 1; }catch(e){ return 1; }
+}
+
 // ===== P0-03 · Auto-bloqueo por inactividad (5 min) =====
 // Candado local: garantiza que iniciarAutoBloqueo() corra UNA sola vez por
 // carga de página, sin importar por dónde entre (login o sesión existente).
@@ -224,6 +611,7 @@ btnCerrarDia1.addEventListener('click', async () => {
     const res = await llamar('f_puerta_cerrar_dia_y_activar_siguiente', { p_token: tokenSesion });
     if(res && res.ok){
       diaActivo = res.dia_nuevo;
+      naGuardarDiaActivo(res.dia_nuevo);
       actualizarSelectorDia();
       // El aviso vive dentro de #panelCerrarDia1: se pinta DESPUÉS de refrescar
       // el selector, y se deja el panel visible para que el resultado siga
@@ -267,11 +655,37 @@ async function verificarEstadoEvento(){
       return;
     }
     diaActivo = estado.dia_activo || 1;
+    naGuardarDiaActivo(diaActivo);
     mostrarPrincipal();
     actualizarSelectorDia();
   }catch(e){
+    // P2-01: sin conexión en el ARRANQUE no se expulsa al operador: la puerta
+    // entra en MODO RESPALDO con el último día activo confirmado. La
+    // revalidación real sigue en el servidor (0011): si la sesión ya caducó o
+    // el evento cambió de lado, la cola lo delata al volver la red.
+    if(esErrorRed(e)){
+      naEntrarModoRespaldo();
+      return;
+    }
     alert('Error al verificar el evento: ' + (e.message || e));
   }
+}
+
+// ===== P2-01 · Modo respaldo (la puerta arranca sin conexión) =====
+// Solo llega aquí si el fallo de f_puerta_estado fue de RED (no de sesión).
+// Retoma el último día activo confirmado y avisa de forma VISIBLE; sin red no
+// hay listas ni fichas: quedan los escaneos por código en cola y el CSV de
+// respaldo. Ni ronda de revalidación automática: el rechazo real lo emite el
+// servidor en cuanto vuelva, en la sincronización.
+function naEntrarModoRespaldo(){
+  if(!tokenSesion || tarjetaPrincipal.style.display === 'block') return;
+  diaActivo = naLeerDiaActivo();
+  mostrarPrincipal();
+  actualizarSelectorDia();
+  actualizarIndicadorRed();
+  pintarAviso(avisoDia,
+    '📴 SIN CONEXIÓN · Modo respaldo: continuas en el Día ' + diaActivo + ' (último día confirmado con red). Los códigos V-/CI-/PR- quedan en la cola local y se envían solos al volver la red. El CSV de respaldo usa la copia local. Al reconectar, recarga para revalidar el estado.',
+    'aviso aviso-rojo');
 }
 
 // Marcador de tiempo agotado para la carrera con el temporizador de reintento.
@@ -331,6 +745,7 @@ async function reintentarEstadoEvento(){
     return;
   }
   diaActivo = estado.dia_activo || 1;
+  naGuardarDiaActivo(diaActivo);
   mostrarPrincipal();
   actualizarSelectorDia();
   // Reintento exitoso: sin resultado de una consulta vieja (botones «Autorizar»
@@ -356,12 +771,20 @@ async function reintentarEstadoEvento(){
 // si la RPC de marcar puede llamarse ya; en caso contrario NO se llama, se
 // avisa con el modal propio (norma v2.1) y se actualiza el estado local.
 async function estadoEventoOperativo(){
+  // P2-01: un fallo DE RED en la revalidación no cancela la autorización: si
+  // la marca también falla por red, se encola; el servidor (0011) sigue siendo
+  // quien revalida de verdad (edición, día distinto, sesión caducada siguen
+  // recibiendo la llamada y la RPC rechaza).
+  if(navigator.onLine === false) return true;
   let estado = null;
+  let falloRed = false;
   try{
     estado = await llamar('f_puerta_estado', { p_token: tokenSesion });
   }catch(e){
+    falloRed = esErrorRed(e);
     estado = null;
   }
+  if(!estado && falloRed) return true;
   if(!estado){
     // Fail-closed: sin verificación el servidor no recibe la autorización.
     modalAlert('⛔ No se pudo verificar el estado del evento. La autorización queda cancelada. Revisa la conexión y escanea el QR de nuevo.');
@@ -375,6 +798,7 @@ async function estadoEventoOperativo(){
   const diaServidor = estado.dia_activo || 1;
   if(diaServidor !== diaActivo){
     diaActivo = diaServidor;
+    naGuardarDiaActivo(diaServidor);
     actualizarSelectorDia();
     modalAlert('⚠️ El día activo cambió a Día ' + diaServidor + ' desde otro equipo. Este panel tenía estado viejo y se actualizó. Escanea el QR de nuevo.');
     return false;
@@ -438,6 +862,12 @@ btnEntrar.addEventListener('click', async () => {
     tokenSesion = r[0].token;
     activarAutoBloqueo();
     await verificarEstadoEvento();
+    // P2-01: al entrar CON red, vacía la cola del día anterior si la hay y
+    // refresca la copia local de los pases del día (respaldo CSV + escaneos).
+    if(navigator.onLine !== false){
+      naSincronizarCola();
+      naRefrescarCachePases();
+    }
     // F-5: el panel principal ya está visible aquí si el evento está operativo,
     // así que el campo manual existe y se ve rellenado con el código del link.
     // Edición: solo pre-llena el campo; no lanza búsqueda automática.
@@ -610,6 +1040,14 @@ function procesarQRLeido(valor){
   detenerScanner();
   const codigo = extraerCodigo(valor);
   const limpio = codigo.toUpperCase();
+  // P2-01: con la red caída NO se intenta una consulta que va a fallar: los
+  // códigos de un solo dato (V-/CI-/PR-) van directo a la cola (el servidor
+  // resuelve el estado al sincronizar); las listas y los nombres exigen
+  // ver a las personas y se rechazan con mensaje claro.
+  if(navigator.onLine === false){
+    naManejarCodigoSinRed(codigo);
+    return;
+  }
   if(limpio.startsWith('V-')){
     inputManual.value = codigo;
     buscarVendedor(codigo);
@@ -636,6 +1074,11 @@ btnDetenerScan.addEventListener('click', detenerScanner);
 btnBuscarManual.addEventListener('click', () => {
   const texto = inputManual.value.trim();
   if(!texto){ alert('Escribe un código o nombre.'); return; }
+  // P2-01: mismo camino offline que la cámara (códigos de un solo dato → cola).
+  if(navigator.onLine === false){
+    naManejarCodigoSinRed(texto.toUpperCase());
+    return;
+  }
   const limpio = texto.toUpperCase();
   if(limpio.startsWith('V-')){
     buscarVendedor(limpio);
@@ -721,9 +1164,17 @@ async function buscarVendedor(codigoQR){
             }
           }
         }catch(e){
-          alert('Error: ' + (e.message || e));
-          btn.disabled = false;
-          btn.textContent = '✅ AUTORIZAR ENTRADA';
+          // P2-01: red caída → cola local; el botón queda bloqueado para no
+          // encolar EL MISMO pase dos veces. Otro fallo → como siempre.
+          if(esErrorRed(e)){
+            const n = await naEncolar('vendedor', { vendedor_id: vendedor.vendedor_id, dia: diaSeleccionado });
+            const m = document.getElementById('msgAutVendedor');
+            if(m) pintarAviso(m, naAvisoEncolado(n), n === null ? 'aviso aviso-rojo' : 'aviso');
+          }else{
+            alert('Error: ' + (e.message || e));
+            btn.disabled = false;
+            btn.textContent = '✅ AUTORIZAR ENTRADA';
+          }
         }
       });
     }
@@ -840,9 +1291,16 @@ async function buscarCortesiaLista(codigo){
             }
           }
         }catch(e){
-          alert('Error: ' + (e.message || e));
-          btn.disabled = false;
-          btn.textContent = '✅ Autorizar';
+          // P2-01: red caída → cola local (sin reenvío duplicado).
+          if(esErrorRed(e)){
+            const n = await naEncolar('cortesia', { persona_id: id, dia: diaSeleccionado });
+            const m = document.getElementById('msgAutCortesiaLista');
+            if(m) pintarAviso(m, naAvisoEncolado(n), n === null ? 'aviso aviso-rojo' : 'aviso');
+          }else{
+            alert('Error: ' + (e.message || e));
+            btn.disabled = false;
+            btn.textContent = '✅ Autorizar';
+          }
         }
       });
     });
@@ -924,9 +1382,16 @@ async function buscarCortesiaIndividual(codigo){
             }
           }
         }catch(e){
-          alert('Error: ' + (e.message || e));
-          b.disabled = false;
-          b.textContent = '✅ AUTORIZAR ENTRADA';
+          // P2-01: red caída → cola local (sin reenvío duplicado).
+          if(esErrorRed(e)){
+            const n = await naEncolar('cortesia', { persona_id: d.persona_id, dia: diaSeleccionado });
+            const m = document.getElementById('msgAutCortesiaInd');
+            if(m) pintarAviso(m, naAvisoEncolado(n), n === null ? 'aviso aviso-rojo' : 'aviso');
+          }else{
+            alert('Error: ' + (e.message || e));
+            b.disabled = false;
+            b.textContent = '✅ AUTORIZAR ENTRADA';
+          }
         }
       });
     }
@@ -973,6 +1438,8 @@ async function buscarPremiacion(codigoQR){
       html += `<input type="number" id="inputCupones" min="1" max="${cupones}" value="${cupones}" class="campo-cupones">`;
       html += `<button class="btn btn-grande" id="btnCanjearPremio">✅ AUTORIZAR Y CONSUMIR PREMIO</button>`;
     }
+    // Contenedor del resultado del canjeo (norma v2.2), siempre presente (oculto).
+    html += `<div id="msgAutPremiacion" class="aviso" hidden></div>`;
     html += `</div>`;
     mostrarPanel(html);
 
@@ -999,14 +1466,28 @@ async function buscarPremiacion(codigoQR){
           if(r === 'ok'){
             buscarPremiacion(codigoQR);
           }else{
-            alert('No se pudo canjear: ' + (r || 'desconocido'));
+            // Rechazo real del servidor (ERR_DIA / ERR_ANULADA / ERR_USADA …):
+            // se pinta DENTRO de la tarjeta, junto al botón (norma v2.2).
+            const m = document.getElementById('msgAutPremiacion');
+            if(m) pintarAviso(m, '⛔ No se pudo canjear: ' + (r || 'código desconocido') + '. Vuelve a escanear el QR.', 'aviso aviso-rojo');
             btnCanjear.disabled = false;
             btnCanjear.textContent = '✅ AUTORIZAR Y CONSUMIR PREMIO';
           }
         }catch(e){
-          alert('Error: ' + (e.message || e));
-          btnCanjear.disabled = false;
-          btnCanjear.textContent = '✅ AUTORIZAR Y CONSUMIR PREMIO';
+          // P2-01: red caída → cola local. El canje en cola se ejecuta con
+          // TODOS los cupones (mismo valor por defecto de la pantalla con red);
+          // si el servidor lo rechaza (ERR_USADA), NO duplica.
+          if(esErrorRed(e)){
+            const nCola = await naEncolar('premiacion', { codigo_qr: codigoQR, cupones_usados: n });
+            const m = document.getElementById('msgAutPremiacion');
+            if(m) pintarAviso(m, naAvisoEncolado(nCola), nCola === null ? 'aviso aviso-rojo' : 'aviso');
+            btnCanjear.disabled = false; // se valida de nuevo al regresar la red
+            btnCanjear.textContent = '✅ AUTORIZAR Y CONSUMIR PREMIO';
+          }else{
+            alert('Error: ' + (e.message || e));
+            btnCanjear.disabled = false;
+            btnCanjear.textContent = '✅ AUTORIZAR Y CONSUMIR PREMIO';
+          }
         }
       });
     }
@@ -1245,9 +1726,16 @@ async function mostrarListaCompleta(lista){
             }
           }
         }catch(e){
-          alert('Error: ' + (e.message || e));
-          btn.disabled = false;
-          btn.textContent = '✅ Autorizar';
+          // P2-01: red caída → cola local (sin reenvío duplicado).
+          if(esErrorRed(e)){
+            const n = await naEncolar('persona', { persona_id: personaId });
+            const m = document.getElementById('msgAutPersona');
+            if(m) pintarAviso(m, naAvisoEncolado(n), n === null ? 'aviso aviso-rojo' : 'aviso');
+          }else{
+            alert('Error: ' + (e.message || e));
+            btn.disabled = false;
+            btn.textContent = '✅ Autorizar';
+          }
         }
       });
     });
@@ -1343,6 +1831,8 @@ function aplicarParametrosURL(){
   if(s && (s.rol === 'puerta' || s.rol === 'supervisor')){
     tokenSesion = s.token;
     activarAutoBloqueo();
+    // P2-01: monitor de red desde la carga (no depende de llegar al panel).
+    naIniciarMonitorRed();
     verificarEstadoEvento();
   }else{
     // P1-02: un rol guardado que ya no es válido aquí (p. ej. admin) no entra.
