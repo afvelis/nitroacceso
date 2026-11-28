@@ -11,6 +11,8 @@ archivos:
   - "puerta.html"
   - "aliado.html"
   - "config.js"
+  - "supabase/migrations/0013_p1_03_mascarar_cedula_rpc.sql"
+  - "supabase/migrations/0016_p1_03_mascarar_cedula_rpc_resto.sql"
 ---
 
 # P1-03 · Auditoría de acciones y privacidad de datos
@@ -180,3 +182,17 @@ despliegue obligatorio: migración primero (staging y producción), frontend des
 - `f_aliado_ver` fue actualizada: ya no devuelve la cédula completa del ganador ni su correo.
 - Las otras cuatro RPC enmascarables (`f_admin_listar_aliados`, `f_admin_ver_concursos_aliado`, `f_puerta_personas_de_lista`, `f_puerta_cortesia_lista`) siguen **pendientes**, cada una con su `pg_get_functiondef` previo. **Se harán en la siguiente sesión.**
 - El estado de la tarea sigue `en_progreso` hasta que se enmascaren las 4 RPC restantes.
+
+### 27/11/2026 — Unidad 1b (resto): migración preparada
+
+- Se obtuvieron las 4 definiciones con `pg_get_functiondef` en producción y se reescribió la migración `0016_p1_03_mascarar_cedula_rpc_resto.sql`.
+- La migración incluye `CREATE OR REPLACE` para las 4 RPC, envolviendo `cedula` con `public.f_cedula_mascara()`:
+  - `f_admin_listar_aliados`: `'cedula', a.cedula` → `public.f_cedula_mascara(a.cedula)`
+  - `f_admin_ver_concursos_aliado`: `'cedula', a.cedula` y `'cedula', cp.cedula` → envueltas
+  - `f_puerta_personas_de_lista`: `'cedula', p.cedula` → `public.f_cedula_mascara(p.cedula)`
+  - `f_puerta_cortesia_lista`: `'cedula', cp.cedula` → `public.f_cedula_mascara(cp.cedula)`
+- El helper `f_cedula_mascara` ya existe (creado en 0013), no hay dependencia circular.
+- Se mantuvieron intactas las 3 RPC que NO se enmascaran a propósito (comparación física en puerta y deduplicación en stand).
+- Commit `fa760df` en rama `agente/2026-11-25-cierre-sesion`.
+- **PENDIENTE: ejecutar esta migración en staging primero, verificar, luego producción.**
+- **El estado de la tarea sigue `en_progreso` hasta que el usuario ejecute la migración.**
