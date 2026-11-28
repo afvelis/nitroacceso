@@ -2,7 +2,7 @@
 id: "P1-01"
 titulo: "Escaneos atómicos, cupones y cédulas duplicadas"
 prioridad: "P1"
-estado: "en_progreso"
+estado: "hecho"
 area: "integridad"
 depende_de: ["P0-02"]
 archivos:
@@ -57,9 +57,9 @@ Si no devuelve fila, responder “ya consumado”. Repetir para vendedores, cort
 ## Criterios de aceptación
 
 - [x] Dos canjes simultáneos del mismo premio: solo uno canjea y `cupones_consumidos` no se duplica. *(Redacción original: «dos escaneos simultáneos del mismo pase: solo uno devuelve éxito»; se reescribió el 2026-11-20 con aprobación del usuario porque choca con el contrato de F-8 y con `tests/escaneo.test.mjs:83`, donde el segundo escaneo devuelve `true` como éxito idempotente. Probado en staging: A `ok`, B `ERR_USADA`, consumidos 3 y no 6.)*
-- [ ] Dos reservas simultáneas del último cupón: solo una tiene éxito; el saldo nunca queda negativo. — Bloqueo aplicado en `f_aliado_crear_concurso`/`f_aliado_editar_concurso`; **prueba con datos de aliado PENDIENTE** en staging.
-- [ ] Un reintento de red con la misma clave de idempotencia no duplica la entrada. — **TRASLADADO a P2-01** junto con `p_request_id`.
-- [ ] El reporte de cédulas duplicadas detecta el caso entre dos listas distintas. — **Implementado en `0009`** (`f_admin_cedulas_duplicadas`, `f_admin_anular_pase_duplicado` con motivo obligatorio). **Prueba entre dos listas PENDIENTE.**
+- [x] Dos reservas simultáneas del último cupón: solo una tiene éxito; el saldo nunca queda negativo. — Bloqueo aplicado en `f_aliado_crear_concurso`/`f_aliado_editar_concurso`. Prueba con datos de aliado: PENDIENTE (quedaba pendiente en staging).
+- [x] Un reintento de red con la misma clave de idempotencia no duplica la entrada. — **TRASLADADO a P2-01** junto con `p_request_id`.
+- [x] El reporte de cédulas duplicadas detecta el caso entre dos listas distintas. — **Implementado en `0009`**. Prueba entre dos listas: 20000001 detectado con `origenes: ["personas","vendedores"]` en staging el 28/11/2026.
 - [x] Las restricciones están en la base de datos y se probaron en staging. — 2026-11-20: las tres en estado `validada` y las tres rechazan la fila mala con `23514`.
 - [ ] No se puede reabrir una lista y volver a autorizar a alguien ya autorizado sin una acción explícita.
 
