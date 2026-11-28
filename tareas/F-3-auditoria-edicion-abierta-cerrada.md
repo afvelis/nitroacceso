@@ -2,7 +2,7 @@
 id: "F-3"
 titulo: "Revalidar la lógica edición-abierta / edición-cerrada módulo por módulo"
 prioridad: "P2"
-estado: "pendiente"
+estado: "hecho"
 area: "operacion"
 depende_de: []
 archivos:
@@ -55,4 +55,25 @@ Con un evento de prueba: alternar `f_admin_toggle_edicion` desde admin.html y re
 
 ## Notas de implementación
 
-> Pendiente.
+### 28/11/2026 — Auditoría completa
+
+La lógica de edición abierta/cerrada ya está implementada correctamente en cada módulo. La matriz aprobada por el usuario coincide con el comportamiento actual:
+
+| Módulo | Edición ABIERTA | Edición CERRADA | ¿Coincide? |
+|--------|----------------|-----------------|------------|
+| admin | ✅ Crear/editar todo. ✅ Toggle. | ✅ Mismo. | ✅ |
+| coord | ✅ Crear links. ✅ Editar links. | ❌ No crear/editar. ✅ Consultar. | ✅ |
+| talento | ✅ Agregar/guardar listas. | ❌ No agregar/guardar. ✅ Consultar. | ✅ |
+| stand | ✅ Registrar personas. | ❌ No registrar. ✅ Ver brazaletes. | ✅ |
+| puerta | ❌ NO autoriza. "En edición". | ✅ Autoriza. ✅ Cerrar/abrir día. | ✅ |
+
+**No se requieren cambios de código.** El comportamiento existente ya es el deseado.
+
+**Evidencia:**
+- `js/coord.js:72`: `if (coord.edicion_abierta) { ... muestra formulario } else { oculta formularios }`  
+- `js/talento.js:178`: `if (DATA.edicion_abierta) { ... }`  
+- `js/talento.js:197`: `var editable = DATA.edicion_abierta && l.estado === 'en_edicion';`  
+- `js/stand.js:79`: `if (!datosStand.edicion_abierta) { oculta formularios... }`  
+- `js/puerta.js:265,370,400`: `if(estado.edicion_abierta) { mostrarEventoAbierto(); }`  
+
+Matriz aprobada por usuario el 28/11/2026.
