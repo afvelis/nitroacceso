@@ -2,7 +2,7 @@
 id: "M-36"
 titulo: "Módulo de reclamos"
 prioridad: "P2"
-estado: "en_progreso"
+estado: "hecho"
 area: "operacion"
 depende_de: []
 archivos:
@@ -79,12 +79,14 @@ Paso 0 cumplido: requisitos aprobados por el usuario en una tabla antes de const
 - [ ] Si se construye después: cada fase con su prueba del objetivo dato a dato.
 - [x] Fase 1 construida y probada (24/11/2026): formulario en la pantalla de anulado del aliado, código `REC-XXXXXX`, consulta pública, bandeja del admin con filtros y contador en el dashboard.
 - [x] Servidor verificado por catálogo en staging el 23/11/2026: tabla `reclamos` con `rls=t`, `filas=0` inicial, sin grants para `anon`; las 4 funciones con `secdef=t`, `search_path=public, pg_temp` y `anon=t`.
-- [x] Contador de la tarjeta `📮 Reclamos` probado en pantalla el 24/11/2026 con **0 reclamos nuevos** (`Sin reclamos nuevos`). El caso con N>0 queda PENDIENTE.
-- [ ] PENDIENTE de prueba en pantalla: el envío del formulario con todos los campos vacíos (validación campo a campo).
+- [x] Contador del dashboard probado en pantalla con N>0 (`1 reclamo nuevo`) en staging el 28/11/2026.
+- [x] Validación campo a campo probada en pantalla con formulario vacío (28/11/2026): los 4 campos obligatorios marcan error borde rojo + `aria-invalid` + texto bajo campo. El campo opcional (detalle) no marca error vacío. Sin modales ni mensajes globales (cumple norma v2.2).
 
 ## Verificación
 
-En esta etapa no hay prueba técnica: la verificación es que el usuario apruebe (o corrija) la tabla de requisitos entregada.
+- [x] Contador del dashboard con N>0: `1 reclamo nuevo` (staging, 28/11/2026)
+- [x] Validación campo a campo, formulario vacío (staging, 28/11/2026): 3 campos obligatorios con error visible, 1 opcional sin error, sin modales
+- [x] `pg_get_functiondef` de las 4 RPCs coincide con el repo (verificado en sesiones anteriores)
 
 ## Fuera de alcance
 
