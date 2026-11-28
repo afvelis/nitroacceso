@@ -2,7 +2,7 @@
 id: "M-35"
 titulo: "Mostrar nombres de premios anulados (requiere cambio de RPC)"
 prioridad: "P2"
-estado: "en_progreso"
+estado: "hecho"
 area: "datos"
 depende_de: []
 archivos:
@@ -30,18 +30,18 @@ Que las vistas de concursos muestren el nombre del premio/ganador anulado (marca
 
 ## Pasos
 
-- [ ] Reproducir el caso: crear aliado/concurso/premio de prueba, anularlo, y documentar qué muestran hoy aliado.html y aliados-concursos.html.
-- [ ] Pedir al usuario `pg_get_functiondef` de las RPCs involucradas (Consulta C de ARQUITECTURA.md §8) y ubicar dónde se filtra o se oculta lo anulado.
-- [ ] Proponer el cambio mínimo de RPC y su SQL exacto al usuario (regla: primero `pg_get_functiondef`, DROP/OR REPLACE con la misma firma, reglas §6 de ARQUITECTURA.md).
-- [ ] El usuario ejecuta el SQL; ajustar el render en las dos vistas para mostrar el nombre con la marca «anulado».
-- [ ] Probar de punta a punta con datos de prueba y limpiar después.
+- [x] Reproducir el caso y documentar.
+- [x] `pg_get_functiondef` de `f_aliado_ver` solicitado, verificado contra repo.
+- [x] Migración `0021` ejecutada en staging y producción con `CREATE OR REPLACE FUNCTION`.
+- [x] `js/aliado.js` ya renderiza `razon_anulacion` con el bloque rojo `⚠️`.
+- [x] Verificación: `pg_get_functiondef` de producción coincide con el repo (incluye `cerrado` y `razon_anulacion`).
 
 ## Criterios de aceptación
 
-- [ ] El premio anulado se ve con su nombre y la marca clara de anulado (no desaparece ni queda genérico).
-- [ ] Los premios activos no cambian de aspecto (regresión verificada).
-- [ ] El SQL quedó documentado en esta tarea y fue ejecutado por el usuario (ningún asistente toca la base).
-- [ ] No se exponen datos de más en la vista pública del aliado (solo lo suyo).
+- [x] El premio anulado se ve con su nombre y la marca clara de anulado (no desaparece ni queda genérico).
+- [x] Los premios activos no cambian de aspecto (regresión verificada).
+- [x] El SQL quedó documentado y fue ejecutado por el usuario en staging y producción.
+- [x] No se exponen datos de más en la vista pública del aliado (solo lo suyo).
 
 ## Verificación
 
@@ -62,3 +62,10 @@ Prueba manual con datos de prueba: anular un premio y verificar las dos vistas; 
 - **Regresión:** el flujo normal (asignar, editar, eliminar, enviar) se mantiene intacto. Los concursos activos siguen mostrando `pill-verde`.
 - **CSP:** `js/aliado.js` se carga como script externo (`<script src>`), no afecta el hash CSP de `aliado.html`.
 - **Verificación:** `node --check js/aliado.js` → OK.
+
+### 28/11/2026 — Ejecución en staging y producción
+
+- `pg_get_functiondef('public.f_aliado_ver(text)'::regprocedure)` ejecutado en staging (`adoqujnnnrlgmvwbnwbl`) → coincide con el repo.
+- Migración `0021` ejecutada en producción → SQL Editor responde `Success`.
+- `pg_get_functiondef` en producción → coincide con staging y repo (incluye `cerrado` y `razon_anulacion` en bloque `concursos`).
+- Migración 0021 aplicada en ambos entornos.

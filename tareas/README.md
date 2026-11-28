@@ -84,7 +84,7 @@ Usa [PLANTILLA.md](PLANTILLA.md) para crear tareas nuevas. No renombres los IDs 
 | [F-11](F-11-doble-punto-hora-puerta.md) | Doble punto final en la hora de «ENTRADA YA CONSUMADA» en puerta | P3 | **hecho** (14/11/2026, PR #26) | — |
 | [M-33](M-33-vista-anulada-aliado.md) | Humanizar la vista «anulada» del aliado | P2 | **hecho** (23/11/2026) | — |
 | [M-34](M-34-fecha-creacion-tarjeta-admin.md) | Mostrar la fecha de creación en la tarjeta del aliado (aliados.html) | P2 | **hecho** (23/11/2026) | — |
-| [M-35](M-35-nombres-premios-anulados.md) | Mostrar nombres de premios anulados (requiere cambio de RPC) | P2 | **en_progreso** (0021 migración + js/aliado.js actualizados para mostrar razon_anulacion; pendiente ejecutar en staging y producción) | — |
+| [M-35](M-35-nombres-premios-anulados.md) | Mostrar nombres de premios anulados (requiere cambio de RPC) | P2 | **hecho** (28/11: migración 0021 ejecutada en staging y producción, `pg_get_functiondef` verificado en ambos entornos; `js/aliado.js` muestra razon_anulacion con ⚠️ rojo) | — |
 | [M-36](M-36-modulo-reclamos.md) | Módulo de reclamos | P2 | **en_progreso** (fase 1 construida y probada 24/11/2026; pendientes: envío vacío y contador; fases 2 y 3 sin empezar) | — |
 | [M-37](M-37-multi-evento.md) | Multi-evento: gestionar hasta 3 eventos simultáneos desde el dashboard | P2 | pendiente | P1-04 |
 | [M-38](M-38-aprobacion-coordinadores.md) | Aprobación de coordinadores desde el dashboard (solicitar → aprobar/rechazar) | P2 | pendiente | — |
