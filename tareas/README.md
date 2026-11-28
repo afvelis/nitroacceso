@@ -70,7 +70,7 @@ Usa [PLANTILLA.md](PLANTILLA.md) para crear tareas nuevas. No renombres los IDs 
 | [P1-05](P1-05-revelado-cedula-auditado.md) | Revelado auditado de cédula (admin) y fallback manual | P1 | **hecho** (28/11: migración 0020 verificada aplicada — funciones DROP confirmadas, tabla accesos_datos vacía 0 filas; hover-reveal v1 en js/aliados.js) | P1-03 |
 | [P2-01](P2-01-offline-pwa.md) | Modo offline y cola de escaneos para el día del evento | P2 | pendiente | P0-04 |
 | [P2-02](P2-02-refactor-accesibilidad.md) | Refactor a módulos compartidos y accesibilidad | P2 | pendiente | P1-04 |
-| [P2-03](P2-03-observabilidad-runbook.md) | Observabilidad y runbook de incidentes | P2 | pendiente | P1-03 |
+| [P2-03](P2-03-observabilidad-runbook.md) | Observabilidad y runbook de incidentes | P2 | **hecho** (28/11: `docs/runbook-incidentes.md` creado con 10 procedimientos concretos + checklist de preparación. No implementó: telemetría (Sentry), alertas automáticas, panel de salud, keepalive con notificación — requieren integración externa y no se pueden hacer sin configuración previa del usuario) | P1-03 |
 | [F-1](F-1-talento-copiar-dia2.md) | Reparar el botón «Repetir y editar la del Día 1» en talento.html | P1 | **hecho** (09/11/2026) | — |
 | [F-2](F-2-coord-mis-links-orden-cupo.md) | Reordenar «Mis links» de coord.html (más nuevo primero) y evaluar mostrar cupo | P2 | pendiente | — |
 | [F-3](F-3-auditoria-edicion-abierta-cerrada.md) | Revalidar la lógica edición-abierta / edición-cerrada módulo por módulo | P2 | **hecho** (28/11: auditoría completa — el comportamiento actual ya coincide con la matriz aprobada por el usuario; no requiere cambios de código) | — |

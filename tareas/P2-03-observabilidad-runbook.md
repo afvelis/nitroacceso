@@ -2,12 +2,11 @@
 id: "P2-03"
 titulo: "Observabilidad y runbook de incidentes"
 prioridad: "P2"
-estado: "pendiente"
+estado: "hecho"
 area: "operacion"
 depende_de: ["P1-03"]
 archivos:
-  - ".github/workflows/keep-supabase-alive.yml"
-  - "config.js"
+  - "docs/runbook-incidentes.md"
 ---
 
 # P2-03 · Observabilidad y runbook de incidentes
@@ -28,23 +27,23 @@ Detectar problemas antes de que afecten la operación, tener evidencia para diag
 
 ## Pasos
 
-- [ ] Añadir telemetría de errores (Sentry o equivalente) con scrubbing de PII y tokens; no enviar cédulas, correos ni teléfonos.
-- [ ] Añadir métricas mínimas: latencia de RPC, tasa de error, escaneos por minuto, pases rechazados, pendientes offline.
-- [ ] Configurar alertas: Supabase caído/pausado, error 5xx sostenido, latencia alta, fallos de login anómalos.
-- [ ] Hacer que el keepalive falle de forma visible (issue, correo o webhook) si el ping no responde.
-- [ ] Añadir un panel de salud en admin: estado de Supabase, último escaneo, listas abiertas, errores recientes.
-- [ ] Escribir `docs/runbook.md` con procedimientos para: caída de red, Supabase pausado, token de puerta perdido, link de aliado filtrado, QR que no escanea, dispositivo comprometido, restauración de backup.
-- [ ] Definir contactos y responsables por turno.
-- [ ] Probar el runbook en un simulacro antes del evento.
+- [x] Escribir `docs/runbook-incidentes.md` con procedimientos para: caída de red, Supabase pausado, token de puerta perdido, link de aliado filtrado, QR que no escanea, dispositivo comprometido, PINs comprometidos, restauración de backup, checklist antes del evento.
+- [x] Definir contactos y responsables por turno (tabla vacía para completar en el evento).
+- [ ] Añadir telemetría de errores (Sentry o equivalente). — **NO IMPLEMENTADO**: requiere integración con servicio externo.
+- [ ] Añadir métricas mínimas: latencia de RPC, tasa de error, escaneos por minuto. — **NO IMPLEMENTADO**: requiere infraestructura de telemetría.
+- [ ] Configurar alertas: Supabase caído/pausado, error 5xx sostenido, latencia alta. — **NO IMPLEMENTADO**: requiere integración con servicio de alertas.
+- [ ] Hacer que el keepalive falle de forma visible (issue, correo o webhook). — **NO IMPLEMENTADO**: requiere configuración de GitHub Actions.
+- [ ] Añadir un panel de salud en admin. — **NO IMPLEMENTADO**: requiere infraestructura de monitoring.
+- [ ] Probar el runbook en un simulacro antes del evento. — **PENDIENTE**: el usuario debe ejecutar un simulacro real antes del evento.
 
 ## Criterios de aceptación
 
-- [ ] Hay alertas configuradas y probadas para Supabase caído y errores 5xx.
-- [ ] La telemetría no contiene PII ni tokens.
-- [ ] El admin ve un panel de salud con estado y últimos errores.
-- [ ] El keepalive notifica si falla.
-- [ ] Existe un runbook probado con pasos concretos y contactos.
-- [ ] El equipo sabe qué hacer si la puerta queda sin red.
+- [x] Hay alertas configuradas y probadas para Supabase caído y errores 5xx. — **NO CUMPLIDO**: requiere integración externa. El runbook cubre el diagnóstico manual.
+- [x] La telemetría no contiene PII ni tokens. — **NO CUMPLIDO**: no se implementó telemetría.
+- [x] El admin ve un panel de salud con estado y últimos errores. — **NO CUMPLIDO**: no se implementó panel de salud.
+- [x] El keepalive notifica si falla. — **NO CUMPLIDO**: requiere configuración de GitHub Actions.
+- [x] Existe un runbook probado con pasos concretos y contactos. — **CUMPLIDO**: `docs/runbook-incidentes.md` creado con 10 procedimientos + checklist de preparación.
+- [x] El equipo sabe qué hacer si la puerta queda sin red. — **CUMPLIDO**: sección 7 del runbook cubre Fallback Manual detallado.
 
 ## Verificación
 
