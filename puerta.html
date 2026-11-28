@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://exrbwctegkzxurzwihvh.supabase.co; font-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'; style-src 'self' 'sha256-No2qdSo38EbkKjiSSCIvfL3K8i1CUlBEs552Pj3cgIM='">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-9vUtbwVARAjkmP8xMMh71pZYVgyNffrsx0y0dfhpKuk='; img-src 'self' data: blob:; connect-src 'self' https://exrbwctegkzxurzwihvh.supabase.co; font-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'; style-src 'self' 'sha256-ZGEqJ4+IW4oxACEI3NJf05mIoTZWxVx9Bh8QaJ9YdvE='">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -38,6 +38,12 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;backgr
 .btn-mini{padding:8px 12px;font-size:14px}
 input{width:100%;padding:12px 14px;border:1px solid var(--borde);border-radius:10px;background:#0d1626;color:var(--texto);font-size:17px;font-family:inherit}
 input:focus{outline:2px solid var(--acento2);border-color:var(--acento2)}
+/* ===== P2-01: indicador fijo de conexion y cola de escaneos ===== */
+/* bottom:40px para dejar sitio a la banda de staging de config.js (30 px). */
+.estado-red{position:fixed;left:50%;transform:translateX(-50%);bottom:40px;z-index:9999;padding:4px 14px;border-radius:20px;font-size:13px;font-weight:600;background:rgba(18,28,46,.92);border:1px solid var(--borde);pointer-events:none}
+.estado-red-verde{color:var(--acento);border-color:var(--acento)}
+.estado-red-amarillo{color:var(--aviso);border-color:var(--aviso)}
+.estado-red-rojo{color:var(--rojo);border-color:var(--rojo)}
 label{display:block;margin-bottom:6px;color:var(--suave);font-size:15px}
 .selector-dia{display:flex;gap:10px;margin-bottom:16px}
 .selector-dia button{flex:1;padding:16px;border:2px solid var(--borde);background:#0d1626;color:var(--suave);border-radius:10px;cursor:pointer;font-size:18px;font-weight:700;transition:all .2s;position:relative}
@@ -101,6 +107,8 @@ label{display:block;margin-bottom:6px;color:var(--suave);font-size:15px}
     <div class="subtitulo">Puerta de entrada</div>
   </div>
 </header>
+<!-- P2-01: indicador de conexión/cola; lo gestiona js/puerta.js (3 estados). -->
+<div class="estado-red" id="estadoRed" role="status" aria-live="polite"></div>
 
 <main class="contenedor">
   <div class="tarjeta" id="tarjetaLogin">
@@ -164,11 +172,32 @@ label{display:block;margin-bottom:6px;color:var(--suave);font-size:15px}
     </div>
 
     <div class="mt-20">
+      <!-- P2-01: vista local de la cola de escaneos pendientes + reintento manual. -->
+      <button class="btn btn-gris" id="btnVerCola">⏳ Cola de escaneos pendientes</button>
+    </div>
+    <div class="mt-20">
+      <!-- P2-01: respaldo imprimible del día (CSV); resultado junto al botón (norma v2.2). -->
+      <button class="btn btn-gris" id="btnExportarCSV">📋 Exportar CSV de respaldo</button>
+      <div id="msgCSV" class="aviso" hidden></div>
+    </div>
+    <div class="mt-20">
       <button class="btn btn-gris" id="btnSalir">🚪 Cerrar sesión</button>
     </div>
   </div>
 </main>
 
+<script src="js/offline-db.js"></script>
 <script src="js/puerta.js"></script>
+<!-- P2-01: registro del service worker (la CSP exige su hash sha256 en script-src). -->
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('pwa-sw.js').catch(function(){
+      // Sin SW la app sigue funcionando en línea; solo se pierde el shell offline.
+      console.warn('NA: service worker no registrado: sin modo offline de shell');
+    });
+  });
+}
+</script>
 </body>
 </html>
