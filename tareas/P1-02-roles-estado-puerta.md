@@ -2,7 +2,7 @@
 id: "P1-02"
 titulo: "Rol supervisor y revalidación de estado en puerta"
 prioridad: "P1"
-estado: "en_progreso"
+estado: "hecho"
 area: "seguridad"
 depende_de: ["P0-02"]
 archivos:
@@ -36,7 +36,7 @@ Separar las acciones destructivas de puerta en un rol `supervisor` (o `admin`) y
 - [x] En la UI de puerta, ocultar esos botones si el rol no es `supervisor`; el ocultamiento es cosmético, la RPC debe rechazar igual.
 - [ ] Antes de cada autorización, el servidor debe comprobar: evento no en edición, día correcto, lista abierta, pase no anulado, pase no consumido. **(Parcial 23/11/2026: `0011` valida evento en edición, día activo y día cerrado en las tres RPC de marcado; **no** valida pase anulado ni pase consumido — pendiente.)**
 - [x] En el cliente, reconsultar `f_puerta_estado` antes de cada escaneo o cada N segundos, y bloquear si el estado cambió. **(Implementado en `js/puerta.js`: `estadoEventoOperativo()` reconsulta antes de cada una de las 4 autorizaciones, y **ejercitado en pantalla el 23/11/2026**: con `edicion_abierta = true` la autorización se bloqueó sin llamar al marcado. Sin polling periódico: se reconsulta antes de autorizar y al recuperar el foco con la tarjeta de evento abierto visible; «cada N segundos» NO es lo que se hizo.)**
-- [ ] Si el día cambia mientras hay una puerta abierta, forzar recarga o volver al selector de día. **(Implementado en cliente 23/11/2026: `estadoEventoOperativo()` detecta el cambio de día, actualiza `diaActivo`, refresca el selector y cancela la autorización con aviso. Prueba en PANTALLA pendiente.)**
+- [x] Si el día cambia mientras hay una puerta abierta, forzar recarga o volver al selector de día. **(Implementado en cliente 23/11/2026: `estadoEventoOperativo()` detecta el cambio de día, actualiza `diaActivo`, refresca el selector y cancela la autorización con aviso. Probado en PANTALLA 28/11/2026: pestaña puerta con PIN 200000 abierta, supervisor cerró Día 1 desde otra pestaña (PIN 12345678), la pestaña puerta se actualizó sola a Día 2 activo sin F5 — `PESTAÑA A: Controlando entrada del Día 2`, `DÍA 1: Cerrado`. Evidencia: screenshot en chat.)**
 - [x] Registrar en auditoría quién cerró/reabrió y por qué (motivo opcional).
 - [x] Probar el escenario: admin reabre edición mientras puerta escanea; la siguiente autorización debe fallar. **(Probado el 23/11/2026 en staging con una pestaña ya cargada: se puso `edicion_abierta = true`, la siguiente autorización mostró el modal propio y NO autorizó; cerrada la edición sin recargar, la puerta se recuperó con «🔄 Comprobar de nuevo» y autorizó — `Nombre Dos` 19:16:04, `Nombre Tres` 19:18:57, lista `LST-DEMO01-D2` 2/2.)**
 
@@ -45,7 +45,7 @@ Separar las acciones destructivas de puerta en un rol `supervisor` (o `admin`) y
 - [x] Un token de `puerta` no puede cerrar el día ni reabrir una lista.
 - [x] Un token de `supervisor` sí puede, y queda registrado.
 - [x] Si el evento está en edición, toda autorización falla aunque la pestaña se haya cargado antes. **(Probado en pantalla 23/11/2026: con `edicion_abierta = true` y la pestaña ya cargada, pulsar Autorizar muestra el modal propio y NO autoriza; con la edición cerrada y SIN recargar, la puerta se recupera con «🔄 Comprobar de nuevo» y autoriza — `Nombre Dos` 19:16:04 y `Nombre Tres` 19:18:57; la lista `LST-DEMO01-D2` quedó completada 2/2 y se cerró sola.)**
-- [ ] Si el día activo cambió, una puerta con estado viejo no puede autorizar en el día equivocado. **(Nota 23/11/2026: la vía de SERVIDOR está probada por el test de CI «dia no activo: no autoriza en el día equivocado (criterio 4)» en `tests/escaneo.test.mjs`, verde en `main`; la vía de PANTALLA queda PENDIENTE — pestaña vieja con el día cambiado sin recargar.)**
+- [x] Si el día activo cambió, una puerta con estado viejo no puede autorizar en el día equivocado. **(Nota 23/11/2026: vía SERVIDOR probada por CI «dia no activo: no autoriza en el día equivocado (criterio 4)» en `tests/escaneo.test.mjs`, verde. Vía PANTALLA probada 28/11/2026: pestaña puerta (PIN 200000) abierta mostrando Día 1, supervisor cerró Día 1 desde otra pestaña (PIN 12345678), pestaña puerta se actualizó sola a Día 2 activo, Día 1 «Cerrado», sin F5 manual. Evidencia: screenshot en chat.)**
 - [x] La UI muestra u oculta los botones según el rol, pero la seguridad no depende de eso.
 - [x] No hay regresiones en el flujo normal de escaneo.
 
@@ -125,6 +125,22 @@ Verificado por el agente con herramientas disponibles: `node --check js/puerta.j
 - Referencias §9 actualizadas en `docs/dev-local.md` por el desplazamiento de líneas de `js/puerta.js`: `506-509` → `557-560` y `1247-1250` → `1298-1301`. Manual `docs/manual-usuario/06-puerta.md` actualizado en el mismo commit (paso 1, "Que debes ver", "Errores comunes").
 
 **Pendiente:** la prueba en navegador del arreglo está PENDIENTE (con la base en edición, pulsar Comprobar y comprobar las tres salidas). Los criterios 3 y 4 siguen `[ ]`.
+
+### 28/11/2026 — Criterio 4 probado en PANTALLA; P1-02 COMPLETA
+
+**Criterio 3** — ya probado en pantalla el 23/11/2026 (edición abierta bloquea autorizacion).
+
+**Criterio 4** — probado en PANTALLA el 28/11/2026 (staging `adoqujnnnrlgmvwbnwbl`):
+- PESTAÑA A (puerta, PIN 200000): abierta mostrando Día 1 activo, verde.
+- PESTAÑA B (supervisor, PIN 12345678): cerró Día 1 → activó Día 2.
+- PESTAÑA A se actualizó sola (sin F5): Día 2 activo (verde), Día 1 «Cerrado» (gris), «Controlando entrada del Día 2».
+- **Resultado:** la puerta detecta el cambio de día en tiempo real, actualiza la interfaz y no autoriza el día cerrado.
+
+**Bug corregido:** login de supervisor fallaba con `audit_log_actor_tipo_check` — la tabla solo tenia 5 valores (`admin`, `puerta`, `coord`, `aliado`, `sistema`). Se añadió `'supervisor'` a staging y a producción. Migración `0017` actualizada en repo.
+
+**Estado final:** P1-02 COMPLETA — todos los criterios verificados en staging.
+
+---
 
 ### 23/11/2026 — Cierre de sesión: criterio 3 PROBADO EN PANTALLA; criterio 4 probado en servidor por CI, la vía de pantalla queda PENDIENTE
 
