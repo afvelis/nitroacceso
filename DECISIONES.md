@@ -504,3 +504,20 @@
 - Decisión: todas las páginas que se abren desde dashboard (admin, estadísticas, aliados, cortesias, reclamos) deben tener el botón/enlace "← Volver al dashboard" tanto arriba como abajo.
 - Por qué: coherencia visual y usabilidad — el usuario no debería tener que hacer scroll para volver al dashboard.
 - Consecuencia: admin.html y reclamos.html ganaron un botón arriba (ya tenían uno abajo). Se actualizó el hash CSP de admin.html por el CSS nuevo. PR #62 fusionado.
+
+---
+
+## 28/11/2026 · Método de trabajo con Pull Requests
+
+- Decisión: el agente trabaja en una rama `agente/AAAA-MM-DD-tema`, push al origin, y le entrega al usuario los datos EXACTOS para abrir el PR. El usuario abre, pega título, pega cuerpo, confirma merge, fusiona.
+- Por qué: el agente NO debe tener token de GitHub ni usar `gh` para abrir PRs. El agente solo push y entrega los datos. El usuario es quien revisa y fusiona (regla de `AGENTS.md`: "SOLO el usuario revisa y fusiona el PR").
+- Regla derivada: cada PR lleva SIEMPRE cuatro bloques:
+
+  1. **URL** (formato: `https://github.com/afvelis/nitroacceso/compare/main...agente/AAAA-MM-DD-tema?expand=1`)
+  2. **Título** (Ctrl+A → Ctrl+V, texto exacto)
+  3. **Cuerpo** (Ctrl+A → Ctrl+V, Markdown estructurado: «Que cambia», «Verificado», «Pendiente»)
+  4. **PRUEBA DEL OBJETIVO** (dato a dato: arriba `main ← rama`, «Able to merge» verde, conteo de archivos/cambios, checks corriendo)
+
+- El agente NO pregunta «¿listo para crear el PR?» ni «¿qué número de PR es?». Entrega los datos, el usuario los pega, el usuario confirma `creado` o `fusionado`. El agente verifica con `git fetch origin && git log origin/main --oneline` que el merge está en el historial.
+- Este método quedó registrado con el PR #64 (P0-09). Future sesiones deben encontrar este registro y aplicar el mismo patrón sin necesidad de que el agente lo explique.
+- Bloqueo de seguridad: el agente `gh` no tiene autenticación (`gh auth status` → not logged in). Este registro evita que nuevas sesiones pierdan el método.
