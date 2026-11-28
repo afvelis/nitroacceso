@@ -1,33 +1,21 @@
 -- 0018_p1_03_integrar_auditoria_en_rpc.sql
 -- Proyecto: NitroSystem (control de acceso) · Tarea: P1-03 unidad 2b
--- Referencia: tareas/P1-03-auditoria-privacidad.md — registrar acciones en auditoría
+-- Referencia: tareas/P1-03-auditoria-privacidad.md
 -- Fecha: 27/11/2026
 --
--- QUÉ HACE:
---   Integra calls a public.registrar_auditoria() en las RPC críticas
---   de la aplicación. Cada función se reescribe con CREATE OR REPLACE
---   y solo se añade el registro de auditoría; el cuerpo de la lógica
---   original se conserva íntegro.
---
--- RPCs modificadas:
---   1. f_login          → registrar login_ok o login_fail
---   2. f_logout         → registrar logout
---   3. f_puerta_marcar_persona → registrar autorizar_entrada (tipo persona)
---   4. f_puerta_marcar_vendedor → registrar autorizar_entrada (tipo vendedor)
---   5. f_puerta_cerrar_lista → registrar cierre_edicion
---   6. f_admin_limpiar_todo      → registrar limpieza_total
---   7. f_admin_anular_cortesia   → registrar anular_cortesia
---   8. f_puerta_canjear_premiacion → registrar canje_premiacion
---
--- Dependencias: requiere 0017 (tabla audit_log + registrar_auditoria).
+-- Integra calls a public.registrar_auditoria() en las RPC críticas.
+-- El IP/user-agent se extraen inline con el mismo estilo de f_login.
+-- Depende de 0017 (tabla audit_log + registrar_auditoria).
 
 begin;
+
+-- Helper interno: extrae IP desde request.headers (estilo f_login)
+-- Se repite en cada función porque plpgsql no permite funciones sql en begin/commit de Supabase.
+-- La macro se escribe inline.
 
 -- ======================================================================
 -- 1) f_login — registrar login_ok o login_fail
 -- ======================================================================
--- La función original obtiene v_ip y v_disp (dispositivo/user-agent).
--- Se añade el registro en los dos puntos de decisión.
 CREATE OR REPLACE FUNCTION public.f_login(p_pin text, p_rol_solicitado text DEFAULT NULL::text)
  RETURNS TABLE(token uuid, rol text)
  LANGUAGE plpgsql
@@ -38,6 +26,7 @@ declare
   v_rol text;
   v_ip text;
   v_disp text;
+  v_headers text;
   v_intentos int;
   v_token uuid;
   v_ventana interval;
@@ -66,7 +55,7 @@ begin
 
   if v_intentos >= 5 then
     v_restantes := greatest(1, ceil(extract(epoch from (v_mas_antiguo + v_ventana - now())))::int);
-    -- Loguear el bloqueo (ya hubo 5 intentos fallidos, pero se registra el último intento)
+    -- Loguear el bloqueo
     perform public.registrar_auditoria(
       'puerta', null, coalesce(p_rol_solicitado, 'desconocido'),
       'login_fail', 'sesion', null, null,
@@ -133,8 +122,6 @@ $function$;
 -- ======================================================================
 -- 2) f_logout — registrar logout
 -- ======================================================================
--- Para obtener el actor_id y actor_label, necesitamos buscar en la
--- tabla sesiones (ya que el token es el identificador de la sesión actual).
 CREATE OR REPLACE FUNCTION public.f_logout(p_token uuid)
  RETURNS boolean
  LANGUAGE plpgsql
@@ -145,12 +132,14 @@ declare
   v_found bool;
   v_rol text;
   v_device text;
+  v_disp text;
+  v_ip text;
 begin
   if p_token is null then
     return false;
   end if;
 
-  -- Obtener rol y device de la sesión antes de revocarla
+  -- Obtener rol y device de la sesión
   select rol, device_label into v_rol, v_device
   from public.sesiones
   where token_hash = encode(extensions.digest(p_token::text, 'sha256'), 'hex')
@@ -165,13 +154,20 @@ begin
   v_found := found;
 
   if v_found then
+    -- Extraer IP y user-agent (estilo f_login)
+    v_ip := coalesce(
+              nullif(btrim(split_part(coalesce(nullif(current_setting('request.headers', true), '')::json ->> 'x-forwarded-for', ''), ',', 1)), ''),
+              nullif(btrim(coalesce(nullif(current_setting('request.headers', true), '')::json ->> 'x-real-ip', '')), ''),
+              'desconocida'
+            );
+    v_disp := left(coalesce(nullif(current_setting('request.headers', true), '')::json ->> 'user-agent', ''), 200);
+
     -- Loguear logout
     perform public.registrar_auditoria(
       coalesce(v_rol, 'desconocido'), null, coalesce(v_device, 'desconocido'),
       'logout', 'sesion', null, null,
       jsonb_build_object('rol', v_rol, 'hora', now()::text),
-      public.audit_get_ip(),
-      public.audit_get_user_agent()
+      v_ip, v_disp
     );
   end if;
 
@@ -196,11 +192,28 @@ declare
   v_despues jsonb;
   v_dispositivo text;
   v_rol text;
+  v_ip text;
+  v_disp text;
 begin
   if f_sesion_rol(p_token) is distinct from 'puerta' then return false; end if;
   if p_estado not in ('pendiente','autorizado') then return false; end if;
 
-  -- Capturar antes del cambio
+  -- Extraer IP y dispositivo (estilo f_login)
+  v_ip := coalesce(
+            nullif(btrim(split_part(coalesce(nullif(current_setting('request.headers', true), '')::json ->> 'x-forwarded-for', ''), ',', 1)), ''),
+            nullif(btrim(coalesce(nullif(current_setting('request.headers', true), '')::json ->> 'x-real-ip', '')), ''),
+            'desconocida'
+          );
+  v_disp := left(coalesce(nullif(current_setting('request.headers', true), '')::json ->> 'user-agent', ''), 200);
+
+  -- Obtener rol de la sesión
+  select s.rol, s.device_label into v_rol, v_dispositivo
+  from sesiones s
+  where token_hash = encode(extensions.digest(p_token::text, 'sha256'), 'hex')
+    and revocado_at is null
+  limit 1;
+
+  -- Capturar antes
   select id, estado, marcado_at into v_persona
   from personas where id = p_persona_id;
 
@@ -211,13 +224,6 @@ begin
       'marcado_at', v_persona.marcado_at
     );
   end if;
-
-  -- Obtener rol y dispositivo de la sesión actual
-  select s.rol, s.device_label into v_rol, v_dispositivo
-  from sesiones s
-  where token_hash = encode(extensions.digest(p_token::text, 'sha256'), 'hex')
-    and revocado_at is null
-  limit 1;
 
   update personas p set
     estado = p_estado,
@@ -240,7 +246,7 @@ begin
   end if;
 
   if v_found then
-    -- Capturar después del cambio
+    -- Capturar después
     select id, estado, marcado_at into v_persona
     from personas where id = p_persona_id;
 
@@ -252,13 +258,12 @@ begin
       );
     end if;
 
-    -- Loguear autorización
+    -- Loguear
     perform public.registrar_auditoria(
       'puerta', null, coalesce(v_dispositivo, 'puerta-' || coalesce(v_rol, '')),
       case when p_estado = 'autorizado' then 'autorizar_entrada' else 'marcar_pendiente' end,
       'personas', p_persona_id, v_antes, v_despues,
-      public.audit_get_ip(),
-      public.audit_get_user_agent()
+      v_ip, v_disp
     );
   end if;
 
@@ -282,9 +287,26 @@ declare
   v_despues jsonb;
   v_dispositivo text;
   v_rol text;
+  v_ip text;
+  v_disp text;
 begin
   if f_sesion_rol(p_token) is distinct from 'puerta' then return false; end if;
   if p_estado not in ('pendiente','autorizado') then return false; end if;
+
+  -- Extraer IP y dispositivo
+  v_ip := coalesce(
+            nullif(btrim(split_part(coalesce(nullif(current_setting('request.headers', true), '')::json ->> 'x-forwarded-for', ''), ',', 1)), ''),
+            nullif(btrim(coalesce(nullif(current_setting('request.headers', true), '')::json ->> 'x-real-ip', '')), ''),
+            'desconocida'
+          );
+  v_disp := left(coalesce(nullif(current_setting('request.headers', true), '')::json ->> 'user-agent', ''), 200);
+
+  -- Obtener sesión
+  select s.rol, s.device_label into v_rol, v_dispositivo
+  from sesiones s
+  where token_hash = encode(extensions.digest(p_token::text, 'sha256'), 'hex')
+    and revocado_at is null
+  limit 1;
 
   -- Capturar antes
   select id, estado_dia1, estado_dia2, marcado_dia1_at, marcado_dia2_at
@@ -303,13 +325,6 @@ begin
       );
     end if;
   end if;
-
-  -- Obtener sesión
-  select s.rol, s.device_label into v_rol, v_dispositivo
-  from sesiones s
-  where token_hash = encode(extensions.digest(p_token::text, 'sha256'), 'hex')
-    and revocado_at is null
-  limit 1;
 
   if p_dia = 1 then
     update vendedores set
@@ -346,8 +361,7 @@ begin
       'puerta', null, coalesce(v_dispositivo, 'puerta-' || coalesce(v_rol, '')),
       case when p_estado = 'autorizado' then 'autorizar_entrada' else 'marcar_pendiente' end,
       'vendedores', p_vendedor_id, v_antes, v_despues,
-      public.audit_get_ip(),
-      public.audit_get_user_agent()
+      v_ip, v_disp
     );
   end if;
 
@@ -371,8 +385,25 @@ declare
   v_despues jsonb;
   v_dispositivo text;
   v_rol text;
+  v_ip text;
+  v_disp text;
 begin
   if f_sesion_rol(p_token) is distinct from 'puerta' then return false; end if;
+
+  -- Extraer IP y dispositivo
+  v_ip := coalesce(
+            nullif(btrim(split_part(coalesce(nullif(current_setting('request.headers', true), '')::json ->> 'x-forwarded-for', ''), ',', 1)), ''),
+            nullif(btrim(coalesce(nullif(current_setting('request.headers', true), '')::json ->> 'x-real-ip', '')), ''),
+            'desconocida'
+          );
+  v_disp := left(coalesce(nullif(current_setting('request.headers', true), '')::json ->> 'user-agent', ''), 200);
+
+  -- Obtener sesión
+  select s.rol, s.device_label into v_rol, v_dispositivo
+  from sesiones s
+  where token_hash = encode(extensions.digest(p_token::text, 'sha256'), 'hex')
+    and revocado_at is null
+  limit 1;
 
   -- Capturar antes
   select id, estado, cerrada_at into v_list
@@ -385,13 +416,6 @@ begin
       'cerrada_at_anterior', v_list.cerrada_at
     );
   end if;
-
-  -- Obtener sesión
-  select s.rol, s.device_label into v_rol, v_dispositivo
-  from sesiones s
-  where token_hash = encode(extensions.digest(p_token::text, 'sha256'), 'hex')
-    and revocado_at is null
-  limit 1;
 
   update listas set
     estado = case when p_cerrada then 'cerrada' else 'en_puerta' end,
@@ -415,8 +439,7 @@ begin
       'puerta', null, coalesce(v_dispositivo, 'puerta-' || coalesce(v_rol, '')),
       case when p_cerrada then 'cerrar_edicion' else 'reabrir_edicion' end,
       'listas', p_lista_id, v_antes, v_despues,
-      public.audit_get_ip(),
-      public.audit_get_user_agent()
+      v_ip, v_disp
     );
   end if;
 
@@ -437,9 +460,19 @@ declare
   v_found bool;
   v_dispositivo text;
   v_rol text;
+  v_ip text;
+  v_disp text;
 begin
   if public.f_sesion_rol(p_token) is distinct from 'admin' then return false; end if;
   if not exists (select 1 from eventos) then return false; end if;
+
+  -- Extraer IP y dispositivo
+  v_ip := coalesce(
+            nullif(btrim(split_part(coalesce(nullif(current_setting('request.headers', true), '')::json ->> 'x-forwarded-for', ''), ',', 1)), ''),
+            nullif(btrim(coalesce(nullif(current_setting('request.headers', true), '')::json ->> 'x-real-ip', '')), ''),
+            'desconocida'
+          );
+  v_disp := left(coalesce(nullif(current_setting('request.headers', true), '')::json ->> 'user-agent', ''), 200);
 
   -- Obtener sesión
   select s.rol, s.device_label into v_rol, v_dispositivo
@@ -463,8 +496,7 @@ begin
       'coordinadores', (select count(*) from coordinadores)
     ),
     null,
-    public.audit_get_ip(),
-    public.audit_get_user_agent()
+    v_ip, v_disp
   );
 
   delete from cortesia_personas where true;
@@ -501,8 +533,7 @@ begin
       'edicion_abierta', true
     ),
     null,
-    public.audit_get_ip(),
-    public.audit_get_user_agent()
+    v_ip, v_disp
   );
 
   return v_found;
@@ -524,6 +555,8 @@ DECLARE
   v_cortesia cortesias%ROWTYPE;
   v_dispositivo text;
   v_rol text;
+  v_ip text;
+  v_disp text;
 BEGIN
   IF public.f_sesion_ok(p_token, 'admin') IS NOT TRUE THEN
     RETURN NULL;
@@ -537,6 +570,14 @@ BEGIN
   IF v_cortesia.estado = 'anulada' THEN
     RETURN 'ERR_ANULADA';
   END IF;
+
+  -- Extraer IP y dispositivo
+  v_ip := coalesce(
+            nullif(btrim(split_part(coalesce(nullif(current_setting('request.headers', true), '')::json ->> 'x-forwarded-for', ''), ',', 1)), ''),
+            nullif(btrim(coalesce(nullif(current_setting('request.headers', true), '')::json ->> 'x-real-ip', '')), ''),
+            'desconocida'
+          );
+  v_disp := left(coalesce(nullif(current_setting('request.headers', true), '')::json ->> 'user-agent', ''), 200);
 
   -- Obtener sesión
   SELECT s.rol, s.device_label INTO v_rol, v_dispositivo
@@ -556,8 +597,7 @@ BEGIN
       'cupones_total', v_cortesia.cupones_total
     ),
     jsonb_build_object('estado_anterior', v_cortesia.estado),
-    public.audit_get_ip(),
-    public.audit_get_user_agent()
+    v_ip, v_disp
   );
 
   UPDATE cortesias
@@ -570,8 +610,7 @@ BEGIN
     'anular_cortesia', 'cortesias', v_cortesia.id,
     jsonb_build_object('estado_anterior', 'activa'),
     jsonb_build_object('estado_nuevo', 'anulada'),
-    public.audit_get_ip(),
-    public.audit_get_user_agent()
+    v_ip, v_disp
   );
 
   RETURN 'ok';
@@ -592,10 +631,20 @@ DECLARE
   v_cortesia cortesias%ROWTYPE;
   v_dispositivo text;
   v_rol text;
+  v_ip text;
+  v_disp text;
 BEGIN
   IF public.f_sesion_ok(p_token, 'puerta') IS NOT TRUE THEN
     RETURN jsonb_build_object('error', 'ERR_NO_SESION');
   END IF;
+
+  -- Extraer IP y dispositivo
+  v_ip := coalesce(
+            nullif(btrim(split_part(coalesce(nullif(current_setting('request.headers', true), '')::json ->> 'x-forwarded-for', ''), ',', 1)), ''),
+            nullif(btrim(coalesce(nullif(current_setting('request.headers', true), '')::json ->> 'x-real-ip', '')), ''),
+            'desconocida'
+          );
+  v_disp := left(coalesce(nullif(current_setting('request.headers', true), '')::json ->> 'user-agent', ''), 200);
 
   -- Obtener sesión
   SELECT s.rol, s.device_label INTO v_rol, v_dispositivo
@@ -625,8 +674,7 @@ BEGIN
       'cupones_consumidos_anterior', v_cortesia.cupones_consumidos
     ),
     jsonb_build_object('cupones_nuevos', p_cupones_usados),
-    public.audit_get_ip(),
-    public.audit_get_user_agent()
+    v_ip, v_disp
   );
 
   UPDATE cortesias SET cupones_consumidos = cupones_consumidos + p_cupones_usados
@@ -638,8 +686,7 @@ BEGIN
     'canje_premiacion', 'cortesias', v_cortesia.id,
     jsonb_build_object('cupones_consumidos_anterior', v_cortesia.cupones_consumidos),
     jsonb_build_object('cupones_consumidos_nuevo', v_cortesia.cupones_consumidos + p_cupones_usados),
-    public.audit_get_ip(),
-    public.audit_get_user_agent()
+    v_ip, v_disp
   );
 
   RETURN jsonb_build_object(

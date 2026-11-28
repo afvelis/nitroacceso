@@ -1,24 +1,11 @@
 -- 0017_p1_03_tabla_auditoria.sql
 -- Proyecto: NitroSystem (control de acceso) · Tarea: P1-03 unidad 2
--- Referencia: tareas/P1-03-auditoria-privacidad.md — crear tabla de auditoría append-only
+-- Referencia: tareas/P1-03-auditoria-privacidad.md
 -- Fecha: 27/11/2026
 --
--- QUÉ HACE:
---   1. Crea la tabla public.audit_log con las columnas:
---        id (PK), evento_id (nullable), actor_tipo, actor_id,
---        actor_label, accion, entidad, entidad_id, antes, despues, ip,
---        user_agent, created_at
---   2. RLS: INSERT permitido para anon/authenticated (las RPC SECURITY
---      DEFINER insertan dentro de su contexto). NO SELECT, NO UPDATE,
---      NO DELETE para la app (append-only).
---   3. Crea la función genérica public.registrar_auditoria() para que las
---      RPC de la app la llamen (seguridad: SECURITY DEFINER, no expuesta).
---   4. NO guarda tokens, PINs ni contraseñas.
---
--- PENDIENTE (0018): integrar calls a registrar_auditoria() en las
---   RPC críticas (f_login, f_logout, f_puerta_marcar_*, f_admin_*)
---
--- PENDIENTE (futuro): vista de auditoría en admin, política de retención
+-- Crea la tabla de auditoría y la función de registro.
+-- Sin funciones helper de IP/user-agent: se extraen inline en cada RPC
+-- (igual que lo hace f_login actualmente).
 
 begin;
 
@@ -41,7 +28,6 @@ create table if not exists public.audit_log (
   created_at  timestamptz default now() not null
 );
 
--- Index para búsquedas
 create index if not exists idx_audit_log_created on public.audit_log (created_at desc);
 create index if not exists idx_audit_log_actor on public.audit_log (actor_tipo, actor_id, created_at desc);
 create index if not exists idx_audit_log_accion on public.audit_log (accion, created_at desc);
@@ -59,7 +45,7 @@ create policy audit_insert on public.audit_log
   with check (true);
 
 -- ======================================================================
--- 3) Función genérica de registro
+-- 3) Función genérica de registro (SECURITY DEFINER, no expuesta)
 -- ======================================================================
 create or replace function public.registrar_auditoria(
   p_actor_tipo text,
@@ -90,88 +76,8 @@ $function$;
 revoke all on function public.registrar_auditoria(text, uuid, text, text, text, uuid, jsonb, jsonb, text, text) from public, anon, authenticated;
 
 -- ======================================================================
--- 4) Función helper para extraer IP del request (PostgREST)
--- ======================================================================
-create or replace function public.audit_get_ip()
- returns text
- language plpgsql
- security definer
- set search_path to 'public', 'pg_temp'
-as $function$
-declare
-  v_raw text;
-  v_hdr text;
-begin
-  -- Leer headers del request
-  begin
-    select current_setting('request.headers') into v_raw;
-  exception when others then
-    v_raw := '';
-  end;
-
-  -- Extraer x-forwarded-for
-  begin
-    select (
-      select split_part(x, ',', 1) from jsonb_array_elements_text(
-        jsonb_path_query(v_raw::jsonb, '$.x-forwarded-for')
-      ) x
-    ) into v_hdr;
-  exception when others then
-    v_hdr := '';
-  end;
-
-  v_hdr := trim(v_hdr);
-
-  -- Si no hay x-forwarded-for, intentar x-real-ip
-  if v_hdr = '' then
-    begin
-      select jsonb_path_query(v_raw::jsonb, '$.x-real-ip')::text into v_hdr;
-    exception when others then
-      v_hdr := '';
-    end;
-    v_hdr := trim(v_hdr);
-  end;
-
-  if v_hdr = '' then
-    return 'desconocida';
-  end if;
-
-  return v_hdr;
-end;
-$function$;
-
-revoke all on function public.audit_get_ip() from public, anon, authenticated;
-
--- ======================================================================
--- 5) Función helper para extraer user-agent del request (PostgREST)
--- ======================================================================
-create or replace function public.audit_get_user_agent()
- returns text
- language plpgsql
- security definer
- set search_path to 'public', 'pg_temp'
-as $function$
-declare
-  v_raw text;
-begin
-  begin
-    select current_setting('request.headers') into v_raw;
-  exception when others then
-    v_raw := '';
-  end;
-
-  begin
-    return left(jsonb_path_query(v_raw::jsonb, '$.user-agent')::text, 500);
-  exception when others then
-    return 'no-disponible';
-  end;
-end;
-$function$;
-
-revoke all on function public.audit_get_user_agent() from public, anon, authenticated;
-
--- ======================================================================
--- 6) Funciones helper para acciones comunes (seguras, SECURITY DEFINER)
+-- 4) Funciones helper para acciones comunes (SECURITY DEFINER, no expuestas)
+--    Usan la misma sintaxis de current_setting que f_login (plpgsql con BEGIN...EXCEPTION).
 -- ======================================================================
 
 -- f_audit_login_ok
@@ -184,13 +90,42 @@ language plpgsql
 security definer
 set search_path to 'public', 'pg_temp'
 as $function$
+declare
+  v_hdr text;
+  v_ip text;
+  v_ua text;
 begin
+  -- Extraer IP (estilo f_login)
+  begin
+    select current_setting('request.headers') into v_hdr;
+  exception when others then
+    v_hdr := null;
+  end;
+
+  if v_hdr is not null then
+    select nullif(btrim(split_part(v_hdr::json->>'x-forwarded-for', ',', 1)), '') into v_ip;
+    if v_ip is null or v_ip = '' then
+      select nullif(btrim(v_hdr::json->>'x-real-ip'), '') into v_ip;
+    end if;
+  end if;
+  if v_ip is null then v_ip := 'desconocida'; end if;
+
+  -- Extraer user-agent
+  begin
+    select current_setting('request.headers') into v_hdr;
+  exception when others then
+    v_hdr := null;
+  end;
+  if v_hdr is not null then
+    select left(nullif(btrim(v_hdr::json->>'user-agent'), ''), 500) into v_ua;
+  end if;
+  if v_ua is null or v_ua = '' then v_ua := 'no-disponible'; end if;
+
   perform public.registrar_auditoria(
     'puerta', p_actor_id, p_actor_label,
     'login_ok', 'sesion', null, null,
     jsonb_build_object('rol', p_rol),
-    public.audit_get_ip(),
-    public.audit_get_user_agent()
+    v_ip, v_ua
   );
 end;
 $function$;
@@ -207,13 +142,40 @@ language plpgsql
 security definer
 set search_path to 'public', 'pg_temp'
 as $function$
+declare
+  v_hdr text;
+  v_ip text;
+  v_ua text;
 begin
+  begin
+    select current_setting('request.headers') into v_hdr;
+  exception when others then
+    v_hdr := null;
+  end;
+
+  if v_hdr is not null then
+    select nullif(btrim(split_part(v_hdr::json->>'x-forwarded-for', ',', 1)), '') into v_ip;
+    if v_ip is null or v_ip = '' then
+      select nullif(btrim(v_hdr::json->>'x-real-ip'), '') into v_ip;
+    end if;
+  end if;
+  if v_ip is null then v_ip := 'desconocida'; end if;
+
+  begin
+    select current_setting('request.headers') into v_hdr;
+  exception when others then
+    v_hdr := null;
+  end;
+  if v_hdr is not null then
+    select left(nullif(btrim(v_hdr::json->>'user-agent'), ''), 500) into v_ua;
+  end if;
+  if v_ua is null or v_ua = '' then v_ua := 'no-disponible'; end if;
+
   perform public.registrar_auditoria(
     'puerta', null, p_actor_label,
     'login_fail', 'sesion', null, null,
     jsonb_build_object('rol', coalesce(p_rol, 'desconocido'), 'motivo', p_motivo),
-    public.audit_get_ip(),
-    public.audit_get_user_agent()
+    v_ip, v_ua
   );
 end;
 $function$;
@@ -229,7 +191,35 @@ language plpgsql
 security definer
 set search_path to 'public', 'pg_temp'
 as $function$
+declare
+  v_hdr text;
+  v_ip text;
+  v_ua text;
 begin
+  begin
+    select current_setting('request.headers') into v_hdr;
+  exception when others then
+    v_hdr := null;
+  end;
+
+  if v_hdr is not null then
+    select nullif(btrim(split_part(v_hdr::json->>'x-forwarded-for', ',', 1)), '') into v_ip;
+    if v_ip is null or v_ip = '' then
+      select nullif(btrim(v_hdr::json->>'x-real-ip'), '') into v_ip;
+    end if;
+  end if;
+  if v_ip is null then v_ip := 'desconocida'; end if;
+
+  begin
+    select current_setting('request.headers') into v_hdr;
+  exception when others then
+    v_hdr := null;
+  end;
+  if v_hdr is not null then
+    select left(nullif(btrim(v_hdr::json->>'user-agent'), ''), 500) into v_ua;
+  end if;
+  if v_ua is null or v_ua = '' then v_ua := 'no-disponible'; end if;
+
   perform public.registrar_auditoria(
     case
       when p_actor_label like '%@%' then 'admin'
@@ -237,8 +227,7 @@ begin
     end, p_actor_id, p_actor_label,
     'logout', 'sesion', null, null,
     jsonb_build_object('hora', now()::text),
-    public.audit_get_ip(),
-    public.audit_get_user_agent()
+    v_ip, v_ua
   );
 end;
 $function$;
