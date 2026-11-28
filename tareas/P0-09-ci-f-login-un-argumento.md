@@ -2,7 +2,7 @@
 id: "P0-09"
 titulo: "El CI prueba f_login con un solo argumento y no cubre los cubos por rol"
 prioridad: "P2"
-estado: "en_progreso"
+estado: "hecho"
 area: "operacion"
 depende_de: []
 archivos:
@@ -22,13 +22,28 @@ archivos:
 ## Criterios de aceptación
 
 - [x] La helper de login llama a `f_login` con `p_rol_solicitado` explícito (admin y puerta, cada una con su rol) y no compra en el cubo legado.
-- [ ] Aislamiento de 5 fallos: cubierto por prueba MANUAL en `tests/negativos-login.manual.mjs` (NO en CI, porque provoca bloqueo de puerta 90 s en staging y puede tumbar escaneo / la corrida siguiente). Pendiente de ejecución manual cuando no haya demo en curso.
+- [x] Aislamiento de 5 fallos: cubierto por prueba MANUAL en `tests/negativos-login.manual.mjs` (NO en CI, porque provoca bloqueo de puerta 90 s en staging y puede tumbar escaneo / la corrida siguiente).
 
 ## Notas de implementación
 
 - `tests/helpers.mjs`: `login(pin)` pasó a `login(pin, rol)`. El rol es obligatorio y validado (solo `"admin"` o `"puerta"`; cualquier otro valor lanza error antes de llamar a la RPC) y se envía como `p_rol_solicitado` explícito, de modo que los tests dejan de comprar en el cubo legado `null`.
 - Callers actualizados a la firma nueva: `tests/login.test.mjs` (admin y puerta), `tests/escaneo.test.mjs` (`tokenPuerta()`) y `tests/cupones.test.mjs` (login único de admin).
 - `tests/login.test.mjs` suma 2 tests seguros para CI: (a) `f_login` con 1 argumento (cubo legado `null`) sigue respondiendo HTTP 200 sin `PGRST203`; (b) `f_login` con `p_rol_solicitado` inválido falla con `ERR_ROL` sin consumir cubo (el `raise` ocurre antes de insertar en `login_intentos`).
-- El test de aislamiento de 5 fallos (5 fallos de puerta + login admin vivo) vive en `tests/negativos-login.manual.mjs` y NO corre en CI: provocarlo bloquea la puerta 90 s en staging y puede tumbar escaneo / la corrida siguiente (misma razón por la que los negativos ya estaban fuera del pipeline). Ver `DECISIONES.md` 2026-11-22 Sesión 33. Pendiente de ejecución manual cuando no haya demo en curso.
+- El test de aislamiento de 5 fallos (5 fallos de puerta + login admin vivo) vive en `tests/negativos-login.manual.mjs` y NO corre en CI: provocarlo bloquea la puerta 90 s en staging y puede tumbar escaneo / la corrida siguiente (misma razón por la que los negativos ya estaban fuera del pipeline). Ver `DECISIONES.md` 2026-11-22 Sesión 33.
 - Archivos tocados: `tests/helpers.mjs`, `tests/login.test.mjs`, `tests/escaneo.test.mjs`, `tests/cupones.test.mjs`, `tests/negativos-login.manual.mjs`, esta ficha y `DECISIONES.md`. No se tocó SQL.
 - CI cubre: firma de 2 argumentos, compatibilidad de 1 argumento (sin `PGRST203`) y rechazo de rol inválido sin consumir cubo.
+
+## Ejecución manual 28/11/2026
+
+```
+node tests\negativos-login.manual.mjs
+✔ f_login con un PIN incorrecto no devuelve sesion (2068.3027ms)
+✔ f_login con un PIN de formato invalido (3 digitos) no devuelve sesion (1181.0424ms)
+✔ MANUAL aislamiento: 5 fallos de puerta no bloquean el login de admin (4089.3802ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+```
+
+3/3 tests pasaron. P0-09 completado.
