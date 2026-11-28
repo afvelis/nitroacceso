@@ -507,6 +507,15 @@
 
 ---
 
+## 28/11/2026 · M-38: Invitaciones a coordinadores (opción B — registro interno)
+
+- Decisión: coordinadores son designados por la mesa técnica (admin). No hay página pública de solicitud. El admin envía un link profesional (`coordinator.html?i=INV-XXXX`) por WhatsApp, el coordinador abre el link, ingresa nombre + contacto, confirma su acceso → se genera código `COORD-XXXX` → redirige a `coord.html`.
+- Se creó `coord-invitas.html` como página independiente para gestión de invitaciones (crear, ver lista colapsable/dinámica sin lista infinita, aprobar/rechazar con motivo ≥10 caracteres). Sección de coordinadores removida de `admin.html` (ya estaba saturada).
+- Dashboard: botón "👥 Coordinadores" → abre `coord-invitas.html`.
+- Migración SQL `0022`: tabla `coordinator_invitations` + RPCs `f_coordinador_aceptar`, `f_admin_listar_invitaciones`, `f_admin_rechazar_invitacion`, `f_admin_aceptar_invitacion`.
+
+---
+
 ## 28/11/2026 · Método de trabajo con Pull Requests
 
 - Decisión: el agente trabaja en una rama `agente/AAAA-MM-DD-tema`, push al origin, y le entrega al usuario los datos EXACTOS para abrir el PR. El usuario abre, pega título, pega cuerpo, confirma merge, fusiona.

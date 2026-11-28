@@ -1,6 +1,6 @@
 # ESTADO.md — NitroSystem (control de acceso)
 
-Versión del archivo: **45** · Última actualización: **28/11/2026** · P1-02 COMPLETA (criterios 3 y 4 verificados en pantalla 28/11: pestaña puerta con PIN 200000 abierta, supervisor cerró Día 1 desde otra pestaña (PIN 12345678), pestaña puerta se actualizó sola a Día 2 sin F5 · Bug corregido: audit_log.check_constraint sin 'supervisor' (añadido a staging y producción) · P1-03 (0016, 0017, 0018) verificadas como APLICADAS en producción · P1-05 (0020) verificada como APLICADA en producción · Vuelta atrás (P0-07) probada A VOLUMEN: el volcado de producción (15 tablas, 317 filas) se restauró íntegro sobre staging con huella de contenido idéntica (`e3c3141c1914c4820cd9e4075da86166`), sello probado en ambos sentidos y pruebas destructiva controlada + re-restauración; huella reutilizable en `docs/sql/huella-contenido.sql`; segunda copia del volcado en el disco externo del usuario · P0-07 queda con solo dos criterios del generador en PENDIENTE · INCIDENTE cerrado: filtración del volcado en un chat → PINs de admin y puerta de producción ROTADOS el 17/11/2026 (ambos verificados funcionando)
+Versión del archivo: **46** · Última actualización: **28/11/2026** · P1-02 COMPLETA (criterios 3 y 4 verificados en pantalla 28/11: pestaña puerta con PIN 200000 abierta, supervisor cerró Día 1 desde otra pestaña (PIN 12345678), pestaña puerta se actualizó sola a Día 2 sin F5 · Bug corregido: audit_log.check_constraint sin 'supervisor' (añadido a staging y producción) · P1-03 (0016, 0017, 0018) verificadas como APLICADAS en producción · P1-05 (0020) verificada como APLICADA en producción · Vuelta atrás (P0-07) probada A VOLUMEN: el volcado de producción (15 tablas, 317 filas) se restauró íntegro sobre staging con huella de contenido idéntica (`e3c3141c1914c4820cd9e4075da86166`), sello probado en ambos sentidos y pruebas destructiva controlada + re-restauración; huella reutilizable en `docs/sql/huella-contenido.sql`; segunda copia del volcado en el disco externo del usuario · P0-07 queda con solo dos criterios del generador en PENDIENTE · INCIDENTE cerrado: filtración del volcado en un chat → PINs de admin y puerta de producción ROTADOS el 17/11/2026 (ambos verificados funcionando)
 <!-- verificador:main-medido = d963e123eaea1a57b4b98c6432083a148afd0054 · 2026-11-14 -->
 
 > Este archivo SOLO lleva el ESTADO del proyecto. Las reglas de trabajo viven en `AGENTS.md` (+ sus anexos: continuidad v3 y estilo de trato). La arquitectura técnica vive en `ARQUITECTURA.md`. Los "por qués" viven en `DECISIONES.md`. Las tareas ejecutables viven en `tareas/`. Si este archivo contradice a `AGENTS.md`, manda `AGENTS.md`. Si contradice al repo, manda el repo.
@@ -144,16 +144,23 @@ Al iniciar cualquier sesión, se verifica en este orden. Cada punto dice quién 
 
 ## 4 · Siguiente paso inmediato
 
-**28/11/2026 (sesión): P1-02 COMPLETA. P1-03 y P1-05 verificadas como APLICADAS en producción.**
+**28/11/2026 (sesión): 8 tareas completadas (P0-09, M-35, M-36, P1-01, F-3, P2-03, P2-01, M-38), 7 PRs fusionados (#64–#72), método de trabajo con PRs registrado.**
 
-1. **P1-02** (Rol supervisor y revalidación de estado en puerta): **COMPLETA**. Criterio 3 probado 23/11, criterio 4 probado 28/11 (pestaña puerta se actualiza sola sin F5). Staging verificado.
-2. **P1-03** (Auditoría y privacidad): **COMPLETA** — `0016`, `0017`, `0018` verificados en producción con `pg_get_functiondef` (funciones DROP, tabla audit_log existe, 8 RPCs integran auditoría). Staging verificado en sesiones anteriores.
-3. **P1-05** (Rollback de 0015): migración `0020` aplicada en producción — funciones `f_admin_revelar_cedula` y `f_admin_listar_accesos_datos` DROP (confirmado), tabla `accesos_datos` vacía (0 filas, 0 policies) no borrada intencionalmente (protege datos reales). Hover-reveal simple sin auditoría v1 implementado en `js/aliados.js`. **COMPLETA**.
-4. **M-35:** migración `0021` + `js/aliado.js` actualizados para mostrar `razon_anulacion`, pendiente ejecutar en staging y producción.
-5. **P0-09:** pendiente prueba MANUAL de aislamiento de 5 fallos (`node tests/negativos-login.manual.mjs`).
-6. **Pendiente futuro:** borrar migración 0015 y tabla `accesos_datos` (ya vacía) — no urgente.
-7. **Aviso de producción:** `config` tiene `dia_activo = 2`; desde `0011` la puerta solo autoriza el día que diga `dia_activo`. Si el evento arranca por el Día 1, ponerlo en 1 a propósito y ANTES de abrir la puerta.
-8. Recordatorio: los hashes de CSP de los `<style>` inline deben recalcularse al cambiar CSS; el verificador lo detecta y da FALLA.
+1. **P0-09** (El CI prueba f_login con un solo argumento y no cubre los cubos por rol): **COMPLETA** — prueba MANUAL ejecutada: `node tests\negativos-login.manual.mjs` → 3/3 tests pasaron (PIN incorrecto, PIN inválido, aislamiento por 5 fallos de puerta no bloquean admin).
+2. **M-35** (Mostrar nombres de premios anulados): **COMPLETA** — migración `0021` ejecutada en staging y producción, `pg_get_functiondef` verificado en ambos entornos, `js/aliado.js` muestra `razon_anulacion` con ⚠️ rojo.
+3. **M-36** (Módulo de reclamos): **COMPLETA** — validación campo a campo probada con formulario vacío (3 campos obligatorios marcan error, opcional sin error, sin modales), contador del dashboard `1 reclamo nuevo` verificado.
+4. **P1-01** (Escaneos atómicos, cupones y cédulas duplicadas): **COMPLETA** — duplicados entre dos listas verificados (`20000001` con `origenes: ["personas","vendedores"]`), cuadre ledger verificado (`cuadra: true`).
+5. **F-3** (Revalidar edición abierta/cerrada): **COMPLETA** — auditoría completa, comportamiento actual coincide con matriz aprobada, sin cambios de código.
+6. **P2-03** (Observabilidad y runbook): **COMPLETA** — `docs/runbook-incidentes.md` creado con 10 procedimientos concretos + checklist. No implementado: telemetría/Sentry, alertas automáticas, panel de salud — requieren integración externa.
+7. **P2-01** (Modo offline y cola de escaneos): **COMPLETA** — `pwa-sw.js` service worker, `js/offline-db.js` IndexedDB con cola de escaneos, indicador visual de red, botón exportar CSV, sincronización al volver la red. Hashes CSP corregidos por agente.
+8. **M-38** (Aprobación de coordinadores): **COMPLETA** — `coordinator.html` página profesional de aceptación con `?i=INV-`, `coord-invitas.html` panel admin con lista colapsable/dinámica (sin lista infinita), botón en dashboard, sección de coordinadores quitada de `admin.html`.
+
+**Método de trabajo con PRs registrado (28/11/2026, PR #65):** el agente push, el usuario abre PR con URL/Título/Cuerpo/Prueba-del-objetivo exactos, el usuario fusiona. Documento en `DECISIONES.md` § "28/11/2026 · Método de trabajo con Pull Requests". `gh auth` no logueado.
+
+9. **Pendiente futuro (bloq. por P1-04):** P2-02 (refactor accesibilidad), M-37 (multi-evento). Se cierra deuda (P1-01…F-11, pendientes menores) primero.
+10. **Recordatorio:** los hashes de CSP se recalculan al cambiar CSS inline; el verificador lo detecta. `config` tiene `dia_activo = 2`.
+
+**Siguiente paso recomendado:** M-37 (multi-evento) — requiere P1-04 completado (staging estable). O P2-02 si se prefiere refactor accesibilidad.
 
 ## 5 · Transición v2.4 → v3 (histórico)
 
