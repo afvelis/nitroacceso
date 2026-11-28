@@ -13,6 +13,8 @@ archivos:
   - "config.js"
   - "supabase/migrations/0013_p1_03_mascarar_cedula_rpc.sql"
   - "supabase/migrations/0016_p1_03_mascarar_cedula_rpc_resto.sql"
+  - "supabase/migrations/0017_p1_03_tabla_auditoria.sql"
+  - "supabase/migrations/0018_p1_03_integrar_auditoria_en_rpc.sql"
 ---
 
 # P1-03 · Auditoría de acciones y privacidad de datos
@@ -196,3 +198,26 @@ despliegue obligatorio: migración primero (staging y producción), frontend des
 - Commit `fa760df` en rama `agente/2026-11-25-cierre-sesion`.
 - **PENDIENTE: ejecutar esta migración en staging primero, verificar, luego producción.**
 - **El estado de la tarea sigue `en_progreso` hasta que el usuario ejecute la migración.**
+
+### 27/11/2026 — Unidad 2: tabla de auditoría (0017)
+
+- Migración `0017_p1_03_tabla_auditoria.sql` preparada con:
+  - Tabla `audit_log` con columnas: id, evento_id, actor_tipo, actor_id, actor_label, accion, entidad, entidad_id, antes, despues, ip, user_agent, created_at
+  - RLS: INSERT permitido, NO SELECT/UPDATE/DELETE para la app (append-only)
+  - Función `registrar_auditoria()` (SECURITY DEFINER, no expuesta)
+  - Funciones helper `audit_get_ip()` y `audit_get_user_agent()` para obtener metadatos del request (PostgREST)
+  - Funciones `f_audit_login_ok`, `f_audit_login_fail`, `f_audit_logout` para acciones comunes
+- **PENDIENTE: ejecutar en staging, verificar creación de tabla y functions**
+
+### 27/11/2026 — Unidad 2b: integración en RPC (0018)
+
+- Migración `0018_p1_03_integrar_auditoria_en_rpc.sql` preparada con `CREATE OR REPLACE` de 8 RPC críticas, integrando calls a `registrar_auditoria()`:
+  - `f_login`: registra `login_ok` (éxito) y `login_fail` (PIN incorrecto / BLOQUEADO)
+  - `f_logout`: registra `logout` con rol y dispositivo
+  - `f_puerta_marcar_persona`: registra `autorizar_entrada` o `marcar_pendiente` con snapshot antes/después
+  - `f_puerta_marcar_vendedor`: registra `autorizar_entrada` o `marcar_pendiente` con snapshot antes/después
+  - `f_puerta_cerrar_lista`: registra `cerrar_edicion` o `reabrir_edicion`
+  - `f_admin_limpiar_todo`: registra `limpieza_total_iniciada` y `limpieza_total_completada` con conteos
+  - `f_admin_anular_cortesia`: registra `anular_cortesia` con snapshot
+  - `f_puerta_canjear_premiacion`: registra `canje_premiacion` con cupones antes/después
+- **PENDIENTE: ejecutar en staging, verificar que se crean las funciones y los logs se escriben**

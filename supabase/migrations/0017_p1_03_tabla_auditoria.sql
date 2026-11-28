@@ -10,24 +10,15 @@
 --        user_agent, created_at
 --   2. RLS: INSERT permitido para anon/authenticated (las RPC SECURITY
 --      DEFINER insertan dentro de su contexto). NO SELECT, NO UPDATE,
---      NO DELETE para la app (append-only). El administrador consulta
---      con SQL Editor usando service_role.
---   3. NO guarda tokens, PINs ni contraseñas. Solo IDs, nombres, acciones y
---      snapshots JSONB de antes/después.
---   4. Crea la función genérica public.registrar_auditoria() para que las
---      RPC de la app llamen fácilmente (seguridad: la función es SECURITY
---      DEFINER, pero como no se expone a anon/authenticated, solo las RPC
---      pueden usarla).
+--      NO DELETE para la app (append-only).
+--   3. Crea la función genérica public.registrar_auditoria() para que las
+--      RPC de la app la llamen (seguridad: SECURITY DEFINER, no expuesta).
+--   4. NO guarda tokens, PINs ni contraseñas.
 --
--- PENDIENTE (próximas migraciones):
---   · Integrar registros en cada RPC crítica:
---     - f_login: registrar_auditoria('puerta'/'admin', ...) con login_ok/login_fail
---     - f_logout: registrar_auditoria con logout
---     - f_puerta_autorizar_entrada: accion='autorizar_entrada'
---     - f_puerta_anular_cortesia: accion='anular_cortesia'
---     - f_coord_cerrar_edicion: accion='cierre_edicion'
---   · Crear la vista de auditoría en admin (nueva pantalla o sección)
---   · Política de retención automática (borrado > N meses)
+-- PENDIENTE (0018): integrar calls a registrar_auditoria() en las
+--   RPC críticas (f_login, f_logout, f_puerta_marcar_*, f_admin_*)
+--
+-- PENDIENTE (futuro): vista de auditoría en admin, política de retención
 
 begin;
 
@@ -68,7 +59,7 @@ create policy audit_insert on public.audit_log
   with check (true);
 
 -- ======================================================================
--- 3) Función genérica de registro (segura, solo llamadas internas)
+-- 3) Función genérica de registro
 -- ======================================================================
 create or replace function public.registrar_auditoria(
   p_actor_tipo text,
@@ -99,34 +90,159 @@ $function$;
 revoke all on function public.registrar_auditoria(text, uuid, text, text, text, uuid, jsonb, jsonb, text, text) from public, anon, authenticated;
 
 -- ======================================================================
--- 4) Helper: extraer IP y user-agent de request info (PostgREST)
+-- 4) Función helper para extraer IP del request (PostgREST)
 -- ======================================================================
--- Esta función es segura (no expuesta) y la llaman las RPC SECURITY
--- DEFINER para obtener los metadatos de la conexión sin exponerlos.
-create or replace function public._aud_ip()
+create or replace function public.audit_get_ip()
  returns text
-language sql
+ language plpgsql
+ security definer
+ set search_path to 'public', 'pg_temp'
+as $function$
+declare
+  v_raw text;
+  v_hdr text;
+begin
+  -- Leer headers del request
+  begin
+    select current_setting('request.headers') into v_raw;
+  exception when others then
+    v_raw := '';
+  end;
+
+  -- Extraer x-forwarded-for
+  begin
+    select (
+      select split_part(x, ',', 1) from jsonb_array_elements_text(
+        jsonb_path_query(v_raw::jsonb, '$.x-forwarded-for')
+      ) x
+    ) into v_hdr;
+  exception when others then
+    v_hdr := '';
+  end;
+
+  v_hdr := trim(v_hdr);
+
+  -- Si no hay x-forwarded-for, intentar x-real-ip
+  if v_hdr = '' then
+    begin
+      select jsonb_path_query(v_raw::jsonb, '$.x-real-ip')::text into v_hdr;
+    exception when others then
+      v_hdr := '';
+    end;
+    v_hdr := trim(v_hdr);
+  end;
+
+  if v_hdr = '' then
+    return 'desconocida';
+  end if;
+
+  return v_hdr;
+end;
+$function$;
+
+revoke all on function public.audit_get_ip() from public, anon, authenticated;
+
+-- ======================================================================
+-- 5) Función helper para extraer user-agent del request (PostgREST)
+-- ======================================================================
+create or replace function public.audit_get_user_agent()
+ returns text
+ language plpgsql
+ security definer
+ set search_path to 'public', 'pg_temp'
+as $function$
+declare
+  v_raw text;
+begin
+  begin
+    select current_setting('request.headers') into v_raw;
+  exception when others then
+    v_raw := '';
+  end;
+
+  begin
+    return left(jsonb_path_query(v_raw::jsonb, '$.user-agent')::text, 500);
+  exception when others then
+    return 'no-disponible';
+  end;
+end;
+$function$;
+
+revoke all on function public.audit_get_user_agent() from public, anon, authenticated;
+
+-- ======================================================================
+-- 6) Funciones helper para acciones comunes (seguras, SECURITY DEFINER)
+-- ======================================================================
+
+-- f_audit_login_ok
+create or replace function public.f_audit_login_ok(
+  p_actor_label text,
+  p_rol         text,
+  p_actor_id    uuid default null
+) returns void
+language plpgsql
 security definer
 set search_path to 'public', 'pg_temp'
 as $function$
-  select current_setting('request.header.x-forwarded-for', true)
-         coalesce(nullif(current_setting('request.header.x-forwarded-for', true), ''),
-                  current_setting('request.header.x-real-ip', true))
+begin
+  perform public.registrar_auditoria(
+    'puerta', p_actor_id, p_actor_label,
+    'login_ok', 'sesion', null, null,
+    jsonb_build_object('rol', p_rol),
+    public.audit_get_ip(),
+    public.audit_get_user_agent()
+  );
+end;
 $function$;
 
--- La IP real se obtiene con:
--- select current_setting('request.header.x-forwarded-for', true) || 
---        coalesce(nullif(current_setting('request.header.x-forwarded-for', true), ''),
---                 current_setting('request.header.x-real-ip', true));
--- Pero eso no funciona directamente. En PostgREST, la IP está en:
--- select request.headers::json->>'x-forwarded-for';
--- Mejor: crear una función simple que la lea del request context.
--- Sin embargo, las funciones SECURITY DEFINER en Supabase no tienen
--- acceso directo a request.headers. La alternativa es pasar la IP
--- desde el frontend o desde la RPC que la recibe.
+revoke all on function public.f_audit_login_ok(text, text, uuid) from public, anon, authenticated;
 
--- Pendiente: integrar la obtención de IP del request en cada RPC
--- que llame a registrar_auditoria. La app puede enviar 'X-Forwarded-For'
--- en los headers de la llamada a Supabase (postg-js lo soporta).
+-- f_audit_login_fail
+create or replace function public.f_audit_login_fail(
+  p_actor_label text,
+  p_rol         text,
+  p_motivo      text default 'PIN incorrecto o cuenta bloqueada'
+) returns void
+language plpgsql
+security definer
+set search_path to 'public', 'pg_temp'
+as $function$
+begin
+  perform public.registrar_auditoria(
+    'puerta', null, p_actor_label,
+    'login_fail', 'sesion', null, null,
+    jsonb_build_object('rol', coalesce(p_rol, 'desconocido'), 'motivo', p_motivo),
+    public.audit_get_ip(),
+    public.audit_get_user_agent()
+  );
+end;
+$function$;
+
+revoke all on function public.f_audit_login_fail(text, text, text) from public, anon, authenticated;
+
+-- f_audit_logout
+create or replace function public.f_audit_logout(
+  p_actor_label text,
+  p_actor_id    uuid
+) returns void
+language plpgsql
+security definer
+set search_path to 'public', 'pg_temp'
+as $function$
+begin
+  perform public.registrar_auditoria(
+    case
+      when p_actor_label like '%@%' then 'admin'
+      else 'puerta'
+    end, p_actor_id, p_actor_label,
+    'logout', 'sesion', null, null,
+    jsonb_build_object('hora', now()::text),
+    public.audit_get_ip(),
+    public.audit_get_user_agent()
+  );
+end;
+$function$;
+
+revoke all on function public.f_audit_logout(text, uuid) from public, anon, authenticated;
 
 commit;
