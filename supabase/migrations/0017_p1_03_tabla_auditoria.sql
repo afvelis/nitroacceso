@@ -12,7 +12,7 @@ begin;
 create table if not exists public.audit_log (
   id          uuid default gen_random_uuid() primary key,
   evento_id   uuid,
-  actor_tipo  text not null check (actor_tipo in ('admin', 'puerta', 'coord', 'aliado', 'sistema')),
+  actor_tipo  text not null check (actor_tipo in ('admin', 'puerta', 'coord', 'aliado', 'sistema', 'supervisor')),
   actor_id    uuid,
   actor_label text not null,
   accion      text not null,

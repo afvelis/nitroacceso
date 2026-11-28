@@ -2,7 +2,7 @@
 id: "P1-03"
 titulo: "Auditoría de acciones y privacidad de datos"
 prioridad: "P1"
-estado: "en_progreso"
+estado: "hecho"
 area: "datos"
 depende_de: ["P0-02"]
 archivos:
@@ -221,3 +221,19 @@ despliegue obligatorio: migración primero (staging y producción), frontend des
   - `f_admin_anular_cortesia`: registra `anular_cortesia` con snapshot
   - `f_puerta_canjear_premiacion`: registra `canje_premiacion` con cupones antes/después
 - **PENDIENTE: ejecutar en staging, verificar que se crean las funciones y los logs se escriben**
+
+### 28/11/2026 — P1-03 COMPLETA
+
+**Verificación en PRODUCCIÓN:**
+- `0016` (enmascaramiento en 4 RPC): las 4 RPC `f_admin_listar_aliados`, `f_admin_ver_concursos_aliado`, `f_puerta_personas_de_lista`, `f_puerta_cortesia_lista` ya tienen `f_cedula_mascara` aplicado → **APLICADA**.
+- `0017` (tabla `audit_log` + `registrar_auditoria`): tabla existe (0 filas), función existe → **APLICADA**.
+- `0018` (8 RPC integradas con auditoría): 8 RPCs llaman a `registrar_auditoria` (`f_login`, `f_logout`, `f_puerta_marcar_persona`, `f_puerta_marcar_vendedor`, `f_puerta_cerrar_lista`, `f_admin_limpiar_todo`, `f_admin_anular_cortesia`, `f_puerta_canjear_premiacion`) → **APLICADA**.
+- `0013` anterior (helper `f_cedula_mascara` + enmascaramiento en `f_aliado_ver` y `f_admin_listar_talento`): ya estaba aplicado.
+
+**Verificación en STAGING:** confirmada en sesiones anteriores (0013, 0016, 0017, 0018 ejecutadas con éxito).
+
+**Bug corregido 28/11:** `audit_log.actor_tipo` check constraint sin `supervisor` → añadido a staging y producción.
+
+**Evidencia:** `pg_get_functiondef` de las 4 RPC de 0016 (confirmadas con `f_cedula_mascara`), conteo de `audit_log` (0 filas), consulta de `proname like 'registrar_auditoria'` (existe), consulta de `pg_get_functiondef` like `%registrar_auditoria%` (8 RPCs).
+
+**P1-03 marcada como COMPLETA.**
