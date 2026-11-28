@@ -76,7 +76,7 @@ Tanto estas confirmaciones como los avisos de error de esta pantalla (por ejempl
 
 **7. Accesos rápidos**
 
-En la tarjeta **"⚡ Accesos rápidos"** tienes: **"🛠️ Gestión completa"** (administración avanzada, incluso crear coordinadores), **"📊 Estadísticas"**, **"🤝 Aliados"**, **"📄 Historial e informes"** y **"➕ Crear coordinador"**. Arriba a la derecha hay dos atajos: **"🎁 Nueva cortesía"** y **"🤝 Aliados"**.
+En la tarjeta **"⚡ Accesos rápidos"** tienes: **"🛠️ Gestión completa"** (administración avanzada; los coordinadores ya no se gestionan aquí: tienen su propio panel), **"📊 Estadísticas"**, **"🤝 Aliados"**, **"📄 Historial e informes"** y **"👥 Coordinadores"** (el botón de acceso rápido, abre coord-invitas.html: ver capítulo 07). Arriba a la derecha hay dos atajos: **"🎁 Nueva cortesía"** y **"🤝 Aliados"**.
 
 ## Que debes ver
 

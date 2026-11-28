@@ -21,16 +21,21 @@ Dos herramientas de apoyo, separadas:
 
 ## Paso a paso
 
-**Parte A - El administrador y sus coordinadores**
+**Parte A - El administrador, las invitaciones y sus coordinadores**
 
-1. Desde el panel, usa el acceso rápido **"➕ Crear coordinador"** (o entra a **"🛠️ Gestión completa"**, sección **"Crear coordinador"**).
-2. Elige el **Tipo**: "Coordinador de talentos" o "Coordinador de stands"; escribe **"Nombre y apellido"** y, si quieres, **"Correo (opcional)"**; pulsa **"Crear coordinador"**.
-3. Aparece el **código** del coordinador en una caja, con el botón **"Copiar codigo"** y la orientación de entregárselo: con ese código el coordinador entra a crear sus links. Verás el aviso **"Coordinador creado correctamente."**
-4. En la sección **"Coordinadores creados"** tienes, por cada coordinador, su código, su estado (Activo o Revocado) y su link de acceso, con los botones **"Copiar código"**, **"📋 Copiar link"**, **"📱 WhatsApp"** y **"✉️ Correo"** para entregárselo.
-5. Acciones por coordinador:
-   - **Revocar**: apaga su llave sin borrar lo que creó. Se puede reactivar después con **"Reactivar"**.
-   - **Eliminar definitivamente** (solo en revocados): lo saca de la lista para siempre; el sistema lo protege si ya creó talentos o stands.
-   - **Editar** y **Guardar cambios**: corrige nombre o correo.
+Desde M-38 (28/11/2026) los coordinadores NACEN POR INVITACION, no se crean al vuelo. Todo esto vive en coord-invitas.html (boton **"👥 Coordinadores"** del panel).
+
+1. En **"➕ Crear invitación"**: elige el **Tipo** (talentos o stands), escribe **nombre y apellido** (3 a 120 letras) y, si quieres, correo y teléfono; pulsa **"Crear invitación"**.
+2. Aparece el LINK de la invitación (coordinator.html?i=INV-xxxx), con botones **"Copiar link"**, **"📱 WhatsApp"** y **"✉️ Correo"**. Enviaselo a la persona: ese link es SU llave de invitacion.
+3. En **"📋 Lista de invitaciones"** ves las mas recientes primero (de a 20, con **"Mostrar todas"** para ver el resto) y filtros por estado (pendiente/aceptada/rechazada) y por tipo (talentos/stands). Cada invitacion queda registrada y se puede **"⬇️ Exportar CSV"** para respaldo.
+4. Mientras este **"Pendiente"**, puedes:
+   - **Rechazar**: pide un **motivo obligatorio de al menos 10 letras** (queda registrado con fecha) y el link deja de servir.
+   - **Aceptar**: abre la ventana de confirmacion con nombre y contacto (se pueden corregir); al confirmar, el sistema genera el **codigo COORD-** igual que antes, lo muestra en el panel con botones de copiar/WhatsApp/correo y queda la invitacion como **"Aceptada"**. Es para coordinadores que confirmaron por otro canal y no usaran el link.
+5. El coordinador real acepta POR SU LADO: abre el link, ve una pagina limpia de NitroSystem ("Invitacion para coordinar") con su tipo, confirma su **nombre** (obligatorio, 3 a 120 letras) y su contacto (opcional) y pulsa **"Confirmar mi acceso"**: recibe su codigo COORD- y el boton **"Entrar a mi panel ahora"** lo lleva a coord.html. Una misma invitacion no se puede aceptar dos veces, y un mismo correo/telefono/nombre no puede activar mas de 1 invitacion en 24 horas (limite anti-spam; ese aviso lo veria como "LIMITE_DIARIO"). El rechazo o expiracion del link se lo dice la propia pagina.
+6. En **"👥 Coordinadores creados"** estan TODOS los coordinadores ya activos (viejos y nuevos) con las acciones de siempre:
+   - **Revocar**: apaga su llave sin borrar lo que creo. Se puede reactivar despues con **"Reactivar"**.
+   - **Eliminar definitivamente** (solo en revocados): lo saca de la lista para siempre; el sistema lo protege si ya creo talentos o stands.
+   - **Editar** y **Guardar cambios**: corrige nombre o correo. **"📋 Copiar link"**, **"📱 WhatsApp"** y **"✉️ Correo"** reenvian su codigo.
 
 **Parte B - El coordinador crea los links**
 

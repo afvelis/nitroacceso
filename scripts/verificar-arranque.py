@@ -83,6 +83,7 @@ PARAMETROS_ESPERADOS = {
     "js/cortesia.js": "c",
     "js/aliado.js": "a",
     "js/coord.js": "c",
+    "js/coordinator.js": "i",  # M-38: invitaciones (coordinator.html?i=INV-...)
 }
 ARCHIVOS_CONTAR_ID = ["ESTADO.md", "docs/dev-local.md", "ARQUITECTURA.md"]
 ARCHIVO_F7 = "tareas/F-7-modales-nativos.md"

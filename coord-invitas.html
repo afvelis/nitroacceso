@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://exrbwctegkzxurzwihvh.supabase.co; font-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'; style-src 'self' 'sha256-JZBKTYKFvaXEyr8Wwx6ituHImZd5n6mgj4Mg/jHjgJE='">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NitroSystem</title>
+<style>
+:root{
+  --fondo:#0b1220; --tarjeta:#121c2e; --borde:#24344d; --texto:#eef3f8;
+  --suave:#9fb0c3; --acento:#35d07f; --acento2:#1fa2ff; --aviso:#ffd33d;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0; background:var(--fondo); color:var(--texto);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  font-size:17px; line-height:1.5;
+}
+.franja{height:6px;background:linear-gradient(90deg,var(--acento),var(--acento2));}
+.cabecera{display:flex;gap:14px;align-items:center;padding:20px 16px;max-width:900px;margin:0 auto;}
+.logo{width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,var(--acento),var(--acento2));display:flex;align-items:center;justify-content:center;font-size:30px;flex:none;}
+.ceja{color:var(--suave);letter-spacing:2px;text-transform:uppercase;font-size:17px;}
+h1{margin:0;font-size:26px;}
+h2{margin:0 0 12px;font-size:22px;}
+main{max-width:900px;margin:0 auto;padding:0 16px 40px;display:flex;flex-direction:column;gap:20px;}
+.tarjeta{background:var(--tarjeta);border:1px solid var(--borde);border-radius:16px;padding:20px;box-shadow:0 8px 24px rgba(0,0,0,.35);}
+label{display:block;margin:10px 0;font-size:17px;}
+select,input{width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1px solid var(--borde);background:#0d1526;color:var(--texto);font-size:17px;}
+.btn{display:inline-block;border:none;border-radius:12px;padding:12px 18px;font-size:17px;font-weight:600;color:#06281a;background:linear-gradient(135deg,var(--acento),#2bb673);cursor:pointer;text-decoration:none;}
+.btn-gris{background:#2a3648;color:var(--texto);}
+.btn-rojo{background:linear-gradient(135deg,#e05252,#c73e3e);color:#fff;}
+.btn-verde{background:linear-gradient(135deg,var(--acento),#2bb673);color:#06281a;}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+.fila{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;}
+.fila-mt0{margin-top:0;}
+.suave{color:var(--suave);}
+.codigo{background:#0d1526;border:1px solid var(--borde);border-radius:10px;padding:12px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:18px;letter-spacing:1px;margin-top:8px;word-break:break-all;}
+.item{border:1px solid var(--borde);border-radius:12px;padding:14px;margin-top:12px;background:#0e1728;}
+/* M-38: filtros y tabla dinámica (sin lista infinita) */
+.pestanas{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+.pestana{padding:10px 16px;border-radius:999px;border:1px solid var(--borde);background:#0d1526;color:var(--suave);font-size:16px;font-weight:700;cursor:pointer;}
+.pestana.activa{background:linear-gradient(135deg,var(--acento),#2bb673);color:#06281a;border-color:var(--acento);}
+.inv{border:1px solid var(--borde);border-radius:12px;padding:14px;margin-top:12px;background:#0e1728;}
+.inv .fila-encab{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.inv .nombre{font-weight:700;font-size:18px;}
+.pill{display:inline-block;padding:4px 12px;border-radius:999px;font-size:14px;font-weight:700;}
+.pill-pendiente{background:#4a3a12;color:var(--aviso);}
+.pill-aceptada{background:#12402c;color:#7ee2ae;}
+.pill-rechazada{background:#4a1a1a;color:#ff9d9d;}
+.pill-expirada{background:#2a3648;color:#9fb0c3;}
+.badge-tipo{display:inline-block;padding:4px 10px;border-radius:999px;font-size:15px;background:#123a5c;color:#9fd2ff;}
+.filtros{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+.filtro{padding:6px 14px;border-radius:999px;border:1px solid var(--borde);background:#0d1526;color:var(--suave);font-size:14px;font-weight:700;cursor:pointer;}
+.filtro.activa{background:rgba(31,162,255,.2);color:var(--acento2);border-color:var(--acento2);}
+.mensaje-accion{margin-top:8px;font-size:15px;}
+.panel-edit{margin-top:12px;border-top:1px dashed var(--borde);padding-top:6px;}
+/* Regla v2.1: modales propios (sin alert/confirm/prompt nativos) */
+.modal-fondo{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px}
+.modal-caja{background:var(--tarjeta);border:1px solid var(--borde);border-radius:16px;padding:22px;max-width:480px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,.5)}
+.modal-titulo{font-size:18px;font-weight:700;color:var(--acento);margin-bottom:12px}
+.modal-mensaje{color:var(--texto);white-space:pre-wrap;line-height:1.55;margin-bottom:18px}
+.modal-acciones{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.modal-acciones .btn{padding:10px 18px;font-size:16px}
+.campo-modal{width:100%;padding:10px;border-radius:10px;border:1px solid var(--borde);background:#0d1526;color:var(--texto);font-size:16px;margin-bottom:14px}
+.fila-compacta{margin-bottom:8px;}
+.codigo-enlace{font-size:14px;margin-top:4px;}
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header class="cabecera">
+  <div class="logo">🚀</div>
+  <div>
+    <div class="ceja">Panel de administracion</div>
+    <h1>Coordinadores</h1>
+  </div>
+</header>
+<main>
+
+  <div class="fila fila-mt0">
+    <a href="dashboard.html" class="btn btn-gris">← Volver al dashboard</a>
+  </div>
+
+  <div class="pestanas" role="tablist">
+    <button type="button" class="pestana activa" id="pestaCrear">➕ Crear invitación</button>
+    <button type="button" class="pestana" id="pestaLista">📋 Lista de invitaciones</button>
+    <button type="button" class="pestana" id="pestaCoords">👥 Coordinadores creados</button>
+  </div>
+
+  <section class="tarjeta" id="tabCrear">
+    <h2>Crear invitación</h2>
+    <p class="suave">Llena los datos del coordinador. El sistema crea la invitación y da un LINK: envíaselo por WhatsApp o correo y la persona acepta (confirma su nombre y contacto); al aceptar recibe su código COORD- y entra a coord.html. La invitación queda registrada y se puede rechazar antes de que alguien la acepte.</p>
+    <label>Tipo
+      <select id="cTipo">
+        <option value="talentos">Coordinador de talentos</option>
+        <option value="stands">Coordinador de stands</option>
+      </select>
+    </label>
+    <label>Nombre y apellido (obligatorio, 3 a 120 letras)
+      <input id="cNombre" placeholder="Ej.: Maria Perez">
+      <span id="errCNombre" class="mensaje-accion" style="color:var(--rojo)"></span>
+    </label>
+    <label>Correo (opcional)
+      <input id="cCorreo" type="email" placeholder="Ej.: maria@correo.com">
+      <span id="errCCorreo" class="mensaje-accion" style="color:var(--rojo)"></span>
+    </label>
+    <label>Teléfono (opcional)
+      <input id="cTelefono" placeholder="Ej.: 0414 123 4567">
+      <span id="errCTelefono" class="mensaje-accion" style="color:var(--rojo)"></span>
+    </label>
+    <div class="fila">
+      <button class="btn" id="btnCrearInvitacion">Crear invitación</button>
+    </div>
+    <p id="msgCrear" class="suave"></p>
+    <div id="resultadoInvitacion"></div>
+  </section>
+
+  <section class="tarjeta" id="tabLista" hidden>
+    <h2>Lista de invitaciones</h2>
+    <p class="suave">Las más recientes primero. Las pendientes se pueden aceptar (a nombre del coordinador, generando su código) o rechazar con un motivo. Exporta a CSV para respaldo.</p>
+    <div class="filtros" id="filtrosEstado">
+      <button type="button" class="filtro activa" data-filtro-estado="todos">Todos</button>
+      <button type="button" class="filtro" data-filtro-estado="pendiente">Pendientes</button>
+      <button type="button" class="filtro" data-filtro-estado="aceptada">Aceptadas</button>
+      <button type="button" class="filtro" data-filtro-estado="rechazada">Rechazadas</button>
+    </div>
+    <div class="filtros" id="filtrosTipo">
+      <button type="button" class="filtro activa" data-filtro-tipo="todos">Tipos: todos</button>
+      <button type="button" class="filtro" data-filtro-tipo="talentos">Talentos</button>
+      <button type="button" class="filtro" data-filtro-tipo="stands">Stands</button>
+    </div>
+    <div id="listaInvitaciones"><p class="suave">Consultando...</p></div>
+    <div class="fila">
+      <button class="btn btn-gris" id="btnVerMasInv" hidden>Mostrar más invitaciones</button>
+      <button class="btn btn-gris" id="btnExportarInvCSV">⬇️ Exportar CSV</button>
+    </div>
+    <p id="msgListaInv" class="suave"></p>
+  </section>
+
+  <section class="tarjeta" id="tabCoords" hidden>
+    <h2>Coordinadores creados</h2>
+    <p class="suave">Aqui ves quien tiene llave de entrada. El boton "Revocar" desactiva la llave sin borrar lo creado; y sobre un coordinador ya revocado aparece "Eliminar definitivamente" para sacarlo de esta lista para siempre.</p>
+    <div id="listaCoords"><p class="suave">Consultando...</p></div>
+  </section>
+
+  <div class="fila">
+    <a href="dashboard.html" class="btn btn-gris" id="btnVolver">← Volver al dashboard</a>
+  </div>
+
+</main>
+<script src="config.js"></script>
+<script src="js/modales.js"></script>
+<script src="js/coord-invitas.js"></script>
+</body>
+</html>
